@@ -1,8 +1,10 @@
 import 'dart:math';
+import 'package:flareline/pages/test/map_widget/farm_list_panel/farm_list.dart';
 import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 
@@ -19,7 +21,8 @@ class MapWidget extends StatefulWidget {
 }
 
 class _MapWidgetState extends State<MapWidget> {
-  String selectedMap = "OSM";
+  String selectedMap = "Google Satellite";
+  bool _showFarmListPanel = false; // State variable to manage panel visibility
   double zoomLevel = 15.0;
   LatLng? previewPoint;
   PinStyle selectedPinStyle = PinStyle.rice; // Add PinStyle state variable
@@ -79,7 +82,6 @@ class _MapWidgetState extends State<MapWidget> {
                 TileLayer(
                   tileProvider: CancellableNetworkTileProvider(),
                   urlTemplate: MapLayersHelper.availableLayers[selectedMap]!,
-                  // subdomains: ['a', 'b', 'c'],
                 ),
 
                 // Use ValueListenableBuilder for the polyline layer
@@ -109,6 +111,11 @@ class _MapWidgetState extends State<MapWidget> {
                     if (polygonManager.isEditing) {
                       setState(() {
                         polygonManager.selectPolygon(i);
+                        // Initialize PolyEditor when a polygon is selected
+                        if (polygonManager.selectedPolygon != null) {
+                          polygonManager.initializePolyEditor(
+                              polygonManager.selectedPolygon!);
+                        }
                       });
                     }
                   },
@@ -125,28 +132,13 @@ class _MapWidgetState extends State<MapWidget> {
                       .toList(), // Pass the list of PinStyles
                 ),
 
+                // Replace the manual drag marker layer with PolyEditor's drag markers
                 if (polygonManager.isEditing &&
-                    polygonManager.selectedPolygonIndex != null)
-                  MapLayersHelper.createDragMarkerLayer(
-                    polygonManager.polygons
-                        .map((polygon) => polygon.vertices)
-                        .toList(), // Extract vertices from PolygonData
-                    polygonManager.selectedPolygonIndex!,
-                    (j) {
-                      setState(() {
-                        polygonManager.removeVertex(j);
-                      });
-                    },
-                    (j, newPoint) {
-                      setState(() {
-                        polygonManager.updateVertex(j, newPoint);
-                      });
-                    },
-                    (j, newPoint) {
-                      setState(() {
-                        polygonManager.addMidpoint(j, newPoint);
-                      });
-                    },
+                        polygonManager.selectedPolygon != null
+                    // &&    polygonManager.selectedPolygonIndex != null
+                    )
+                  DragMarkers(
+                    markers: polygonManager.polyEditor?.edit() ?? [],
                   ),
 
                 MapLayersHelper.createPolygonLayer(
@@ -192,6 +184,48 @@ class _MapWidgetState extends State<MapWidget> {
           ),
         ),
 
+        // Farm list panel
+        if (_showFarmListPanel)
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: FarmListPanel(
+              polygonManager: polygonManager,
+              onPolygonSelected: (int index) {
+                setState(() {
+                  polygonManager.selectPolygon(
+                      index); // Update the selected polygon in PolygonManager
+                });
+              },
+            ),
+          ),
+
+// Toggle farm list panel button
+        Positioned(
+          top: 10,
+          left: _showFarmListPanel
+              ? 250
+              : 10, // Adjust the left position based on panel visibility
+          child: IconButton(
+            onPressed: () {
+              // Toggle the visibility of the farm list panel
+              setState(() {
+                _showFarmListPanel = !_showFarmListPanel;
+              });
+            },
+            icon: Icon(
+              _showFarmListPanel
+                  ? Icons.arrow_back
+                  : Icons.menu, // Use different icons for open/closed states
+              color: Colors.white, // Icon color
+            ),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.blue, // Button background color
+              padding: EdgeInsets.all(12), // Adjust padding as needed
+            ),
+          ),
+        ),
         // Map controls
         Positioned(
           top: 10,
@@ -253,11 +287,11 @@ class _MapWidgetState extends State<MapWidget> {
         if (polygonManager.selectedPolygon != null &&
             polygonManager.selectedPolygon!.vertices.isNotEmpty)
           Positioned(
-            bottom: 20,
+            bottom: 0,
             left: 20,
             right: 20,
             child: Container(
-                padding: EdgeInsets.all(10),
+                padding: EdgeInsets.all(0),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),

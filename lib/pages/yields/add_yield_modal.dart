@@ -6,15 +6,24 @@ import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 class AddYieldModal {
   static void show({
     required BuildContext context,
-    required Function(String cropType, double yieldAmount, DateTime date)
+    required Function(String cropType, String farmer, String farmArea,
+            double yieldAmount, DateTime date)
         onYieldAdded,
   }) {
-    // Controllers for the form fields
-    final TextEditingController cropTypeController = TextEditingController();
+    // Example data (this should be fetched from API or database inside the modal)
+    final List<String> cropTypes = ['Rice', 'Corn', 'Wheat', 'Barley'];
+    final Map<String, List<String>> farmersWithFarmAreas = {
+      'John Doe': ['Field A', 'Field B'],
+      'Jane Smith': ['Farm X', 'Farm Y'],
+      'Mark Johnson': ['Zone 1', 'Zone 2']
+    };
+
     final TextEditingController yieldAmountController = TextEditingController();
     DateTime selectedDate = DateTime.now();
+    String? selectedCropType;
+    String? selectedFarmer;
+    String? selectedFarmArea;
 
-    // Get screen width
     final double screenWidth = MediaQuery.of(context).size.width;
 
     ModalDialog.show(
@@ -24,42 +33,115 @@ class AddYieldModal {
       showTitleDivider: true,
       modalType: screenWidth < 600 ? ModalType.small : ModalType.medium,
       onCancelTap: () {
-        Navigator.of(context).pop(); // Close the modal
+        Navigator.of(context).pop();
       },
       onSaveTap: () {
-        // Validate and collect data
-        final String cropType = cropTypeController.text.trim();
         final String yieldAmountText = yieldAmountController.text.trim();
         final double? yieldAmount = double.tryParse(yieldAmountText);
 
-        if (cropType.isEmpty || yieldAmount == null || yieldAmount <= 0) {
-          // Show validation error
+        if (selectedCropType == null ||
+            selectedFarmer == null ||
+            selectedFarmArea == null ||
+            yieldAmount == null ||
+            yieldAmount <= 0) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Please enter valid yield details')),
           );
           return;
         }
 
-        // Call the callback with the new yield data
-        onYieldAdded(cropType, yieldAmount, selectedDate);
-        Navigator.of(context).pop(); // Close the modal
+        onYieldAdded(selectedCropType!, selectedFarmer!, selectedFarmArea!,
+            yieldAmount, selectedDate);
+        Navigator.of(context).pop();
       },
       child: Padding(
         padding: EdgeInsets.all(screenWidth < 600 ? 8.0 : 16.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Crop Type Field
-            TextFormField(
-              controller: cropTypeController,
-              decoration: const InputDecoration(
-                labelText: 'Crop Type',
-                border: OutlineInputBorder(),
-              ),
+            // ComboBox-like widget for Crop Type
+            Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text.isEmpty) {
+                  return cropTypes;
+                }
+                return cropTypes.where((crop) => crop
+                    .toLowerCase()
+                    .contains(textEditingValue.text.toLowerCase()));
+              },
+              onSelected: (String value) {
+                selectedCropType = value;
+              },
+              fieldViewBuilder: (BuildContext context,
+                  TextEditingController textEditingController,
+                  FocusNode focusNode,
+                  VoidCallback onFieldSubmitted) {
+                return TextFormField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Crop Type',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.arrow_drop_down),
+                  ),
+                );
+              },
             ),
             SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
 
-            // Yield Amount Field
+            // ComboBox-like widget for Farmers
+            Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text.isEmpty) {
+                  return farmersWithFarmAreas.keys.toList();
+                }
+                return farmersWithFarmAreas.keys.where((farmer) => farmer
+                    .toLowerCase()
+                    .contains(textEditingValue.text.toLowerCase()));
+              },
+              onSelected: (String value) {
+                selectedFarmer = value;
+                selectedFarmArea = null; // Reset farm area when farmer changes
+              },
+              fieldViewBuilder: (BuildContext context,
+                  TextEditingController textEditingController,
+                  FocusNode focusNode,
+                  VoidCallback onFieldSubmitted) {
+                return TextFormField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Farmer',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.arrow_drop_down),
+                  ),
+                );
+              },
+            ),
+            SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
+
+            // Farm Area Dropdown (dependent on selected farmer)
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(
+                labelText: 'Farm Area',
+                border: OutlineInputBorder(),
+              ),
+              value: selectedFarmArea,
+              items: selectedFarmer != null
+                  ? farmersWithFarmAreas[selectedFarmer]!
+                      .map((area) => DropdownMenuItem(
+                            value: area,
+                            child: Text(area),
+                          ))
+                      .toList()
+                  : [],
+              onChanged: (value) {
+                selectedFarmArea = value;
+              },
+            ),
+            SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
+
+            // Yield Amount Input
             TextFormField(
               controller: yieldAmountController,
               keyboardType: TextInputType.number,
@@ -95,7 +177,8 @@ class AddYieldModal {
                       ),
                     ),
                     controller: TextEditingController(
-                        text: "${selectedDate.toLocal()}".split(' ')[0]),
+                      text: "${selectedDate.toLocal()}".split(' ')[0],
+                    ),
                   ),
                 ),
               ],
@@ -118,7 +201,7 @@ class AddYieldModal {
                   btnText: 'Cancel',
                   textColor: FlarelineColors.darkBlackText,
                   onTap: () {
-                    Navigator.of(context).pop(); // Close the modal
+                    Navigator.of(context).pop();
                   },
                 ),
               ),
@@ -128,17 +211,16 @@ class AddYieldModal {
                 child: ButtonWidget(
                   btnText: 'Add Yield',
                   onTap: () {
-                    // Validate and collect data
-                    final String cropType = cropTypeController.text.trim();
                     final String yieldAmountText =
                         yieldAmountController.text.trim();
                     final double? yieldAmount =
                         double.tryParse(yieldAmountText);
 
-                    if (cropType.isEmpty ||
+                    if (selectedCropType == null ||
+                        selectedFarmer == null ||
+                        selectedFarmArea == null ||
                         yieldAmount == null ||
                         yieldAmount <= 0) {
-                      // Show validation error
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             content: Text('Please enter valid yield details')),
@@ -146,9 +228,9 @@ class AddYieldModal {
                       return;
                     }
 
-                    // Call the callback with the new yield data
-                    onYieldAdded(cropType, yieldAmount, selectedDate);
-                    Navigator.of(context).pop(); // Close the modal
+                    onYieldAdded(selectedCropType!, selectedFarmer!,
+                        selectedFarmArea!, yieldAmount, selectedDate);
+                    Navigator.of(context).pop();
                   },
                   type: ButtonType.primary.type,
                 ),

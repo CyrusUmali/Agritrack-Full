@@ -1,3 +1,4 @@
+import 'package:flareline/pages/farmers/add_farmer_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/farmers/grid_card.dart';
 import 'package:flareline/pages/layout.dart';
@@ -31,6 +32,18 @@ class FarmersPage extends LayoutWidget {
                 onPressed: () {
                   // Add your logic for the "Add Farmer" button here
                   print("Add Farmer button pressed");
+
+                  // Example data for the farmer
+                  String farmerName = "John Doe";
+                  String farmerId = "123";
+
+                  AddFarmerModal.show(
+                    context: context,
+                    onUserAdded: (String name, String email, String password,
+                        String role) {
+                      // You can call your ViewModel or API here to save the user
+                    },
+                  );
                 },
                 child: const Text("Add Farmer"),
               ),

@@ -28,7 +28,7 @@ class CircularhartWidget extends StatelessWidget {
 
   _lineChart(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.only(top: 12),
       child: Column(
         children: [
           Row(

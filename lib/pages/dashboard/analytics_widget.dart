@@ -28,7 +28,7 @@ class AnalyticsWidget extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            flex: 3,
+            flex: 4,
             child: CommonCard(
               child: CircularhartWidget(
                 title: 'Farmer Distribution',
@@ -75,7 +75,7 @@ class AnalyticsWidget extends StatelessWidget {
           ),
 
           Expanded(
-            flex: 4,
+            flex: 3,
             child: CommonCard(
               child: const ClimateInfoWidget(),
             ),

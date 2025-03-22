@@ -5,19 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
 import 'package:responsive_builder/responsive_builder.dart';
-import 'package:flareline/pages/farmers/farmer_profile.dart'; // Import the new widget
+import 'package:flareline/pages/sectors/sector_profile.dart'; // Import the new widget
 import 'package:flareline_uikit/components/buttons/button_widget.dart'; // Import the ButtonWidget
 import 'package:flareline_uikit/core/theme/flareline_colors.dart'; // Import FlarelineColors
 
-class Users extends StatefulWidget {
-  const Users({super.key});
+class SectorTableWidget extends StatefulWidget {
+  const SectorTableWidget({super.key});
 
   @override
-  State<Users> createState() => UsersState();
+  State<SectorTableWidget> createState() => _SectorTableWidgetState();
 }
 
-class UsersState extends State<Users> {
-  Map<String, dynamic>? selectedFarmer;
+class _SectorTableWidgetState extends State<SectorTableWidget> {
+  Map<String, dynamic>? selectedSector;
 
   @override
   Widget build(BuildContext context) {
@@ -37,26 +37,19 @@ class UsersState extends State<Users> {
       height: 450,
       child: Column(
         children: [
-          _buildSearchBar(), // Add the search bar here
-          const SizedBox(height: 16),
           Expanded(
             child: Row(
               children: [
                 Expanded(
                   flex: 2,
-                  child: DataTableWidget(
-                    onFarmerSelected: (farmer) {
+                  child: SectorDataTableWidget(
+                    onSectorSelected: (sector) {
                       setState(() {
-                        selectedFarmer = farmer;
+                        selectedSector = sector;
                       });
                     },
                   ),
                 ),
-                // const SizedBox(width: 16),
-                // Expanded(
-                //   flex: 1,
-                //   child: FarmerDetailWidget(farmer: selectedFarmer),
-                // ),
               ],
             ),
           ),
@@ -68,14 +61,12 @@ class UsersState extends State<Users> {
   Widget _channelMobile(BuildContext context) {
     return Column(
       children: [
-        _buildSearchBar(), // Add the search bar here
-        const SizedBox(height: 16),
         SizedBox(
-          height: 500,
-          child: DataTableWidget(
-            onFarmerSelected: (farmer) {
+          height: 380,
+          child: SectorDataTableWidget(
+            onSectorSelected: (sector) {
               setState(() {
-                selectedFarmer = farmer;
+                selectedSector = sector;
               });
             },
           ),
@@ -83,67 +74,40 @@ class UsersState extends State<Users> {
       ],
     );
   }
-
-  // Search Bar Widget
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search USers...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: () {},
-            child: const Text("Search"),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-class DataTableWidget extends TableWidget<FarmersViewModel> {
-  final Function(Map<String, dynamic>)? onFarmerSelected;
+class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
+  final Function(Map<String, dynamic>)? onSectorSelected;
 
-  DataTableWidget({this.onFarmerSelected, Key? key}) : super(key: key) {
-    print("DataTableWidget initialized");
+  SectorDataTableWidget({this.onSectorSelected, Key? key}) : super(key: key) {
+    print("SectorDataTableWidget initialized");
   }
 
   @override
-  FarmersViewModel viewModelBuilder(BuildContext context) {
-    return FarmersViewModel(
+  SectorsViewModel viewModelBuilder(BuildContext context) {
+    print("Building SectorsViewModel");
+
+    return SectorsViewModel(
       context,
-      onFarmerSelected,
+      onSectorSelected,
       (id) {
-        print("Deleted USer ID: $id");
-        // Add logic to remove the farmer from the list or show a confirmation dialog
+        print("Deleted Sector ID: $id");
+        // Add logic to remove the sector from the list or show a confirmation dialog
       },
     );
   }
 
   @override
   Widget actionWidgetsBuilder(BuildContext context,
-      TableDataRowsTableDataRows columnData, FarmersViewModel viewModel) {
-    // Create a farmer object from the data
+      TableDataRowsTableDataRows columnData, SectorsViewModel viewModel) {
+    // Create a sector object from the data
     int id = int.tryParse(columnData.id ?? '0') ?? 0;
-    final user = {
-      'Username': 'Username $id',
-      'UserRole': 'Officer',
-      // 'farmSize': '${id + 1} hectares',
-      'contact': 'farmer$id@example.com',
-      // 'lastHarvest': 'March ${2024 - id}',
+    final sector = {
+      'Sector': 'Sector $id',
+      'LandArea': '${id + 1} hectares',
+      'Farmers': '12',
+      'Yield': '100kg',
+      'Value': '100php',
     };
 
     return Row(
@@ -152,16 +116,11 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
         IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),
           onPressed: () {
-            print("Delete icon clicked for Farmer $id");
-
-            // Add your delete logic here
-            // if (viewModel.onFarmerDeleted != null) {
-            //   viewModel.onFarmerDeleted!(id);
-            // }
+            print("Delete icon clicked for Sector $id");
 
             ModalDialog.show(
               context: context,
-              title: 'Delete User',
+              title: 'Delete Sector',
               showTitle: true,
               showTitleDivider: true,
               modalType: ModalType.medium,
@@ -170,27 +129,23 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
               },
               onSaveTap: () {
                 // Perform the delete operation here
-                if (viewModel.onFarmerDeleted != null) {
-                  viewModel.onFarmerDeleted!(id);
+                if (viewModel.onSectorDeleted != null) {
+                  viewModel.onSectorDeleted!(id);
                 }
                 Navigator.of(context).pop(); // Close the modal
               },
               child: Center(
                 child: Text(
-                  'Are you sure you want to delete ${user['Username']}?',
-                  textAlign:
-                      TextAlign.center, // Optional: Center-align the text
+                  'Are you sure you want to delete ${sector['Sector']}?',
+                  textAlign: TextAlign.center,
                 ),
               ),
               footer: Padding(
-                // Add padding to the footer
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 10.0), // Adjust padding as needed
+                    horizontal: 20.0, vertical: 10.0),
                 child: Center(
                   child: Row(
-                    mainAxisSize: MainAxisSize
-                        .min, // Ensure the Row takes only the space it needs
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(
                         width: 120,
@@ -209,8 +164,8 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
                           btnText: 'Delete',
                           onTap: () {
                             // Perform the delete operation here
-                            if (viewModel.onFarmerDeleted != null) {
-                              viewModel.onFarmerDeleted!(id);
+                            if (viewModel.onSectorDeleted != null) {
+                              viewModel.onSectorDeleted!(id);
                             }
                             Navigator.of(context).pop(); // Close the modal
                           },
@@ -227,16 +182,16 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
-            print("Arrow icon clicked for farmer $id");
+            print("Arrow icon clicked for Sector $id");
 
-            if (viewModel.onFarmerSelected != null) {
-              viewModel.onFarmerSelected!(user);
+            if (viewModel.onSectorSelected != null) {
+              viewModel.onSectorSelected!(sector);
             }
 
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => FarmersProfile(farmer: user),
+                builder: (context) => SectorProfile(sector: sector),
               ),
             );
           },
@@ -266,19 +221,25 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
   }
 }
 
-class FarmersViewModel extends BaseTableProvider {
-  final Function(Map<String, dynamic>)? onFarmerSelected;
-  final Function(int)? onFarmerDeleted; // Add this line
+class SectorsViewModel extends BaseTableProvider {
+  final Function(Map<String, dynamic>)? onSectorSelected;
+  final Function(int)? onSectorDeleted;
 
   @override
-  String get TAG => 'FarmersViewModel';
+  String get TAG => 'SectorsViewModel';
 
-  FarmersViewModel(super.context, this.onFarmerSelected,
-      this.onFarmerDeleted); // Modify constructor
+  SectorsViewModel(super.context, this.onSectorSelected, this.onSectorDeleted);
 
   @override
   Future loadData(BuildContext context) async {
-    const headers = ["Username", "UserRole", "Contact", "Action"];
+    const headers = [
+      "Sector Name",
+      "Land Area",
+      "Farmers",
+      "Yield",
+      "Value",
+      "Action"
+    ];
 
     List<List<TableDataRowsTableDataRows>> rows = [];
 
@@ -287,32 +248,48 @@ class FarmersViewModel extends BaseTableProvider {
       var id = i;
       var item = {
         'id': id.toString(),
-        'Username': 'User $id',
-        'UserRole': 'UserRole',
-        'contact': 'farmer$id@example.com',
+        'sectorName': 'Sector $id',
+        'landArea': '${id + 1} hectares',
+        'farmers': '12',
+        'yield': '100kg',
+        'value': '100php',
       };
 
       // Create regular cells
-      var farmerNameCell = TableDataRowsTableDataRows()
-        ..text = item['Username']
+      var sectorNameCell = TableDataRowsTableDataRows()
+        ..text = item['sectorName']
         ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Username'
+        ..columnName = 'Sector Name'
         ..id = item['id'];
-      row.add(farmerNameCell);
+      row.add(sectorNameCell);
 
-      var sectorCell = TableDataRowsTableDataRows()
-        ..text = item['UserRole']
+      var landAreaCell = TableDataRowsTableDataRows()
+        ..text = item['landArea']
         ..dataType = CellDataType.TEXT.type
-        ..columnName = 'UserRole'
+        ..columnName = 'Land Area'
         ..id = item['id'];
-      row.add(sectorCell);
+      row.add(landAreaCell);
 
-      var contactCell = TableDataRowsTableDataRows()
-        ..text = item['contact']
+      var farmersCell = TableDataRowsTableDataRows()
+        ..text = item['farmers']
         ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Contact'
+        ..columnName = 'Farmers'
         ..id = item['id'];
-      row.add(contactCell);
+      row.add(farmersCell);
+
+      var yieldCell = TableDataRowsTableDataRows()
+        ..text = item['yield']
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = 'Yield'
+        ..id = item['id'];
+      row.add(yieldCell);
+
+      var valueCell = TableDataRowsTableDataRows()
+        ..text = item['value']
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = 'Value'
+        ..id = item['id'];
+      row.add(valueCell);
 
       // Add action cell for the icon button
       var actionCell = TableDataRowsTableDataRows()

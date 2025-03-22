@@ -1,3 +1,4 @@
+import 'package:flareline/pages/sectors/sector_table.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/sectors/grid_card.dart';
 import 'package:flareline/pages/layout.dart';
@@ -36,7 +37,9 @@ class SectorsPage extends LayoutWidget {
         const SizedBox(height: 16),
         const SectorsGridCard(),
         const SizedBox(height: 16),
-        const FarmersPerSectorWidget(),
+
+        SectorTableWidget(),
+        // const FarmersPerSectorWidget(),
         const SizedBox(height: 16),
 
         SectorLineChart(),

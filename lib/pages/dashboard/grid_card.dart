@@ -109,7 +109,7 @@ class GridCard extends StatelessWidget {
             ),
             Text(
               text,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(
               height: 2,
@@ -118,7 +118,7 @@ class GridCard extends StatelessWidget {
               children: [
                 Text(
                   subTitle,
-                  style: const TextStyle(fontSize: 8, color: Colors.grey),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const Spacer(),
               ],

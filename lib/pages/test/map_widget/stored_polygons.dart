@@ -11,8 +11,8 @@ List<Map<String, dynamic>> storedPolygons = [
     'name': 'Polygon 1',
     'color': Colors.blue.value,
     'description': 'A sample polygon',
-    'icon': 'corn',
-    'pinStyle': 'corn', // Add PinStyle
+    'icon': 'fishery',
+    'pinStyle': 'fishery', // Add PinStyle
   },
   {
     'vertices': [
@@ -48,7 +48,7 @@ List<Map<String, dynamic>> storedPolygons = [
     'name': 'Polygon 4',
     'color': Colors.blue.value,
     'icon': 'fishery',
-    'pinStyle': 'livestock',
+    'pinStyle': 'fishery',
   },
   {
     'vertices': [
@@ -59,8 +59,8 @@ List<Map<String, dynamic>> storedPolygons = [
     ],
     'name': 'Polygon 5',
     'color': Colors.blue.value,
-    'icon': 'livestock',
-    'pinStyle': 'livestock',
+    'icon': 'fishery',
+    'pinStyle': 'fishery',
   },
   {
     'vertices': [
@@ -71,8 +71,8 @@ List<Map<String, dynamic>> storedPolygons = [
     ],
     'name': 'Polygon 6',
     'color': Colors.blue.value,
-    'icon': 'livestock',
-    'pinStyle': 'livestock',
+    'icon': 'fishery',
+    'pinStyle': 'fishery',
   },
   {
     'vertices': [
@@ -83,8 +83,8 @@ List<Map<String, dynamic>> storedPolygons = [
     ],
     'name': 'Polygon 7',
     'color': Colors.blue.value,
-    'icon': 'livestock',
-    'pinStyle': 'livestock',
+    'icon': 'fishery',
+    'pinStyle': 'fishery',
   },
   {
     'vertices': [
@@ -95,8 +95,8 @@ List<Map<String, dynamic>> storedPolygons = [
     ],
     'name': 'Polygon 8',
     'color': Colors.blue.value,
-    'icon': 'livestock',
-    'pinStyle': 'livestock',
+    'icon': 'fishery',
+    'pinStyle': 'fishery',
   },
   {
     'vertices': [
@@ -213,4 +213,24 @@ List<Map<String, dynamic>> storedPolygons = [
     'icon': 'fishery',
     'pinStyle': 'fishery',
   },
+  {
+    "vertices": [
+      {"lat": 14.085817, "lng": 121.325215},
+      {"lat": 14.085084, "lng": 121.325449},
+      {"lat": 14.085034, "lng": 121.325832},
+      {"lat": 14.085596, "lng": 121.325691},
+      {"lat": 14.085746, "lng": 121.326217},
+      {"lat": 14.085605, "lng": 121.326294},
+      {"lat": 14.085508, "lng": 121.326530},
+      {"lat": 14.085668, "lng": 121.326847},
+      {"lat": 14.086600, "lng": 121.326697},
+      {"lat": 14.086482, "lng": 121.326197},
+      {"lat": 14.086286, "lng": 121.326242},
+      {"lat": 14.086135, "lng": 121.325823}
+    ],
+    "name": "Polygon 18",
+    "color": const Color.fromARGB(255, 55, 255, 0).value,
+    "icon": "rice",
+    "pinStyle": "rice"
+  }
 ];

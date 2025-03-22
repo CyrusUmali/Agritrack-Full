@@ -12,7 +12,7 @@ enum PinStyle {
 Widget getPinIcon(PinStyle pinStyle) {
   switch (pinStyle) {
     case PinStyle.rice:
-      return Icon(Icons.water, color: Colors.white);
+      return Icon(Icons.rice_bowl, color: Colors.white);
     case PinStyle.corn:
       return Icon(Icons.eco, color: Colors.yellow);
     case PinStyle.highValueCrop:

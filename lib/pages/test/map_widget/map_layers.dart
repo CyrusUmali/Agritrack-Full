@@ -82,8 +82,8 @@ class MapLayersHelper {
           for (int j = 0; j < polygons[selectedPolygonIndex].length; j++)
             Marker(
               point: polygons[selectedPolygonIndex][j],
-              width: 10.0,
-              height: 10.0,
+              width: 20.0,
+              height: 20.0,
               child: GestureDetector(
                 onTap: () {
                   onMarkerTap(selectedPolygonIndex, j);

@@ -51,13 +51,13 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 Icons.group,
-                '\Users',
-                "Total:", // Subtitle 1
+                '\User Status',
+                "Active: ", // Subtitle 1
                 '',
                 true,
-                ": ", // Subtitle 2
+                "Inactive: ", // Subtitle 2
                 ':21',
-                '')), // Number value for Subtitle 1
+                '11')), // Number value for Subtitle 1
         const SizedBox(
           width: 16,
         ),
@@ -65,7 +65,7 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 Icons.security_rounded,
-                '\Users',
+                '\New Users: ',
                 "Total:", // Subtitle 1
                 '',
                 true,
@@ -86,13 +86,13 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 Icons.data_object,
-                'Users',
-                "Active:", // Subtitle 1
-                '0.43%',
+                '\Users',
+                "Total:", // Subtitle 1
+                '',
                 true,
-                "Inactive: ", // Subtitle 2
-                '123',
-                '213'), // Number value for Subtitle 1
+                ": ", // Subtitle 2
+                ':21',
+                ''), // Number value for Subtitle 1
           ),
           const SizedBox(
             width: 16, // Horizontal spacing between cards
@@ -118,13 +118,13 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 Icons.group,
-                '\Users',
-                "Total:", // Subtitle 1
+                '\User Status',
+                "Active: ", // Subtitle 1
                 '',
                 true,
-                ": ", // Subtitle 2
+                "Inactive: ", // Subtitle 2
                 ':21',
-                ''), // Number value for Subtitle 1
+                '11'), // Number value for Subtitle 1
           ),
           const SizedBox(
             width: 16, // Horizontal spacing between cards
@@ -134,13 +134,13 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 Icons.security_rounded,
-                'Registration',
-                'Registered: ', // Subtitle 1
-                '0.43%',
-                false,
-                "Not Registered: ", // Subtitle 2
-                '101',
-                '12'), // Number value for Subtitle 1
+                '\New Users: ',
+                "Total:", // Subtitle 1
+                '',
+                true,
+                ": ", // Subtitle 2
+                ':21',
+                ''), // Number value for Subtitle 1
           ),
         ],
       ),

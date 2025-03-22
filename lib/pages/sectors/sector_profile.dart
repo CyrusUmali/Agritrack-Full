@@ -1,32 +1,33 @@
+import 'package:flareline/pages/farmers/sector_farmers.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
 
-class FarmersProfile extends LayoutWidget {
-  final Map<String, dynamic> farmer;
+class SectorProfile extends LayoutWidget {
+  final Map<String, dynamic> sector;
 
-  const FarmersProfile({super.key, required this.farmer});
+  const SectorProfile({super.key, required this.sector});
 
   @override
   String breakTabTitle(BuildContext context) {
-    return 'Farmer Profile';
+    return 'Sector Profile';
   }
 
   @override
   Widget contentDesktopWidget(BuildContext context) {
-    return FarmersProfileDesktop(farmer: farmer);
+    return SectorProfileDesktop(sector: sector);
   }
 
   @override
   Widget contentMobileWidget(BuildContext context) {
-    return FarmersProfileMobile(farmer: farmer);
+    return SectorProfileMobile(sector: sector);
   }
 }
 
-class FarmersProfileDesktop extends StatelessWidget {
-  final Map<String, dynamic> farmer;
+class SectorProfileDesktop extends StatelessWidget {
+  final Map<String, dynamic> sector;
 
-  const FarmersProfileDesktop({super.key, required this.farmer});
+  const SectorProfileDesktop({super.key, required this.sector});
 
   @override
   Widget build(BuildContext context) {
@@ -68,23 +69,23 @@ class FarmersProfileDesktop extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            farmer['farmerName'] ?? 'Unknown Farmer',
+            sector['sectorName'] ?? 'Unknown Sector',
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
-          FarmerDetailsCard(farmer: farmer),
-          FarmDetailsCard(farmer: farmer),
-          AnnualRecordsCard(farmer: farmer),
+          SectorDetailsCard(sector: sector),
+          SectorStatisticsCard(sector: sector),
+          AnnualYieldReportCard(sector: sector),
         ],
       ),
     );
   }
 }
 
-class FarmersProfileMobile extends StatelessWidget {
-  final Map<String, dynamic> farmer;
+class SectorProfileMobile extends StatelessWidget {
+  final Map<String, dynamic> sector;
 
-  const FarmersProfileMobile({super.key, required this.farmer});
+  const SectorProfileMobile({super.key, required this.sector});
 
   @override
   Widget build(BuildContext context) {
@@ -127,13 +128,13 @@ class FarmersProfileMobile extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              farmer['farmerName'] ?? 'Unknown Farmer',
+              sector['sectorName'] ?? 'Unknown Sector',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            FarmerDetailsCard(farmer: farmer),
-            FarmDetailsCard(farmer: farmer),
-            AnnualRecordsCard(farmer: farmer),
+            SectorDetailsCard(sector: sector),
+            SectorStatisticsCard(sector: sector),
+            AnnualYieldReportCard(sector: sector),
           ],
         ),
       ),
@@ -141,9 +142,9 @@ class FarmersProfileMobile extends StatelessWidget {
   }
 }
 
-class FarmerDetailsCard extends StatelessWidget {
-  final Map<String, dynamic> farmer;
-  const FarmerDetailsCard({super.key, required this.farmer});
+class SectorDetailsCard extends StatelessWidget {
+  final Map<String, dynamic> sector;
+  const SectorDetailsCard({super.key, required this.sector});
 
   @override
   Widget build(BuildContext context) {
@@ -153,83 +154,16 @@ class FarmerDetailsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'User Details',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          Row(
-            children: [
-              Expanded(child: _buildInputField('First Name')),
-              SizedBox(width: 10),
-              Expanded(child: _buildInputField('Last Name')),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: _buildInputField('Middle Initial', maxLength: 1),
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: _buildInputField('Suffix (Jr., Sr., III)'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputField(String label, {int? maxLength}) {
-    return TextField(
-      maxLength: maxLength,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(),
-        counterText: "",
-      ),
-    );
-  }
-
-  Widget _buildDetailField(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        initialValue: value,
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          filled: true,
-          fillColor: Colors.grey[100],
-        ),
-        style: const TextStyle(fontSize: 14),
-      ),
-    );
-  }
-}
-
-class FarmDetailsCard extends StatelessWidget {
-  final Map<String, dynamic> farmer;
-  const FarmDetailsCard({super.key, required this.farmer});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Farm Details',
+            'Sector Details',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
-          _buildDetailField('Sector', farmer['sector'] ?? 'Not specified'),
-          _buildDetailField('Farm Size', '${farmer['farmSize']} hectares'),
           _buildDetailField(
-              'Farm Locations', farmer['farmLocations'] ?? 'Not specified'),
+              'Sector Name', sector['sectorName'] ?? 'Not specified'),
           _buildDetailField(
-              'Main Products', farmer['mainProducts'] ?? 'Not specified'),
+              'Description', sector['description'] ?? 'Not specified'),
+          const SizedBox(height: 16),
+          const FarmersPerSectorWidget(),
         ],
       ),
     );
@@ -253,9 +187,9 @@ class FarmDetailsCard extends StatelessWidget {
   }
 }
 
-class AnnualRecordsCard extends StatelessWidget {
-  final Map<String, dynamic> farmer;
-  const AnnualRecordsCard({super.key, required this.farmer});
+class SectorStatisticsCard extends StatelessWidget {
+  final Map<String, dynamic> sector;
+  const SectorStatisticsCard({super.key, required this.sector});
 
   @override
   Widget build(BuildContext context) {
@@ -265,16 +199,55 @@ class AnnualRecordsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Annual Records',
+            'Sector Statistics',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          _buildDetailField('Total Farmers',
+              sector['totalFarmers']?.toString() ?? 'Not specified'),
+          _buildDetailField(
+              'Total Land Area', '${sector['totalLandArea']} hectares'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailField(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextFormField(
+        initialValue: value,
+        readOnly: true,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          filled: true,
+          fillColor: Colors.grey[100],
+        ),
+        style: const TextStyle(fontSize: 14),
+      ),
+    );
+  }
+}
+
+class AnnualYieldReportCard extends StatelessWidget {
+  final Map<String, dynamic> sector;
+  const AnnualYieldReportCard({super.key, required this.sector});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Annual Yield Report',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
           _buildDetailField(
-              'Total Yield per Year', '${farmer['totalYield']} tons'),
-          _buildDetailField(
-              'Last Harvest', farmer['lastHarvest'] ?? 'Not specified'),
-          _buildDetailField(
-              'Years of Experience', '${farmer['experience']} years'),
+              'Annual Yield', '${sector['annualYieldReport']} tons'),
         ],
       ),
     );

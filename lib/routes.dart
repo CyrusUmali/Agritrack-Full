@@ -1,3 +1,5 @@
+// ignore_for_file: library_prefixes
+
 import 'package:flareline/deferred_widget.dart';
 import 'package:flareline/pages/modal/modal_page.dart' deferred as modal;
 import 'package:flareline/pages/table/contacts_page.dart' deferred as contacts;

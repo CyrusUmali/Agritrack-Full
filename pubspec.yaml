@@ -41,6 +41,7 @@ dependencies:
 
   flutter_map: ^6.0.0
   flutter_map_cancellable_tile_provider: ^2.0.0
+  flutter_map_line_editor: ^6.0.0
   flutter_map_dragmarker: ^6.0.0
   build_web_compilers: ^4.0.4
   flutter_map_animations: ^0.6.0

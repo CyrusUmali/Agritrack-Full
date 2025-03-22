@@ -2,6 +2,7 @@
 
 import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:developer'; // Import the developer library for logging
 import 'package:flutter/foundation.dart'; // For ValueNotifier
@@ -18,6 +19,8 @@ class PolygonManager {
   bool isEditing = false;
   ValueNotifier<PolygonData?> selectedPolygonNotifier = ValueNotifier(null);
 
+  PolyEditor? polyEditor;
+
   // Undo and redo history
   List<PolygonHistoryEntry> undoHistory = [];
   List<PolygonHistoryEntry> redoHistory = [];
@@ -25,35 +28,64 @@ class PolygonManager {
   // Constructor to accept MapController
   PolygonManager(this.mapController);
 
+  void initializePolyEditor(PolygonData polygon) {
+    polyEditor = PolyEditor(
+      points: polygon.vertices,
+      pointIcon: Container(
+        width: 40, // Adjust the size of the container
+        height: 40, // Adjust the size of the container
+        decoration: BoxDecoration(
+          shape: BoxShape.circle, // Make the container circular
+          color: Colors.orange, // Fill color of the circle
+          border: Border.all(
+            color: Colors.white, // Border color
+            width: 2.0, // Border width
+          ),
+        ),
+      ),
+      intermediateIcon: Icon(
+        Icons.lens,
+        size: 25,
+        color: Colors.grey,
+      ),
+      callbackRefresh: () {
+        // Refresh the state or update the map
+        selectedPolygonNotifier.value = selectedPolygon;
+      },
+      addClosePathMarker: true, // Set to true for polygons
+    );
+  }
+
   /// Logs all polygon data to the console
   void logPolygons() {
     if (polygons.isEmpty) {
-      print("No polygons available.");
+      // print("No polygons available.");
       return;
     }
 
-    print("===== Logging Polygon Data =====");
+    // print("===== Logging Polygon Data =====");
     for (int i = 0; i < polygons.length; i++) {
       final polygon = polygons[i];
-      print("Polygon ${i + 1}: ${polygon.name}");
-      print("  - Vertices:");
+      // print("Polygon ${i + 1}: ${polygon.name}");
+      // print("  - Vertices:");
       for (int j = 0; j < polygon.vertices.length; j++) {
         final vertex = polygon.vertices[j];
-        print(
-            "    ${j + 1}: Lat: ${vertex.latitude}, Lng: ${vertex.longitude}");
+        // print(
+        //     "    ${j + 1}: Lat: ${vertex.latitude}, Lng: ${vertex.longitude}"
+        //     );
       }
-      print("  - Color: ${polygon.color}");
-      print(
-          "  - Center: Lat: ${polygon.center.latitude}, Lng: ${polygon.center.longitude}");
+      // print("  - Color: ${polygon.color}");
+      // print(
+      //     "  - Center: Lat: ${polygon.center.latitude}, Lng: ${polygon.center.longitude}");
       if (polygon.description != null) {
-        print("  - Description: ${polygon.description}");
+        // print("  - Description: ${polygon.description}");
       }
       if (polygon.pinStyle != null) {
-        print("  - Icon: ${polygon.pinStyle}");
+        // print("  - Icon: ${polygon.pinStyle}");
       }
-      print("-----------------------------");
+      // print("-----------------------------");
     }
-    print("===== End of Polygon Data =====");
+    // print("===== End of Polygon Data =====");
   }
 
   void toggleDrawing() {
@@ -62,6 +94,9 @@ class PolygonManager {
 
     if (!isDrawing) {
       currentPolygon.clear();
+      if (selectedPolygon == null) {
+        polyEditor = null; // Clear the PolyEditor when no polygon is selected
+      }
     }
 
     if (isDrawing) {
@@ -101,9 +136,9 @@ class PolygonManager {
   }
 
   void handleDrawingTap(LatLng point) {
-    _saveState();
     if (selectedPolygonIndex != null) {
       polygons[selectedPolygonIndex!].vertices.add(point);
+      _saveState();
     } else {
       if (currentPolygon.isNotEmpty) {
         final double distance = const Distance().as(
@@ -136,7 +171,7 @@ class PolygonManager {
     selectedPolygon = null;
     selectedPolygonIndex = null;
 
-    log("Tap at: ${tapPoint.latitude}, ${tapPoint.longitude}");
+    // log("Tap at: ${tapPoint.latitude}, ${tapPoint.longitude}");
 
     for (int i = 0; i < polygons.length; i++) {
       List<LatLng> polygonPoints = polygons[i].vertices;
@@ -156,17 +191,20 @@ class PolygonManager {
       var tapTurfPoint = turf.Point(
           coordinates: turf.Position(tapPoint.longitude, tapPoint.latitude));
 
-      log("Checking polygon ${polygons[i].name}: ${polygonCoordinates}");
+      // log("Checking polygon ${polygons[i].name}: ${polygonCoordinates}");
 
       // ✅ Fix: Pass tapTurfPoint.coordinates, not tapTurfPoint itself
       bool isInside = turf.booleanPointInPolygon(tapTurfPoint.coordinates,
           turf.Polygon(coordinates: [polygonCoordinates]));
 
       if (isInside) {
-        log("Point is inside ${polygons[i].name}");
+        // log("Point is inside ${polygons[i].name}");
         selectedPolygon = polygons[i];
         selectedPolygonIndex = i;
         selectedPolygonNotifier.value = selectedPolygon;
+
+        // Reinitialize the PolyEditor with the new polygon's vertices
+        initializePolyEditor(selectedPolygon!);
 
         // Zoom and center the map on the selected polygon
         _zoomToPolygon(polygons[i]);
@@ -175,7 +213,9 @@ class PolygonManager {
     }
 
     if (selectedPolygon == null) {
-      log("No polygon selected.");
+      // log("No polygon selected.");
+      // Clear the PolyEditor when no polygon is selected
+      polyEditor = null;
     }
   }
 
@@ -224,7 +264,7 @@ class PolygonManager {
 
   /// Loads a list of polygons into the manager
   void loadPolygons(List<PolygonData> polygonsToLoad) {
-    _saveState(); // Save the current state before loading new polygons
+    // _saveState();
     polygons = List<PolygonData>.from(polygonsToLoad);
     selectedPolygonIndex = null;
     selectedPolygon = null;
@@ -282,6 +322,8 @@ class PolygonManager {
 
     if (vertexIndex >= 0 && vertexIndex < polygon.vertices.length) {
       polygon.vertices[vertexIndex] = newPoint;
+      initializePolyEditor(
+          polygon); // Reinitialize the editor with updated points
     }
   }
 
@@ -294,6 +336,8 @@ class PolygonManager {
 
     if (beforeIndex >= 0 && beforeIndex < polygon.vertices.length) {
       polygon.vertices.insert(beforeIndex + 1, newPoint);
+      initializePolyEditor(
+          polygon); // Reinitialize the editor with updated points
     }
   }
 
@@ -306,6 +350,10 @@ class PolygonManager {
   }
 
   void _saveState() {
+    if (undoHistory.isNotEmpty && redoHistory.isNotEmpty) {
+      redoHistory.clear();
+    }
+
     final newState = PolygonHistoryEntry(
       List<PolygonData>.from(polygons.map((polygon) => PolygonData(
             vertices: List<LatLng>.from(polygon.vertices),
@@ -318,7 +366,6 @@ class PolygonManager {
       selectedPolygonIndex,
     );
     undoHistory.add(newState);
-    redoHistory.clear();
   }
 
   /// Undo the last action

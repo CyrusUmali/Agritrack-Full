@@ -416,7 +416,16 @@ class _ProductFilterWidgetState extends State<ProductFilterWidget> {
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                 ),
-                items: ["All", "Crop", "Livestock", "Fish"]
+                items: [
+                  "All",
+                  "Rice",
+                  "Livestock",
+                  "Fishery",
+                  "Corn",
+                  "High Value Crop",
+                  "Organic",
+                  "Etc"
+                ]
                     .map((type) =>
                         DropdownMenuItem(value: type, child: Text(type)))
                     .toList(),

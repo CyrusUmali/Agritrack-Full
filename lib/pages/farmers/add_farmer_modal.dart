@@ -3,23 +3,24 @@ import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 
-class AddProductModal {
+class AddFarmerModal {
   static void show({
     required BuildContext context,
-    required Function(String name, String description, String category)
-        onProductAdded,
+    required Function(String name, String email, String password, String role)
+        onUserAdded,
   }) {
     // Controllers for the form fields
     final TextEditingController nameController = TextEditingController();
-    final TextEditingController descriptionController = TextEditingController();
-    String selectedCategory = 'Rice'; // Default category
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    String selectedRole = 'farmer'; // Default role
 
     // Get screen width
     final double screenWidth = MediaQuery.of(context).size.width;
 
     ModalDialog.show(
       context: context,
-      title: 'Add New Product',
+      title: 'Add New User',
       showTitle: true,
       showTitleDivider: true,
       modalType: screenWidth < 600 ? ModalType.small : ModalType.medium,
@@ -29,18 +30,19 @@ class AddProductModal {
       onSaveTap: () {
         // Validate and collect data
         final String name = nameController.text.trim();
-        final String description = descriptionController.text.trim();
+        final String email = emailController.text.trim();
+        final String password = passwordController.text.trim();
 
-        if (name.isEmpty || description.isEmpty) {
+        if (name.isEmpty || email.isEmpty || password.isEmpty) {
           // Show validation error
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please fill all fields correctly')),
+            const SnackBar(content: Text('Please fill all fields')),
           );
           return;
         }
 
-        // Call the callback with the new product data
-        onProductAdded(name, description, selectedCategory);
+        // Call the callback with the new user data
+        onUserAdded(name, email, password, selectedRole);
         Navigator.of(context).pop(); // Close the modal
       },
       child: Padding(
@@ -52,7 +54,7 @@ class AddProductModal {
             TextFormField(
               controller: nameController,
               decoration: InputDecoration(
-                labelText: 'Product Name',
+                labelText: 'Name',
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(
                   vertical: screenWidth < 600 ? 10.0 : 16.0,
@@ -62,26 +64,41 @@ class AddProductModal {
             ),
             SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
 
-            // Description Field
+            // Email Field
             TextFormField(
-              controller: descriptionController,
+              controller: emailController,
               decoration: InputDecoration(
-                labelText: 'Description',
+                labelText: 'Email',
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(
                   vertical: screenWidth < 600 ? 10.0 : 16.0,
                   horizontal: 10.0,
                 ),
               ),
-              maxLines: 3,
+              keyboardType: TextInputType.emailAddress,
             ),
             SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
 
-            // Category Dropdown
-            DropdownButtonFormField<String>(
-              value: selectedCategory,
+            // Password Field
+            TextFormField(
+              controller: passwordController,
               decoration: InputDecoration(
-                labelText: 'Category',
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: screenWidth < 600 ? 10.0 : 16.0,
+                  horizontal: 10.0,
+                ),
+              ),
+              obscureText: true,
+            ),
+            SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
+
+            // Role Dropdown
+            DropdownButtonFormField<String>(
+              value: selectedRole,
+              decoration: InputDecoration(
+                labelText: 'Role',
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(
                   vertical: screenWidth < 600 ? 10.0 : 16.0,
@@ -89,18 +106,13 @@ class AddProductModal {
                 ),
               ),
               items: const [
-                DropdownMenuItem(value: 'Rice', child: Text('Rice')),
-                DropdownMenuItem(value: 'Corn', child: Text('Corn')),
-                DropdownMenuItem(value: 'Fishery', child: Text('Fishery')),
-                DropdownMenuItem(value: 'Organic', child: Text('Organic')),
-                DropdownMenuItem(
-                    value: 'High Value Crop', child: Text('High Value Crop')),
-                DropdownMenuItem(value: 'Livestock', child: Text('Livestock')),
-                DropdownMenuItem(value: 'Etc', child: Text('Etc')),
+                DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                DropdownMenuItem(value: 'officer', child: Text('Officer')),
+                DropdownMenuItem(value: 'farmer', child: Text('Farmer')),
               ],
               onChanged: (String? value) {
                 if (value != null) {
-                  selectedCategory = value;
+                  selectedRole = value;
                 }
               },
             ),
@@ -130,24 +142,23 @@ class AddProductModal {
               SizedBox(
                 width: screenWidth < 600 ? 100 : 120,
                 child: ButtonWidget(
-                  btnText: 'Add Product',
+                  btnText: 'Add User',
                   onTap: () {
                     // Validate and collect data
                     final String name = nameController.text.trim();
-                    final String description =
-                        descriptionController.text.trim();
+                    final String email = emailController.text.trim();
+                    final String password = passwordController.text.trim();
 
-                    if (name.isEmpty || description.isEmpty) {
+                    if (name.isEmpty || email.isEmpty || password.isEmpty) {
                       // Show validation error
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Please fill all fields correctly')),
+                        const SnackBar(content: Text('Please fill all fields')),
                       );
                       return;
                     }
 
-                    // Call the callback with the new product data
-                    onProductAdded(name, description, selectedCategory);
+                    // Call the callback with the new user data
+                    onUserAdded(name, email, password, selectedRole);
                     Navigator.of(context).pop(); // Close the modal
                   },
                   type: ButtonType.primary.type,

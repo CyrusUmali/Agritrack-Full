@@ -34,11 +34,11 @@ class _PolygonInfoPanelState extends State<PolygonInfoPanel> {
   Color selectedColor = Colors.blue;
 
   // Sample data for fish cage info
-  String fishCageOwner = "Juan Dela Cruz";
+  String farmOwner = "Juan Dela Cruz";
   double areaHa = 15.5; // in hectares
-  double stockingDensity = 5.5; // fish per square meter
+  double yield = 5.5; // fish per square meter
   double averageKgValuePHP = 200.0; // average kg price in PHP
-  String fishVariety = "Tilapia";
+  String products = "Tilapia";
   String yearlyFilter = "2018"; // Default year
 
   @override
@@ -103,56 +103,92 @@ class _PolygonInfoPanelState extends State<PolygonInfoPanel> {
           BoxConstraints(maxHeight: 400), // Limit the height of the panel
       child: SingleChildScrollView(
         // Make the panel scrollable
-        child: ExpansionTile(
-          title: Text(
-            "Fish Cage: ${widget.polygon.name}",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+        child: Column(
           children: [
-            PolygonDetailsSection(
-              fishCageOwner: fishCageOwner,
-              areaHa: areaHa,
-              stockingDensity: stockingDensity,
-              fishVariety: fishVariety,
-              yearlyFilter: yearlyFilter,
-              averageKgValuePHP: averageKgValuePHP,
-              onYearChanged: (newYear) {
-                setState(() {
-                  yearlyFilter = newYear;
-                });
-              },
-            ),
-            if (widget.polygon.description != null)
-              Padding(
-                padding: EdgeInsets.only(bottom: 10),
-                child: Text(
-                  "Description: ${widget.polygon.description}",
-                  style: TextStyle(fontSize: 14),
-                ),
+            // Placeholder images section
+            Container(
+              height: 100, // Set a fixed height for the images section
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: 3, // Number of placeholder images
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: EdgeInsets.only(right: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        color: Colors.grey[300], // Placeholder background color
+                        child: Icon(
+                          Icons.image, // Placeholder icon
+                          color: Colors.grey[600],
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            LocationCoordinatesSection(
-              latController: latController,
-              lngController: lngController,
             ),
-            PinStyleDropdown(
-              selectedPinStyle: selectedPinStyle,
-              onPinStyleChanged: (newPinStyle) {
-                setState(() {
-                  selectedPinStyle = newPinStyle;
-                  widget.onUpdatePinStyle(selectedPinStyle);
-                });
-              },
-            ),
-            ColorPickerButton(
-              selectedColor: selectedColor,
-              onColorPicked: _showColorPicker,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                widget.onSave();
-              },
-              child: Text("Save Changes"),
+            SizedBox(height: 16), // Spacing between images and content
+            ExpansionTile(
+              title: Text(
+                "Farm Name: ${widget.polygon.name}",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              children: [
+                PolygonDetailsSection(
+                  farmOwner: farmOwner,
+                  areaHa: areaHa,
+                  yield: yield,
+                  products: products,
+                  yearlyFilter: yearlyFilter,
+                  averageKgValuePHP: averageKgValuePHP,
+                  onYearChanged: (newYear) {
+                    setState(() {
+                      yearlyFilter = newYear;
+                    });
+                  },
+                ),
+                if (widget.polygon.description != null)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      "Description: ${widget.polygon.description}",
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
+
+                LocationCoordinatesSection(
+                  latController: latController,
+                  lngController: lngController,
+                ),
+
+                // Add the PolygonVerticesSection here
+                PolygonVerticesSection(vertices: widget.polygon.vertices),
+                PinStyleDropdown(
+                  selectedPinStyle: selectedPinStyle,
+                  onPinStyleChanged: (newPinStyle) {
+                    setState(() {
+                      selectedPinStyle = newPinStyle;
+                      widget.onUpdatePinStyle(selectedPinStyle);
+                    });
+                  },
+                ),
+
+                ColorPickerButton(
+                  selectedColor: selectedColor,
+                  onColorPicked: _showColorPicker,
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    widget.onSave();
+                  },
+                  child: Text("Save Changes"),
+                ),
+              ],
             ),
           ],
         ),

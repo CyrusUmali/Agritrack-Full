@@ -35,8 +35,8 @@ class YieldsPage extends LayoutWidget {
 
                   AddYieldModal.show(
                     context: context,
-                    onYieldAdded:
-                        (String cropType, double yieldAmount, DateTime date) {},
+                    onYieldAdded: (String cropType, String farmer,
+                        String farmArea, double yieldAmount, DateTime date) {},
                   );
                 },
                 child: const Text("Add Yield"),

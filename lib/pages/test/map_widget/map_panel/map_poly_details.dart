@@ -1,6 +1,7 @@
 import 'package:flareline/pages/test/map_widget/map_panel/map_panel_row.dart';
 import 'package:flareline/pages/test/map_widget/pin_style.dart';
-import 'package:flutter/material.dart'; // For Colors
+import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart'; // For Colors
 
 class YearlyFilterDropdown extends StatelessWidget {
   final String yearlyFilter;
@@ -34,20 +35,20 @@ class YearlyFilterDropdown extends StatelessWidget {
 }
 
 class PolygonDetailsSection extends StatelessWidget {
-  final String fishCageOwner;
+  final String farmOwner;
   final double areaHa;
-  final double stockingDensity;
-  final String fishVariety;
+  final double yield;
+  final String products;
   final String yearlyFilter;
   final double averageKgValuePHP;
   final Function(String) onYearChanged;
 
   const PolygonDetailsSection({
     Key? key,
-    required this.fishCageOwner,
+    required this.farmOwner,
     required this.areaHa,
-    required this.stockingDensity,
-    required this.fishVariety,
+    required this.yield,
+    required this.products,
     required this.yearlyFilter,
     required this.averageKgValuePHP,
     required this.onYearChanged,
@@ -57,12 +58,10 @@ class PolygonDetailsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        InfoRow(title: "Fish Cage Owner:", value: fishCageOwner),
+        InfoRow(title: "Farm Owner:", value: farmOwner),
         InfoRow(title: "Area (Ha):", value: areaHa.toString()),
-        InfoRow(
-            title: "Stocking Density (fish/m²):",
-            value: stockingDensity.toString()),
-        InfoRow(title: "Fish Variety:", value: fishVariety),
+        InfoRow(title: "Yield (kg):", value: yield.toString()),
+        InfoRow(title: "Products:", value: products),
         SizedBox(height: 20),
         Text(
           "Average Price (PHP) - Yearly Filter: $yearlyFilter",
@@ -79,6 +78,35 @@ class PolygonDetailsSection extends StatelessWidget {
             onYearChanged: onYearChanged,
           ),
         ),
+      ],
+    );
+  }
+}
+
+class PolygonVerticesSection extends StatelessWidget {
+  final List<LatLng> vertices;
+
+  const PolygonVerticesSection({Key? key, required this.vertices})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Polygon Vertices:",
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 8),
+        ...vertices.asMap().entries.map((entry) {
+          final index = entry.key;
+          final vertex = entry.value;
+          return Text(
+            "Vertex ${index + 1}: (${vertex.latitude.toStringAsFixed(6)}, ${vertex.longitude.toStringAsFixed(6)})",
+            style: TextStyle(fontSize: 14),
+          );
+        }).toList(),
       ],
     );
   }
