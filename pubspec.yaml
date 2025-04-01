@@ -44,8 +44,8 @@ dependencies:
   flutter_map_line_editor: ^6.0.0
   flutter_map_dragmarker: ^6.0.0
   build_web_compilers: ^4.0.4
-  flutter_map_animations: ^0.6.0
-  
+  flutter_map_animations: ^0.6.0 
+  flutter_fullscreen: ^1.1.0
   turf: ^0.0.10
 
   # flutter_map_draw: ^0.5.0
@@ -86,7 +86,7 @@ dependencies:
 
   responsive_builder: ^0.7.0
 
-  window_manager: ^0.3.8
+  window_manager: ^0.4.2
 
   intl: ^0.20.0
 
@@ -119,7 +119,7 @@ dependencies:
   # flutter_colorpicker: ^1.1.0
 
   multi_select_flutter: ^4.1.3
-
+  simplify: ^1.1.0
   flex_color_scheme: ^8.0.0
 
   flareline_uikit:
@@ -127,6 +127,11 @@ dependencies:
   webview_flutter_web: ^0.2.3+4
   dio: ^5.8.0+1
   dropdown_search: ^6.0.2
+  get_storage: ^2.1.1
+  flutter_bloc: ^8.1.6
+  draggable_bottom_sheet: ^1.0.2
+  wolt_modal_sheet: ^0.11.0
+  flutter_map_tile_caching: ^9.0.1
 
 
 dependency_overrides:
@@ -158,10 +163,9 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  assets:
-    - assets/
+  assets: 
     - assets/brand/
-    - assets//cards/
+    - assets/cards/
     - assets/country/
     - assets/cover/
     - assets/icon/
@@ -179,6 +183,8 @@ flutter:
     - assets/ai/
     - assets/crm/
     - assets/map.html
+    - assets/barangays.json
+    - assets/map/barangays.geojson
   #   - assets/a_dot_burr.jpeg
   #   - assets/a_dot_ham.jpeg
 

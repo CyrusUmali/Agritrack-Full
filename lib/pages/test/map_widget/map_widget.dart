@@ -1,17 +1,16 @@
 import 'dart:math';
-import 'package:flareline/pages/test/map_widget/farm_list_panel/farm_list.dart';
-import 'package:flareline/pages/test/map_widget/pin_style.dart';
-import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
+import 'package:flareline/pages/test/map_widget/farm_list_panel/barangay_filter_panel.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/farm_info_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
+import 'package:flutter_map_animations/flutter_map_animations.dart';
 
+import 'farm_list_panel/farm_list.dart';
+import 'stored_polygons.dart';
 import 'map_controls.dart';
 import 'map_layers.dart';
-import 'PolygonInfoPanel.dart';
 import 'polygon_manager.dart';
+import 'map_content.dart';
 
 class MapWidget extends StatefulWidget {
   const MapWidget({super.key});
@@ -20,171 +19,127 @@ class MapWidget extends StatefulWidget {
   _MapWidgetState createState() => _MapWidgetState();
 }
 
-class _MapWidgetState extends State<MapWidget> {
+class _MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
+  PolygonData?
+      _selectedPolygonForModal; // Track which polygon is being shown in modal
+
   String selectedMap = "Google Satellite";
-  bool _showFarmListPanel = false; // State variable to manage panel visibility
+  bool _showFarmListPanel = false;
   double zoomLevel = 15.0;
   LatLng? previewPoint;
-  PinStyle selectedPinStyle = PinStyle.rice; // Add PinStyle state variable
 
-  final MapController mapController = MapController();
+  late final AnimatedMapController _animatedMapController;
   late PolygonManager polygonManager;
+  late BarangayManager barangayManager;
+  final ValueNotifier<LatLng?> previewPointNotifier = ValueNotifier(null);
+
+  late final RenderBox _renderBox;
+  LatLng? _lastPoint;
 
   @override
   void initState() {
     super.initState();
-    polygonManager = PolygonManager(mapController);
-    // Load stored polygons
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _renderBox = context.findRenderObject() as RenderBox;
+    });
+    FarmInfoCard.loadBarangays();
+    barangayManager = BarangayManager();
+    _animatedMapController = AnimatedMapController(vsync: this);
+    polygonManager = PolygonManager(
+        mapController: _animatedMapController,
+        onPolygonSelected: _hideFarmListPanel,
+        onFiltersChanged: () => setState(() {}));
+
     List<PolygonData> polygonsToLoad =
         storedPolygons.map((map) => PolygonData.fromMap(map)).toList();
     polygonManager.loadPolygons(polygonsToLoad);
+
+    barangayManager = BarangayManager();
+    barangayManager.loadBarangays(barangays);
+  }
+
+  void _hideFarmListPanel() {
+    setState(() {
+      _showFarmListPanel = false;
+    });
   }
 
   @override
   void dispose() {
-    mapController.dispose(); // Dispose of the MapController
-    previewPointNotifier.dispose(); // Dispose the ValueNotifier
+    _animatedMapController.dispose();
+    previewPointNotifier.dispose();
     super.dispose();
   }
 
-  final ValueNotifier<LatLng?> previewPointNotifier = ValueNotifier(null);
-
   @override
   Widget build(BuildContext context) {
-    print("Building MapWidget"); // Debugging statement
-
     return Stack(
       children: <Widget>[
-        MouseRegion(
-          onHover: (event) {
-            if (polygonManager.isDrawing) {
-              final RenderBox renderBox =
-                  context.findRenderObject() as RenderBox;
-              final Offset localPosition =
-                  renderBox.globalToLocal(event.position);
+        Listener(
+          onPointerMove: (event) {
+            // Only process if in drawing mode
+            if (!polygonManager.isDrawing) return;
 
-              final Point<double> localPoint =
-                  Point(localPosition.dx, localPosition.dy);
-              final LatLng newPoint =
-                  mapController.camera.pointToLatLng(localPoint);
+            try {
+              // Get the render box if not already available
+              final renderBox =
+                  _renderBox ?? context.findRenderObject() as RenderBox?;
+              if (renderBox == null) return;
 
-              previewPointNotifier.value = newPoint; // Update the ValueNotifier
+              // Convert global position to local coordinates
+              final localPosition = renderBox.globalToLocal(event.position);
+              final newPoint = _animatedMapController.mapController.camera
+                  .pointToLatLng(Point(localPosition.dx, localPosition.dy));
+
+              // Update only if point changed significantly (optimization)
+              if (_lastPoint == null ||
+                  (newPoint.latitude - _lastPoint!.latitude).abs() > 0.0001 ||
+                  (newPoint.longitude - _lastPoint!.longitude).abs() > 0.0001) {
+                _lastPoint = newPoint;
+                previewPointNotifier.value = newPoint;
+              }
+            } catch (e) {
+              debugPrint('Error in pointer move: $e');
             }
           },
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.88,
-            width: MediaQuery.of(context).size.width,
-            child: FlutterMap(
-              mapController: mapController,
-              options: _buildMapOptions(),
-              children: [
-                // Base tile layer
-                TileLayer(
-                  tileProvider: CancellableNetworkTileProvider(),
-                  urlTemplate: MapLayersHelper.availableLayers[selectedMap]!,
-                ),
+          child: MouseRegion(
+            onHover: (event) {
+              // Add hover support for smoother preview
+              if (!polygonManager.isDrawing) return;
 
-                // Use ValueListenableBuilder for the polyline layer
-                ValueListenableBuilder<LatLng?>(
-                  valueListenable: previewPointNotifier,
-                  builder: (context, previewPoint, child) {
-                    return MapLayersHelper.createPolylineLayer(
-                      polygonManager.polygons
-                          .map((polygon) => polygon.vertices)
-                          .toList(), // Extract vertices from PolygonData
-                      polygonManager.currentPolygon,
-                      previewPoint,
-                      polygonManager.isDrawing,
-                    );
-                  },
-                ),
+              try {
+                final renderBox = context.findRenderObject() as RenderBox?;
+                if (renderBox == null) return;
 
-                // Use the helper methods from MapLayersHelper
-                MapLayersHelper.createMarkerLayer(
-                  polygonManager.polygons
-                      .map((polygon) => polygon.vertices)
-                      .toList(), // Extract vertices from PolygonData
-                  polygonManager.currentPolygon,
-                  polygonManager.selectedPolygonIndex,
-                  polygonManager.isEditing,
-                  (i, j) {
-                    if (polygonManager.isEditing) {
-                      setState(() {
-                        polygonManager.selectPolygon(i);
-                        // Initialize PolyEditor when a polygon is selected
-                        if (polygonManager.selectedPolygon != null) {
-                          polygonManager.initializePolyEditor(
-                              polygonManager.selectedPolygon!);
-                        }
-                      });
-                    }
-                  },
-                  (i) {
-                    if (i == 0 && polygonManager.currentPolygon.length > 2) {
-                      setState(() {
-                        polygonManager.completeCurrentPolygon();
-                      });
-                    }
-                  },
-                  polygonManager.polygons
-                      .map((polygon) => polygon
-                          .pinStyle) // Extract PinStyles from PolygonData
-                      .toList(), // Pass the list of PinStyles
-                ),
+                final localPosition = renderBox.globalToLocal(event.position);
+                final newPoint = _animatedMapController.mapController.camera
+                    .pointToLatLng(Point(localPosition.dx, localPosition.dy));
 
-                // Replace the manual drag marker layer with PolyEditor's drag markers
-                if (polygonManager.isEditing &&
-                        polygonManager.selectedPolygon != null
-                    // &&    polygonManager.selectedPolygonIndex != null
-                    )
-                  DragMarkers(
-                    markers: polygonManager.polyEditor?.edit() ?? [],
-                  ),
-
-                MapLayersHelper.createPolygonLayer(
-                  polygonManager.polygons
-                      .map((polygon) => polygon.vertices)
-                      .toList(), // Extract vertices from PolygonData
-                  polygonManager.currentPolygon,
-                  polygonManager.polygons
-                      .map((polygon) =>
-                          polygon.color) // Extract colors from PolygonData
-                      .toList(), // Pass the list of colors
-                  defaultColor: Colors.blue, // Optional: Set a default color
-                ),
-
-                // Drawing helper text
-                ValueListenableBuilder<LatLng?>(
-                  valueListenable: previewPointNotifier,
-                  builder: (context, previewPoint, child) {
-                    if (polygonManager.isDrawing &&
-                        polygonManager.currentPolygon.length > 2) {
-                      return Positioned(
-                        left: MediaQuery.of(context).size.width / 2 - 150,
-                        top: MediaQuery.of(context).size.height / 2 - 50,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            "Click the first point to close shape and save it",
-                            style: TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                        ),
-                      );
-                    }
-                    return const SizedBox
-                        .shrink(); // Return an empty widget if the condition fails
-                  },
-                ),
-              ],
+                previewPointNotifier.value = newPoint;
+              } catch (e) {
+                debugPrint('Error in hover: $e');
+              }
+            },
+            child: MapContent(
+              mapController: _animatedMapController.mapController,
+              selectedMap: selectedMap,
+              zoomLevel: zoomLevel,
+              polygonManager: polygonManager,
+              barangayManager: barangayManager,
+              previewPointNotifier: previewPointNotifier,
+              setState: setState,
+              barangayFilter: polygonManager.selectedBarangays,
+              farmTypeFilters: BarangayFilterPanel.filterOptions,
+              animatedMapController: _animatedMapController,
+              onBarangayFilterChanged: (newFilters) {
+                setState(() {
+                  polygonManager.selectedBarangays = newFilters;
+                });
+              },
             ),
           ),
         ),
-
-        // Farm list panel
         if (_showFarmListPanel)
           Positioned(
             left: 0,
@@ -192,41 +147,43 @@ class _MapWidgetState extends State<MapWidget> {
             bottom: 0,
             child: FarmListPanel(
               polygonManager: polygonManager,
+              barangayManager: barangayManager,
+              selectedBarangays: polygonManager.selectedBarangays,
+              onBarangayFilterChanged: (newFilters) {
+                setState(() {
+                  polygonManager.selectedBarangays = newFilters;
+                });
+              },
               onPolygonSelected: (int index) {
                 setState(() {
-                  polygonManager.selectPolygon(
-                      index); // Update the selected polygon in PolygonManager
+                  polygonManager.selectPolygon(index);
                 });
+              },
+              onFiltersChanged: () {
+                setState(() {});
               },
             ),
           ),
-
-// Toggle farm list panel button
         Positioned(
           top: 10,
-          left: _showFarmListPanel
-              ? 250
-              : 10, // Adjust the left position based on panel visibility
-          child: IconButton(
+          left: _showFarmListPanel ? 260 : 10,
+          child: _buildStyledIconButton(
+            icon: _showFarmListPanel
+                ? Icons.arrow_left_rounded
+                : Icons.arrow_right_rounded,
             onPressed: () {
-              // Toggle the visibility of the farm list panel
               setState(() {
                 _showFarmListPanel = !_showFarmListPanel;
               });
             },
-            icon: Icon(
-              _showFarmListPanel
-                  ? Icons.arrow_back
-                  : Icons.menu, // Use different icons for open/closed states
-              color: Colors.white, // Icon color
-            ),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.blue, // Button background color
-              padding: EdgeInsets.all(12), // Adjust padding as needed
+            backgroundColor: Colors.white,
+            iconSize: 15,
+            buttonSize: 30.0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
             ),
           ),
         ),
-        // Map controls
         Positioned(
           top: 10,
           right: 10,
@@ -238,17 +195,13 @@ class _MapWidgetState extends State<MapWidget> {
             selectedMap: selectedMap,
             selectedPolygonIndex: polygonManager.selectedPolygonIndex,
             onZoomIn: () {
-              print('Zoom In button pressed'); // Debugging statement
               setState(() {
-                zoomLevel++;
-                mapController.move(mapController.center, zoomLevel);
-                polygonManager.logPolygons();
+                _animatedMapController.animatedZoomIn();
               });
             },
             onZoomOut: () {
               setState(() {
-                zoomLevel--;
-                mapController.move(mapController.center, zoomLevel);
+                _animatedMapController.animatedZoomOut();
               });
             },
             onToggleDrawing: () {
@@ -261,7 +214,6 @@ class _MapWidgetState extends State<MapWidget> {
               setState(() {
                 polygonManager.toggleEditing();
                 if (!polygonManager.isEditing) {
-                  // Clear the selected polygon when exiting editing mode
                   polygonManager.selectedPolygon = null;
                 }
               });
@@ -274,7 +226,6 @@ class _MapWidgetState extends State<MapWidget> {
               }
             },
             onUndo: () {
-              print('undo button pressed ');
               if (polygonManager.canUndo()) {
                 setState(() {
                   polygonManager.undoLastPoint();
@@ -283,48 +234,7 @@ class _MapWidgetState extends State<MapWidget> {
             },
           ),
         ),
-
-        if (polygonManager.selectedPolygon != null &&
-            polygonManager.selectedPolygon!.vertices.isNotEmpty)
-          Positioned(
-            bottom: 0,
-            left: 20,
-            right: 20,
-            child: Container(
-                padding: EdgeInsets.all(0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
-                ),
-                child: PolygonInfoPanel(
-                  polygon: polygonManager.selectedPolygon!,
-                  onUpdateCenter: (LatLng newCenter) {
-                    // Handle center update
-                    polygonManager.selectedPolygon!.updateCenter(newCenter);
-                  },
-                  onUpdatePinStyle: (PinStyle newStyle) {
-                    setState(() {
-                      // selectedPinStyle = newStyle;
-                      polygonManager.selectedPolygon!.pinStyle = newStyle;
-                    });
-                  },
-                  onUpdateColor: (Color newColor) {
-                    setState(() {
-                      polygonManager.selectedPolygon!.color = newColor;
-                    });
-                  },
-                  onSave: () {
-                    // Handle save action
-                    polygonManager
-                        .saveEditedPolygon(); // Save the polygon changes
-                    setState(() {}); // Refresh the UI
-                  },
-                )),
-          ),
-
-        // Save button (visible only in editing mode)
-        if (polygonManager.selectedPolygonIndex != null &&
+        if (polygonManager.selectedPolygonIndex == null &&
             polygonManager.isEditing)
           Positioned(
             bottom: 20,
@@ -333,15 +243,13 @@ class _MapWidgetState extends State<MapWidget> {
               onPressed: () {
                 setState(() {
                   polygonManager.saveEditedPolygon();
-                  polygonManager
-                      .toggleEditing(); // Exit editing mode after saving
-
+                  polygonManager.toggleEditing();
                   polygonManager.selectedPolygon = null;
                   polygonManager.selectedPolygonIndex = null;
                 });
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue, // Button color
+                backgroundColor: Colors.blue,
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
               child: Text(
@@ -350,27 +258,54 @@ class _MapWidgetState extends State<MapWidget> {
               ),
             ),
           ),
+        if (polygonManager.selectedBarangays.isNotEmpty ||
+            BarangayFilterPanel.filterOptions.values
+                .any((isChecked) => !isChecked))
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.only(top: 20),
+              child: ElevatedButton(
+                onPressed: polygonManager.clearFilters,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey,
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+                child: Text(
+                  'Reset Filters',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  MapOptions _buildMapOptions() {
-    return MapOptions(
-        center: LatLng(14.077557, 121.328938),
-        zoom: zoomLevel,
-        minZoom: 13,
-        maxBounds: LatLngBounds(
-          LatLng(14.027557, 121.278938),
-          LatLng(14.127557, 121.378938),
-        ),
-        onTap: (_, LatLng point) {
-          setState(() {
-            if (polygonManager.isDrawing) {
-              polygonManager.handleDrawingTap(point);
-            } else {
-              polygonManager.handleSelectionTap(point);
-            }
-          });
-        });
+  Widget _buildStyledIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    Color? backgroundColor,
+    double iconSize = 24.0,
+    double buttonSize = 48.0,
+    ShapeBorder? shape,
+  }) {
+    return Container(
+      width: buttonSize,
+      height: buttonSize,
+      decoration: BoxDecoration(
+        color: backgroundColor ?? Colors.white,
+        shape: shape is CircleBorder ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: shape is RoundedRectangleBorder
+            ? (shape.borderRadius as BorderRadius?)
+            : null,
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, size: iconSize),
+        padding: EdgeInsets.zero,
+        alignment: Alignment.center,
+      ),
+    );
   }
 }

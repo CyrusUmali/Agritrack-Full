@@ -1,32 +1,396 @@
 // ignore_for_file: avoid_print
 
+import 'package:flareline/pages/test/map_widget/farm_list_panel/barangay_filter_panel.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/barangay_modal.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/brgy_prev.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/farm_creation/farm_creation_modal.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/farm_prev.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal.dart';
 import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
 import 'package:latlong2/latlong.dart';
-import 'dart:developer'; // Import the developer library for logging
+// Import the developer library for logging
 import 'package:flutter/foundation.dart'; // For ValueNotifier
 import 'package:flutter/material.dart'; // For Colors
 import 'package:turf/turf.dart' as turf;
+import 'package:flutter_map_animations/flutter_map_animations.dart'; // Add this import
 
 class PolygonManager {
-  final MapController mapController; // Add MapController as a member variable
-  List<PolygonData> polygons = []; // Store PolygonData objects
+  // Add this field
+  final AnimatedMapController mapController;
+  List<PolygonData> polygons = [];
   List<LatLng> currentPolygon = [];
+
   int? selectedPolygonIndex;
-  PolygonData? selectedPolygon; // Use PolygonData instead of List<LatLng>
+  PolygonData? selectedPolygon;
   bool isDrawing = false;
   bool isEditing = false;
   ValueNotifier<PolygonData?> selectedPolygonNotifier = ValueNotifier(null);
+  final Function()? onPolygonSelected;
 
   PolyEditor? polyEditor;
 
-  // Undo and redo history
   List<PolygonHistoryEntry> undoHistory = [];
   List<PolygonHistoryEntry> redoHistory = [];
 
-  // Constructor to accept MapController
-  PolygonManager(this.mapController);
+  final VoidCallback? onFiltersChanged;
+
+  bool _isModalShowing = false;
+  PolygonData? _lastShownPolygon;
+  // Filter-related properties
+  List<String> selectedBarangays = [];
+
+  // New overlay controller
+  OverlayEntry? _infoCardOverlay;
+
+  PolygonManager({
+    required this.mapController,
+    this.onPolygonSelected,
+    this.onFiltersChanged,
+  });
+
+  void showBarangayInfo(BuildContext context, PolygonData barangay,
+      List<PolygonData> allPolygons) {
+    _removeInfoCardOverlay();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+
+      final renderBox = context.findRenderObject() as RenderBox?;
+      if (renderBox == null || !renderBox.hasSize) return;
+
+      final mapWidgetSize = renderBox.size;
+      final mapWidgetPosition = renderBox.localToGlobal(Offset.zero);
+
+      _infoCardOverlay = OverlayEntry(
+        builder: (context) => Positioned(
+          bottom: 20,
+          left: mapWidgetPosition.dx,
+          width: mapWidgetSize.width,
+          child: Center(
+            child: BarangayInfoCard(
+              barangay: barangay,
+              farmsInBarangay: allPolygons
+                  .where((p) => p.parentBarangay == barangay.name)
+                  .toList(),
+              onTap: () {
+                _removeInfoCardOverlay();
+                if (context.mounted) {
+                  _showBarangayDetailsModal(
+                      context,
+                      barangay,
+                      allPolygons
+                          .where((p) => p.parentBarangay == barangay.name)
+                          .toList());
+                }
+              },
+            ),
+          ),
+        ),
+      );
+
+      if (context.mounted) {
+        Overlay.of(context).insert(_infoCardOverlay!);
+      }
+    });
+  }
+
+  // Updated selectPolygon method
+  void selectPolygon(int index, {BuildContext? context}) async {
+    if (index >= 0 && index < polygons.length) {
+      selectedPolygonIndex = index;
+      selectedPolygon = polygons[index];
+      selectedPolygonNotifier.value = selectedPolygon;
+
+      // Start the zoom animation
+      _zoomToPolygon(polygons[index]); // Make sure this is awaited
+      onPolygonSelected?.call();
+
+      if (context != null && context.mounted) {
+        // Use a post-frame callback to ensure layout is complete
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            _showInfoCard(context, polygons[index]);
+          }
+        });
+      }
+    }
+  }
+
+  void _showInfoCard(BuildContext context, PolygonData polygon) {
+    _removeInfoCardOverlay();
+
+    // Wait for the next frame to ensure layout is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+
+      final renderBox = context.findRenderObject() as RenderBox?;
+      if (renderBox == null || !renderBox.hasSize) return;
+
+      final mapWidgetSize = renderBox.size;
+      final mapWidgetPosition = renderBox.localToGlobal(Offset.zero);
+
+      _infoCardOverlay = OverlayEntry(
+        builder: (context) => Positioned(
+          left: mapWidgetPosition.dx,
+          width: mapWidgetSize.width,
+          bottom: 20,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Material(
+              child: InfoCard(
+                polygon: polygon,
+                onTap: () {
+                  _removeInfoCardOverlay();
+                  if (context.mounted) {
+                    showPolygonModal(context, polygon);
+                  }
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      if (context.mounted) {
+        Overlay.of(context).insert(_infoCardOverlay!);
+      }
+    });
+  }
+
+  void _showBarangayDetailsModal(
+      BuildContext context, PolygonData barangay, List<PolygonData> farms) {
+    BarangayModal.show(
+      context: context,
+      barangay: barangay,
+      farms: farms,
+      polygonManager: this,
+    ).then((_) {
+      // Modal closed callback
+      _isModalShowing = false;
+      _lastShownPolygon = null;
+    });
+  }
+
+  // Method to remove the info card overlay
+  void _removeInfoCardOverlay() {
+    if (_infoCardOverlay != null && _infoCardOverlay!.mounted) {
+      _infoCardOverlay!.remove();
+    }
+    _infoCardOverlay = null;
+  }
+
+  void handleModalForSelectedPolygon(BuildContext context) {
+    if (selectedPolygon != null &&
+        selectedPolygon!.vertices.isNotEmpty &&
+        !_isModalShowing &&
+        _lastShownPolygon != selectedPolygon) {
+      _lastShownPolygon = selectedPolygon;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          _showInfoCard(context, selectedPolygon!);
+        }
+      });
+    }
+  }
+
+  // Existing showPolygonModal method remains unchanged
+  Future<void> showPolygonModal(
+      BuildContext context, PolygonData polygon) async {
+    _isModalShowing = true;
+    selectedPolygon = polygon;
+    selectedPolygonNotifier.value = polygon;
+
+    await PolygonModal.show(
+      context: context,
+      polygon: polygon,
+      onUpdateCenter: (newCenter) {
+        selectedPolygon?.center = newCenter;
+        selectedPolygonNotifier.value = selectedPolygon;
+      },
+      onUpdatePinStyle: (newStyle) {
+        selectedPolygon?.pinStyle = newStyle;
+        selectedPolygonNotifier.value = selectedPolygon;
+      },
+      onUpdateColor: (color) {
+        selectedPolygon?.color = color;
+        selectedPolygonNotifier.value = selectedPolygon;
+      },
+      onSave: () {
+        saveEditedPolygon();
+      },
+      selectedYear: DateTime.now().year.toString(),
+      onYearChanged: (newYear) {
+        // Store year in polygon data when implemented
+        print('Year changed to: $newYear');
+      },
+    );
+
+    _isModalShowing = false;
+    _lastShownPolygon = polygon;
+    selectedPolygon = null;
+    selectedPolygonNotifier.value = null;
+  }
+
+  // Don't forget to clean up overlay when disposing
+  void dispose() {
+    _removeInfoCardOverlay();
+    selectedPolygonNotifier.dispose();
+    // Other cleanup code...
+  }
+
+  void handleSelectionTap(LatLng tapPoint, BuildContext context) {
+    // Add context parameter
+    _saveState();
+    selectedPolygon = null;
+    selectedPolygonIndex = null;
+
+    for (int i = 0; i < polygons.length; i++) {
+      List<LatLng> polygonPoints = polygons[i].vertices;
+
+      if (polygonPoints.length < 3) continue;
+
+      // Convert to List<Position>
+      List<turf.Position> polygonCoordinates = polygonPoints
+          .map((p) => turf.Position(p.longitude, p.latitude))
+          .toList();
+
+      if (polygonCoordinates.first != polygonCoordinates.last) {
+        polygonCoordinates.add(polygonCoordinates.first);
+      }
+
+      // Convert tapPoint to Turf Point correctly
+      var tapTurfPoint = turf.Point(
+          coordinates: turf.Position(tapPoint.longitude, tapPoint.latitude));
+
+      bool isInside = turf.booleanPointInPolygon(tapTurfPoint.coordinates,
+          turf.Polygon(coordinates: [polygonCoordinates]));
+
+      if (isInside) {
+        // Pass the context to selectPolygon
+        selectPolygon(i, context: context);
+
+        // Reinitialize the PolyEditor with the new polygon's vertices
+        initializePolyEditor(selectedPolygon!);
+        break;
+      } else {
+        _removeInfoCardOverlay();
+      }
+    }
+
+    if (selectedPolygon == null) {
+      // Clear the PolyEditor when no polygon is selected
+      polyEditor = null;
+    }
+  }
+
+  void _zoomToPolygon(PolygonData polygon) {
+    if (polygon.vertices.isEmpty) return;
+
+    mapController.animatedFitCamera(
+      cameraFit: CameraFit.coordinates(
+        coordinates: polygon.vertices,
+        padding: const EdgeInsets.all(30), // Decrease for tighter zoom
+      ),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void handleDrawingTap(LatLng point) {
+    if (selectedPolygonIndex != null) {
+      polygons[selectedPolygonIndex!].vertices.add(point);
+      _saveState(); // ✅ Already saving for existing polygons
+    } else {
+      if (currentPolygon.isNotEmpty) {
+        final double distance = const Distance().as(
+          LengthUnit.Meter,
+          currentPolygon.first,
+          point,
+        );
+
+        if (distance < 10) {
+          currentPolygon.add(currentPolygon.first);
+          polygons.add(PolygonData(
+            vertices: List.from(currentPolygon),
+            name: 'Polygon ${polygons.length + 1}',
+            color: Colors.blue,
+          ));
+          selectedPolygonIndex = polygons.length - 1;
+          selectedPolygon = polygons[selectedPolygonIndex!];
+          currentPolygon.clear();
+          _saveState(); // ✅ Save when finishing a new polygon
+        } else {
+          currentPolygon.add(point);
+          _saveState(); // 🚀 NEW: Save after adding any intermediate point
+        }
+      } else {
+        currentPolygon.add(point);
+        _saveState(); // 🚀 NEW: Save after adding the first point
+      }
+    }
+  }
+
+  void clearFilters() {
+    selectedBarangays.clear();
+    BarangayFilterPanel.filterOptions.forEach((key, value) {
+      BarangayFilterPanel.filterOptions[key] = true;
+    });
+    onFiltersChanged?.call();
+  }
+
+  /// Loads a list of polygons into the manager
+  void loadPolygons(List<PolygonData> polygonsToLoad) {
+    // _saveState();
+    polygons = List<PolygonData>.from(polygonsToLoad);
+    selectedPolygonIndex = null;
+    selectedPolygon = null;
+    selectedPolygonNotifier.value = null;
+  }
+
+  Future<void> completeCurrentPolygon(BuildContext context) async {
+    _saveState();
+    if (currentPolygon.length > 2) {
+      // Create temporary polygon
+      final tempPolygon = PolygonData(
+        vertices: List.from(currentPolygon),
+        name: 'New Farm ${polygons.length + 1}',
+        color: Colors.blue,
+      );
+
+      // Show creation modal
+      final shouldSave = await FarmCreationModal.show(
+        context: context,
+        polygon: tempPolygon,
+        onNameChanged: (name) => tempPolygon.name = name,
+      );
+
+      if (shouldSave) {
+        polygons.add(tempPolygon);
+        currentPolygon.clear();
+        isDrawing = false;
+        clearFilters();
+        selectedPolygonNotifier.value = tempPolygon;
+      } else {
+        // Reset drawing state completely
+        currentPolygon.clear();
+        isDrawing = false;
+        isEditing = false;
+        selectedPolygon = null;
+        selectedPolygonIndex = null;
+        polyEditor = null;
+
+        // Notify listeners
+        selectedPolygonNotifier.value = null;
+
+        // Trigger state refresh using existing callback
+        if (onFiltersChanged != null) {
+          onFiltersChanged!();
+        }
+      }
+    }
+  }
 
   void initializePolyEditor(PolygonData polygon) {
     polyEditor = PolyEditor(
@@ -56,6 +420,21 @@ class PolygonManager {
     );
   }
 
+  void saveEditedPolygon() {
+    if (selectedPolygonIndex != null && selectedPolygon != null) {
+      polygons[selectedPolygonIndex!] = PolygonData(
+        vertices: List<LatLng>.from(selectedPolygon!.vertices),
+        name: selectedPolygon!.name,
+        color: selectedPolygon!.color,
+        description: selectedPolygon!.description,
+        pinStyle: selectedPolygon!.pinStyle,
+      );
+      selectedPolygonNotifier.value = selectedPolygon;
+    } else {
+      print('Cannot save polygon: No polygon is selected.');
+    }
+  }
+
   /// Logs all polygon data to the console
   void logPolygons() {
     if (polygons.isEmpty) {
@@ -66,26 +445,20 @@ class PolygonManager {
     // print("===== Logging Polygon Data =====");
     for (int i = 0; i < polygons.length; i++) {
       final polygon = polygons[i];
-      // print("Polygon ${i + 1}: ${polygon.name}");
-      // print("  - Vertices:");
-      for (int j = 0; j < polygon.vertices.length; j++) {
-        final vertex = polygon.vertices[j];
-        // print(
-        //     "    ${j + 1}: Lat: ${vertex.latitude}, Lng: ${vertex.longitude}"
-        //     );
-      }
-      // print("  - Color: ${polygon.color}");
-      // print(
-      //     "  - Center: Lat: ${polygon.center.latitude}, Lng: ${polygon.center.longitude}");
-      if (polygon.description != null) {
-        // print("  - Description: ${polygon.description}");
-      }
+      print("Polygon ${i + 1}: ${polygon.name}");
+
+      print("  - Color: ${polygon.color}");
+      print(
+          "  - Center: Lat: ${polygon.center.latitude}, Lng: ${polygon.center.longitude}");
+
+      print("  - Description: ${polygon.description}");
+
       if (polygon.pinStyle != null) {
-        // print("  - Icon: ${polygon.pinStyle}");
+        print("  - Icon: ${polygon.pinStyle}");
       }
-      // print("-----------------------------");
+      print("-----------------------------");
     }
-    // print("===== End of Polygon Data =====");
+    print("===== End of Polygon Data =====");
   }
 
   void toggleDrawing() {
@@ -117,178 +490,6 @@ class PolygonManager {
     if (isEditing) {
       isDrawing = false;
       selectedPolygonIndex = null;
-    }
-  }
-
-  void saveEditedPolygon() {
-    if (selectedPolygonIndex != null && selectedPolygon != null) {
-      polygons[selectedPolygonIndex!] = PolygonData(
-        vertices: List<LatLng>.from(selectedPolygon!.vertices),
-        name: selectedPolygon!.name,
-        color: selectedPolygon!.color,
-        description: selectedPolygon!.description,
-        pinStyle: selectedPolygon!.pinStyle,
-      );
-      selectedPolygonNotifier.value = selectedPolygon;
-    } else {
-      print('Cannot save polygon: No polygon is selected.');
-    }
-  }
-
-  void handleDrawingTap(LatLng point) {
-    if (selectedPolygonIndex != null) {
-      polygons[selectedPolygonIndex!].vertices.add(point);
-      _saveState();
-    } else {
-      if (currentPolygon.isNotEmpty) {
-        final double distance = const Distance().as(
-          LengthUnit.Meter,
-          currentPolygon.first,
-          point,
-        );
-
-        if (distance < 10) {
-          currentPolygon.add(currentPolygon.first);
-          polygons.add(PolygonData(
-            vertices: List.from(currentPolygon),
-            name: 'Polygon ${polygons.length + 1}', // Default name
-            color: Colors.blue, // Default color
-          ));
-          selectedPolygonIndex = polygons.length - 1;
-          selectedPolygon = polygons[selectedPolygonIndex!];
-          currentPolygon.clear();
-        } else {
-          currentPolygon.add(point);
-        }
-      } else {
-        currentPolygon.add(point);
-      }
-    }
-  }
-
-  void handleSelectionTap(LatLng tapPoint) {
-    _saveState();
-    selectedPolygon = null;
-    selectedPolygonIndex = null;
-
-    // log("Tap at: ${tapPoint.latitude}, ${tapPoint.longitude}");
-
-    for (int i = 0; i < polygons.length; i++) {
-      List<LatLng> polygonPoints = polygons[i].vertices;
-
-      if (polygonPoints.length < 3) continue;
-
-      // Convert to List<Position>
-      List<turf.Position> polygonCoordinates = polygonPoints
-          .map((p) => turf.Position(p.longitude, p.latitude))
-          .toList();
-
-      if (polygonCoordinates.first != polygonCoordinates.last) {
-        polygonCoordinates.add(polygonCoordinates.first);
-      }
-
-      // Convert tapPoint to Turf Point correctly
-      var tapTurfPoint = turf.Point(
-          coordinates: turf.Position(tapPoint.longitude, tapPoint.latitude));
-
-      // log("Checking polygon ${polygons[i].name}: ${polygonCoordinates}");
-
-      // ✅ Fix: Pass tapTurfPoint.coordinates, not tapTurfPoint itself
-      bool isInside = turf.booleanPointInPolygon(tapTurfPoint.coordinates,
-          turf.Polygon(coordinates: [polygonCoordinates]));
-
-      if (isInside) {
-        // log("Point is inside ${polygons[i].name}");
-        selectedPolygon = polygons[i];
-        selectedPolygonIndex = i;
-        selectedPolygonNotifier.value = selectedPolygon;
-
-        // Reinitialize the PolyEditor with the new polygon's vertices
-        initializePolyEditor(selectedPolygon!);
-
-        // Zoom and center the map on the selected polygon
-        _zoomToPolygon(polygons[i]);
-        break;
-      }
-    }
-
-    if (selectedPolygon == null) {
-      // log("No polygon selected.");
-      // Clear the PolyEditor when no polygon is selected
-      polyEditor = null;
-    }
-  }
-
-  void _zoomToPolygon(PolygonData polygon) {
-    if (polygon.vertices.isEmpty) return;
-
-    // Calculate the bounding box of the polygon
-    double minLat = polygon.vertices[0].latitude;
-    double maxLat = polygon.vertices[0].latitude;
-    double minLng = polygon.vertices[0].longitude;
-    double maxLng = polygon.vertices[0].longitude;
-
-    for (var point in polygon.vertices) {
-      if (point.latitude < minLat) minLat = point.latitude;
-      if (point.latitude > maxLat) maxLat = point.latitude;
-      if (point.longitude < minLng) minLng = point.longitude;
-      if (point.longitude > maxLng) maxLng = point.longitude;
-    }
-
-    // Calculate the center of the bounding box
-    LatLng center = LatLng((minLat + maxLat) / 2, (minLng + maxLng) / 2);
-
-    // Calculate the zoom level based on the bounding box size
-    double zoomLevel = _calculateZoomLevel(minLat, maxLat, minLng, maxLng);
-
-    // Move the map to the calculated center and zoom level
-    mapController.move(center, zoomLevel);
-  }
-
-  double _calculateZoomLevel(
-      double minLat, double maxLat, double minLng, double maxLng) {
-    // This is a simple calculation, you might need to adjust it based on your map's projection
-    double latDiff = maxLat - minLat;
-    double lngDiff = maxLng - minLng;
-    double maxDiff = (latDiff > lngDiff) ? latDiff : lngDiff;
-
-    if (maxDiff < 0.01) return 20.0;
-    if (maxDiff < 0.05) return 14.0;
-    if (maxDiff < 0.1) return 12.0;
-    if (maxDiff < 0.5) return 10.0;
-    if (maxDiff < 1.0) return 8.0;
-    if (maxDiff < 5.0) return 6.0;
-    if (maxDiff < 10.0) return 4.0;
-    return 2.0;
-  }
-
-  /// Loads a list of polygons into the manager
-  void loadPolygons(List<PolygonData> polygonsToLoad) {
-    // _saveState();
-    polygons = List<PolygonData>.from(polygonsToLoad);
-    selectedPolygonIndex = null;
-    selectedPolygon = null;
-    selectedPolygonNotifier.value = null;
-  }
-
-  void completeCurrentPolygon() {
-    _saveState();
-    if (currentPolygon.length > 2) {
-      polygons.add(PolygonData(
-        vertices: List.from(currentPolygon),
-        name: 'Polygon ${polygons.length + 1}',
-        color: Colors.blue,
-      ));
-      currentPolygon.clear();
-      isDrawing = false;
-    }
-  }
-
-  void selectPolygon(int index) {
-    if (index >= 0 && index < polygons.length) {
-      selectedPolygonIndex = index;
-      selectedPolygon = polygons[index];
-      selectedPolygonNotifier.value = selectedPolygon;
     }
   }
 
@@ -368,7 +569,6 @@ class PolygonManager {
     undoHistory.add(newState);
   }
 
-  /// Undo the last action
   void undo() {
     if (undoHistory.isNotEmpty) {
       final lastState = undoHistory.removeLast();
@@ -425,13 +625,18 @@ class PolygonHistoryEntry {
       this.polygons, this.currentPolygon, this.selectedPolygonIndex);
 }
 
+enum PolygonType { farm, barangay }
+
 class PolygonData {
   List<LatLng> vertices;
   String name;
   LatLng center;
   Color color;
   String? description;
-  PinStyle pinStyle; // Add PinStyle field
+  PinStyle pinStyle;
+  PolygonType type;
+  String? barangay; // Add barangay reference
+  String? parentBarangay; // For farms, reference which barangay they belong to
 
   PolygonData({
     required this.vertices,
@@ -439,10 +644,73 @@ class PolygonData {
     LatLng? center,
     this.color = Colors.blue,
     this.description,
-    this.pinStyle = PinStyle.fishery, // Default PinStyle
+    this.pinStyle = PinStyle.fishery,
+    this.type = PolygonType.farm,
+    this.barangay, // For barangay polygons
+    this.parentBarangay, // For farm polygons
   }) : center = center ?? _calculateCenter(vertices);
 
-  /// Calculates the geometric center of the polygon
+  Map<String, dynamic> toMap() {
+    return {
+      'vertices': vertices
+          .map((point) => {'lat': point.latitude, 'lng': point.longitude})
+          .toList(),
+      'name': name,
+      'center': {'lat': center.latitude, 'lng': center.longitude},
+      'color': color.value,
+      'description': description,
+      'pinStyle': pinStyle.toString().split('.').last,
+      'type': type.toString().split('.').last,
+      'barangay': barangay,
+      'parentBarangay': parentBarangay,
+    };
+  }
+
+  /// Update fromMap() to include barangay/parentBarangay
+  factory PolygonData.fromMap(Map<String, dynamic> map) {
+    return PolygonData(
+      vertices: (map['vertices'] as List)
+          .map((point) => LatLng(point['lat'], point['lng']))
+          .toList(),
+      name: map['name'],
+      center: map.containsKey('center')
+          ? LatLng(map['center']['lat'], map['center']['lng'])
+          : _calculateCenter((map['vertices'] as List)
+              .map((point) => LatLng(point['lat'], point['lng']))
+              .toList()),
+      color: Color(map['color']),
+      description: map['description'],
+      pinStyle: parsePinStyle(map['pinStyle']),
+      type: map['type'] == 'barangay' ? PolygonType.barangay : PolygonType.farm,
+      barangay: map['barangay'],
+      parentBarangay: map['parentBarangay'],
+    );
+  }
+
+  PolygonData copyWith() {
+    return PolygonData(
+      name: name,
+      center: LatLng(center.latitude, center.longitude),
+      vertices: List.from(vertices),
+      color: color,
+      pinStyle: pinStyle,
+      description: description,
+      parentBarangay: parentBarangay,
+      // Copy all other properties
+    );
+  }
+
+  void updateFrom(PolygonData other) {
+    name = other.name;
+    center = other.center;
+    vertices = List.from(other.vertices);
+    color = other.color;
+    pinStyle = other.pinStyle;
+    description = other.description;
+    parentBarangay = other.parentBarangay;
+    // Update all other properties that should be copied
+  }
+
   static LatLng _calculateCenter(List<LatLng> vertices) {
     if (vertices.isEmpty) return const LatLng(0, 0);
 
@@ -458,40 +726,16 @@ class PolygonData {
   void updateCenter(LatLng newCenter) {
     center = newCenter;
   }
+}
 
-  /// Converts the object to a map for storage
-  Map<String, dynamic> toMap() {
-    return {
-      'vertices': vertices
-          .map((point) => {'lat': point.latitude, 'lng': point.longitude})
-          .toList(),
-      'name': name,
-      'center': {
-        'lat': center.latitude,
-        'lng': center.longitude
-      }, // Store center
-      'color': color.value,
-      'description': description,
-      'pinStyle':
-          pinStyle.toString().split('.').last, // Store pinStyle as a string
-    };
-  }
+class BarangayManager {
+  List<PolygonData> barangays = [];
 
-  /// Creates an object from a map
-  factory PolygonData.fromMap(Map<String, dynamic> map) {
-    return PolygonData(
-      vertices: (map['vertices'] as List)
-          .map((point) => LatLng(point['lat'], point['lng']))
-          .toList(),
-      name: map['name'],
-      center: map.containsKey('center')
-          ? LatLng(map['center']['lat'], map['center']['lng'])
-          : _calculateCenter((map['vertices'] as List)
-              .map((point) => LatLng(point['lat'], point['lng']))
-              .toList()),
-      color: Color(map['color']),
-      description: map['description'],
-      pinStyle: parsePinStyle(map['pinStyle']), // Use the utility function
-    );
+  void loadBarangays(List<Map<String, dynamic>> barangayMaps) {
+    barangays = barangayMaps.map((map) {
+      final polygon = PolygonData.fromMap(map);
+      polygon.type = PolygonType.barangay;
+      return polygon;
+    }).toList();
   }
 }

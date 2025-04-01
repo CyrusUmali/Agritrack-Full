@@ -1,6 +1,7 @@
-// ignore_for_file: library_prefixes
+// ignore_for_file: library_prefixes, unused_import
 
 import 'package:flareline/deferred_widget.dart';
+import 'package:flareline/pages/farms/farms_page.dart';
 import 'package:flareline/pages/modal/modal_page.dart' deferred as modal;
 import 'package:flareline/pages/table/contacts_page.dart' deferred as contacts;
 import 'package:flareline/pages/toast/toast_page.dart' deferred as toast;
@@ -33,6 +34,9 @@ import 'package:flareline/pages/table/advance_table_page.dart'
 
 import 'package:flareline/pages/test/new_page.dart'
     deferred as newPage; // Import your new page
+
+import 'package:flareline/pages/farms/farms_page.dart'
+    deferred as farmsPage; // Import your new page
 
 import 'package:flareline/pages/users/users_page.dart' deferred as usersPage;
 import 'package:flareline/pages/farmers/farmers_page.dart'
@@ -131,6 +135,11 @@ final List<Map<String, Object>> MAIN_PAGES = [
     'routerPath': '/newPage',
     'widget': DeferredWidget(
         newPage.loadLibrary, () => newPage.NewPage()), // Add new page
+  },
+  {
+    'routerPath': '/farms',
+    'widget': DeferredWidget(
+        farmsPage.loadLibrary, () => farmsPage.FarmsPage()), // Add new page
   },
   {
     'routerPath': '/usersPage',

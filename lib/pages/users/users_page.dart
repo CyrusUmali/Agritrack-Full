@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flareline/pages/users/add_user_modal.dart'; // Import the DeleteFarmerModal
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/users/grid_card.dart';

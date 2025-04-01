@@ -1,4 +1,4 @@
-// ignore_for_file: must_be_immutable
+// ignore_for_file: must_be_immutable, avoid_print
 
 import 'package:flareline/pages/yields/yield_profile.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
 import 'package:responsive_builder/responsive_builder.dart';
-import 'package:flareline/pages/farmers/farmer_profile.dart'; // Import the new widget
+// Import the new widget
 import 'package:flareline_uikit/components/buttons/button_widget.dart'; // Import the ButtonWidget
 import 'package:flareline_uikit/core/theme/flareline_colors.dart'; // Import FlarelineColors
 

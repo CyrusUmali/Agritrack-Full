@@ -1,4 +1,4 @@
-// ignore_for_file: must_be_immutable
+// ignore_for_file: must_be_immutable, avoid_print, use_super_parameters, non_constant_identifier_names
 
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';

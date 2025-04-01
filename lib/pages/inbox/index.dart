@@ -10,13 +10,11 @@ class InboxWidget extends LayoutWidget {
 
   @override
   String breakTabTitle(BuildContext context) {
-    // TODO: implement title
     return 'Inbox';
   }
 
   @override
   Widget contentDesktopWidget(BuildContext context) {
-    // TODO: implement contentWidget
     return CommonCard(
       child: Row(children: [
         SizedBox(

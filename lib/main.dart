@@ -1,3 +1,5 @@
+// ignore_for_file: no_wildcard_variable_uses
+
 import 'package:flareline/core/theme/global_theme.dart';
 import 'package:flareline_uikit/service/localization_provider.dart';
 import 'package:flareline/routes.dart';
@@ -8,10 +10,12 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:flutter_fullscreen/flutter_fullscreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await FullScreen.ensureInitialized(); // Initialize flutter_fullscreen
   await GetStorage.init();
 
   if (GetPlatform.isDesktop && !GetPlatform.isWeb) {
@@ -35,7 +39,7 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {

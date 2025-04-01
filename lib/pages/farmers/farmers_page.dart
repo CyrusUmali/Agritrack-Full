@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flareline/pages/farmers/add_farmer_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/farmers/grid_card.dart';

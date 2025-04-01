@@ -1,8 +1,6 @@
 // File: new_page.dart
-import 'package:flareline/pages/test/map_widget/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
-import 'package:latlong2/latlong.dart';
 import 'map_widget/map_widget.dart';
 // import 'map_widget/map_widget.dart';
 

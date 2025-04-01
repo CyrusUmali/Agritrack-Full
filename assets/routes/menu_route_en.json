@@ -22,6 +22,11 @@
         "menuName": "Map",
         "path": "/newPage"
       },
+      {
+        "icon": "assets/sidebar/dashboard.svg",
+        "menuName": "Farms",
+        "path": "/farms"
+      },
       
       {
         "icon": "assets/sidebar/dashboard.svg",

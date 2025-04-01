@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 enum PinStyle {
   rice,
   corn,
-  highValueCrop,
+  highvaluecrop,
   livestock,
   fishery,
   organic,
@@ -15,7 +15,7 @@ Widget getPinIcon(PinStyle pinStyle) {
       return Icon(Icons.rice_bowl, color: Colors.white);
     case PinStyle.corn:
       return Icon(Icons.eco, color: Colors.yellow);
-    case PinStyle.highValueCrop:
+    case PinStyle.highvaluecrop:
       return Icon(Icons.attach_money, color: Colors.green);
     case PinStyle.livestock:
       return Icon(Icons.pets, color: Colors.brown);
@@ -33,8 +33,8 @@ PinStyle parsePinStyle(String pinStyle) {
       return PinStyle.rice;
     case 'corn':
       return PinStyle.corn;
-    case 'highValueCrop':
-      return PinStyle.highValueCrop;
+    case 'Test':
+      return PinStyle.highvaluecrop;
     case 'livestock':
       return PinStyle.livestock;
     case 'fishery':

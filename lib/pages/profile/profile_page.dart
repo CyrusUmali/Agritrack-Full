@@ -9,7 +9,6 @@ class ProfilePage extends LayoutWidget {
 
   @override
   String breakTabTitle(BuildContext context) {
-    // TODO: implement title
     return AppLocalizations.of(context)!.profile;
   }
 

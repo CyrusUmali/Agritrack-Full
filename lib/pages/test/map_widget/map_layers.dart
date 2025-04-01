@@ -2,6 +2,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flareline/pages/test/map_widget/pin_style.dart';
+import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -9,26 +10,44 @@ import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 
 /// Helper class for working with map layers
 class MapLayersHelper {
-  /// Creates a polygon layer from the given polygons and current polygon
+  static PolygonLayer createBarangayLayer(List<PolygonData> barangays) {
+    return PolygonLayer(
+      polygons: barangays
+          .map((barangay) => Polygon(
+                points: barangay.vertices,
+                color: const Color.fromARGB(255, 255, 255, 0).withOpacity(0.1),
+                borderStrokeWidth: 1,
+                borderColor: const Color.fromARGB(255, 223, 212, 1),
+                isFilled: true,
+              ))
+          .toList(),
+    );
+  }
+
   static PolygonLayer createPolygonLayer(
       List<List<LatLng>> polygons, // List of polygon vertices
       List<LatLng> currentPolygon, // Current polygon being drawn
       List<Color>? polygonColors, // Optional list of colors for each polygon
       {Color defaultColor =
-          Colors.blue} // Default color if no color is provided
+          Colors.blue, // Default color if no color is provided
+      int? selectedPolygonIndex} // Index of the selected polygon
       ) {
     return PolygonLayer(
       polygons: [
         for (int i = 0; i < polygons.length; i++)
           Polygon(
             points: polygons[i],
-            color: (polygonColors != null && i < polygonColors.length)
-                ? polygonColors[i].withOpacity(0.2) // Use provided color
-                : defaultColor.withOpacity(0.2), // Use default color
+            color: (i == selectedPolygonIndex)
+                ? Colors.red.withOpacity(0.3) // Highlight selected polygon
+                : (polygonColors != null && i < polygonColors.length)
+                    ? polygonColors[i].withOpacity(0.2)
+                    : defaultColor.withOpacity(0.2),
             borderStrokeWidth: 3,
-            borderColor: (polygonColors != null && i < polygonColors.length)
-                ? polygonColors[i] // Use provided color
-                : defaultColor, // Use default color
+            borderColor: (i == selectedPolygonIndex)
+                ? Colors.red // Highlight border of selected polygon
+                : (polygonColors != null && i < polygonColors.length)
+                    ? polygonColors[i]
+                    : defaultColor,
             isFilled: true,
           ),
         if (currentPolygon.isNotEmpty)
@@ -40,6 +59,73 @@ class MapLayersHelper {
             isFilled: true,
           ),
       ],
+    );
+  }
+
+// File: map_widget/map_layers.dart
+// Add this new method to the MapLayersHelper class
+
+  /// Creates a layer with interactive circles for barangay centers that will
+  /// render even if the polygon itself is not shown
+  static MarkerLayer createBarangayCenterFallbackLayer(
+    List<PolygonData> barangays,
+    Function(PolygonData) onTap, {
+    Color circleColor = Colors.blue,
+    Color iconColor = Colors.white,
+    double size = 30.0,
+    List<String>? filteredBarangays,
+  }) {
+    return MarkerLayer(
+      markers: barangays.map((barangay) {
+        final isFiltered = filteredBarangays != null &&
+            filteredBarangays.contains(barangay.name);
+        return Marker(
+          point: MapLayersHelper.calculateCenter(barangay.vertices),
+          width: size,
+          height: size,
+          child: GestureDetector(
+            onTap: () => onTap(barangay),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isFiltered ? Colors.green : circleColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white,
+                  width: 2.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.account_balance, // Government building icon
+                      color: isFiltered ? Colors.white : iconColor,
+                      size: size * 0.5,
+                    ),
+                    if (size > 35) // Only show text if marker is large enough
+                      Text(
+                        'Brgy',
+                        style: TextStyle(
+                          color: isFiltered ? Colors.white : iconColor,
+                          fontSize: size * 0.2,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -77,27 +163,6 @@ class MapLayersHelper {
   ) {
     return MarkerLayer(
       markers: [
-        // Polygon vertices (only shown if isEditing is true and the polygon is selected)
-        if (selectedPolygonIndex != null)
-          for (int j = 0; j < polygons[selectedPolygonIndex].length; j++)
-            Marker(
-              point: polygons[selectedPolygonIndex][j],
-              width: 20.0,
-              height: 20.0,
-              child: GestureDetector(
-                onTap: () {
-                  onMarkerTap(selectedPolygonIndex, j);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.red, // Highlight selected polygon vertices
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-            ),
-
         // Current polygon vertices (always shown)
         for (int i = 0; i < currentPolygon.length; i++)
           Marker(
@@ -121,7 +186,7 @@ class MapLayersHelper {
         // Polygon center markers (always shown)
         for (int i = 0; i < polygons.length; i++)
           Marker(
-            point: _calculateCenter(polygons[i]),
+            point: calculateCenter(polygons[i]),
             width: 35.0,
             height: 35.0,
             child: Container(
@@ -138,7 +203,7 @@ class MapLayersHelper {
   }
 
   /// Helper method to calculate the center of a polygon
-  static LatLng _calculateCenter(List<LatLng> vertices) {
+  static LatLng calculateCenter(List<LatLng> vertices) {
     if (vertices.isEmpty) return const LatLng(0, 0);
 
     double latSum = 0, lngSum = 0;
@@ -217,8 +282,17 @@ class MapLayersHelper {
 
   /// Available map layer templates
   static final Map<String, String> availableLayers = {
+    // OpenStreetMap & variants (public domain)
+
     "OSM": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    "Google Satellite": "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+    "Google Satellite": "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+
+    // Wikimedia (free tiles)
+    "Wikimedia": "https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png",
+
+    // CartoDB (free with attribution)
+    "CartoDB Light":
+        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
   };
 }
 

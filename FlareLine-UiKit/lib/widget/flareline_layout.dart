@@ -11,7 +11,7 @@ import 'package:responsive_builder/responsive_builder.dart';
 abstract class FlarelineLayoutWidget extends StatelessWidget {
   const FlarelineLayoutWidget({super.key});
 
-  String get appName => 'Flareline';
+  String get appName => 'AgriTrack';
 
   bool get showTitle => true;
 
@@ -19,7 +19,11 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
 
   bool get showSideBar => true;
 
-  bool get showToolBar => true;
+  // bool get showToolBar => true;
+
+  bool showToolBar(BuildContext context) {
+    return true; // Default implementation
+  }
 
   bool get showDrawer => false;
 
@@ -170,13 +174,13 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
     );
 
     return Column(children: [
-      if (showToolBar)
+      if (showToolBar(context)) // Use the method here
         toolbarWidget(
               context,
               showDrawer,
             ) ??
             const SizedBox.shrink(),
-      if (showToolBar)
+      if (showToolBar(context)) // Use the method here
         const SizedBox(
           height: 0,
         ),

@@ -1,6 +1,5 @@
 // ignore_for_file: file_names
 
-import 'package:flareline/flutter_gen/app_localizations.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
 import 'package:flutter/material.dart';

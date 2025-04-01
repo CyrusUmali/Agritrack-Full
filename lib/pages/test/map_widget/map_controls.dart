@@ -39,19 +39,22 @@ class MapControls extends StatelessWidget {
           tooltip: "Zoom In",
           icon: Icons.add,
           onPressed: onZoomIn,
+          index: 1, // Unique index
         ),
         const SizedBox(height: 5),
         _buildControlButton(
           tooltip: "Zoom Out",
           icon: Icons.remove,
           onPressed: onZoomOut,
+          index: 2, // Unique index
         ),
         const SizedBox(height: 5),
         _buildControlButton(
           tooltip: "Toggle Drawing Mode",
           icon: Icons.create,
           onPressed: onToggleDrawing,
-          backgroundColor: isDrawing ? Colors.red : Colors.green,
+          backgroundColor: isDrawing ? Colors.red : Colors.white,
+          index: 3, // Unique index
         ),
         const SizedBox(height: 5),
         _buildControlButton(
@@ -71,19 +74,22 @@ class MapControls extends StatelessWidget {
 
             onMapLayerChange(newValue);
           },
+          index: 4,
         ),
         const SizedBox(height: 5),
         _buildControlButton(
           tooltip: "Undo last point in selected polygon",
           icon: Icons.undo,
           onPressed: onUndo,
+          index: 5, // Unique index
         ),
         const SizedBox(height: 5),
         _buildControlButton(
           tooltip: "Toggle Edit Mode",
           icon: Icons.edit,
           onPressed: onToggleEditing,
-          backgroundColor: isEditing ? Colors.orange : Colors.grey,
+          backgroundColor: isEditing ? Colors.orange : Colors.white,
+          index: 6, // Unique index
         ),
       ],
     );
@@ -94,14 +100,38 @@ class MapControls extends StatelessWidget {
     required IconData icon,
     required VoidCallback onPressed,
     Color? backgroundColor,
+    required int index, // Add this parameter
   }) {
     return Tooltip(
       message: tooltip,
-      child: FloatingActionButton(
-        mini: true,
-        onPressed: onPressed,
-        backgroundColor: backgroundColor,
-        child: Icon(icon),
+      child: Container(
+        width: 30, // Custom button width
+        height: 30, // Custom button height
+        child: FloatingActionButton(
+          heroTag: 'map-control-$index', // Unique for each button
+          mini: true, // Optional: Keep this for a smaller button
+          onPressed: onPressed,
+          backgroundColor: backgroundColor,
+          child: Icon(
+            icon,
+            size: 15, // Custom icon size
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStyledIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    Color? backgroundColor,
+  }) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      style: IconButton.styleFrom(
+        backgroundColor: backgroundColor ?? Colors.white, // Default to white
+        padding: EdgeInsets.all(12), // Consistent padding
       ),
     );
   }

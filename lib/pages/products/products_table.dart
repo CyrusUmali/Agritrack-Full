@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flareline/pages/products/add_product_modal.dart';
 import 'package:flareline/pages/products/product_profile.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';

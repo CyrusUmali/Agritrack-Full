@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flareline/pages/yields/add_yield_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/yields/grid_card.dart';
