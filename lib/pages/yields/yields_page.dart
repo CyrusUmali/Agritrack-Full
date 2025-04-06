@@ -29,20 +29,6 @@ class YieldsPage extends LayoutWidget {
             mainAxisSize: MainAxisSize
                 .min, // Ensures the Row takes only the space it needs
             children: [
-              // Add Farmer Button on the left
-              ElevatedButton(
-                onPressed: () {
-                  // Add your logic for the "Add Farmer" button here
-                  print("Add Farmer button pressed");
-
-                  AddYieldModal.show(
-                    context: context,
-                    onYieldAdded: (String cropType, String farmer,
-                        String farmArea, double yieldAmount, DateTime date) {},
-                  );
-                },
-                child: const Text("Add Yield"),
-              ),
               const SizedBox(
                   width: 16), // Add spacing between the button and the dropdown
               // Year Filter Dropdown
@@ -60,8 +46,6 @@ class YieldsPage extends LayoutWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        const SectorsGridCard(),
         const SizedBox(height: 16),
         const YieldsWidget(),
         const SizedBox(height: 16),

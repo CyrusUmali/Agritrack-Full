@@ -124,8 +124,8 @@ class PolygonModal {
               padding: const EdgeInsets.all(16),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.black87,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -136,7 +136,13 @@ class PolygonModal {
                   onSave();
                   Navigator.of(modalContext).pop();
                 },
-                child: const Text('Save Changes'),
+                child: const Text(
+                  'Save Changes',
+                  style: TextStyle(
+                      fontSize: 16, // Slightly larger font size
+                      fontWeight: FontWeight.w600, // Semi-bold weight
+                      color: Colors.white),
+                ),
               ),
             ),
           )
@@ -362,10 +368,7 @@ class _ModalContentState extends State<_ModalContent> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        YieldDataTable.build(
-                          selectedYear: widget.selectedYear,
-                          theme: widget.theme,
-                        ),
+                        const YieldDataTable(), // Simplified usage
                       ],
                     ),
                   ),
@@ -376,21 +379,41 @@ class _ModalContentState extends State<_ModalContent> {
           const Divider(height: 1),
           // Footer with save button
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            padding: const EdgeInsets.symmetric(
+              horizontal:
+                  24.0, // Increased horizontal padding for larger screens
+              vertical: 16.0,
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minWidth: 200, // Minimum width
+                maxWidth: 400, // Maximum width for very large screens
+              ),
+              child: SizedBox(
+                width: double.infinity, // Will expand up to maxWidth
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.black87,
+                    elevation:
+                        2, // Added slight elevation for better visibility
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 18, // Slightly increased vertical padding
+                      horizontal: 32, // Increased horizontal padding
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  onPressed: widget.onSave,
+                  child: const Text(
+                    'Save Changes',
+                    style: TextStyle(
+                        fontSize: 16, // Slightly larger font size
+                        fontWeight: FontWeight.w600, // Semi-bold weight
+                        color: Colors.white),
+                  ),
                 ),
-                onPressed: widget.onSave,
-                child: const Text('Save Changes'),
               ),
             ),
           ),
@@ -459,10 +482,7 @@ class _ModalContentState extends State<_ModalContent> {
             // Yield data section
             Padding(
               padding: const EdgeInsets.only(top: 16, bottom: 100),
-              child: YieldDataTable.build(
-                selectedYear: widget.selectedYear,
-                theme: widget.theme,
-              ),
+              child: const YieldDataTable(),
             ),
 
             // Add the vertices coordinates card

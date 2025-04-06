@@ -118,9 +118,9 @@ class EditControls {
             // Pin style dropdown
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.push_pin,
+              leading: Icon(Icons.layers,
                   color: colorScheme.onSurface.withOpacity(0.8)),
-              title: Text('Pin Style', style: textTheme.bodyMedium),
+              title: Text('Sector', style: textTheme.bodyMedium),
               trailing: DropdownButton<PinStyle>(
                 value: selectedPinStyle,
                 onChanged: (newStyle) {

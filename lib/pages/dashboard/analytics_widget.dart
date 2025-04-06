@@ -1,4 +1,6 @@
+import 'package:flareline/components/charts/map_chart.dart';
 import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/pages/dashboard/map_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flareline_uikit/components/charts/circular_chart.dart';
@@ -69,24 +71,24 @@ class AnalyticsWidget extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(
             width: 16,
           ),
-
+          Expanded(
+            flex: 4,
+            child: CommonCard(
+              child: const MapMiniView(),
+            ),
+          ),
+          const SizedBox(
+            width: 16,
+          ),
           Expanded(
             flex: 3,
             child: CommonCard(
               child: const ClimateInfoWidget(),
             ),
           ),
-
-          // Expanded(
-          //   flex: 4,
-          //   child: CommonCard(
-          //     child: const MapChartWidget(),
-          //   ),
-          // ),
         ],
       ),
     );
@@ -99,7 +101,7 @@ class AnalyticsWidget extends StatelessWidget {
           height: 350,
           child: CommonCard(
             child: CircularhartWidget(
-              title: 'Visitors Analytics',
+              title: 'Farmer Distribution',
               palette: const [
                 GlobalColors.warn,
                 GlobalColors.secondary,
@@ -140,15 +142,17 @@ class AnalyticsWidget extends StatelessWidget {
         const SizedBox(
           height: 16,
         ),
-        // SizedBox(
-        //   height: 350,
-        //   child: CommonCard(
-        //     child: const MapChartWidget(),
-        //   ),
-        // ),
-
         SizedBox(
           height: 350,
+          child: CommonCard(
+            child: const MapMiniView(),
+          ),
+        ),
+        const SizedBox(
+          height: 16,
+        ),
+        SizedBox(
+          height: 250,
           child: CommonCard(
             child: const ClimateInfoWidget(),
           ),

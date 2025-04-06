@@ -1,4 +1,4 @@
-// ignore_for_file: must_be_immutable, avoid_print
+// ignore_for_file: must_be_immutable
 
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
@@ -202,21 +202,41 @@ class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: constraints.maxWidth,
-            ),
-            child: SizedBox(
-              width: 1200,
-              child: super.build(context),
-            ),
-          ),
-        );
-      },
+    return ScreenTypeLayout.builder(
+      desktop: _buildDesktopTable,
+      mobile: _buildMobileTable,
+      tablet: _buildMobileTable,
+    );
+  }
+
+  Widget _buildDesktopTable(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: 1000, // Set minimum width for desktop
+        maxWidth: 1200, // Set maximum width for desktop
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: 1200, // Fixed width for desktop
+          child: super.build(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileTable(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: MediaQuery.of(context).size.width, // Full width on mobile
+        ),
+        child: SizedBox(
+          width: 700, // Wider than mobile screen to enable scrolling
+          child: super.build(context),
+        ),
+      ),
     );
   }
 }

@@ -13,13 +13,19 @@ import 'polygon_manager.dart';
 import 'map_content.dart';
 
 class MapWidget extends StatefulWidget {
-  const MapWidget({super.key});
+  const MapWidget({
+    super.key,
+    required this.routeObserver,
+  });
+
+  final RouteObserver<ModalRoute> routeObserver; // Changed to ModalRoute
 
   @override
   _MapWidgetState createState() => _MapWidgetState();
 }
 
-class _MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
+class _MapWidgetState extends State<MapWidget>
+    with TickerProviderStateMixin, RouteAware {
   PolygonData?
       _selectedPolygonForModal; // Track which polygon is being shown in modal
 
@@ -48,7 +54,7 @@ class _MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     _animatedMapController = AnimatedMapController(vsync: this);
     polygonManager = PolygonManager(
         mapController: _animatedMapController,
-        onPolygonSelected: _hideFarmListPanel,
+        onPolygonSelected: hideFarmListPanel,
         onFiltersChanged: () => setState(() {}));
 
     List<PolygonData> polygonsToLoad =
@@ -59,17 +65,60 @@ class _MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
     barangayManager.loadBarangays(barangays);
   }
 
-  void _hideFarmListPanel() {
+  void hideFarmListPanel() {
     setState(() {
       _showFarmListPanel = false;
     });
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final route = ModalRoute.of(context);
+    if (route == null) return;
+
+    // Find any RouteObserver that can observe ModalRoute
+    final navigator = Navigator.of(context);
+    if (navigator is NavigatorState) {
+      for (final observer in navigator.widget.observers) {
+        if (observer is RouteObserver<ModalRoute>) {
+          observer.subscribe(this, route);
+          break;
+        }
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    // Unsubscribe from route changes
+    widget.routeObserver.unsubscribe(this);
+    polygonManager.dispose();
     _animatedMapController.dispose();
     previewPointNotifier.dispose();
     super.dispose();
+  }
+
+  // Handle route changes
+  @override
+  void didPush() {
+    polygonManager.removeInfoCardOverlay();
+  }
+
+  @override
+  void didPop() {
+    polygonManager.removeInfoCardOverlay();
+  }
+
+  @override
+  void didPopNext() {
+    polygonManager.removeInfoCardOverlay();
+  }
+
+  @override
+  void didPushNext() {
+    polygonManager.removeInfoCardOverlay();
   }
 
   @override
@@ -135,6 +184,7 @@ class _MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
               onBarangayFilterChanged: (newFilters) {
                 setState(() {
                   polygonManager.selectedBarangays = newFilters;
+                  hideFarmListPanel();
                 });
               },
             ),
@@ -174,6 +224,14 @@ class _MapWidgetState extends State<MapWidget> with TickerProviderStateMixin {
             onPressed: () {
               setState(() {
                 _showFarmListPanel = !_showFarmListPanel;
+
+                if (_showFarmListPanel) {
+                  polygonManager.selectedPolygonIndex = -1;
+                  polygonManager.selectedPolygon = null;
+                  polygonManager.selectedPolygonNotifier.value = null;
+
+                  polygonManager.removeInfoCardOverlay();
+                }
               });
             },
             backgroundColor: Colors.white,

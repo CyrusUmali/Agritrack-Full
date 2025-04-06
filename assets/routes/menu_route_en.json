@@ -1,14 +1,5 @@
 [
-  {
-    "groupName": "Project",
-    "menuList": [
-      {
-        "icon": "assets/sidebar/tools.svg",
-        "menuName": "Project",
-        "path": "/tools"
-      }
-    ]
-  },
+  
   {
     "groupName": "Widgets",
     "menuList": [
@@ -18,40 +9,45 @@
         "path": "/"
       },
       {
-        "icon": "assets/sidebar/dashboard.svg",
+        "icon": "assets/sidebar/map.svg",
         "menuName": "Map",
         "path": "/newPage"
       },
       {
-        "icon": "assets/sidebar/dashboard.svg",
+        "icon": "assets/sidebar/farm.svg",
         "menuName": "Farms",
         "path": "/farms"
       },
       
       {
-        "icon": "assets/sidebar/dashboard.svg",
+        "icon": "assets/sidebar/user.svg",
         "menuName": "Users",
         "path": "/usersPage"
       },
       {
-        "icon": "assets/sidebar/dashboard.svg",
+        "icon": "assets/sidebar/user.svg",
         "menuName": "Farmers",
         "path": "/farmers"
       },
       {
-        "icon": "assets/sidebar/dashboard.svg",
+        "icon": "assets/sidebar/products.svg",
         "menuName": "Products",
         "path": "/products"
       },
       {
-        "icon": "assets/sidebar/dashboard.svg",
+        "icon": "assets/sidebar/yield.svg",
         "menuName": "Yields",
         "path": "/yields"
       },
       {
-        "icon": "assets/sidebar/dashboard.svg",
+        "icon": "assets/sidebar/sector.svg",
         "menuName": "Sectors",
         "path": "/sectors"
+      },
+      {
+        "icon": "assets/sidebar/AI.svg",
+        "menuName": "Recommendation",
+        "path": "/recommendation"
       },
       {
         "icon": "assets/sidebar/calendar.svg",

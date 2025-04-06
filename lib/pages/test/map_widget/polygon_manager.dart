@@ -16,7 +16,7 @@ import 'package:flutter/material.dart'; // For Colors
 import 'package:turf/turf.dart' as turf;
 import 'package:flutter_map_animations/flutter_map_animations.dart'; // Add this import
 
-class PolygonManager {
+class PolygonManager with RouteAware {
   // Add this field
   final AnimatedMapController mapController;
   List<PolygonData> polygons = [];
@@ -50,9 +50,17 @@ class PolygonManager {
     this.onFiltersChanged,
   });
 
+  void didPush() {
+    removeInfoCardOverlay();
+  }
+
+  void didPop() {
+    removeInfoCardOverlay();
+  }
+
   void showBarangayInfo(BuildContext context, PolygonData barangay,
       List<PolygonData> allPolygons) {
-    _removeInfoCardOverlay();
+    removeInfoCardOverlay();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!context.mounted) return;
@@ -75,7 +83,7 @@ class PolygonManager {
                   .where((p) => p.parentBarangay == barangay.name)
                   .toList(),
               onTap: () {
-                _removeInfoCardOverlay();
+                removeInfoCardOverlay();
                 if (context.mounted) {
                   _showBarangayDetailsModal(
                       context,
@@ -119,7 +127,7 @@ class PolygonManager {
   }
 
   void _showInfoCard(BuildContext context, PolygonData polygon) {
-    _removeInfoCardOverlay();
+    removeInfoCardOverlay();
 
     // Wait for the next frame to ensure layout is complete
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -142,7 +150,7 @@ class PolygonManager {
               child: InfoCard(
                 polygon: polygon,
                 onTap: () {
-                  _removeInfoCardOverlay();
+                  removeInfoCardOverlay();
                   if (context.mounted) {
                     showPolygonModal(context, polygon);
                   }
@@ -174,7 +182,7 @@ class PolygonManager {
   }
 
   // Method to remove the info card overlay
-  void _removeInfoCardOverlay() {
+  void removeInfoCardOverlay() {
     if (_infoCardOverlay != null && _infoCardOverlay!.mounted) {
       _infoCardOverlay!.remove();
     }
@@ -236,7 +244,7 @@ class PolygonManager {
 
   // Don't forget to clean up overlay when disposing
   void dispose() {
-    _removeInfoCardOverlay();
+    removeInfoCardOverlay();
     selectedPolygonNotifier.dispose();
     // Other cleanup code...
   }
@@ -276,7 +284,7 @@ class PolygonManager {
         initializePolyEditor(selectedPolygon!);
         break;
       } else {
-        _removeInfoCardOverlay();
+        removeInfoCardOverlay();
       }
     }
 

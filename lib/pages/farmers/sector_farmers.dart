@@ -1,5 +1,6 @@
 // ignore_for_file: must_be_immutable, avoid_print, use_super_parameters, non_constant_identifier_names
 
+import 'package:flareline/pages/farmers/add_farmer_modal.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
@@ -105,8 +106,23 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
           ),
           const SizedBox(width: 10),
           ElevatedButton(
-            onPressed: () {},
-            child: const Text("Search"),
+            onPressed: () {
+              // Add your logic for the "Add Farmer" button here
+              print("Add Farmer button pressed");
+
+              // Example data for the farmer
+              String farmerName = "John Doe";
+              String farmerId = "123";
+
+              AddFarmerModal.show(
+                context: context,
+                onUserAdded:
+                    (String name, String email, String password, String role) {
+                  // You can call your ViewModel or API here to save the user
+                },
+              );
+            },
+            child: const Text("Add Farmer"),
           ),
         ],
       ),

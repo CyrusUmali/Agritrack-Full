@@ -1,5 +1,6 @@
 // ignore_for_file: must_be_immutable, avoid_print
 
+import 'package:flareline/pages/yields/add_yield_modal.dart';
 import 'package:flareline/pages/yields/yield_profile.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
@@ -101,8 +102,14 @@ class YieldsWidgetState extends State<YieldsWidget> {
           ),
           const SizedBox(width: 10),
           ElevatedButton(
-            onPressed: () {},
-            child: const Text("Search"),
+            onPressed: () {
+              AddYieldModal.show(
+                context: context,
+                onYieldAdded: (String cropType, String farmer, String farmArea,
+                    double yieldAmount, DateTime date) {},
+              );
+            },
+            child: const Text("Add Yield"),
           ),
         ],
       ),

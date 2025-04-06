@@ -24,13 +24,14 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 Icons.data_object,
-                '\Users',
+                'Users',
                 "Total:", // Subtitle 1
                 '',
                 true,
                 ": ", // Subtitle 2
-                ':21',
-                '')), // Number value for Subtitle 1
+                '21',
+                '',
+                DeviceScreenType.desktop)),
         const SizedBox(
           width: 16,
         ),
@@ -38,13 +39,14 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 Icons.shopping_cart,
-                '\User Role',
-                'Admin & Officer ', // Subtitle 1
+                'User Role',
+                'Admin & Officer', // Subtitle 1
                 '%',
                 true,
                 "Farmer", // Subtitle 2
                 '1',
-                '5')), // Number value for Subtitle 1
+                '5',
+                DeviceScreenType.desktop)),
         const SizedBox(
           width: 16,
         ),
@@ -52,13 +54,14 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 Icons.group,
-                '\User Status',
-                "Active: ", // Subtitle 1
+                'User Status',
+                "Active:", // Subtitle 1
                 '',
                 true,
-                "Inactive: ", // Subtitle 2
-                ':21',
-                '11')), // Number value for Subtitle 1
+                "Inactive:", // Subtitle 2
+                '21',
+                '11',
+                DeviceScreenType.desktop)),
         const SizedBox(
           width: 16,
         ),
@@ -66,89 +69,49 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 Icons.security_rounded,
-                '\New Users: ',
+                'New Users',
                 "Total:", // Subtitle 1
                 '',
                 true,
-                ": ", // Subtitle 2
-                ':21',
-                '')), // Number value for Subtitle 1
+                ":", // Subtitle 2
+                '21',
+                '',
+                DeviceScreenType.desktop)),
       ],
     );
   }
 
   Widget contentMobileWidget(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal, // Make the content scroll horizontally
-      child: Row(
-        children: [
-          Container(
-            width: 240, // Set a fixed width for all cards
-            child: _itemCardWidget(
-                context,
-                Icons.data_object,
-                '\Users',
-                "Total:", // Subtitle 1
-                '',
-                true,
-                ": ", // Subtitle 2
-                ':21',
-                ''), // Number value for Subtitle 1
-          ),
-          const SizedBox(
-            width: 16, // Horizontal spacing between cards
-          ),
-          Container(
-            width: 240, // Set a fixed width for all cards
-            child: _itemCardWidget(
-                context,
-                Icons.shopping_cart,
-                '\User Role',
-                'Admin & Officer ', // Subtitle 1
-                '%',
-                true,
-                "Farmer", // Subtitle 2
-                '1',
-                '5'), // Number value for Subtitle 1
-          ),
-          const SizedBox(
-            width: 16, // Horizontal spacing between cards
-          ),
-          Container(
-            width: 240, // Set a fixed width for all cards
-            child: _itemCardWidget(
-                context,
-                Icons.group,
-                '\User Status',
-                "Active: ", // Subtitle 1
-                '',
-                true,
-                "Inactive: ", // Subtitle 2
-                ':21',
-                '11'), // Number value for Subtitle 1
-          ),
-          const SizedBox(
-            width: 16, // Horizontal spacing between cards
-          ),
-          Container(
-            width: 240, // Set a fixed width for all cards
-            child: _itemCardWidget(
-                context,
-                Icons.security_rounded,
-                '\New Users: ',
-                "Total:", // Subtitle 1
-                '',
-                true,
-                ": ", // Subtitle 2
-                ':21',
-                ''), // Number value for Subtitle 1
-          ),
-        ],
-      ),
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.0,
+      children: [
+        _itemCardWidget(context, Icons.data_object, 'Users', "Total:", '', true,
+            ":", '21', '', DeviceScreenType.mobile),
+        _itemCardWidget(
+            context,
+            Icons.shopping_cart,
+            'User Role',
+            'Admin & Officer',
+            '%',
+            true,
+            "Farmer",
+            '1',
+            '5',
+            DeviceScreenType.mobile),
+        _itemCardWidget(context, Icons.group, 'User Status', "Active:", '',
+            true, "Inactive:", '21', '11', DeviceScreenType.mobile),
+        _itemCardWidget(context, Icons.security_rounded, 'New Users', "Total:",
+            '', true, ":", '21', '', DeviceScreenType.mobile),
+      ],
     );
   }
 
-  _itemCardWidget(
+  Widget _itemCardWidget(
     BuildContext context,
     IconData icons,
     String text,
@@ -158,9 +121,13 @@ class SectorsGridCard extends StatelessWidget {
     String subTitle2,
     String subTitle1Value,
     String subTitle2Value,
+    DeviceScreenType screenType,
   ) {
+    double titleSize = screenType == DeviceScreenType.desktop ? 18 : 14;
+    double subtitleSize = screenType == DeviceScreenType.desktop ? 10 : 8;
+
     return CommonCard(
-      height: 166,
+      height: screenType == DeviceScreenType.desktop ? 166 : 140,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -169,37 +136,33 @@ class SectorsGridCard extends StatelessWidget {
           children: [
             ClipOval(
               child: Container(
-                width: 36,
-                height: 36,
-                alignment: Alignment.center,
-                color: Colors.grey.shade200,
-                child: Icon(
-                  icons,
-                  color: GlobalColors.sideBar,
-                ),
-              ),
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  color: Colors.grey.shade200,
+                  child: Icon(
+                    icons,
+                    color: GlobalColors.sideBar,
+                  )),
             ),
-            const SizedBox(
-              height: 12,
-            ),
+            const SizedBox(height: 12),
             Text(
               text,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style:
+                  TextStyle(fontSize: titleSize, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(
-              height: 6,
-            ),
+            const SizedBox(height: 6),
             // Subtitle 1 with its value in a Row
             Row(
               children: [
                 Text(
                   subTitle1,
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  style: TextStyle(fontSize: subtitleSize, color: Colors.grey),
                 ),
-                const SizedBox(width: 4), // Spacing between subtitle and value
+                const SizedBox(width: 4),
                 Text(
                   subTitle1Value,
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  style: TextStyle(fontSize: subtitleSize, color: Colors.grey),
                 ),
               ],
             ),
@@ -208,18 +171,16 @@ class SectorsGridCard extends StatelessWidget {
               children: [
                 Text(
                   subTitle2,
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  style: TextStyle(fontSize: subtitleSize, color: Colors.grey),
                 ),
-                const SizedBox(width: 4), // Spacing between subtitle and value
+                const SizedBox(width: 4),
                 Text(
-                  subTitle2Value, // Placeholder for Subtitle 2 value (you can add a parameter if needed)
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  subTitle2Value,
+                  style: TextStyle(fontSize: subtitleSize, color: Colors.grey),
                 ),
               ],
             ),
-            const SizedBox(
-              height: 6,
-            ),
+            const SizedBox(height: 6),
           ],
         ),
       ),

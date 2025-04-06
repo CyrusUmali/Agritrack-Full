@@ -36,6 +36,11 @@ enum CellDataType {
 abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
   TableWidget({super.params, super.key});
 
+  /// Add this method to customize header widgets
+  Widget headerBuilder(BuildContext context, String headerName, S viewModel) {
+    return Text(headerName); // Default implementation
+  }
+
   // Add new callback for handling cell taps
   void onCellTap(BuildContext context, TableDataRowsTableDataRows columnData,
       S viewModel) {}
@@ -180,10 +185,12 @@ abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
       children: [
         Expanded(
             child: ScreenTypeLayout.builder(
-          desktop: (context) =>
-              responsiveWidget(dataGridSource, headers, false),
-          mobile: (context) => responsiveWidget(dataGridSource, headers, true),
-          tablet: (context) => responsiveWidget(dataGridSource, headers, true),
+          desktop: (context) => responsiveWidget(
+              dataGridSource, headers, false, context, viewModel),
+          mobile: (context) => responsiveWidget(
+              dataGridSource, headers, true, context, viewModel),
+          tablet: (context) => responsiveWidget(
+              dataGridSource, headers, true, context, viewModel),
         )),
         if (showPaging && rows.isNotEmpty)
           SizedBox(
@@ -198,7 +205,12 @@ abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
   }
 
   Widget responsiveWidget(
-      BaseDataGridSource dataGridSource, List<dynamic> headers, bool isMobile) {
+    BaseDataGridSource dataGridSource,
+    List<dynamic> headers,
+    bool isMobile,
+    BuildContext context,
+    S viewModel,
+  ) {
     return SfDataGrid(
       source: dataGridSource,
       rowHeight: rowHeight,
@@ -210,7 +222,14 @@ abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
       footerFrozenColumnsCount: isLastColumnFixed ? 1 : 0,
       isScrollbarAlwaysShown: true,
       columnWidthMode: columnWidthMode,
-      columns: headers.map((e) => gridColumnWidget(e, isMobile)).toList(),
+      columns: headers
+          .map((e) => gridColumnWidget(
+                e,
+                isMobile,
+                context,
+                viewModel,
+              ))
+          .toList(),
     );
   }
 
@@ -225,7 +244,13 @@ abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
     return true;
   }
 
-  GridColumn gridColumnWidget(dynamic e, bool isMobile) {
+  /// Update the method signature to include context and viewModel
+  GridColumn gridColumnWidget(
+    dynamic e,
+    bool isMobile,
+    BuildContext context, // Add context parameter
+    S viewModel, // Add viewModel parameter
+  ) {
     String columnName;
     String? align;
     if (e is String) {
@@ -234,6 +259,7 @@ abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
       columnName = e['columnName'] ?? '';
       align = e['align'];
     }
+
     return GridColumn(
       width: gridColumnWidgetWidth(columnName),
       columnName: columnName,
@@ -242,7 +268,7 @@ abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
         alignment: 'center' == align
             ? Alignment.center
             : ('right' == align ? Alignment.centerRight : Alignment.centerLeft),
-        child: Text(columnName),
+        child: headerBuilder(context, columnName, viewModel),
       ),
     );
   }

@@ -133,7 +133,7 @@ class _FarmListPanelState extends State<FarmListPanel> {
               ),
               SizedBox(width: 8),
               IconButton(
-                icon: Icon(Icons.location_on,
+                icon: Icon(Icons.tune_sharp,
                     color: widget.selectedBarangays.isNotEmpty
                         ? Colors.blue
                         : Colors.grey),
@@ -156,9 +156,17 @@ class _FarmListPanelState extends State<FarmListPanel> {
                     widget.polygonManager.polygons.indexOf(polygon);
 
                 return ListTile(
-                  title: Text(polygon.name),
+                  title: Text(
+                    polygon.name,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
                   subtitle: polygon.parentBarangay != null
-                      ? Text('Barangay: ${polygon.parentBarangay}')
+                      ? Text(
+                          'Barangay: ${polygon.parentBarangay}',
+                          style: TextStyle(
+                              fontSize:
+                                  12), // Make sure this is smaller than title
+                        )
                       : null,
                   tileColor: widget.polygonManager.selectedPolygonIndex ==
                           originalIndex

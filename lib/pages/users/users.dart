@@ -1,5 +1,4 @@
-// ignore_for_file: must_be_immutable, avoid_print
-
+import 'package:flareline/pages/users/add_user_modal.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
@@ -93,7 +92,7 @@ class UsersState extends State<Users> {
           Expanded(
             child: TextField(
               decoration: InputDecoration(
-                hintText: "Search USers...",
+                hintText: "Search Users...",
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -105,8 +104,27 @@ class UsersState extends State<Users> {
           ),
           const SizedBox(width: 10),
           ElevatedButton(
-            onPressed: () {},
-            child: const Text("Search"),
+            onPressed: () {
+              // Example data for the farmer
+              String farmerName = "John Doe";
+              String farmerId = "123";
+
+              AddUserModal.show(
+                context: context,
+                onUserAdded:
+                    (String name, String email, String password, String role) {
+                  // Handle the new user data here
+                  print('New User Added:');
+                  print('Name: $name');
+                  print('Email: $email');
+                  print('Password: $password');
+                  print('Role: $role');
+
+                  // You can call your ViewModel or API here to save the user
+                },
+              );
+            },
+            child: const Text("Add User"),
           ),
         ],
       ),
@@ -127,7 +145,7 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
       context,
       onFarmerSelected,
       (id) {
-        print("Deleted USer ID: $id");
+        print("Deleted User ID: $id");
         // Add logic to remove the farmer from the list or show a confirmation dialog
       },
     );
@@ -139,11 +157,9 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
     // Create a farmer object from the data
     int id = int.tryParse(columnData.id ?? '0') ?? 0;
     final user = {
-      'Username': 'Username $id',
+      'Username': 'User $id',
       'UserRole': 'Officer',
-      // 'farmSize': '${id + 1} hectares',
       'contact': 'farmer$id@example.com',
-      // 'lastHarvest': 'March ${2024 - id}',
     };
 
     return Row(
@@ -152,12 +168,7 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
         IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),
           onPressed: () {
-            print("Delete icon clicked for Farmer $id");
-
-            // Add your delete logic here
-            // if (viewModel.onFarmerDeleted != null) {
-            //   viewModel.onFarmerDeleted!(id);
-            // }
+            print("Delete icon clicked for User $id");
 
             ModalDialog.show(
               context: context,
@@ -178,19 +189,15 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
               child: Center(
                 child: Text(
                   'Are you sure you want to delete ${user['Username']}?',
-                  textAlign:
-                      TextAlign.center, // Optional: Center-align the text
+                  textAlign: TextAlign.center,
                 ),
               ),
               footer: Padding(
-                // Add padding to the footer
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 10.0), // Adjust padding as needed
+                    horizontal: 20.0, vertical: 10.0),
                 child: Center(
                   child: Row(
-                    mainAxisSize: MainAxisSize
-                        .min, // Ensure the Row takes only the space it needs
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(
                         width: 120,
@@ -227,7 +234,7 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
-            print("Arrow icon clicked for farmer $id");
+            print("Arrow icon clicked for user $id");
 
             if (viewModel.onFarmerSelected != null) {
               viewModel.onFarmerSelected!(user);
@@ -247,21 +254,41 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: constraints.maxWidth,
-            ),
-            child: SizedBox(
-              width: 1200,
-              child: super.build(context),
-            ),
-          ),
-        );
-      },
+    return ScreenTypeLayout.builder(
+      desktop: _buildDesktopTable,
+      mobile: _buildMobileTable,
+      tablet: _buildMobileTable,
+    );
+  }
+
+  Widget _buildDesktopTable(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: 1000, // Set minimum width for desktop
+        maxWidth: 1200, // Set maximum width for desktop
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: 1200, // Fixed width for desktop
+          child: super.build(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileTable(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: MediaQuery.of(context).size.width, // Full width on mobile
+        ),
+        child: SizedBox(
+          width: 600, // Wider than mobile screen to enable scrolling
+          child: super.build(context),
+        ),
+      ),
     );
   }
 }

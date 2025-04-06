@@ -48,12 +48,17 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(create: (_) => ThemeProvider(_)),
           //theme
           ChangeNotifierProvider(create: (_) => LocalizationProvider(_)),
+
           //localizationen ai
         ],
         child: Builder(builder: (context) {
           context.read<LocalizationProvider>().supportedLocales =
               AppLocalizations.supportedLocales;
+          final RouteObserver<PageRoute> routeObserver =
+              RouteObserver<PageRoute>();
+
           return MaterialApp(
+            navigatorObservers: [routeObserver],
             navigatorKey: RouteConfiguration.navigatorKey,
             restorationScopeId: 'rootFlareLine',
             title: 'AgriTrack',

@@ -30,39 +30,19 @@ class FarmersPage extends LayoutWidget {
                 .min, // Ensures the Row takes only the space it needs
             children: [
               // Add Farmer Button on the left
-              ElevatedButton(
-                onPressed: () {
-                  // Add your logic for the "Add Farmer" button here
-                  print("Add Farmer button pressed");
 
-                  // Example data for the farmer
-                  String farmerName = "John Doe";
-                  String farmerId = "123";
-
-                  AddFarmerModal.show(
-                    context: context,
-                    onUserAdded: (String name, String email, String password,
-                        String role) {
-                      // You can call your ViewModel or API here to save the user
-                    },
-                  );
-                },
-                child: const Text("Add Farmer"),
-              ),
-              const SizedBox(
-                  width: 16), // Add spacing between the button and the dropdown
               // Year Filter Dropdown
-              YearFilterDropdown(
-                selectedYear: selectedYear,
-                onYearChanged: (int? newValue) {
-                  if (newValue != null) {
-                    // Update the selected year
-                    selectedYear = newValue;
-                    // You can add logic here to refresh the data based on the selected year
-                    print("Selected Year: $selectedYear");
-                  }
-                },
-              ),
+              // YearFilterDropdown(
+              //   selectedYear: selectedYear,
+              //   onYearChanged: (int? newValue) {
+              //     if (newValue != null) {
+              //       // Update the selected year
+              //       selectedYear = newValue;
+              //       // You can add logic here to refresh the data based on the selected year
+              //       print("Selected Year: $selectedYear");
+              //     }
+              //   },
+              // ),
             ],
           ),
         ),

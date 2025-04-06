@@ -1,3 +1,4 @@
+import 'package:flareline/pages/dashboard/analytics_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/dashboard/grid_card.dart';
 import 'package:flareline/pages/dashboard/revenue_widget.dart';
@@ -20,6 +21,9 @@ class EcommercePage extends LayoutWidget {
         SizedBox(
           height: 16,
         ),
+
+        AnalyticsWidget(),
+        const SizedBox(height: 20),
         RevenueWidget(),
         SizedBox(
           height: 16,

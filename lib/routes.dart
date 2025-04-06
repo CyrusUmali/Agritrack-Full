@@ -46,9 +46,12 @@ import 'package:flareline/pages/products/products_page.dart'
 import 'package:flareline/pages/sectors/sectors_page.dart'
     deferred as sectorsPage;
 
+import 'package:flareline/pages/recommendation/recommendation_page.dart'
+    deferred as recommendationPage;
 import 'package:flareline/pages/yields/yields_page.dart' deferred as yieldsPage;
 
 typedef PathWidgetBuilder = Widget Function(BuildContext, String?);
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 final List<Map<String, Object>> MAIN_PAGES = [
   {'routerPath': '/', 'widget': const EcommercePage()},
@@ -134,7 +137,10 @@ final List<Map<String, Object>> MAIN_PAGES = [
   {
     'routerPath': '/newPage',
     'widget': DeferredWidget(
-        newPage.loadLibrary, () => newPage.NewPage()), // Add new page
+        newPage.loadLibrary,
+        () =>
+            newPage.NewPage(routeObserver: routeObserver) // Pass observer here
+        ), // Add new page
   },
   {
     'routerPath': '/farms',
@@ -160,6 +166,11 @@ final List<Map<String, Object>> MAIN_PAGES = [
     'routerPath': '/sectors',
     'widget': DeferredWidget(sectorsPage.loadLibrary,
         () => sectorsPage.SectorsPage()), // Add new page
+  },
+  {
+    'routerPath': '/recommendation',
+    'widget': DeferredWidget(recommendationPage.loadLibrary,
+        () => recommendationPage.RecommendationPage()), // Add new page
   },
   {
     'routerPath': '/modal',

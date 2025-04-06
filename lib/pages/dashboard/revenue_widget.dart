@@ -48,15 +48,15 @@ class RevenueWidget extends StatelessWidget {
     return Column(
       children: [
         SizedBox(
-          height: 360,
-          child: _lineChart(),
+          height: 440,
+          child: SectorLineChart(),
         ),
         const SizedBox(
           height: 16,
         ),
         SizedBox(
-          height: 360,
-          child: _barChart(),
+          height: 460,
+          child: SectorBarChart(),
         ),
       ],
     );

@@ -6,56 +6,68 @@ class ClimateInfoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        // boxShadow: [
-        //   BoxShadow(
-        //     color: Colors.black.withOpacity(0.1),
-        //     blurRadius: 6,
-        //     spreadRadius: 2,
-        //     offset: const Offset(0, 4),
-        //   ),
-        // ],
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _locationBadge("Los Baños, PH"),
-          const SizedBox(height: 8),
-          _dateAndWeather(),
-          const SizedBox(height: 8),
-          _temperatureDetails(),
+          _LocationBadge(location: "Los Baños, PH"),
+          const SizedBox(height: 16),
+          _DateAndWeather(),
+          const SizedBox(height: 16),
+          _TemperatureDetails(),
         ],
       ),
     );
   }
+}
 
-  Widget _locationBadge(String location) {
+class _LocationBadge extends StatelessWidget {
+  final String location;
+
+  const _LocationBadge({required this.location});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.green.shade600,
+        color: theme.colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.location_on, color: Colors.white, size: 18),
+          Icon(Icons.location_on,
+              color: theme.colorScheme.onPrimaryContainer, size: 16),
           const SizedBox(width: 6),
           Text(
             location,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold),
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _dateAndWeather() {
+class _DateAndWeather extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -63,49 +75,68 @@ class ClimateInfoWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              DateFormat('EEEE').format(DateTime.now()), // Day name
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              DateFormat('EEEE').format(DateTime.now()),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
+            const SizedBox(height: 2),
             Text(
-              DateFormat('d MMM, yyyy').format(DateTime.now()), // Date
-              style: const TextStyle(color: Colors.grey),
+              DateFormat('d MMM, yyyy').format(DateTime.now()),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
             ),
           ],
         ),
-        const Icon(Icons.wb_cloudy,
-            size: 40, color: Colors.blueAccent), // Weather icon
+        Icon(Icons.wb_cloudy_outlined,
+            size: 48, color: theme.colorScheme.primary),
       ],
     );
   }
+}
 
-  Widget _temperatureDetails() {
+class _TemperatureDetails extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               "24°C",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              style: theme.textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.w300,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
-              "High: 27 Low: 10",
-              style: TextStyle(color: Colors.grey.shade700),
+              "High: 27° Low: 10°",
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
             ),
           ],
         ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Text(
-              "Cloudy",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
             Text(
-              "Feels Like 26",
-              style: TextStyle(color: Colors.grey.shade700),
+              "Cloudy",
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              "Feels like 26°",
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
             ),
           ],
         ),

@@ -1,7 +1,10 @@
 import 'package:flareline/pages/farmers/sector_farmers.dart';
-import 'package:flareline_uikit/components/card/common_card.dart';
+import 'package:flareline/pages/farms/farms_table.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
+import 'package:flareline/pages/sectors/sector_profile/sector_header.dart';
+import 'package:flareline/pages/sectors/sector_profile/sector_kpi.dart';
+import 'package:flareline/pages/sectors/sector_profile/sector_overview.dart';
 
 class SectorProfile extends LayoutWidget {
   final Map<String, dynamic> sector;
@@ -15,257 +18,114 @@ class SectorProfile extends LayoutWidget {
 
   @override
   Widget contentDesktopWidget(BuildContext context) {
-    return SectorProfileDesktop(sector: sector);
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          SectorHeader(sector: sector),
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SectorKpiCards(sector: sector),
+                const SizedBox(height: 24),
+                SectorOverviewPanel(sector: sector),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Column(
+            children: [
+              Align(
+                alignment: Alignment.centerLeft, // Aligns text to the left
+                child: Text(
+                  "Farmers in this Sector",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(height: 10), // Adds spacing
+              FarmersPerSectorWidget(),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Column(
+            children: [
+              Align(
+                alignment: Alignment.centerLeft, // Aligns text to the left
+                child: Text(
+                  "Farms in this Sector",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(height: 10), // Adds spacing
+              FarmsTableWidget(),
+            ],
+          )
+        ],
+      ),
+    );
   }
 
   @override
   Widget contentMobileWidget(BuildContext context) {
-    return SectorProfileMobile(sector: sector);
-  }
-}
-
-class SectorProfileDesktop extends StatelessWidget {
-  final Map<String, dynamic> sector;
-
-  const SectorProfileDesktop({super.key, required this.sector});
-
-  @override
-  Widget build(BuildContext context) {
-    return CommonCard(
-      margin: EdgeInsets.zero,
+    return SingleChildScrollView(
       child: Column(
         children: [
-          Stack(
-            children: [
-              SizedBox(
-                height: 280,
-                child: Image.asset(
-                  'assets/cover/cover-01.png',
-                  height: 280,
-                  width: double.maxFinite,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Container(
-                  margin: const EdgeInsets.all(10),
-                  color: Colors.blueAccent,
-                  child: TextButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.camera, color: Colors.white),
-                    label: const Text('Edit',
-                        style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          CircleAvatar(
-            radius: 72,
-            backgroundColor: Colors.greenAccent,
-            child: Image.asset('assets/user/user-01.png'),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            sector['sectorName'] ?? 'Unknown Sector',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          SectorDetailsCard(sector: sector),
-          SectorStatisticsCard(sector: sector),
-          AnnualYieldReportCard(sector: sector),
-        ],
-      ),
-    );
-  }
-}
-
-class SectorProfileMobile extends StatelessWidget {
-  final Map<String, dynamic> sector;
-
-  const SectorProfileMobile({super.key, required this.sector});
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: CommonCard(
-        margin: EdgeInsets.zero,
-        child: Column(
-          children: [
-            Stack(
+          SectorHeader(sector: sector, isMobile: true),
+          const SizedBox(height: 64),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  height: 180,
-                  child: Image.asset(
-                    'assets/cover/cover-01.png',
-                    height: 180,
-                    width: double.maxFinite,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Container(
-                    margin: const EdgeInsets.all(10),
-                    color: Colors.blueAccent,
-                    child: TextButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.camera, color: Colors.white),
-                      label: const Text('Edit',
-                          style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
-                ),
+                SectorKpiCards(sector: sector, isMobile: true),
+                const SizedBox(height: 16),
+                SectorOverviewPanel(sector: sector, isMobile: true),
               ],
             ),
-            const SizedBox(height: 20),
-            CircleAvatar(
-              radius: 48,
-              backgroundColor: Colors.greenAccent,
-              child: Image.asset('assets/user/user-01.png'),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              sector['sectorName'] ?? 'Unknown Sector',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            SectorDetailsCard(sector: sector),
-            SectorStatisticsCard(sector: sector),
-            AnnualYieldReportCard(sector: sector),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class SectorDetailsCard extends StatelessWidget {
-  final Map<String, dynamic> sector;
-  const SectorDetailsCard({super.key, required this.sector});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Sector Details',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 10),
-          _buildDetailField(
-              'Sector Name', sector['sectorName'] ?? 'Not specified'),
-          _buildDetailField(
-              'Description', sector['description'] ?? 'Not specified'),
           const SizedBox(height: 16),
-          const FarmersPerSectorWidget(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailField(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        initialValue: value,
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          filled: true,
-          fillColor: Colors.grey[100],
-        ),
-        style: const TextStyle(fontSize: 14),
-      ),
-    );
-  }
-}
-
-class SectorStatisticsCard extends StatelessWidget {
-  final Map<String, dynamic> sector;
-  const SectorStatisticsCard({super.key, required this.sector});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Sector Statistics',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Column(
+            children: [
+              Align(
+                alignment: Alignment.centerLeft, // Aligns text to the left
+                child: Text(
+                  "Farmers in this Sector",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(height: 10), // Adds spacing
+              FarmersPerSectorWidget(),
+            ],
           ),
-          const SizedBox(height: 10),
-          _buildDetailField('Total Farmers',
-              sector['totalFarmers']?.toString() ?? 'Not specified'),
-          _buildDetailField(
-              'Total Land Area', '${sector['totalLandArea']} hectares'),
+          const SizedBox(height: 16),
+          Column(
+            children: [
+              Align(
+                alignment: Alignment.centerLeft, // Aligns text to the left
+                child: Text(
+                  "Farms in this Sector",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(height: 10), // Adds spacing
+              FarmsTableWidget(),
+            ],
+          )
         ],
-      ),
-    );
-  }
-
-  Widget _buildDetailField(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        initialValue: value,
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          filled: true,
-          fillColor: Colors.grey[100],
-        ),
-        style: const TextStyle(fontSize: 14),
-      ),
-    );
-  }
-}
-
-class AnnualYieldReportCard extends StatelessWidget {
-  final Map<String, dynamic> sector;
-  const AnnualYieldReportCard({super.key, required this.sector});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Annual Yield Report',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          _buildDetailField(
-              'Annual Yield', '${sector['annualYieldReport']} tons'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailField(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        initialValue: value,
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          filled: true,
-          fillColor: Colors.grey[100],
-        ),
-        style: const TextStyle(fontSize: 14),
       ),
     );
   }
