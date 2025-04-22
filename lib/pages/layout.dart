@@ -1,4 +1,3 @@
-
 import 'package:flareline_uikit/components/toolbar/toolbar.dart';
 import 'package:flareline_uikit/service/localization_provider.dart';
 import 'package:flareline_uikit/widget/flareline_layout.dart';
@@ -23,19 +22,18 @@ abstract class LayoutWidget extends FlarelineLayoutWidget {
   }
 
   Widget _userInfoWidget(BuildContext context) {
-
     return const Row(
       children: [
         Column(
           children: [
-            Text('Demo'),
+            // Text('Demo'),
           ],
         ),
         SizedBox(
           width: 10,
         ),
         CircleAvatar(
-          backgroundImage:AssetImage('assets/user/user-02.png'),
+          backgroundImage: AssetImage('assets/user/user-02.png'),
           radius: 22,
         )
       ],

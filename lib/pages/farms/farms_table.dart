@@ -1,6 +1,7 @@
 // ignore_for_file: must_be_immutable
 
 import 'package:flareline/pages/farms/farm_profile.dart';
+import 'package:flareline/pages/modal/barangay_filter_modal.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
@@ -66,7 +67,7 @@ class FarmsTableWidgetState extends State<FarmsTableWidget> {
         _buildSearchBar(),
         const SizedBox(height: 16),
         SizedBox(
-          height: 380,
+          height: 450,
           child: DataTableWidget(
             onFarmSelected: (farm) {
               setState(() {
@@ -80,44 +81,115 @@ class FarmsTableWidgetState extends State<FarmsTableWidget> {
   }
 
   Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search farms...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Use column layout for narrow screens (mobile)
+        if (constraints.maxWidth < 600) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search farms...",
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 15),
+                  ),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-              ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildFilterButton(
+                      context,
+                      icon: Icons.category,
+                      label: "Sector",
+                      onPressed: () => _showSectorFilter(context),
+                    ),
+                    _buildFilterButton(
+                      context,
+                      icon: Icons.location_on,
+                      label: "Location",
+                      onPressed: () => showBarangayFilterModal(context),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 10),
-          // Sector Filter Button
-          FilterButton(
-            icon: Icons.category,
-            onPressed: () => _showSectorFilter(context),
-          ),
-          const SizedBox(width: 10),
-          // Barangay Filter Button
-          FilterButton(
-            icon: Icons.location_on,
-            onPressed: () => _showBarangayFilterModal(context),
-          ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: () {},
-            child: const Text("Search"),
-          ),
-        ],
-      ),
+          );
+        }
+        // Use row layout for wider screens
+        else {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: "Search farms...",
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 15),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _buildFilterButton(
+                  context,
+                  icon: Icons.category,
+                  label: "Sector",
+                  onPressed: () => _showSectorFilter(context),
+                ),
+                _buildFilterButton(
+                  context,
+                  icon: Icons.location_on,
+                  label: "Location",
+                  onPressed: () => showBarangayFilterModal(context),
+                ),
+              ],
+            ),
+          );
+        }
+      },
     );
   }
+}
+
+Widget _buildFilterButton(
+  BuildContext context, {
+  required IconData icon,
+  required String label,
+  required VoidCallback onPressed,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+    child: TextButton(
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.grey[700],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      onPressed: onPressed,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 14)),
+        ],
+      ),
+    ),
+  );
 }
 
 // Custom filter button widget
@@ -183,185 +255,6 @@ void _showSectorFilter(BuildContext context) {
       print('Selected sector: $value');
     }
   });
-}
-
-// Show barangay filter modal
-void _showBarangayFilterModal(BuildContext context) {
-  // Sample barangay data
-  final List<String> allBarangays = [
-    'Barangay 1',
-    'Barangay 2',
-    'Barangay 3',
-    'Barangay 4',
-    'Barangay 5',
-    'Barangay 6'
-  ];
-
-  // State management
-  final selectedBarangays = <String>{};
-  final searchController = TextEditingController();
-  final filteredBarangays = ValueNotifier<List<String>>(allBarangays);
-  final focusNode = FocusNode();
-
-  // Search function
-  void filterBarangays(String query) {
-    if (query.isEmpty) {
-      filteredBarangays.value = allBarangays;
-    } else {
-      filteredBarangays.value = allBarangays
-          .where((barangay) =>
-              barangay.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    }
-  }
-
-  ModalDialog.show(
-    context: context,
-    title: 'Filter by Barangay',
-    showTitle: true,
-    showTitleDivider: true,
-    modalType: ModalType.medium,
-    onCancelTap: () => Navigator.of(context).pop(),
-    onSaveTap: () {
-      // Handle selected barangays
-      print('Selected barangays: $selectedBarangays');
-      Navigator.of(context).pop();
-    },
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Search input (styled like a combo box)
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: FlarelineColors.darkBorder),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: searchController,
-                  focusNode: focusNode,
-                  decoration: InputDecoration(
-                    hintText: 'Search barangay...',
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    border: InputBorder.none,
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                  ),
-                  onChanged: filterBarangays,
-                ),
-              ),
-              if (searchController.text.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () {
-                    searchController.clear();
-                    filterBarangays('');
-                    focusNode.unfocus();
-                  },
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        // Select All checkbox
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: FlarelineColors.darkBorder),
-            ),
-          ),
-          child: Row(
-            children: [
-              Checkbox(
-                value: selectedBarangays.length == allBarangays.length,
-                onChanged: (value) {
-                  if (value == true) {
-                    selectedBarangays.addAll(allBarangays);
-                  } else {
-                    selectedBarangays.clear();
-                  }
-                  filteredBarangays.notifyListeners();
-                },
-              ),
-              const Text('Select All', style: TextStyle(fontSize: 14)),
-            ],
-          ),
-        ),
-        // Barangay list with checkboxes
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 300),
-          child: ValueListenableBuilder<List<String>>(
-            valueListenable: filteredBarangays,
-            builder: (context, filteredList, _) {
-              return ListView.builder(
-                shrinkWrap: true,
-                itemCount: filteredList.length,
-                itemBuilder: (context, index) {
-                  final barangay = filteredList[index];
-                  return Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(color: FlarelineColors.darkBorder),
-                      ),
-                    ),
-                    child: CheckboxListTile(
-                      title:
-                          Text(barangay, style: const TextStyle(fontSize: 14)),
-                      value: selectedBarangays.contains(barangay),
-                      onChanged: (value) {
-                        if (value == true) {
-                          selectedBarangays.add(barangay);
-                        } else {
-                          selectedBarangays.remove(barangay);
-                        }
-                        filteredBarangays.notifyListeners();
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    ),
-    footer: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 120,
-              child: ButtonWidget(
-                btnText: 'Cancel',
-                textColor: FlarelineColors.darkBlackText,
-                onTap: () => Navigator.of(context).pop(),
-              ),
-            ),
-            const SizedBox(width: 20),
-            SizedBox(
-              width: 120,
-              child: ButtonWidget(
-                btnText: 'Apply',
-                onTap: () {
-                  // Handle selected barangays
-                  print('Selected barangays: $selectedBarangays');
-                  Navigator.of(context).pop();
-                },
-                type: ButtonType.primary.type,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 class DataTableWidget extends TableWidget<FarmViewModel> {

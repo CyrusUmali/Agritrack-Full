@@ -1,130 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:flareline_uikit/components/card/common_card.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 class YieldHistory extends StatefulWidget {
-  final List<dynamic> yearlyYield;
-  final List<dynamic> monthlyYield;
+  final Map<String, dynamic> product;
+  final bool isMobile;
 
   const YieldHistory({
     super.key,
-    required this.yearlyYield,
-    required this.monthlyYield,
+    required this.product,
+    this.isMobile = false,
   });
 
   @override
-  State<YieldHistory> createState() => _YieldHistoryState();
+  State<YieldHistory> createState() => YieldHistoryState();
 }
 
-class _YieldHistoryState extends State<YieldHistory> {
-  // Dummy yearly yield data
-  static final List<Map<String, dynamic>> dummyYearlyYield = [
-    {'year': '2020', 'yield': 120},
-    {'year': '2021', 'yield': 180},
-    {'year': '2022', 'yield': 210},
-    {'year': '2023', 'yield': 190},
-    {'year': '2024', 'yield': 250},
-  ];
-
-  // Dummy monthly yield data for multiple years
-  static final Map<String, List<Map<String, dynamic>>> dummyMonthlyYieldByYear =
-      {
-    '2020': [
-      {'month': 'Jan', 'yield': 10},
-      {'month': 'Feb', 'yield': 12},
-      {'month': 'Mar', 'yield': 15},
-      {'month': 'Apr', 'yield': 18},
-      {'month': 'May', 'yield': 20},
-      {'month': 'Jun', 'yield': 22},
-      {'month': 'Jul', 'yield': 25},
-      {'month': 'Aug', 'yield': 23},
-      {'month': 'Sep', 'yield': 20},
-      {'month': 'Oct', 'yield': 18},
-      {'month': 'Nov', 'yield': 15},
-      {'month': 'Dec', 'yield': 12},
-    ],
-    '2021': [
-      {'month': 'Jan', 'yield': 12},
-      {'month': 'Feb', 'yield': 15},
-      {'month': 'Mar', 'yield': 18},
-      {'month': 'Apr', 'yield': 20},
-      {'month': 'May', 'yield': 25},
-      {'month': 'Jun', 'yield': 28},
-      {'month': 'Jul', 'yield': 30},
-      {'month': 'Aug', 'yield': 28},
-      {'month': 'Sep', 'yield': 25},
-      {'month': 'Oct', 'yield': 22},
-      {'month': 'Nov', 'yield': 18},
-      {'month': 'Dec', 'yield': 15},
-    ],
-    '2022': [
-      {'month': 'Jan', 'yield': 15},
-      {'month': 'Feb', 'yield': 18},
-      {'month': 'Mar', 'yield': 20},
-      {'month': 'Apr', 'yield': 22},
-      {'month': 'May', 'yield': 25},
-      {'month': 'Jun', 'yield': 30},
-      {'month': 'Jul', 'yield': 35},
-      {'month': 'Aug', 'yield': 32},
-      {'month': 'Sep', 'yield': 28},
-      {'month': 'Oct', 'yield': 25},
-      {'month': 'Nov', 'yield': 20},
-      {'month': 'Dec', 'yield': 18},
-    ],
-    '2023': [
-      {'month': 'Jan', 'yield': 18},
-      {'month': 'Feb', 'yield': 20},
-      {'month': 'Mar', 'yield': 22},
-      {'month': 'Apr', 'yield': 25},
-      {'month': 'May', 'yield': 28},
-      {'month': 'Jun', 'yield': 32},
-      {'month': 'Jul', 'yield': 35},
-      {'month': 'Aug', 'yield': 33},
-      {'month': 'Sep', 'yield': 30},
-      {'month': 'Oct', 'yield': 28},
-      {'month': 'Nov', 'yield': 25},
-      {'month': 'Dec', 'yield': 22},
-    ],
-    '2024': [
-      {'month': 'Jan', 'yield': 15},
-      {'month': 'Feb', 'yield': 18},
-      {'month': 'Mar', 'yield': 22},
-      {'month': 'Apr', 'yield': 25},
-      {'month': 'May', 'yield': 30},
-      {'month': 'Jun', 'yield': 35},
-      {'month': 'Jul', 'yield': 40},
-      {'month': 'Aug', 'yield': 38},
-      {'month': 'Sep', 'yield': 32},
-      {'month': 'Oct', 'yield': 28},
-      {'month': 'Nov', 'yield': 20},
-      {'month': 'Dec', 'yield': 15},
-    ],
-  };
-
+class YieldHistoryState extends State<YieldHistory> {
   String? _selectedYear;
+  String? _startYear;
+  String? _endYear;
+  bool _showMonthlyView = false;
 
   @override
   void initState() {
     super.initState();
-    // Set the default selected year to the most recent year available
-    final years = dummyMonthlyYieldByYear.keys.toList()..sort();
-    _selectedYear = years.last;
+    _initializeSelections();
+  }
+
+  void _initializeSelections() {
+    // Initialize years
+    final yields = (widget.product['yields'] as List?)
+        ?.whereType<Map<String, dynamic>>()
+        .toList();
+    if (yields != null && yields.isNotEmpty) {
+      yields.sort((a, b) => (a['year'] ?? '').compareTo(b['year'] ?? ''));
+      _selectedYear = yields.last['year']?.toString();
+      _startYear = yields.first['year']?.toString();
+      _endYear = yields.last['year']?.toString();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use the provided data if available, otherwise use dummy data
-    final effectiveYearlyYield =
-        widget.yearlyYield.isNotEmpty ? widget.yearlyYield : dummyYearlyYield;
-    final effectiveMonthlyYield = widget.monthlyYield.isNotEmpty
-        ? widget.monthlyYield
-        : dummyMonthlyYieldByYear[_selectedYear] ?? [];
+    final yields = (widget.product['yields'] as List?)
+            ?.whereType<Map<String, dynamic>>()
+            .toList() ??
+        [];
 
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return CommonCard(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(widget.isMobile ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -134,137 +60,292 @@ class _YieldHistoryState extends State<YieldHistory> {
                     fontWeight: FontWeight.bold,
                   ),
             ),
-            const SizedBox(height: 24),
-            _buildYearlyYield(context, effectiveYearlyYield),
-            const SizedBox(height: 24),
-            _buildMonthlyYield(context, effectiveMonthlyYield),
+            const SizedBox(height: 16),
+            if (yields.isEmpty)
+              const Center(child: Text('No yield data recorded')),
+            if (yields.isNotEmpty) ...[
+              _buildViewToggle(),
+              const SizedBox(height: 16),
+              _buildDateRangeControls(),
+              const SizedBox(height: 16),
+              _buildChart(yields),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildYearlyYield(BuildContext context, List<dynamic> yieldData) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Yearly Yield',
-          style: Theme.of(context).textTheme.titleMedium,
+  Widget _buildViewToggle() {
+    return Container(
+      alignment: Alignment.center,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(20),
         ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 250,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: yieldData.length,
-            itemBuilder: (context, index) {
-              final data = yieldData[index];
-              return Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Column(
-                  children: [
-                    Text(data['year']?.toString() ?? 'Year'),
-                    const SizedBox(height: 4),
-                    Container(
-                      width: 40,
-                      height:
-                          150 * (data['yield'] ?? 0) / _getMaxYield(yieldData),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text('${data['yield']?.toString() ?? '0'} tons'),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMonthlyYield(BuildContext context, List<dynamic> yieldData) {
-    // Get available years for dropdown
-    final availableYears = dummyMonthlyYieldByYear.keys.toList()..sort();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Monthly Yield',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            DropdownButton<String>(
-              value: _selectedYear,
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedYear = newValue;
-                });
-              },
-              items:
-                  availableYears.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              underline: Container(
-                height: 1,
-                color: Theme.of(context).colorScheme.primary,
+            TextButton(
+              onPressed: () => setState(() => _showMonthlyView = false),
+              style: TextButton.styleFrom(
+                foregroundColor: _showMonthlyView
+                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.6)
+                    : Theme.of(context).colorScheme.primary,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero,
+                ),
               ),
+              child: Text('Yearly'),
+            ),
+            TextButton(
+              onPressed: () => setState(() => _showMonthlyView = true),
+              style: TextButton.styleFrom(
+                foregroundColor: _showMonthlyView
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero,
+                ),
+              ),
+              child: Text('Monthly'),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 250,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: yieldData.length,
-            itemBuilder: (context, index) {
-              final data = yieldData[index];
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Column(
-                  children: [
-                    Text(data['month']?.toString() ?? 'Month'),
-                    const SizedBox(height: 4),
-                    Container(
-                      width: 30,
-                      height:
-                          150 * (data['yield'] ?? 0) / _getMaxYield(yieldData),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondary,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text('${data['yield']?.toString() ?? '0'} tons'),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  double _getMaxYield(List<dynamic> yieldData) {
-    if (yieldData.isEmpty) return 1;
+  Widget _buildDateRangeControls() {
+    final yields = (widget.product['yields'] as List?)
+        ?.whereType<Map<String, dynamic>>()
+        .toList();
+    if (yields == null || yields.isEmpty) return SizedBox();
 
-    double max = 0;
-    for (var data in yieldData) {
-      final value = (data['yield'] as num?)?.toDouble() ?? 0;
-      if (value > max) max = value;
+    final years =
+        yields.map((y) => y['year']?.toString()).whereType<String>().toList();
+    years.sort();
+
+    if (_showMonthlyView) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Year: '),
+          const SizedBox(width: 8),
+          DropdownButton<String>(
+            value: _selectedYear,
+            items: years.map((year) {
+              return DropdownMenuItem<String>(
+                value: year,
+                child: Text(year),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _selectedYear = newValue;
+                });
+              }
+            },
+          ),
+        ],
+      );
+    } else {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('From: '),
+          const SizedBox(width: 8),
+          DropdownButton<String>(
+            value: _startYear,
+            items: years.map((year) {
+              return DropdownMenuItem<String>(
+                value: year,
+                child: Text(year),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _startYear = newValue;
+                  if (_endYear != null &&
+                      _startYear!.compareTo(_endYear!) > 0) {
+                    _endYear = _startYear;
+                  }
+                });
+              }
+            },
+          ),
+          const SizedBox(width: 16),
+          Text('To: '),
+          const SizedBox(width: 8),
+          DropdownButton<String>(
+            value: _endYear,
+            items: years
+                .where((year) => year.compareTo(_startYear ?? '') >= 0)
+                .map((year) {
+              return DropdownMenuItem<String>(
+                value: year,
+                child: Text(year),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _endYear = newValue;
+                });
+              }
+            },
+          ),
+        ],
+      );
     }
-    return max == 0 ? 1 : max;
   }
+
+  Widget _buildChart(List<Map<String, dynamic>> yields) {
+    if (yields.isEmpty) {
+      return const Center(child: Text('No yield data available'));
+    }
+
+    if (_showMonthlyView) {
+      return _buildMonthlyChart(yields);
+    } else {
+      return _buildYearlyChart(yields);
+    }
+  }
+
+  Widget _buildMonthlyChart(List<Map<String, dynamic>> yields) {
+    final selectedYield = yields.firstWhere(
+      (y) => y['year'] == _selectedYear,
+      orElse: () => {'monthly': List.filled(12, 0), 'year': ''},
+    );
+
+    final monthlyData =
+        selectedYield['monthly'] as List<dynamic>? ?? List.filled(12, 0);
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+
+    final chartData = List.generate(12, (index) {
+      return _ChartData(
+        months[index],
+        (monthlyData[index] as num?)?.toDouble() ?? 0,
+        0, // We don't have value data in this example
+      );
+    });
+
+    return SizedBox(
+      height: 300,
+      child: _buildBarChart(
+        chartData,
+        title: 'Monthly Yield for $_selectedYear (tons)',
+      ),
+    );
+  }
+
+  Widget _buildYearlyChart(List<Map<String, dynamic>> yields) {
+    final filteredYields = yields.where((yieldData) {
+      final year = yieldData['year']?.toString() ?? '';
+      return (_startYear == null || year.compareTo(_startYear!) >= 0) &&
+          (_endYear == null || year.compareTo(_endYear!) <= 0);
+    }).toList();
+
+    filteredYields.sort((a, b) => (a['year'] ?? '').compareTo(b['year'] ?? ''));
+
+    final chartData = filteredYields.map((yieldData) {
+      final year = yieldData['year']?.toString() ?? 'Unknown';
+      final monthly = yieldData['monthly'] as List<dynamic>? ?? [];
+      final totalYield = monthly.fold<double>(
+          0, (sum, value) => sum + (value is num ? value.toDouble() : 0));
+
+      return _ChartData(
+        year,
+        totalYield,
+        0, // We don't have value data in this example
+      );
+    }).toList();
+
+    return SizedBox(
+      height: 300,
+      child: _buildBarChart(
+        chartData,
+        title: 'Yearly Yield (${_startYear} - ${_endYear}) (tons)',
+      ),
+    );
+  }
+
+  Widget _buildBarChart(List<_ChartData> chartData, {String title = ''}) {
+    final needsScrolling = widget.isMobile && chartData.length > 5;
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final chart = SfCartesianChart(
+      plotAreaBorderWidth: 0,
+      title: ChartTitle(text: title),
+      legend: Legend(isVisible: true, position: LegendPosition.top),
+      primaryXAxis: CategoryAxis(
+        majorGridLines: const MajorGridLines(width: 0),
+        labelRotation: needsScrolling ? -45 : 0,
+      ),
+      primaryYAxis: NumericAxis(
+        axisLine: const AxisLine(width: 0),
+        labelFormat: '{value}',
+        majorTickLines: const MajorTickLines(size: 0),
+        majorGridLines: const MajorGridLines(width: 1),
+        rangePadding: ChartRangePadding.additional,
+      ),
+      series: <ColumnSeries<_ChartData, String>>[
+        ColumnSeries<_ChartData, String>(
+          dataSource: chartData,
+          xValueMapper: (_ChartData data, _) => data.x,
+          yValueMapper: (_ChartData data, _) => data.y,
+          color: const Color(0xFFFE8111), // Orange color
+          name: 'Yield (tons)',
+          width: 0.6,
+          spacing: 0.2,
+          dataLabelSettings: const DataLabelSettings(
+            isVisible: true,
+            textStyle: TextStyle(fontSize: 10),
+          ),
+        )
+      ],
+      tooltipBehavior: TooltipBehavior(
+        enable: true,
+        header: '',
+        canShowMarker: false,
+        textStyle: TextStyle(color: isDark ? Colors.black : Colors.grey),
+      ),
+    );
+
+    return needsScrolling
+        ? SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              width: chartData.length * 80.0,
+              child: chart,
+            ),
+          )
+        : chart;
+  }
+}
+
+class _ChartData {
+  _ChartData(this.x, this.y, this.y2);
+
+  final String x; // Month or Year
+  final double y; // Yield value
+  final double y2; // Not used in this implementation
 }

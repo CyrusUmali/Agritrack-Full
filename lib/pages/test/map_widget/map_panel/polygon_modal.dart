@@ -367,9 +367,7 @@ class _ModalContentState extends State<_ModalContent> {
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
                     child: Column(
-                      children: [
-                        const YieldDataTable(), // Simplified usage
-                      ],
+                      children: [YieldDataTable(polygon: widget.polygon)],
                     ),
                   ),
                 ),
@@ -480,9 +478,10 @@ class _ModalContentState extends State<_ModalContent> {
             ),
 
             // Yield data section
+            // Yield data section
             Padding(
               padding: const EdgeInsets.only(top: 16, bottom: 100),
-              child: const YieldDataTable(),
+              child: YieldDataTable(polygon: widget.polygon),
             ),
 
             // Add the vertices coordinates card

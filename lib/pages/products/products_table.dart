@@ -261,8 +261,26 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
 
   @override
   Widget build(BuildContext context) {
+    return ScreenTypeLayout.builder(
+      desktop: (context) => _buildDesktopTable(),
+      mobile: (context) => _buildMobileTable(context),
+      tablet: (context) => _buildMobileTable(context),
+    );
+  }
+
+  Widget _buildDesktopTable() {
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Responsive width calculation for desktop
+        double tableWidth;
+        if (constraints.maxWidth > 1200) {
+          tableWidth = 1200;
+        } else if (constraints.maxWidth > 800) {
+          tableWidth = constraints.maxWidth * 0.9;
+        } else {
+          tableWidth = constraints.maxWidth;
+        }
+
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
@@ -270,12 +288,22 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
               minWidth: constraints.maxWidth,
             ),
             child: SizedBox(
-              width: 1200,
+              width: tableWidth,
               child: super.build(context),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMobileTable(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: 800, // Fixed maximum width for mobile
+        child: super.build(context),
+      ),
     );
   }
 }
@@ -296,7 +324,7 @@ class ProductsViewModel extends BaseTableProvider {
 
   @override
   Future loadData(BuildContext context) async {
-    const headers = ["Product Name", "Type", "Description", "Action"];
+    const headers = ["Product ", "Type", "Description", "Action"];
 
     List<List<TableDataRowsTableDataRows>> rows = [];
 
@@ -307,6 +335,8 @@ class ProductsViewModel extends BaseTableProvider {
         'productName': 'Product $id',
         'type': 'Type $id',
         'description': 'Description for Product $id',
+        'imageUrl':
+            'https://picsum.photos/50/50?random=$id', // Random image URL
       };
 
       // Apply search and filter logic
@@ -314,7 +344,7 @@ class ProductsViewModel extends BaseTableProvider {
           !item['productName']!
               .toLowerCase()
               .contains(searchQuery.toLowerCase())) {
-        continue; // Skip if the product name doesn't match the search query
+        continue; // Skip if the Product  doesn't match the search query
       }
 
       if (filterType != "All" && item['type'] != filterType) {
@@ -323,14 +353,14 @@ class ProductsViewModel extends BaseTableProvider {
 
       // Add the product to the rows
       List<TableDataRowsTableDataRows> row = [];
-      // ... (add cells to the row as before)
-// Create regular cells
-      var productNameCell = TableDataRowsTableDataRows()
+
+      var productCell = TableDataRowsTableDataRows()
         ..text = item['productName']
-        ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Product Name'
+        ..imageUrl = item['imageUrl'] // Add image URL
+        ..dataType = CellDataType.IMAGE_TEXT.type // Use IMAGE_TEXT type
+        ..columnName = 'Product'
         ..id = item['id'];
-      row.add(productNameCell);
+      row.add(productCell);
 
       var typeCell = TableDataRowsTableDataRows()
         ..text = item['type']

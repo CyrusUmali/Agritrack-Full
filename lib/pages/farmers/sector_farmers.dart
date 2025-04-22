@@ -72,7 +72,7 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
         _buildSearchBar(), // Add the search bar here
         const SizedBox(height: 16),
         SizedBox(
-          height: 380,
+          height: 500,
           child: DataTableWidget(
             onFarmerSelected: (farmer) {
               setState(() {
@@ -265,8 +265,26 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
 
   @override
   Widget build(BuildContext context) {
+    return ScreenTypeLayout.builder(
+      desktop: (context) => _buildDesktopTable(),
+      mobile: (context) => _buildMobileTable(context),
+      tablet: (context) => _buildMobileTable(context),
+    );
+  }
+
+  Widget _buildDesktopTable() {
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Responsive width calculation for desktop
+        double tableWidth;
+        if (constraints.maxWidth > 1200) {
+          tableWidth = 1200;
+        } else if (constraints.maxWidth > 800) {
+          tableWidth = constraints.maxWidth * 0.9;
+        } else {
+          tableWidth = constraints.maxWidth;
+        }
+
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
@@ -274,12 +292,22 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
               minWidth: constraints.maxWidth,
             ),
             child: SizedBox(
-              width: 1200,
+              width: tableWidth,
               child: super.build(context),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMobileTable(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: 1000, // Fixed maximum width for mobile
+        child: super.build(context),
+      ),
     );
   }
 }

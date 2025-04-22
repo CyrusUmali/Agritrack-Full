@@ -1,5 +1,7 @@
 // ignore_for_file: unnecessary_string_interpolations, unnecessary_brace_in_string_interps
 
+import 'dart:math';
+
 import 'package:flareline_uikit/core/mvvm/base_viewmodel.dart';
 import 'package:flareline_uikit/core/mvvm/base_widget.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
@@ -43,6 +45,23 @@ class LineChartWidget extends BaseWidget<LineChartProvider> {
         child: Stack(
           children: [
             SfCartesianChart(
+              annotations: [
+                CartesianChartAnnotation(
+                  widget: Container(
+                    child: Column(
+                      children: [
+                        Icon(Icons.info, color: Colors.red, size: 20),
+                        Text('Drought', style: TextStyle(fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                  coordinateUnit: CoordinateUnit.point,
+                  x: '2020',
+                  y: 19,
+                  horizontalAlignment: ChartAlignment.near,
+                ),
+                // Add more annotations as needed
+              ],
               plotAreaBorderWidth: 0,
               title: ChartTitle(
                   text: title,
@@ -57,16 +76,37 @@ class LineChartWidget extends BaseWidget<LineChartProvider> {
               ),
               primaryYAxis: const NumericAxis(
                   labelStyle: TextStyle(fontWeight: FontWeight.normal),
-                  labelFormat: '{value}%',
+                  labelFormat: '{value}kg',
                   axisLine: AxisLine(width: 0),
                   majorTickLines: MajorTickLines(color: Colors.transparent)),
               series: _getDefaultLineSeries(context, viewModel),
               tooltipBehavior: TooltipBehavior(
-                  enable: true,
-                  textStyle: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? FlarelineColors.darkBlackText
-                          : FlarelineColors.gray)),
+                enable: true,
+                header: '',
+                canShowMarker: true,
+                builder: (dynamic data, dynamic point, dynamic series,
+                    int pointIndex, int seriesIndex) {
+                  final note = series.dataSource[pointIndex]['note'];
+                  return Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black12, blurRadius: 4)
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('${data['x']}: ${data['y']}'),
+                        if (note != null)
+                          Text(note, style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
             if (!(isDropdownToggle ?? false)) dateToggleWidget(context),
             if (isDropdownToggle ?? false) dropdownDateToggleWidget(context)
@@ -193,19 +233,74 @@ class LineChartWidget extends BaseWidget<LineChartProvider> {
     );
   }
 
-  /// The method returns line series to chart.
   List<SplineSeries<dynamic, String>> _getDefaultLineSeries(
       BuildContext context, LineChartProvider viewModel) {
     return datas.map((item) {
       return SplineSeries<dynamic, String>(
-          dataSource: item['data'],
-          xValueMapper: (dynamic sales, _) => sales['x'],
-          yValueMapper: (dynamic sales, _) => sales['y'],
-          name: item['name'],
-          color: item['color'],
-          // isVisibleInLegend: false,
-          markerSettings: const MarkerSettings(isVisible: false));
+        dataSource: item['data'],
+        xValueMapper: (dynamic sales, _) => sales['x'],
+        yValueMapper: (dynamic sales, _) => sales['y'],
+        name: item['name'],
+        color: item['color'],
+        markerSettings: MarkerSettings(
+          isVisible: true,
+          shape: DataMarkerType.circle,
+          width: 6,
+          height: 6,
+          borderWidth: 2,
+          borderColor: item['color'],
+        ),
+        // Add special markers for important points
+        pointColorMapper: (dynamic data, _) {
+          // Highlight specific points (e.g., min/max values)
+          final values =
+              (item['data'] as List).map((d) => d['y'] as int).toList();
+          if (data['y'] == values.reduce(max) ||
+              data['y'] == values.reduce(min)) {
+            return Colors.red; // Highlight color for min/max points
+          }
+          return item['color'];
+        },
+        dataLabelSettings: DataLabelSettings(
+          isVisible: false, // We'll use tooltips instead
+        ),
+        onPointTap: (ChartPointDetails details) {
+          // Show a dialog or tooltip when a point is tapped
+          final data = details.dataPoints![details.pointIndex!].data;
+          _showPointInfo(context, data['note'], data['x'], data['y']);
+        },
+        onPointDoubleTap: (ChartPointDetails details) {
+          // Optional: Handle double tap
+        },
+        onPointLongPress: (ChartPointDetails details) {
+          // Optional: Handle long press
+        },
+      );
     }).toList();
+  }
+
+  void _showPointInfo(BuildContext context, String note, String x, num y) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Point Details ($x)"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Value: $y"),
+            SizedBox(height: 10),
+            Text("Note: $note"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("OK"),
+          ),
+        ],
+      ),
+    );
   }
 }
 

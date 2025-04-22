@@ -5,7 +5,6 @@ import 'package:flareline/pages/layout.dart';
 import './farmers_widget/household_info_card.dart';
 import './farmers_widget/farm_profile_card.dart';
 import './farmers_widget/emergency_contacts_card.dart';
-import './farmers_widget/household_info_card.dart';
 
 class FarmersProfile extends LayoutWidget {
   final Map<String, dynamic> farmer;
@@ -28,10 +27,17 @@ class FarmersProfile extends LayoutWidget {
   }
 }
 
-class FarmersProfileDesktop extends StatelessWidget {
+class FarmersProfileDesktop extends StatefulWidget {
   final Map<String, dynamic> farmer;
 
   const FarmersProfileDesktop({super.key, required this.farmer});
+
+  @override
+  State<FarmersProfileDesktop> createState() => _FarmersProfileDesktopState();
+}
+
+class _FarmersProfileDesktopState extends State<FarmersProfileDesktop> {
+  int _selectedFarmIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -40,15 +46,23 @@ class FarmersProfileDesktop extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _ProfileHeader(farmer: farmer),
+            _ProfileHeader(farmer: widget.farmer),
             const SizedBox(height: 24),
-            PersonalInfoCard(farmer: farmer),
+            PersonalInfoCard(farmer: widget.farmer),
             const SizedBox(height: 16),
-            HouseholdInfoCard(farmer: farmer),
+            HouseholdInfoCard(farmer: widget.farmer),
             const SizedBox(height: 16),
-            EmergencyContactsCard(farmer: farmer),
+            EmergencyContactsCard(farmer: widget.farmer),
             const SizedBox(height: 16),
-            FarmProfileCard(farmer: farmer),
+            FarmProfileCard(
+              farmer: widget.farmer,
+              selectedFarmIndex: _selectedFarmIndex,
+              onFarmSelected: (index) {
+                setState(() {
+                  _selectedFarmIndex = index;
+                });
+              },
+            ),
           ],
         ),
       ),
@@ -56,10 +70,17 @@ class FarmersProfileDesktop extends StatelessWidget {
   }
 }
 
-class FarmersProfileMobile extends StatelessWidget {
+class FarmersProfileMobile extends StatefulWidget {
   final Map<String, dynamic> farmer;
 
   const FarmersProfileMobile({super.key, required this.farmer});
+
+  @override
+  State<FarmersProfileMobile> createState() => _FarmersProfileMobileState();
+}
+
+class _FarmersProfileMobileState extends State<FarmersProfileMobile> {
+  int _selectedFarmIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -68,15 +89,24 @@ class FarmersProfileMobile extends StatelessWidget {
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
-            _ProfileHeader(farmer: farmer, isMobile: true),
+            _ProfileHeader(farmer: widget.farmer, isMobile: true),
             const SizedBox(height: 16),
-            PersonalInfoCard(farmer: farmer, isMobile: true),
+            PersonalInfoCard(farmer: widget.farmer, isMobile: true),
             const SizedBox(height: 16),
-            HouseholdInfoCard(farmer: farmer, isMobile: true),
+            HouseholdInfoCard(farmer: widget.farmer, isMobile: true),
             const SizedBox(height: 16),
-            EmergencyContactsCard(farmer: farmer, isMobile: true),
+            EmergencyContactsCard(farmer: widget.farmer, isMobile: true),
             const SizedBox(height: 16),
-            FarmProfileCard(farmer: farmer, isMobile: true),
+            FarmProfileCard(
+              farmer: widget.farmer,
+              isMobile: true,
+              selectedFarmIndex: _selectedFarmIndex,
+              onFarmSelected: (index) {
+                setState(() {
+                  _selectedFarmIndex = index;
+                });
+              },
+            ),
           ],
         ),
       ),
@@ -92,11 +122,8 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return CommonCard(
+      margin: EdgeInsets.zero,
       child: Stack(
         children: [
           SizedBox(
@@ -177,16 +204,57 @@ final farmerData = {
   'isIndigenous': false,
   'governmentId': '123-456-789-000',
   'association': 'Farmers Cooperative',
-  // Add all other required fields...
   'farms': [
     {
+      'farmName': 'Riverbank Farm',
       'location': 'Near the river',
       'barangay': 'Barangay 1',
       'city': 'Cityville',
-      'area': 5.2,
-      'commodities': ['Rice', 'Corn'],
+      'areaHectares': 5.2,
+      'ownershipType': 'Owned',
+      'commodities': [
+        {'type': 'Rice', 'area': 3.0},
+        {'type': 'Corn', 'area': 2.2}
+      ],
+      'soilType': 'Clay loam',
+      'irrigationType': 'Gravity irrigation',
+      'gpsCoordinates': {'latitude': 14.5995, 'longitude': 120.9842},
       'livestockCount': 0,
       'poultryCount': 0,
+    },
+    {
+      'farmName': 'Hilltop Farm',
+      'location': 'Mountain area',
+      'barangay': 'Barangay 2',
+      'city': 'Cityville',
+      'areaHectares': 8.5,
+      'ownershipType': 'Leased',
+      'commodities': [
+        {'type': 'Coffee', 'area': 5.0},
+        {'type': 'Banana', 'area': 3.5}
+      ],
+      'soilType': 'Volcanic loam',
+      'irrigationType': 'Rain-fed',
+      'gpsCoordinates': {'latitude': 14.6012, 'longitude': 120.9828},
+      'livestockCount': 10,
+      'poultryCount': 50,
+    },
+    {
+      'farmName': 'Hilltop Farm',
+      'location': 'Mountain area',
+      'barangay': 'Barangay 2',
+      'city': 'Cityville',
+      'areaHectares': 8.5,
+      'ownershipType': 'Leased',
+      'commodities': [
+        {'type': 'Coffee', 'area': 5.0},
+        {'type': 'Banana', 'area': 3.5}
+      ],
+      'soilType': 'Volcanic loam',
+      'irrigationType': 'Rain-fed',
+      'gpsCoordinates': {'latitude': 14.6012, 'longitude': 120.9828},
+      'livestockCount': 10,
+      'poultryCount': 50,
     }
   ]
 };

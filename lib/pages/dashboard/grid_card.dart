@@ -6,6 +6,9 @@ import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:flareline/pages/dashboard/analytics_widget.dart';
 
+import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
+import 'package:iconify_flutter_plus/icons/mdi.dart';
+
 class GridCard extends StatelessWidget {
   const GridCard({super.key});
 
@@ -24,8 +27,8 @@ class GridCard extends StatelessWidget {
         Expanded(
           child: _itemCardWidget(
             context,
-            Icons.data_object,
-            'Total Land Area',
+            Icons.landscape_outlined,
+            'Land Area',
             'Size:',
             '',
             true,
@@ -39,7 +42,7 @@ class GridCard extends StatelessWidget {
         Expanded(
           child: _itemCardWidget(
             context,
-            Icons.shopping_cart,
+            Icons.nature_outlined,
             'Total Products',
             'Types:',
             '',
@@ -69,7 +72,7 @@ class GridCard extends StatelessWidget {
         Expanded(
           child: _itemCardWidget(
             context,
-            Icons.security_rounded,
+            Icons.person_2_outlined,
             'Total Farmers',
             'Active:',
             '',
@@ -97,8 +100,8 @@ class GridCard extends StatelessWidget {
           children: [
             _itemCardWidget(
               context,
-              Icons.data_object,
-              'Total Land Area',
+              Icons.landscape_outlined,
+              'Land Area',
               'Size:',
               '',
               true,
@@ -109,7 +112,7 @@ class GridCard extends StatelessWidget {
             ),
             _itemCardWidget(
               context,
-              Icons.shopping_cart,
+              Icons.nature_outlined,
               'Total Products',
               'Types:',
               '',
@@ -121,7 +124,7 @@ class GridCard extends StatelessWidget {
             ),
             _itemCardWidget(
               context,
-              Icons.group,
+              Icons.view_list_outlined,
               'Annual Yield',
               'Volume:',
               '',

@@ -1,4 +1,6 @@
+import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import './section_header.dart';
 import './detail_field.dart';
 import '../../farms/farm_widgets/farm_map_card.dart';
@@ -22,9 +24,10 @@ class FarmProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final farms = farmer['farms'] as List<dynamic>? ?? [];
     final currentFarm = farms.isNotEmpty ? farms[selectedFarmIndex] : null;
+    final hasMultipleFarms = farms.length > 1;
 
-    return Card(
-      elevation: 1,
+    return CommonCard(
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 12 : 16),
         child: Column(
@@ -52,27 +55,16 @@ class FarmProfileCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            if (farms.length > 1) ...[
-              SizedBox(
-                height: 48,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: farms.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: FilterChip(
-                        label: Text('Farm ${index + 1}'),
-                        selected: selectedFarmIndex == index,
-                        onSelected: (selected) {
-                          if (onFarmSelected != null) {
-                            onFarmSelected!(index);
-                          }
-                        },
-                      ),
-                    );
-                  },
-                ),
+            if (hasMultipleFarms) ...[
+              _FarmSelector(
+                farms: farms,
+                selectedIndex: selectedFarmIndex,
+                onSelected: (index) {
+                  if (onFarmSelected != null) {
+                    onFarmSelected!(
+                        index); // This triggers the parent's setState
+                  }
+                },
               ),
               const SizedBox(height: 16),
             ],
@@ -98,6 +90,107 @@ class FarmProfileCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _FarmSelector extends StatelessWidget {
+  final List<dynamic> farms;
+  final int selectedIndex;
+  final Function(int)? onSelected;
+
+  const _FarmSelector({
+    required this.farms,
+    required this.selectedIndex,
+    this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select Farm:',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color:
+                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: List.generate(farms.length, (index) {
+              final farm = farms[index];
+              final isSelected = index == selectedIndex;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Material(
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(4),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(4),
+                      onTap: () {
+                        onSelected?.call(index); // This triggers the callback
+                        HapticFeedback
+                            .lightImpact(); // Optional: Add haptic feedback
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 8),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Farm ${index + 1}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: isSelected
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onPrimaryContainer
+                                        : null,
+                                  ),
+                            ),
+                            if (farm['farmName'] != null)
+                              Text(
+                                farm['farmName'].toString(),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: isSelected
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .onPrimaryContainer
+                                          : null,
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
     );
   }
 }

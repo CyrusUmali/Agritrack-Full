@@ -52,11 +52,6 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
                     },
                   ),
                 ),
-                // const SizedBox(width: 16),
-                // Expanded(
-                //   flex: 1,
-                //   child: FarmerDetailWidget(farmer: selectedFarmer),
-                // ),
               ],
             ),
           ),

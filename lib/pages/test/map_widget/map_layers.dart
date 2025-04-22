@@ -1,8 +1,7 @@
 // File: map_widget/map_layers.dart
 // ignore_for_file: deprecated_member_use
-
+import 'polygon_manager.dart';
 import 'package:flareline/pages/test/map_widget/pin_style.dart';
-import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -62,9 +61,6 @@ class MapLayersHelper {
     );
   }
 
-// File: map_widget/map_layers.dart
-// Add this new method to the MapLayersHelper class
-
   /// Creates a layer with interactive circles for barangay centers that will
   /// render even if the polygon itself is not shown
   static MarkerLayer createBarangayCenterFallbackLayer(
@@ -72,7 +68,7 @@ class MapLayersHelper {
     Function(PolygonData) onTap, {
     Color circleColor = Colors.blue,
     Color iconColor = Colors.white,
-    double size = 30.0,
+    double size = 36.0,
     List<String>? filteredBarangays,
   }) {
     return MarkerLayer(
@@ -110,15 +106,14 @@ class MapLayersHelper {
                       color: isFiltered ? Colors.white : iconColor,
                       size: size * 0.5,
                     ),
-                    if (size > 35) // Only show text if marker is large enough
-                      Text(
-                        'Brgy',
-                        style: TextStyle(
-                          color: isFiltered ? Colors.white : iconColor,
-                          fontSize: size * 0.2,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Text(
+                      'Brgy',
+                      style: TextStyle(
+                        color: isFiltered ? Colors.white : iconColor,
+                        fontSize: size * 0.2,
+                        fontWeight: FontWeight.bold,
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -160,6 +155,8 @@ class MapLayersHelper {
     Function(int, int) onMarkerTap,
     Function(int) onCurrentPolygonMarkerTap,
     List<PinStyle> pinStyles,
+    PolygonManager polygonManager, // Add this parameter
+    BuildContext context,
   ) {
     return MarkerLayer(
       markers: [
@@ -167,8 +164,8 @@ class MapLayersHelper {
         for (int i = 0; i < currentPolygon.length; i++)
           Marker(
             point: currentPolygon[i],
-            width: 30.0,
-            height: 30.0,
+            width: 36.0,
+            height: 36.0,
             child: GestureDetector(
               onTap: () {
                 onCurrentPolygonMarkerTap(i);
@@ -177,7 +174,14 @@ class MapLayersHelper {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: i == 0 ? Colors.red : Colors.green,
-                  border: Border.all(color: Colors.black, width: 2),
+                  border: Border.all(color: Colors.white, width: 2.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -187,15 +191,31 @@ class MapLayersHelper {
         for (int i = 0; i < polygons.length; i++)
           Marker(
             point: calculateCenter(polygons[i]),
-            width: 35.0,
-            height: 35.0,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color.fromARGB(255, 0, 0, 0),
-                border: Border.all(color: Colors.transparent, width: 3),
+            width: 30.0,
+            height: 30.0,
+            child: GestureDetector(
+              onTap: () => polygonManager.selectPolygon(i, context: context),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: getPinColor(pinStyles[i]).withOpacity(
+                      polygonManager.selectedPolygonIndex == i ? 0.8 : 0.6),
+                  border: Border.all(
+                    color: Colors.white,
+                    width: polygonManager.selectedPolygonIndex == i ? 3.0 : 2.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: getPinIcon(pinStyles[i]),
+                ),
               ),
-              child: getPinIcon(pinStyles[i]),
             ),
           ),
       ],
@@ -283,9 +303,17 @@ class MapLayersHelper {
   /// Available map layer templates
   static final Map<String, String> availableLayers = {
     // OpenStreetMap & variants (public domain)
-
     "OSM": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+    // Satellite/Terrain
     "Google Satellite": "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+
+    "Google Satellite (No Labels)":
+        "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+
+    // ESRI maps
+    "ESRI World Imagery":
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
 
     // Wikimedia (free tiles)
     "Wikimedia": "https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png",
@@ -293,6 +321,11 @@ class MapLayersHelper {
     // CartoDB (free with attribution)
     "CartoDB Light":
         "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+
+    "OpenTopoMap": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    "CyclOSM":
+        "https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+    "Humanitarian": "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
   };
 }
 

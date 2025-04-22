@@ -56,7 +56,7 @@ dependencies:
   flutter_colorpicker: ^1.0.3
 
   provider: ^6.1.1
-
+  docx_template: ^0.4.0
   popover: ^0.2.9
 
   syncfusion_flutter_charts: ^27.1.58
@@ -78,7 +78,7 @@ dependencies:
 
   flutter_svg: ^2.0.9
 
-  calendar_date_picker2: ^1.1.7
+  calendar_date_picker2: ^2.0.0
 
   file_picker: ^8.1.4
 
@@ -132,6 +132,13 @@ dependencies:
   draggable_bottom_sheet: ^1.0.2
   wolt_modal_sheet: ^0.11.0
   flutter_map_tile_caching: ^9.0.1
+  font_awesome_flutter: ^10.8.0
+  iconify_flutter_plus: ^1.0.4
+  data_table_2: ^2.6.0
+  printing: ^5.14.2
+  flutter_date_range_picker: ^0.1.1
+  excel: ^4.0.6
+  universal_html: ^2.2.4
 
 
 dependency_overrides:
@@ -184,6 +191,7 @@ flutter:
     - assets/crm/
     - assets/map.html
     - assets/barangays.json
+    - assets/barangay.json
     - assets/map/barangays.geojson
   #   - assets/a_dot_burr.jpeg
   #   - assets/a_dot_ham.jpeg

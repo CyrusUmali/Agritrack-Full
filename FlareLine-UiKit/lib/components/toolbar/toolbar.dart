@@ -2,11 +2,7 @@
 
 library flareline_uikit;
 
-import 'package:flareline_uikit/components/badge/anim_badge.dart';
-import 'package:flareline_uikit/components/buttons/button_widget.dart';
-import 'package:flareline_uikit/components/forms/search_widget.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
-import 'package:flareline_uikit/service/localization_provider.dart';
 import 'package:flareline_uikit/service/theme_provider.dart';
 import 'package:flutter/material.dart';
 
@@ -58,66 +54,70 @@ class ToolBarWidget extends StatelessWidget {
         }),
         ResponsiveBuilder(builder: (context, sizingInformation) {
           // Check the sizing information here and return your UI
-          if (!(showMore ?? false) &&
-              sizingInformation.deviceScreenType == DeviceScreenType.desktop) {
-            return Container(
-              margin: const EdgeInsets.only(left: 10),
-              width: 280,
-              child: const SearchWidget(),
-            );
-          }
+          // if (!(showMore ?? false) &&
+          //     sizingInformation.deviceScreenType == DeviceScreenType.desktop) {
+          //   return Container(
+          //     margin: const EdgeInsets.only(left: 10),
+          //     width: 280,
+          //     child: const SearchWidget(),
+          //   );
+          // }
 
           return const SizedBox();
         }),
         const Spacer(),
         if (showChangeTheme ?? false) const ToggleWidget(),
+        // const SizedBox(
+        //   width: 10,
+        // ),
+
+        // InkWell(
+        //   child: Stack(
+        //     alignment: Alignment.topRight,
+        //     children: [
+        //       Container(
+        //           width: 34,
+        //           height: 34,
+        //           alignment: Alignment.center,
+        //           decoration: const BoxDecoration(
+        //               color: FlarelineColors.background,
+        //               shape: BoxShape.circle),
+        //           child: SvgPicture.asset('assets/toolbar/alarm.svg',
+        //               width: 18, height: 18)),
+
+        //       const Align(
+        //         child: AnimBadge(),
+        //       )
+        //     ],
+        //   ),
+        // ),
+
         const SizedBox(
           width: 10,
         ),
-        InkWell(
-          child: Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Container(
-                  width: 34,
-                  height: 34,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                      color: FlarelineColors.background,
-                      shape: BoxShape.circle),
-                  child: SvgPicture.asset('assets/toolbar/alarm.svg',
-                      width: 18, height: 18)),
-              const Align(
-                child: AnimBadge(),
-              )
-            ],
-          ),
-        ),
-        const SizedBox(
-          width: 10,
-        ),
-        InkWell(
-          child: Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Container(
-                  width: 34,
-                  height: 34,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                      color: FlarelineColors.background,
-                      shape: BoxShape.circle),
-                  child: SvgPicture.asset('assets/toolbar/message.svg',
-                      width: 18, height: 18)),
-              const Align(
-                child: AnimBadge(),
-              )
-            ],
-          ),
-        ),
-        const SizedBox(
-          width: 20,
-        ),
+
+        // InkWell(
+        //   child: Stack(
+        //     alignment: Alignment.topRight,
+        //     children: [
+        //       Container(
+        //           width: 34,
+        //           height: 34,
+        //           alignment: Alignment.center,
+        //           decoration: const BoxDecoration(
+        //               color: FlarelineColors.background,
+        //               shape: BoxShape.circle),
+        //           child: SvgPicture.asset('assets/toolbar/message.svg',
+        //               width: 18, height: 18)),
+        //       const Align(
+        //         child: AnimBadge(),
+        //       )
+        //     ],
+        //   ),
+        // ),
+        // const SizedBox(
+        //   width: 20,
+        // ),
         if (userInfoWidget != null) userInfoWidget!,
         InkWell(
           child: Container(
@@ -150,10 +150,10 @@ class ToolBarWidget extends StatelessWidget {
                   child: const Text('Settings'),
                   onTap: () async {},
                 ),
-                PopupMenuItem<String>(
-                    enabled: false,
-                    value: 'value04',
-                    child: _languagesWidget(context)),
+                // PopupMenuItem<String>(
+                //     enabled: false,
+                //     value: 'value04',
+                //     child: _languagesWidget(context)),
                 PopupMenuItem<String>(
                   value: 'value05',
                   child: const Text('Log out'),
@@ -185,30 +185,30 @@ class ToolBarWidget extends StatelessWidget {
     Navigator.of(context).popAndPushNamed('/signIn');
   }
 
-  Widget _languagesWidget(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: context.read<LocalizationProvider>().supportedLocales.map((e) {
-        return SizedBox(
-          width: 50,
-          height: 20,
-          child:
-              Consumer<LocalizationProvider>(builder: (ctx, provider, child) {
-            return ButtonWidget(
-              btnText: e.languageCode,
-              type: e.languageCode == provider.languageCode
-                  ? ButtonType.primary.type
-                  : null,
-              onTap: () {
-                context.read<LocalizationProvider>().locale = e;
-              },
-            );
-          }),
-        );
-      }).toList(),
-    );
-  }
+  // Widget _languagesWidget(BuildContext context) {
+  //   return Wrap(
+  //     spacing: 8,
+  //     runSpacing: 8,
+  //     children: context.read<LocalizationProvider>().supportedLocales.map((e) {
+  //       return SizedBox(
+  //         width: 50,
+  //         height: 20,
+  //         child:
+  //             Consumer<LocalizationProvider>(builder: (ctx, provider, child) {
+  //           return ButtonWidget(
+  //             btnText: e.languageCode,
+  //             type: e.languageCode == provider.languageCode
+  //                 ? ButtonType.primary.type
+  //                 : null,
+  //             onTap: () {
+  //               context.read<LocalizationProvider>().locale = e;
+  //             },
+  //           );
+  //         }),
+  //       );
+  //     }).toList(),
+  //   );
+  // }
 }
 
 class ToggleWidget extends StatelessWidget {

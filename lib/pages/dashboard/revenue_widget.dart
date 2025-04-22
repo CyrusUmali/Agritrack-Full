@@ -25,7 +25,7 @@ class RevenueWidget extends StatelessWidget {
 
   Widget _revenueWidgetDesktop(BuildContext context) {
     return SizedBox(
-      height: 420,
+      height: 500,
       child: Row(
         children: [
           Expanded(

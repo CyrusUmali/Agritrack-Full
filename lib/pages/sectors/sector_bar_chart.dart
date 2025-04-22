@@ -3,8 +3,64 @@ import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:provider/provider.dart';
 
-class SectorBarChart extends StatelessWidget {
+class SectorBarChart extends StatefulWidget {
   const SectorBarChart({super.key});
+
+  @override
+  State<SectorBarChart> createState() => _SectorBarChartState();
+}
+
+class _SectorBarChartState extends State<SectorBarChart> {
+  int selectedYear = DateTime.now().year;
+
+  Future<void> _selectYear(BuildContext context) async {
+    final int? picked = await showDialog<int>(
+      context: context,
+      builder: (BuildContext context) {
+        int tempYear = selectedYear;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Select Year'),
+              content: SizedBox(
+                height: 300,
+                width: 300,
+                child: YearPicker(
+                  selectedDate: DateTime(tempYear),
+                  firstDate: DateTime(2018),
+                  lastDate: DateTime(2025),
+                  onChanged: (DateTime dateTime) {
+                    setState(() {
+                      tempYear = dateTime.year;
+                    });
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, tempYear);
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        selectedYear = picked;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +96,7 @@ class SectorBarChart extends StatelessWidget {
                         const SizedBox(height: 12),
                         Align(
                           alignment: Alignment.center,
-                          child: _buildDateDropdown(),
+                          child: _buildYearSelector(context),
                         ),
                       ],
                     )
@@ -54,7 +110,7 @@ class SectorBarChart extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        _buildDateDropdown(),
+                        _buildYearSelector(context),
                       ],
                     ),
             ),
@@ -81,20 +137,9 @@ class SectorBarChart extends StatelessWidget {
     );
   }
 
-  Widget _buildDateDropdown() {
-    return PopupMenuButton<String>(
-      initialValue: '2023',
-      onSelected: (String value) {
-        // Handle date selection
-      },
-      itemBuilder: (BuildContext context) {
-        return ['2021', '2022', '2023', '2024'].map((String item) {
-          return PopupMenuItem<String>(
-            value: item,
-            child: Text(item),
-          );
-        }).toList();
-      },
+  Widget _buildYearSelector(BuildContext context) {
+    return InkWell(
+      onTap: () => _selectYear(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -104,7 +149,7 @@ class SectorBarChart extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('2023'), // Default selected value
+            Text(selectedYear.toString()),
             const SizedBox(width: 8),
             const Icon(Icons.arrow_drop_down, size: 20),
           ],

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
+import 'package:iconify_flutter_plus/icons/mdi.dart';
 
 enum PinStyle {
   rice,
@@ -12,28 +14,47 @@ enum PinStyle {
 Widget getPinIcon(PinStyle pinStyle) {
   switch (pinStyle) {
     case PinStyle.rice:
-      return Icon(Icons.rice_bowl, color: Colors.white);
+      return const Iconify(Mdi.rice, color: Colors.white, size: 24);
     case PinStyle.corn:
-      return Icon(Icons.eco, color: Colors.yellow);
+      return const Iconify(Mdi.corn, color: Colors.white, size: 24);
     case PinStyle.highvaluecrop:
-      return Icon(Icons.attach_money, color: Colors.green);
+      return const Iconify(Mdi.fruit_grapes_outline,
+          color: Color.fromARGB(255, 255, 255, 255), size: 24);
     case PinStyle.livestock:
-      return Icon(Icons.pets, color: Colors.brown);
+      return const Iconify(Mdi.cow, color: Colors.white, size: 24);
     case PinStyle.fishery:
-      return Icon(Icons.water, color: Colors.blue);
+      return const Iconify(Mdi.fish,
+          color: Color.fromARGB(255, 255, 255, 255), size: 24);
     case PinStyle.organic:
-      return Icon(Icons.spa, color: Colors.green);
+      return const Iconify(Mdi.leaf, color: Colors.white, size: 24);
   }
 }
 
-/// Converts a string to a PinStyle enum value
-PinStyle parsePinStyle(String pinStyle) {
+Color getPinColor(PinStyle pinStyle) {
   switch (pinStyle) {
+    case PinStyle.rice:
+      return Colors.grey;
+    case PinStyle.corn:
+      return Colors.yellow;
+    case PinStyle.highvaluecrop:
+      return Colors.orange;
+    case PinStyle.livestock:
+      return Colors.brown;
+    case PinStyle.fishery:
+      return Colors.blue;
+    case PinStyle.organic:
+      return Colors.green;
+  }
+}
+
+PinStyle parsePinStyle(String pinStyle) {
+  switch (pinStyle.toLowerCase()) {
+    // Case-insensitive matching
     case 'rice':
       return PinStyle.rice;
     case 'corn':
       return PinStyle.corn;
-    case 'Test':
+    case 'highvaluecrop':
       return PinStyle.highvaluecrop;
     case 'livestock':
       return PinStyle.livestock;
@@ -42,6 +63,6 @@ PinStyle parsePinStyle(String pinStyle) {
     case 'organic':
       return PinStyle.organic;
     default:
-      return PinStyle.fishery; // Default to fishery if not found
+      return PinStyle.fishery;
   }
 }

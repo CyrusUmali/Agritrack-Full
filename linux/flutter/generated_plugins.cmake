@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   desktop_drop
   file_selector_linux
   objectbox_flutter_libs
+  printing
   screen_retriever_linux
   url_launcher_linux
   window_manager

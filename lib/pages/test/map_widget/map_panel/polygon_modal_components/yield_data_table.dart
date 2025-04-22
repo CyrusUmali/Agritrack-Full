@@ -1,101 +1,156 @@
+import 'dart:math';
+
+import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
+import '../../pin_style.dart';
 
 class YieldDataTable extends StatefulWidget {
-  const YieldDataTable({super.key});
+  final PolygonData polygon;
+
+  const YieldDataTable({super.key, required this.polygon});
 
   @override
   State<YieldDataTable> createState() => _YieldDataTableState();
 }
 
 class _YieldDataTableState extends State<YieldDataTable> {
-  String _selectedProduct = 'Tilapia';
+  late String _selectedProduct;
   bool _showMonthlyData = false;
-  String _selectedYear = '2024'; // Default selected year for monthly data
+  String _selectedYear = '2024';
+  late Map<String, String> _productImages;
+  late Map<String, Map<String, double>> _yieldData;
+  late Map<String, Map<String, Map<String, double>>> _monthlyData;
 
-  final Map<String, IconData> _productIcons = {
-    'Tilapia': Icons.water,
-    'Bangus': Icons.set_meal,
-    'Shrimp': Icons.catching_pokemon,
-  };
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
 
-  final Map<String, Map<String, double>> _yieldData = {
-    "Tilapia": {
-      "2018": 1000,
-      "2019": 1200,
-      "2020": 1100,
-      "2023": 1150,
-      "2024": 1250,
-    },
-    "Bangus": {
-      "2018": 800,
-      "2019": 900,
-      "2020": 850,
-      "2023": 880,
-      "2024": 920,
-    },
-    "Shrimp": {
-      "2018": 500,
-      "2019": 600,
-      "2020": 550,
-      "2023": 580,
-      "2024": 620,
-    },
-  };
+  @override
+  void didUpdateWidget(covariant YieldDataTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.polygon.pinStyle != widget.polygon.pinStyle) {
+      _initializeData();
+    }
+  }
 
-  final Map<String, Map<String, Map<String, double>>> _monthlyData = {
-    "2023": {
-      "Tilapia": {
-        "Jan": 110,
-        "Feb": 120,
-        "Mar": 115,
-        "Apr": 130,
-        "May": 140,
-        "Jun": 135,
-      },
-      "Bangus": {
-        "Jan": 80,
-        "Feb": 85,
-        "Mar": 75,
-        "Apr": 90,
-        "May": 100,
-        "Jun": 95,
-      },
-      "Shrimp": {
-        "Jan": 50,
-        "Feb": 55,
-        "Mar": 45,
-        "Apr": 60,
-        "May": 70,
-        "Jun": 65,
-      },
-    },
-    "2024": {
-      "Tilapia": {
-        "Jan": 120,
-        "Feb": 130,
-        "Mar": 125,
-        "Apr": 140,
-        "May": 150,
-        "Jun": 145,
-      },
-      "Bangus": {
-        "Jan": 90,
-        "Feb": 95,
-        "Mar": 85,
-        "Apr": 100,
-        "May": 110,
-        "Jun": 105,
-      },
-      "Shrimp": {
-        "Jan": 60,
-        "Feb": 65,
-        "Mar": 55,
-        "Apr": 70,
-        "May": 80,
-        "Jun": 75,
-      },
-    },
-  };
+  void _initializeData() {
+    final products = _getFarmProducts(widget.polygon.pinStyle);
+    _selectedProduct = products.first;
+    _productImages = _getProductImages(products);
+    _yieldData = _generateYieldData(products);
+    _monthlyData = _generateMonthlyData(products);
+  }
+
+  List<String> _getFarmProducts(PinStyle pinStyle) {
+    switch (pinStyle) {
+      case PinStyle.fishery:
+        return ["Tilapia", "Bangus", "Hipon"];
+      case PinStyle.rice:
+        return ["Rice"];
+      case PinStyle.corn:
+        return ["Corn"];
+      case PinStyle.organic:
+        return ["Carrot"];
+      case PinStyle.highvaluecrop:
+        return ["Cucumber", "Tomato"];
+      case PinStyle.livestock:
+        return ["Carabao", "Cow", "Horse"];
+      default:
+        return ["Mixed Crops", "Vegetables", "Fruits"];
+    }
+  }
+
+  Map<String, String> _getProductImages(List<String> products) {
+    final imageMap = {
+      "Cow":
+          "https://tse1.mm.bing.net/th/id/OIP.rYY066FUrcasLXCSjpu7nAHaFj?rs=1&pid=ImgDetMain",
+      "Carabao":
+          "https://tse3.mm.bing.net/th/id/OIP.oiSUKijwLvV_6VhKEHTCzAAAAA?rs=1&pid=ImgDetMain",
+      "Horse":
+          "https://cms.bbcearth.com/sites/default/files/factfiles/2024-07/horse1.jpg?imwidth=1008",
+      "Rice":
+          "https://tse2.mm.bing.net/th/id/OIP.8t3f-Mku5Gv2sm3mPXUvSgHaE7?rs=1&pid=ImgDetMain",
+      "Corn": "https://www.drupal.org/files/issues/Corn.jpg",
+      "Tomato":
+          "https://tse2.mm.bing.net/th/id/OIP.BDihZZH52qoMZXSR-PCLBQHaHa?rs=1&pid=ImgDetMain",
+      "Carrot":
+          "https://assets-shop.voltz-maraichage.com/photos/var/r3/caro-miamif1.jpg",
+      "Cucumber":
+          "https://chefsmandala.com/wp-content/uploads/2018/03/Cucumber.jpg",
+      "Tilapia":
+          "https://tse2.mm.bing.net/th/id/OIP.NvFLxnMJXfjOsnwbpbfZzwHaE8?rs=1&pid=ImgDetMain",
+      "Hipon":
+          "https://tse3.mm.bing.net/th/id/OIP.tcGziAgKYkEULjonK2K9BAHaFj?rs=1&pid=ImgDetMain",
+      "Bangus":
+          "https://farmtodoorstep.co/wp-content/uploads/2021/09/bangus-alcantara.jpeg",
+    };
+
+    return Map.fromEntries(
+      products.map((product) => MapEntry(product, imageMap[product] ?? '')),
+    );
+  }
+
+  Map<String, Map<String, double>> _generateYieldData(List<String> products) {
+    final random = Random();
+    final data = <String, Map<String, double>>{};
+
+    for (final product in products) {
+      final productData = <String, double>{};
+      for (var year = 2018; year <= 2024; year++) {
+        if (year != 2021 && year != 2022) {
+          // Skip some years for realism
+          productData[year.toString()] =
+              (random.nextDouble() * 1000 + 500).roundToDouble();
+        }
+      }
+      data[product] = productData;
+    }
+
+    return data;
+  }
+
+  Map<String, Map<String, Map<String, double>>> _generateMonthlyData(
+      List<String> products) {
+    final random = Random();
+    final data = <String, Map<String, Map<String, double>>>{};
+
+    for (var year = 2023; year <= 2024; year++) {
+      final yearData = <String, Map<String, double>>{};
+      for (final product in products) {
+        final productData = <String, double>{};
+        for (var month = 1; month <= 6; month++) {
+          // Only first half year for demo
+          final monthName = _getMonthName(month);
+          productData[monthName] =
+              (random.nextDouble() * 200 + 50).roundToDouble();
+        }
+        yearData[product] = productData;
+      }
+      data[year.toString()] = yearData;
+    }
+
+    return data;
+  }
+
+  String _getMonthName(int month) {
+    return [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ][month - 1];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,13 +179,19 @@ class _YieldDataTableState extends State<YieldDataTable> {
                   color: colorScheme.onSurface,
                 ),
               ),
+              Text(
+                widget.polygon.pinStyle.toString().split('.').last,
+                style: textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.primary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
 
           // Product selection cards
           SizedBox(
-            height: 120,
+            height: 140,
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: _yieldData.keys.map((product) {
@@ -159,18 +220,17 @@ class _YieldDataTableState extends State<YieldDataTable> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
+                            width: 48,
+                            height: 48,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: _selectedProduct == product
                                   ? colorScheme.primary
                                   : colorScheme.secondaryContainer,
-                            ),
-                            padding: const EdgeInsets.all(12),
-                            child: Icon(
-                              _productIcons[product],
-                              color: _selectedProduct == product
-                                  ? colorScheme.onPrimary
-                                  : colorScheme.onSecondaryContainer,
+                              image: DecorationImage(
+                                image: NetworkImage(_productImages[product]!),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -180,6 +240,8 @@ class _YieldDataTableState extends State<YieldDataTable> {
                               color: colorScheme.onSurface,
                             ),
                             textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),

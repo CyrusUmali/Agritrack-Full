@@ -32,6 +32,7 @@ class TableDataRowsTableDataRows {
   String? dataType;
   String? tagType;
   String? id;
+  String? imageUrl;
   String? columnName;
   String? align;
   dynamic data;

@@ -1,96 +1,107 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flareline/pages/test/new_page.dart';
 
-class MapMiniView extends StatelessWidget {
+class MapMiniView extends StatefulWidget {
   final bool isMobile;
 
   const MapMiniView({super.key, this.isMobile = false});
 
   @override
-  Widget build(BuildContext context) {
-    return _maps(context);
-  }
+  State<MapMiniView> createState() => _MapMiniViewState();
+}
 
-  Widget _maps(BuildContext context) {
+class _MapMiniViewState extends State<MapMiniView> {
+  bool _isHovered = false;
+  bool _isTapped = false;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(0),
+      padding: const EdgeInsets.only(bottom: 10, top: 10),
       child: Column(
         children: [
-          const SizedBox(height: 16),
           Expanded(
-            child: Card(
-              elevation: 1,
-              clipBehavior: Clip.antiAlias,
-              child: FlutterMap(
-                options: MapOptions(
-                  center: LatLng(14.077557, 121.328938), // Philippines location
-                  zoom: 13,
-                  minZoom: 13,
-                  maxBounds: LatLngBounds(
-                    LatLng(13.927557, 121.178938), // SW bounds
-                    LatLng(14.227557, 121.478938), // NE bounds
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              onEnter: (_) {
+                if (!widget.isMobile) {
+                  setState(() => _isHovered = true);
+                }
+              },
+              onExit: (_) {
+                if (!widget.isMobile) {
+                  setState(() {
+                    _isHovered = false;
+                    _isTapped = false;
+                  });
+                }
+              },
+              child: GestureDetector(
+                onTapDown: (_) => setState(() => _isTapped = true),
+                onTapUp: (_) => setState(() => _isTapped = false),
+                onTapCancel: () => setState(() => _isTapped = false),
+                onTap: () {
+                  Navigator.pushNamed(context, '/newPage');
+                },
+                child: Card(
+                  elevation: (_isHovered || _isTapped) ? 4 : 1,
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    children: [
+                      FlutterMap(
+                        options: MapOptions(
+                          center: LatLng(14.077557, 121.328938),
+                          zoom: 13,
+                          minZoom: 13,
+                          maxBounds: LatLngBounds(
+                            LatLng(13.927557, 121.178938),
+                            LatLng(14.227557, 121.478938),
+                          ),
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+                            userAgentPackageName: 'com.example.app',
+                          ),
+                        ],
+                      ),
+                      if (_isHovered || _isTapped)
+                        Container(
+                          color: Colors.black.withOpacity(0.3),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  widget.isMobile
+                                      ? Icons.touch_app
+                                      : Icons.zoom_in,
+                                  size: 48,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.isMobile
+                                      ? 'Tap to View Map'
+                                      : 'View Full Map',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
-                    userAgentPackageName: 'com.example.app',
-                  ),
-                  // Example polygon for a region in the Philippines
-                  // PolygonLayer(
-                  //   polygons: [
-                  //     Polygon(
-                  //       points: [
-                  //         LatLng(14.05, 121.30),
-                  //         LatLng(14.05, 121.35),
-                  //         LatLng(14.10, 121.35),
-                  //         LatLng(14.10, 121.30),
-                  //       ],
-                  //       color: Colors.blue.withOpacity(0.5),
-                  //       borderColor: Colors.blue,
-                  //       borderStrokeWidth: 2,
-                  //       isFilled: true,
-                  //       label: 'Sample Region',
-                  //       labelStyle: const TextStyle(
-                  //         color: Colors.black,
-                  //         fontWeight: FontWeight.bold,
-                  //         fontSize: 12,
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                  // MarkerLayer(
-                  //   markers: [
-                  //     // Location marker
-                  //     Marker(
-                  //       width: 40.0,
-                  //       height: 40.0,
-                  //       point: LatLng(14.077557, 121.328938),
-                  //       child: Icon(
-                  //         Icons.location_on,
-                  //         color: Theme.of(context).colorScheme.error,
-                  //         size: 40,
-                  //       ),
-                  //     ),
-                  //     // Region label marker
-                  //     Marker(
-                  //       point: LatLng(14.075, 121.325),
-                  //       width: 120,
-                  //       height: 40,
-                  //       child: const Text(
-                  //         'Sample Region',
-                  //         style: TextStyle(
-                  //           color: Colors.black,
-                  //           fontWeight: FontWeight.bold,
-                  //           backgroundColor: Colors.white70,
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                ],
               ),
             ),
           ),

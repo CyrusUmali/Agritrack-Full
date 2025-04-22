@@ -2,8 +2,239 @@ import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flareline_uikit/components/charts/line_chart.dart';
 
-class SectorLineChart extends StatelessWidget {
+class SectorLineChart extends StatefulWidget {
   const SectorLineChart({super.key});
+
+  @override
+  State<SectorLineChart> createState() => _SectorLineChartState();
+}
+
+class _SectorLineChartState extends State<SectorLineChart> {
+  String selectedSector = 'Rice';
+
+  // Data structure for different sectors
+  final Map<String, List<Map<String, dynamic>>> sectorData = {
+    'Rice': [
+      {
+        'name': 'Jasmine Rice',
+        'color': const Color(0xFFFE8111),
+        'data': [
+          {'x': '2018', 'y': 15},
+          {'x': '2019', 'y': 18},
+          {'x': '2020', 'y': 16},
+          {'x': '2021', 'y': 20},
+          {'x': '2022', 'y': 22},
+          {'x': '2023', 'y': 25},
+          {'x': '2024', 'y': 28},
+        ]
+      },
+      {
+        'name': 'Basmati Rice',
+        'color': const Color(0xFF01B7F9),
+        'data': [
+          {'x': '2018', 'y': 12},
+          {'x': '2019', 'y': 14},
+          {'x': '2020', 'y': 13},
+          {'x': '2021', 'y': 16},
+          {'x': '2022', 'y': 18},
+          {'x': '2023', 'y': 20},
+          {'x': '2024', 'y': 22},
+        ]
+      },
+      {
+        'name': 'Brown Rice',
+        'color': const Color(0xFFA4D96C),
+        'data': [
+          {'x': '2018', 'y': 8},
+          {'x': '2019', 'y': 10},
+          {'x': '2020', 'y': 9},
+          {'x': '2021', 'y': 12},
+          {'x': '2022', 'y': 14},
+          {'x': '2023', 'y': 16},
+          {'x': '2024', 'y': 18},
+        ]
+      },
+    ],
+    'Corn': [
+      {
+        'name': 'Sweet Corn',
+        'color': const Color(0xFFFE8111),
+        'data': [
+          {'x': '2018', 'y': 20},
+          {'x': '2019', 'y': 22},
+          {'x': '2020', 'y': 18},
+          {'x': '2021', 'y': 25},
+          {'x': '2022', 'y': 28},
+          {'x': '2023', 'y': 30},
+          {'x': '2024', 'y': 32},
+        ]
+      },
+      {
+        'name': 'Field Corn',
+        'color': const Color(0xFF01B7F9),
+        'data': [
+          {'x': '2018', 'y': 25},
+          {'x': '2019', 'y': 28},
+          {'x': '2020', 'y': 22},
+          {'x': '2021', 'y': 30},
+          {'x': '2022', 'y': 35},
+          {'x': '2023', 'y': 38},
+          {'x': '2024', 'y': 40},
+        ]
+      },
+    ],
+    'Fishery': [
+      {
+        'name': 'Tilapia',
+        'color': const Color(0xFFFE8111),
+        'data': [
+          {'x': '2018', 'y': 50},
+          {'x': '2019', 'y': 55},
+          {'x': '2020', 'y': 48},
+          {'x': '2021', 'y': 60},
+          {'x': '2022', 'y': 65},
+          {'x': '2023', 'y': 70},
+          {'x': '2024', 'y': 75},
+        ]
+      },
+      {
+        'name': 'Bangus',
+        'color': const Color(0xFF01B7F9),
+        'data': [
+          {'x': '2018', 'y': 40},
+          {'x': '2019', 'y': 45},
+          {'x': '2020', 'y': 38},
+          {'x': '2021', 'y': 50},
+          {'x': '2022', 'y': 55},
+          {'x': '2023', 'y': 60},
+          {'x': '2024', 'y': 65},
+        ]
+      },
+      {
+        'name': 'Shrimp',
+        'color': const Color(0xFFA4D96C),
+        'data': [
+          {'x': '2018', 'y': 30},
+          {'x': '2019', 'y': 35},
+          {'x': '2020', 'y': 28},
+          {'x': '2021', 'y': 40},
+          {'x': '2022', 'y': 45},
+          {'x': '2023', 'y': 50},
+          {'x': '2024', 'y': 55},
+        ]
+      },
+    ],
+    'Livestock': [
+      {
+        'name': 'Poultry',
+        'color': const Color(0xFFFE8111),
+        'data': [
+          {'x': '2018', 'y': 120},
+          {'x': '2019', 'y': 130},
+          {'x': '2020', 'y': 115},
+          {'x': '2021', 'y': 140},
+          {'x': '2022', 'y': 150},
+          {'x': '2023', 'y': 160},
+          {'x': '2024', 'y': 170},
+        ]
+      },
+      {
+        'name': 'Swine',
+        'color': const Color(0xFF01B7F9),
+        'data': [
+          {'x': '2018', 'y': 80},
+          {'x': '2019', 'y': 90},
+          {'x': '2020', 'y': 75},
+          {'x': '2021', 'y': 95},
+          {'x': '2022', 'y': 105},
+          {'x': '2023', 'y': 115},
+          {'x': '2024', 'y': 125},
+        ]
+      },
+      {
+        'name': 'Cattle',
+        'color': const Color(0xFFA4D96C),
+        'data': [
+          {'x': '2018', 'y': 50},
+          {'x': '2019', 'y': 55},
+          {'x': '2020', 'y': 48},
+          {'x': '2021', 'y': 60},
+          {'x': '2022', 'y': 65},
+          {'x': '2023', 'y': 70},
+          {'x': '2024', 'y': 75},
+        ]
+      },
+    ],
+    'Organic': [
+      {
+        'name': 'Organic Rice',
+        'color': const Color(0xFFFE8111),
+        'data': [
+          {'x': '2018', 'y': 10},
+          {'x': '2019', 'y': 12},
+          {'x': '2020', 'y': 11},
+          {'x': '2021', 'y': 14},
+          {'x': '2022', 'y': 16},
+          {'x': '2023', 'y': 18},
+          {'x': '2024', 'y': 20},
+        ]
+      },
+      {
+        'name': 'Organic Vegetables',
+        'color': const Color(0xFF01B7F9),
+        'data': [
+          {'x': '2018', 'y': 15},
+          {'x': '2019', 'y': 18},
+          {'x': '2020', 'y': 16},
+          {'x': '2021', 'y': 20},
+          {'x': '2022', 'y': 22},
+          {'x': '2023', 'y': 25},
+          {'x': '2024', 'y': 28},
+        ]
+      },
+    ],
+    'HVC': [
+      {
+        'name': 'Mango',
+        'color': const Color(0xFFFE8111),
+        'data': [
+          {'x': '2018', 'y': 25},
+          {'x': '2019', 'y': 28},
+          {'x': '2020', 'y': 22},
+          {'x': '2021', 'y': 30},
+          {'x': '2022', 'y': 35},
+          {'x': '2023', 'y': 40},
+          {'x': '2024', 'y': 45},
+        ]
+      },
+      {
+        'name': 'Banana',
+        'color': const Color(0xFF01B7F9),
+        'data': [
+          {'x': '2018', 'y': 30},
+          {'x': '2019', 'y': 35},
+          {'x': '2020', 'y': 28},
+          {'x': '2021', 'y': 40},
+          {'x': '2022', 'y': 45},
+          {'x': '2023', 'y': 50},
+          {'x': '2024', 'y': 55},
+        ]
+      },
+      {
+        'name': 'Coffee',
+        'color': const Color(0xFFA4D96C),
+        'data': [
+          {'x': '2018', 'y': 15},
+          {'x': '2019', 'y': 18},
+          {'x': '2020', 'y': 16},
+          {'x': '2021', 'y': 20},
+          {'x': '2022', 'y': 22},
+          {'x': '2023', 'y': 25},
+          {'x': '2024', 'y': 28},
+        ]
+      },
+    ],
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -76,12 +307,14 @@ class SectorLineChart extends StatelessWidget {
 
   Widget _buildSectorDropdown() {
     return PopupMenuButton<String>(
-      initialValue: 'Rice',
+      initialValue: selectedSector,
       onSelected: (String value) {
-        // Handle sector selection
+        setState(() {
+          selectedSector = value;
+        });
       },
       itemBuilder: (BuildContext context) {
-        return ['Rice', 'Corn', 'Coconut', 'Sugarcane', 'Banana', 'Livestock']
+        return ['Rice', 'Corn', 'Fishery', 'Livestock', 'Organic', 'HVC']
             .map((String item) {
           return PopupMenuItem<String>(
             value: item,
@@ -98,7 +331,7 @@ class SectorLineChart extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Rice'),
+            Text(selectedSector),
             const SizedBox(width: 8),
             const Icon(Icons.arrow_drop_down, size: 20),
           ],
@@ -111,34 +344,7 @@ class SectorLineChart extends StatelessWidget {
     return LineChartWidget(
       title: '',
       dropdownItems: [],
-      datas: const [
-        {
-          'name': 'Yield (Metric Tons)',
-          'color': Color(0xFFFE8111),
-          'data': [
-            {'x': '2018', 'y': 18},
-            {'x': '2019', 'y': 22},
-            {'x': '2020', 'y': 19},
-            {'x': '2021', 'y': 25},
-            {'x': '2022', 'y': 28},
-            {'x': '2023', 'y': 32},
-            {'x': '2024', 'y': 35},
-          ]
-        },
-        {
-          'name': 'Value (Million PHP)',
-          'color': Color(0xFF01B7F9),
-          'data': [
-            {'x': '2018', 'y': 45},
-            {'x': '2019', 'y': 52},
-            {'x': '2020', 'y': 48},
-            {'x': '2021', 'y': 62},
-            {'x': '2022', 'y': 75},
-            {'x': '2023', 'y': 85},
-            {'x': '2024', 'y': 92},
-          ]
-        },
-      ],
+      datas: sectorData[selectedSector] ?? [],
     );
   }
 }

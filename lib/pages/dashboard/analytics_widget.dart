@@ -26,11 +26,11 @@ class AnalyticsWidget extends StatelessWidget {
 
   Widget _analyticsWeb(BuildContext context) {
     return SizedBox(
-      height: 268,
+      height: 280,
       child: Row(
         children: [
           Expanded(
-            flex: 4,
+            flex: 40,
             child: CommonCard(
               child: CircularhartWidget(
                 title: 'Farmer Distribution',
@@ -75,7 +75,7 @@ class AnalyticsWidget extends StatelessWidget {
             width: 16,
           ),
           Expanded(
-            flex: 4,
+            flex: 35,
             child: CommonCard(
               child: const MapMiniView(),
             ),
@@ -84,7 +84,7 @@ class AnalyticsWidget extends StatelessWidget {
             width: 16,
           ),
           Expanded(
-            flex: 3,
+            flex: 35,
             child: CommonCard(
               child: const ClimateInfoWidget(),
             ),
@@ -143,7 +143,7 @@ class AnalyticsWidget extends StatelessWidget {
           height: 16,
         ),
         SizedBox(
-          height: 350,
+          height: 200,
           child: CommonCard(
             child: const MapMiniView(),
           ),
@@ -152,7 +152,7 @@ class AnalyticsWidget extends StatelessWidget {
           height: 16,
         ),
         SizedBox(
-          height: 250,
+          height: 280,
           child: CommonCard(
             child: const ClimateInfoWidget(),
           ),

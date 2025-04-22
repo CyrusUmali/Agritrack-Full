@@ -48,6 +48,8 @@ import 'package:flareline/pages/sectors/sectors_page.dart'
 
 import 'package:flareline/pages/recommendation/recommendation_page.dart'
     deferred as recommendationPage;
+import 'package:flareline/pages/reports/report_page.dart'
+    deferred as reportsPage;
 import 'package:flareline/pages/yields/yields_page.dart' deferred as yieldsPage;
 
 typedef PathWidgetBuilder = Widget Function(BuildContext, String?);
@@ -171,6 +173,11 @@ final List<Map<String, Object>> MAIN_PAGES = [
     'routerPath': '/recommendation',
     'widget': DeferredWidget(recommendationPage.loadLibrary,
         () => recommendationPage.RecommendationPage()), // Add new page
+  },
+  {
+    'routerPath': '/reports',
+    'widget': DeferredWidget(reportsPage.loadLibrary,
+        () => reportsPage.ReportsPage()), // Add new page
   },
   {
     'routerPath': '/modal',

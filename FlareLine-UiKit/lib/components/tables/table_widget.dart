@@ -36,6 +36,47 @@ enum CellDataType {
 abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
   TableWidget({super.params, super.key});
 
+  // Remove the @override annotation
+  Widget buildCell(BuildContext context, TableDataRowsTableDataRows cell) {
+    if (cell.dataType == CellDataType.IMAGE_TEXT.type) {
+      return _buildImageTextCell(cell);
+    }
+    // Default cell implementation
+    return Container(
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+      child: Text(cell.text ?? ''),
+    );
+  }
+
+  Widget _buildImageTextCell(TableDataRowsTableDataRows columnData) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+      child: Row(
+        children: [
+          if (columnData.imageUrl != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12.0),
+              child: CircleAvatar(
+                radius: 20, // Matches your 40x40 dimensions
+                backgroundImage: NetworkImage(columnData.imageUrl!),
+                onBackgroundImageError: (exception, stackTrace) {
+                  // Error handling
+                },
+                child: const Icon(Icons.image, size: 20),
+              ),
+            ),
+          Expanded(
+            child: Text(
+              columnData.text ?? '',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Add this method to customize header widgets
   Widget headerBuilder(BuildContext context, String headerName, S viewModel) {
     return Text(headerName); // Default implementation
@@ -400,6 +441,10 @@ class BaseDataGridSource<F extends BaseTableProvider> extends DataGridSource {
     // Wrap with GestureDetector to handle taps if onCellTap is provided
     Widget contentWidget;
 
+    if (columnData.dataType == CellDataType.IMAGE_TEXT.type) {
+      return _imageTextCellWidget(columnData);
+    }
+
     if (CellDataType.TOGGLE.type == columnData.dataType) {
       return SwitchWidget(
           checked: '1' == columnData.text,
@@ -444,6 +489,34 @@ class BaseDataGridSource<F extends BaseTableProvider> extends DataGridSource {
         : contentWidget;
   }
 
+  Widget _imageTextCellWidget(TableDataRowsTableDataRows columnData) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+      child: Row(
+        children: [
+          if (columnData.imageUrl != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12.0),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundImage: NetworkImage(columnData.imageUrl!),
+                onBackgroundImageError: (exception, stackTrace) {
+                  // Error handling
+                },
+                child: const Icon(Icons.image, size: 20),
+              ),
+            ),
+          Expanded(
+            child: Text(
+              columnData.text ?? '',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Add a new method to handle icon cells
   Widget _iconCellWidget(TableDataRowsTableDataRows columnData) {
     // Extract the icon data from columnData
@@ -462,12 +535,13 @@ class BaseDataGridSource<F extends BaseTableProvider> extends DataGridSource {
       width: 40,
       height: 40,
       child: (columnData.text != null && columnData.text != ''
-          ? Image.network(
-              columnData.text!,
-              fit: BoxFit.contain,
-              errorBuilder: (context, exception, stacktrace) {
-                return Text(stacktrace.toString());
+          ? CircleAvatar(
+              radius: 20,
+              backgroundImage: NetworkImage(columnData.text!),
+              onBackgroundImageError: (exception, stackTrace) {
+                // Error handling
               },
+              // child: const Icon(Icons.image, size: 20),
             )
           : const SizedBox.shrink()),
     );

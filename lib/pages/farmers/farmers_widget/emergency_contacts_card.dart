@@ -1,3 +1,4 @@
+import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
 import './section_header.dart';
 import './detail_field.dart';
@@ -14,8 +15,8 @@ class EmergencyContactsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
+    return CommonCard(
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 12 : 16),
         child: Column(

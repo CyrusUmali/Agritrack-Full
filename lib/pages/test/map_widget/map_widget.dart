@@ -29,7 +29,7 @@ class _MapWidgetState extends State<MapWidget>
   PolygonData?
       _selectedPolygonForModal; // Track which polygon is being shown in modal
 
-  String selectedMap = "Google Satellite";
+  String selectedMap = "Google Satellite (No Labels)";
   bool _showFarmListPanel = false;
   double zoomLevel = 15.0;
   LatLng? previewPoint;

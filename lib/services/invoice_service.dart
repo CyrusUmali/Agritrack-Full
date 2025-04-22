@@ -5,10 +5,22 @@ class InvoiceService {
 
   Future<String> fetchInvoiceData() async {
     try {
-      final response = await _dio.get('http://192.168.254.196:3001/api');
+      final response = await _dio.get(
+        'http://192.168.56.1:3001/api',
+        options: Options(
+          // For web compatibility, only use receiveTimeout
+          receiveTimeout: const Duration(seconds: 5),
+        ),
+      );
       return response.data.toString();
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return "Server error: ${e.response?.statusCode} - ${e.response?.data}";
+      } else {
+        return "Network error: ${e.message}";
+      }
     } catch (e) {
-      return "Error: $e";
+      return "Unexpected error: $e";
     }
   }
 }

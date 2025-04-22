@@ -37,9 +37,21 @@ class ProductHeader extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.asset(
-          'assets/product/product-01.png',
+        child: Image.network(
+          'https://milnepublishing.geneseo.edu/app/uploads/sites/235/2020/06/image1-34-1024x768.jpeg',
           fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) => Icon(Icons.error),
         ),
       ),
     );
@@ -51,14 +63,15 @@ class ProductHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            product['productName'] ?? 'Unknown Product',
+            product['productName'] ?? 'Premium Yellow Corn',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            product['description'] ?? 'No description available',
+            product['description'] ??
+                'High-quality yellow corn harvested at peak ripeness. Perfect for human consumption, animal feed, and industrial processing.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -66,9 +79,11 @@ class ProductHeader extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              InfoChip(label: 'Category', value: product['category']),
-              InfoChip(label: 'Sector', value: product['sector']),
-              InfoChip(label: 'Market Value', value: product['marketValue']),
+              InfoChip(
+                  label: 'Category', value: product['category'] ?? 'Grains'),
+              InfoChip(label: 'Grade', value: product['grade'] ?? 'A'),
+              InfoChip(label: 'Moisture', value: product['moisture'] ?? '14%'),
+              InfoChip(label: 'Origin', value: product['origin'] ?? 'USA'),
             ],
           ),
         ],

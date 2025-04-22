@@ -31,42 +31,105 @@ class FarmsTable extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium,
               )
             else
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  showCheckboxColumn: false,
-                  columns: const [
-                    DataColumn(label: Text('Farm Name')),
-                    DataColumn(label: Text('Location')),
-                    DataColumn(label: Text('Area (acres)')),
-                    DataColumn(label: Text('Est. Yield')),
-                    DataColumn(label: Text('Status')),
-                  ],
-                  rows: farms.map((farm) {
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(farm['name'] ?? 'Unknown')),
-                        DataCell(Text(farm['location'] ?? 'Unknown')),
-                        DataCell(Text(farm['area']?.toString() ?? 'N/A')),
-                        DataCell(Text(farm['yield']?.toString() ?? 'N/A')),
-                        DataCell(
-                          Chip(
-                            label: Text(farm['status'] ?? 'Unknown'),
-                            backgroundColor: _getStatusColor(farm['status']),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  double columnWidth =
+                      constraints.maxWidth / 5; // Divide by number of columns
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columnSpacing: 20,
+                      columns: [
+                        DataColumn(
+                          label: SizedBox(
+                            width: columnWidth,
+                            child: Text('Farm Name'),
+                          ),
+                        ),
+                        DataColumn(
+                          label: SizedBox(
+                            width: columnWidth,
+                            child: Text('Location'),
+                          ),
+                        ),
+                        DataColumn(
+                          label: SizedBox(
+                            width: columnWidth,
+                            child: Text('Area (acres)'),
+                          ),
+                        ),
+                        DataColumn(
+                          label: SizedBox(
+                            width: columnWidth,
+                            child: Text('Est. Yield'),
+                          ),
+                        ),
+                        DataColumn(
+                          label: SizedBox(
+                            width: columnWidth,
+                            child: Text('Status'),
                           ),
                         ),
                       ],
-                      onSelectChanged: (_) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FarmProfile(farm: farm),
-                          ),
+                      rows: farms.map((farm) {
+                        return DataRow(
+                          cells: [
+                            DataCell(
+                              SizedBox(
+                                width: columnWidth,
+                                child: Text(
+                                  farm['name'] ?? 'Unknown',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              SizedBox(
+                                width: columnWidth,
+                                child: Text(
+                                  farm['location'] ?? 'Unknown',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              SizedBox(
+                                width: columnWidth,
+                                child: Text(
+                                  farm['area']?.toString() ?? 'N/A',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              SizedBox(
+                                width: columnWidth,
+                                child: Text(
+                                  farm['yield']?.toString() ?? 'N/A',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(farm['status']),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  farm['status'] ?? 'Unknown',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
                         );
-                      },
-                    );
-                  }).toList(),
-                ),
+                      }).toList(),
+                    ),
+                  );
+                },
               ),
           ],
         ),
@@ -82,7 +145,6 @@ class FarmsTable extends StatelessWidget {
         return Colors.green.withOpacity(0.2);
       case 'inactive':
         return Colors.red.withOpacity(0.2);
-
       default:
         return null;
     }

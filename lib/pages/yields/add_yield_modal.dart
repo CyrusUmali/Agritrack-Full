@@ -88,7 +88,7 @@ class AddYieldModal {
 
     ModalDialog.show(
       context: context,
-      title: 'Add Manual Yield',
+      title: 'Add Record',
       showTitle: true,
       showTitleDivider: true,
       modalType: isSmallScreen ? ModalType.small : ModalType.medium,
@@ -105,7 +105,7 @@ class AddYieldModal {
             yieldAmount == null ||
             yieldAmount <= 0) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please enter valid yield details')),
+            const SnackBar(content: Text('Please enter valid record details')),
           );
           return;
         }
@@ -325,7 +325,7 @@ class AddYieldModal {
               SizedBox(
                 width: isSmallScreen ? 100 : 120,
                 child: ButtonWidget(
-                  btnText: 'Add Yield',
+                  btnText: 'Add Record',
                   onTap: () {
                     final String yieldAmountText =
                         yieldAmountController.text.trim();

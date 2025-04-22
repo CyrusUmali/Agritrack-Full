@@ -132,48 +132,7 @@ class MapContent extends StatelessWidget {
             filteredBarangays: barangayFilter,
           ),
 
-          // Polygon markers layer
-          MapLayersHelper.createMarkerLayer(
-            filteredPolygons.map((polygon) => polygon.vertices).toList(),
-            polygonManager.currentPolygon,
-            polygonManager.selectedPolygonIndex != null
-                ? filteredPolygons.indexWhere((p) =>
-                    polygonManager.polygons.indexOf(p) ==
-                    polygonManager.selectedPolygonIndex)
-                : null,
-            polygonManager.isEditing,
-            (filteredIndex, vertexIndex) {
-              if (polygonManager.isEditing) {
-                setState(() {
-                  final polygon = filteredPolygons[filteredIndex];
-                  final originalIndex =
-                      polygonManager.polygons.indexOf(polygon);
-                  polygonManager.selectPolygon(originalIndex);
-                  if (polygonManager.selectedPolygon != null) {
-                    polygonManager
-                        .initializePolyEditor(polygonManager.selectedPolygon!);
-                  }
-                });
-              }
-            },
-            (i) {
-              if (i == 0 && polygonManager.currentPolygon.length > 2) {
-                setState(() {
-                  polygonManager.completeCurrentPolygon(context);
-                });
-              }
-            },
-            filteredPinStyles,
-          ),
-
-          // Drag markers for polygon editing
-          if (polygonManager.isEditing &&
-              polygonManager.selectedPolygon != null)
-            DragMarkers(
-              markers: polygonManager.polyEditor?.edit() ?? [],
-            ),
-
-          // Polygon layer
+// Polygon layer
           MapLayersHelper.createPolygonLayer(
             filteredPolygons.map((polygon) => polygon.vertices).toList(),
             polygonManager.currentPolygon,
@@ -185,6 +144,44 @@ class MapContent extends StatelessWidget {
                     polygonManager.selectedPolygonIndex)
                 : null,
           ),
+
+          // Polygon markers layer
+          MapLayersHelper.createMarkerLayer(
+              filteredPolygons.map((polygon) => polygon.vertices).toList(),
+              polygonManager.currentPolygon,
+              polygonManager.selectedPolygonIndex != null
+                  ? filteredPolygons.indexWhere((p) =>
+                      polygonManager.polygons.indexOf(p) ==
+                      polygonManager.selectedPolygonIndex)
+                  : null,
+              polygonManager.isEditing, (filteredIndex, vertexIndex) {
+            if (polygonManager.isEditing) {
+              setState(() {
+                final polygon = filteredPolygons[filteredIndex];
+                final originalIndex = polygonManager.polygons.indexOf(polygon);
+                polygonManager.selectPolygon(originalIndex);
+                if (polygonManager.selectedPolygon != null) {
+                  polygonManager
+                      .initializePolyEditor(polygonManager.selectedPolygon!);
+                }
+              });
+            }
+          }, (i) {
+            if (i == 0 && polygonManager.currentPolygon.length > 2) {
+              setState(() {
+                polygonManager.completeCurrentPolygon(context);
+              });
+            }
+          }, filteredPinStyles, polygonManager,
+              context // Pass the polygonManager here
+              ),
+
+          // Drag markers for polygon editing
+          if (polygonManager.isEditing &&
+              polygonManager.selectedPolygon != null)
+            DragMarkers(
+              markers: polygonManager.polyEditor?.edit() ?? [],
+            ),
 
           // Drawing helper text
           ValueListenableBuilder<LatLng?>(
@@ -222,9 +219,11 @@ class MapContent extends StatelessWidget {
     return MapOptions(
       center: LatLng(14.077557, 121.328938),
       zoom: zoomLevel,
-      minZoom: 13,
+      minZoom: 12,
       maxBounds: LatLngBounds(
-          LatLng(13.927557, 121.178938), LatLng(14.227557, 121.478938)),
+        LatLng(13.877557, 121.128938), // South-West (widened)
+        LatLng(14.277557, 121.528938), // North-East (widened)
+      ),
       onTap: (_, LatLng point) {
         setState(() {
           if (polygonManager.isDrawing) {

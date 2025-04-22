@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 
+import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
+import 'package:iconify_flutter_plus/icons/mdi.dart';
+
 class SectorsGridCard extends StatelessWidget {
   const SectorsGridCard({super.key});
 
@@ -19,28 +22,58 @@ class SectorsGridCard extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-            child: _itemCardWidget(context, Icons.rice_bowl, '2,000 Farmers',
-                '10,000 ha', '85%', true, DeviceScreenType.desktop)),
+            child: _itemCardWidget(
+                context,
+                const Iconify(Mdi.rice),
+                '2,000 Farmers',
+                '10,000 ha',
+                '85%',
+                true,
+                DeviceScreenType.desktop)),
         const SizedBox(width: 14),
         Expanded(
-            child: _itemCardWidget(context, Icons.agriculture, '1,500 Farmers',
-                '8,500 ha', '78%', true, DeviceScreenType.desktop)),
+            child: _itemCardWidget(
+                context,
+                const Iconify(Mdi.corn),
+                '1,500 Farmers',
+                '8,500 ha',
+                '78%',
+                true,
+                DeviceScreenType.desktop)),
         const SizedBox(width: 16),
         Expanded(
-            child: _itemCardWidget(context, Icons.pets, '800 Farmers', 'N/A',
-                '90%', true, DeviceScreenType.desktop)),
+            child: _itemCardWidget(context, const Iconify(Mdi.cow),
+                '800 Farmers', 'N/A', '90%', true, DeviceScreenType.desktop)),
         const SizedBox(width: 16),
         Expanded(
-            child: _itemCardWidget(context, Icons.eco, '600 Farmers',
-                '5,200 ha', '88%', true, DeviceScreenType.desktop)),
+            child: _itemCardWidget(
+                context,
+                const Iconify(Mdi.leaf),
+                '600 Farmers',
+                '5,200 ha',
+                '88%',
+                true,
+                DeviceScreenType.desktop)),
         const SizedBox(width: 16),
         Expanded(
-            child: _itemCardWidget(context, Icons.set_meal, '1,200 Farmers',
-                '15,000 ha', '82%', true, DeviceScreenType.desktop)),
+            child: _itemCardWidget(
+                context,
+                const Iconify(Mdi.fish),
+                '1,200 Farmers',
+                '15,000 ha',
+                '82%',
+                true,
+                DeviceScreenType.desktop)),
         const SizedBox(width: 16),
         Expanded(
-            child: _itemCardWidget(context, Icons.grass, '900 Farmers',
-                '7,300 ha', '87%', true, DeviceScreenType.desktop)),
+            child: _itemCardWidget(
+                context,
+                const Iconify(Mdi.fruit_grapes_outline),
+                '900 Farmers',
+                '7,300 ha',
+                '87%',
+                true,
+                DeviceScreenType.desktop)),
       ],
     );
   }
@@ -48,32 +81,31 @@ class SectorsGridCard extends StatelessWidget {
   Widget contentMobileWidget(BuildContext context) {
     return GridView.count(
       shrinkWrap: true,
-      physics:
-          const NeverScrollableScrollPhysics(), // Prevents internal scrolling
-      crossAxisCount: 2, // Ensures two columns
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.0, // Adjust the aspect ratio to fit content
+      childAspectRatio: 1.0,
       children: [
-        _itemCardWidget(context, Icons.rice_bowl, '2,000 Farmers', '10,000 ha',
-            '85%', true, DeviceScreenType.mobile),
-        _itemCardWidget(context, Icons.agriculture, '1,500 Farmers', '8,500 ha',
-            '78%', true, DeviceScreenType.mobile),
-        _itemCardWidget(context, Icons.pets, '800 Farmers', 'N/A', '90%', true,
-            DeviceScreenType.mobile),
-        _itemCardWidget(context, Icons.eco, '600 Farmers', '5,200 ha', '88%',
-            true, DeviceScreenType.mobile),
-        _itemCardWidget(context, Icons.set_meal, '1,200 Farmers', '15,000 ha',
-            '82%', true, DeviceScreenType.mobile),
-        _itemCardWidget(context, Icons.grass, '900 Farmers', '7,300 ha', '87%',
-            true, DeviceScreenType.mobile),
+        _itemCardWidget(context, const Iconify(Mdi.rice), '2,000 Farmers',
+            '10,000 ha', '85%', true, DeviceScreenType.mobile),
+        _itemCardWidget(context, const Iconify(Mdi.corn), '1,500 Farmers',
+            '8,500 ha', '78%', true, DeviceScreenType.mobile),
+        _itemCardWidget(context, const Iconify(Mdi.cow), '800 Farmers', 'N/A',
+            '90%', true, DeviceScreenType.mobile),
+        _itemCardWidget(context, const Iconify(Mdi.leaf), '600 Farmers',
+            '5,200 ha', '88%', true, DeviceScreenType.mobile),
+        _itemCardWidget(context, const Iconify(Mdi.fish), '1,200 Farmers',
+            '15,000 ha', '82%', true, DeviceScreenType.mobile),
+        _itemCardWidget(context, const Iconify(Mdi.fruit_grapes_outline),
+            '900 Farmers', '7,300 ha', '87%', true, DeviceScreenType.mobile),
       ],
     );
   }
 
   _itemCardWidget(
       BuildContext context,
-      IconData icon,
+      Widget icon,
       String farmers,
       String landCovered,
       String performance,
@@ -86,13 +118,12 @@ class SectorsGridCard extends StatelessWidget {
         screenType == DeviceScreenType.desktop ? 12 : 10;
 
     return CommonCard(
-      height: 180, // Increased height to prevent overflow
+      height: 180,
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: 0, vertical: 6), // Adjusted padding
+        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min, // Prevents overflow
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ClipOval(
@@ -101,10 +132,7 @@ class SectorsGridCard extends StatelessWidget {
                 height: 36,
                 alignment: Alignment.center,
                 color: Colors.grey.shade200,
-                child: Icon(
-                  icon,
-                  color: GlobalColors.sideBar,
-                ),
+                child: icon,
               ),
             ),
             const SizedBox(height: 10),
@@ -130,8 +158,8 @@ class SectorsGridCard extends StatelessWidget {
                   "Production:",
                   style: TextStyle(
                       fontSize: performanceTextSize, color: Colors.green),
-                  softWrap: true, // Ensures wrapping
-                  overflow: TextOverflow.visible, // Allows expansion
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
                 ),
                 const Spacer(),
                 Text(

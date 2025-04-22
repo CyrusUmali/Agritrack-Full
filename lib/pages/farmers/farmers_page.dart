@@ -4,7 +4,7 @@ import 'package:flareline/pages/farmers/add_farmer_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/farmers/grid_card.dart';
 import 'package:flareline/pages/layout.dart';
-import 'package:flareline/pages/sectors/sector_farmers.dart';
+import 'package:flareline/pages/farmers/sector_farmers.dart';
 import 'package:flareline/pages/sectors/year_filter_dropdown.dart'; // Import the new widget
 
 class FarmersPage extends LayoutWidget {

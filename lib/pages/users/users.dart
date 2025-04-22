@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:flareline/pages/users/add_user_modal.dart';
+import 'package:flareline/pages/users/da_personel_profile.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
@@ -154,13 +157,39 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
   @override
   Widget actionWidgetsBuilder(BuildContext context,
       TableDataRowsTableDataRows columnData, FarmersViewModel viewModel) {
-    // Create a farmer object from the data
-    int id = int.tryParse(columnData.id ?? '0') ?? 0;
+    // Get all the row data from the current table row
+    final rowData = viewModel.tableDataEntity?.rows
+        ?.firstWhere((row) => row.any((cell) => cell.id == columnData.id));
+
+    // Extract the actual values from the table row
+    final username = rowData
+            ?.firstWhere((cell) => cell.columnName == 'Username',
+                orElse: () => TableDataRowsTableDataRows()..text = '')
+            ?.text ??
+        '';
+
+    final userRole = rowData
+            ?.firstWhere((cell) => cell.columnName == 'UserRole',
+                orElse: () => TableDataRowsTableDataRows()..text = '')
+            ?.text ??
+        '';
+
+    final contact = rowData
+            ?.firstWhere((cell) => cell.columnName == 'Contact',
+                orElse: () => TableDataRowsTableDataRows()..text = '')
+            ?.text ??
+        '';
+
+    // Create user object from the actual table data
     final user = {
-      'Username': 'User $id',
-      'UserRole': 'Officer',
-      'contact': 'farmer$id@example.com',
+      'id': columnData.id,
+      'Username': username,
+      'UserRole': userRole,
+      'contact': contact,
     };
+
+    // Parse the ID for use in delete operations
+    final userId = int.tryParse(columnData.id ?? '0') ?? 0;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -168,7 +197,7 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
         IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),
           onPressed: () {
-            print("Delete icon clicked for User $id");
+            print("Delete icon clicked for User ${user['id']}");
 
             ModalDialog.show(
               context: context,
@@ -182,7 +211,7 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
               onSaveTap: () {
                 // Perform the delete operation here
                 if (viewModel.onFarmerDeleted != null) {
-                  viewModel.onFarmerDeleted!(id);
+                  viewModel.onFarmerDeleted!(userId);
                 }
                 Navigator.of(context).pop(); // Close the modal
               },
@@ -217,7 +246,7 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
                           onTap: () {
                             // Perform the delete operation here
                             if (viewModel.onFarmerDeleted != null) {
-                              viewModel.onFarmerDeleted!(id);
+                              viewModel.onFarmerDeleted!(userId);
                             }
                             Navigator.of(context).pop(); // Close the modal
                           },
@@ -234,18 +263,38 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
-            print("Arrow icon clicked for user $id");
+            print(
+                "Navigating to profile for ${user['Username']} with role ${user['UserRole']}");
 
             if (viewModel.onFarmerSelected != null) {
               viewModel.onFarmerSelected!(user);
             }
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => FarmersProfile(farmer: user),
-              ),
-            );
+            final role = (user['UserRole'] ?? '').toLowerCase();
+
+            if (role.contains('officer') || role.contains('admin')) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DAOfficerProfile(daUser: user),
+                ),
+              );
+            } else if (role.contains('farmer')) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FarmersProfile(farmer: user),
+                ),
+              );
+            } else {
+              // Default to officer profile if role not recognized
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DAOfficerProfile(daUser: user),
+                ),
+              );
+            }
           },
         ),
       ],
@@ -293,6 +342,25 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
   }
 }
 
+// Helper function to get weighted random role
+String _getWeightedRandomRole(List<Map<String, dynamic>> roles) {
+  // Calculate total weight
+  int totalWeight = roles.fold(0, (sum, role) => sum + (role['weight'] as int));
+
+  // Generate random number
+  int random = Random().nextInt(totalWeight);
+  int cumulativeWeight = 0;
+
+  for (var role in roles) {
+    cumulativeWeight += role['weight'] as int;
+    if (random < cumulativeWeight) {
+      return role['role'] as String;
+    }
+  }
+
+  return 'Farmer'; // fallback
+}
+
 class FarmersViewModel extends BaseTableProvider {
   final Function(Map<String, dynamic>)? onFarmerSelected;
   final Function(int)? onFarmerDeleted; // Add this line
@@ -312,27 +380,38 @@ class FarmersViewModel extends BaseTableProvider {
     for (int i = 0; i < 50; i++) {
       List<TableDataRowsTableDataRows> row = [];
       var id = i;
+
+      // List of possible roles with weights for randomization
+      final roles = [
+        {'role': 'Admin', 'weight': 1},
+        {'role': 'DA Officer', 'weight': 3},
+        {'role': 'Farmer', 'weight': 10},
+      ];
+
+      // Generate weighted random role
+      String randomRole = _getWeightedRandomRole(roles);
+
       var item = {
         'id': id.toString(),
         'Username': 'User $id',
-        'UserRole': 'UserRole',
-        'contact': 'farmer$id@example.com',
+        'UserRole': randomRole,
+        'contact': 'user$id@example.com',
       };
 
       // Create regular cells
-      var farmerNameCell = TableDataRowsTableDataRows()
+      var userNameCell = TableDataRowsTableDataRows()
         ..text = item['Username']
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Username'
         ..id = item['id'];
-      row.add(farmerNameCell);
+      row.add(userNameCell);
 
-      var sectorCell = TableDataRowsTableDataRows()
+      var roleCell = TableDataRowsTableDataRows()
         ..text = item['UserRole']
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'UserRole'
         ..id = item['id'];
-      row.add(sectorCell);
+      row.add(roleCell);
 
       var contactCell = TableDataRowsTableDataRows()
         ..text = item['contact']
