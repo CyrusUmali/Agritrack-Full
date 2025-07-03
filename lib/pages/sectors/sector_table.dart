@@ -1,13 +1,13 @@
-// ignore_for_file: must_be_immutable
-
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
 import 'package:responsive_builder/responsive_builder.dart';
-import 'package:flareline/pages/sectors/sector_profile.dart'; // Import the new widget
-import 'package:flareline_uikit/components/buttons/button_widget.dart'; // Import the ButtonWidget
-import 'package:flareline_uikit/core/theme/flareline_colors.dart'; // Import FlarelineColors
+import 'package:flareline/pages/sectors/sector_profile.dart';
+import 'package:flareline_uikit/components/buttons/button_widget.dart';
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flareline/pages/sectors/sector_service.dart';
 
 class SectorTableWidget extends StatefulWidget {
   const SectorTableWidget({super.key});
@@ -78,21 +78,28 @@ class _SectorTableWidgetState extends State<SectorTableWidget> {
 
 class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
   final Function(Map<String, dynamic>)? onSectorSelected;
+  late SectorsViewModel _viewModel; // Add this line to store the view model
 
-  SectorDataTableWidget({this.onSectorSelected, Key? key}) : super(key: key) {
-    print("SectorDataTableWidget initialized");
-  }
+  SectorDataTableWidget({this.onSectorSelected, Key? key}) : super(key: key);
 
   @override
   SectorsViewModel viewModelBuilder(BuildContext context) {
-    print("Building SectorsViewModel");
-
     return SectorsViewModel(
       context,
       onSectorSelected,
-      (id) {
-        print("Deleted Sector ID: $id");
-        // Add logic to remove the sector from the list or show a confirmation dialog
+      (id) async {
+        // Implement delete functionality if needed
+        final sectorService = RepositoryProvider.of<SectorService>(context);
+        try {
+          // Call API to delete sector
+          // await sectorService.deleteSector(id);
+          // Then reload data
+          _viewModel.loadData(context);
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete sector: ${e.toString()}')),
+          );
+        }
       },
     );
   }
@@ -100,93 +107,27 @@ class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
   @override
   Widget actionWidgetsBuilder(BuildContext context,
       TableDataRowsTableDataRows columnData, SectorsViewModel viewModel) {
-    // Create a sector object from the data
-    int id = int.tryParse(columnData.id ?? '0') ?? 0;
-    final sector = {
-      'Sector': 'Sector $id',
-      'LandArea': '${id + 1} hectares',
-      'Farmers': '12',
-      'Yield': '100kg',
-      'Value': '100php',
-    };
+    final sector = viewModel.sectors.firstWhere(
+      (s) => s['id'].toString() == columnData.id,
+      orElse: () => {},
+    );
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () {
-            print("Delete icon clicked for Sector $id");
-
-            ModalDialog.show(
-              context: context,
-              title: 'Delete Sector',
-              showTitle: true,
-              showTitleDivider: true,
-              modalType: ModalType.medium,
-              onCancelTap: () {
-                Navigator.of(context).pop(); // Close the modal
-              },
-              onSaveTap: () {
-                // Perform the delete operation here
-                if (viewModel.onSectorDeleted != null) {
-                  viewModel.onSectorDeleted!(id);
-                }
-                Navigator.of(context).pop(); // Close the modal
-              },
-              child: Center(
-                child: Text(
-                  'Are you sure you want to delete ${sector['Sector']}?',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              footer: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 10.0),
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: ButtonWidget(
-                          btnText: 'Cancel',
-                          textColor: FlarelineColors.darkBlackText,
-                          onTap: () {
-                            Navigator.of(context).pop(); // Close the modal
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      SizedBox(
-                        width: 120,
-                        child: ButtonWidget(
-                          btnText: 'Delete',
-                          onTap: () {
-                            // Perform the delete operation here
-                            if (viewModel.onSectorDeleted != null) {
-                              viewModel.onSectorDeleted!(id);
-                            }
-                            Navigator.of(context).pop(); // Close the modal
-                          },
-                          type: ButtonType.primary.type,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
-            print("Arrow icon clicked for Sector $id");
+            final sector = viewModel.sectors.firstWhere(
+              (s) => s['id'].toString() == columnData.id,
+              orElse: () => {},
+            );
 
-            if (viewModel.onSectorSelected != null) {
+            if (sector.isNotEmpty && viewModel.onSectorSelected != null) {
               viewModel.onSectorSelected!(sector);
             }
+
+            print(sector);
 
             Navigator.push(
               context,
@@ -203,39 +144,41 @@ class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
   @override
   Widget build(BuildContext context) {
     return ScreenTypeLayout.builder(
-      desktop: _buildDesktopTable,
-      mobile: _buildMobileTable,
-      tablet: _buildMobileTable,
+      desktop: (context) => _buildDesktopTable(),
+      mobile: (context) => _buildMobileTable(context),
+      tablet: (context) => _buildMobileTable(context),
     );
   }
 
-  Widget _buildDesktopTable(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minWidth: 1000, // Set minimum width for desktop
-        maxWidth: 1200, // Set maximum width for desktop
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: 1200, // Fixed width for desktop
-          child: super.build(context),
-        ),
-      ),
+  Widget _buildDesktopTable() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double tableWidth = constraints.maxWidth > 1200
+            ? 1200
+            : constraints.maxWidth > 800
+                ? constraints.maxWidth * 0.9
+                : constraints.maxWidth;
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+            child: SizedBox(
+              width: tableWidth,
+              child: super.build(context),
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildMobileTable(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: MediaQuery.of(context).size.width, // Full width on mobile
-        ),
-        child: SizedBox(
-          width: 700, // Wider than mobile screen to enable scrolling
-          child: super.build(context),
-        ),
+      child: SizedBox(
+        width: 800,
+        child: super.build(context),
       ),
     );
   }
@@ -244,6 +187,7 @@ class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
 class SectorsViewModel extends BaseTableProvider {
   final Function(Map<String, dynamic>)? onSectorSelected;
   final Function(int)? onSectorDeleted;
+  List<Map<String, dynamic>> sectors = [];
 
   @override
   String get TAG => 'SectorsViewModel';
@@ -256,76 +200,77 @@ class SectorsViewModel extends BaseTableProvider {
       "Sector Name",
       "Land Area",
       "Farmers",
-      "Yield",
-      "Value",
-      "Action"
+      "Farms",
+      "Yield Volume",
+      ""
     ];
 
-    List<List<TableDataRowsTableDataRows>> rows = [];
+    try {
+      final sectorService = RepositoryProvider.of<SectorService>(context);
+      final apiData = await sectorService.fetchSectors();
+      sectors = apiData;
 
-    for (int i = 0; i < 50; i++) {
-      List<TableDataRowsTableDataRows> row = [];
-      var id = i;
-      var item = {
-        'id': id.toString(),
-        'sectorName': 'Sector $id',
-        'landArea': '${id + 1} hectares',
-        'farmers': '12',
-        'yield': '100kg',
-        'value': '100php',
-      };
+      List<List<TableDataRowsTableDataRows>> rows = [];
 
-      // Create regular cells
-      var sectorNameCell = TableDataRowsTableDataRows()
-        ..text = item['sectorName']
-        ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Sector Name'
-        ..id = item['id'];
-      row.add(sectorNameCell);
+      for (var sector in apiData) {
+        List<TableDataRowsTableDataRows> row = [];
 
-      var landAreaCell = TableDataRowsTableDataRows()
-        ..text = item['landArea']
-        ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Land Area'
-        ..id = item['id'];
-      row.add(landAreaCell);
+        var sectorNameCell = TableDataRowsTableDataRows()
+          ..text = sector['name'] ?? ''
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = 'Sector Name'
+          ..id = sector['id'].toString();
+        row.add(sectorNameCell);
 
-      var farmersCell = TableDataRowsTableDataRows()
-        ..text = item['farmers']
-        ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Farmers'
-        ..id = item['id'];
-      row.add(farmersCell);
+        var landAreaCell = TableDataRowsTableDataRows()
+          ..text = (sector['stats']?['totalLandArea']?.toString() ?? '0') +
+              ' hectare'
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = 'Land Area'
+          ..id = sector['id'].toString();
+        row.add(landAreaCell);
 
-      var yieldCell = TableDataRowsTableDataRows()
-        ..text = item['yield']
-        ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Yield'
-        ..id = item['id'];
-      row.add(yieldCell);
+        var farmersCell = TableDataRowsTableDataRows()
+          ..text = (sector['stats']?['totalFarmers']?.toString() ?? '0')
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = 'Farmers'
+          ..id = sector['id'].toString();
+        row.add(farmersCell);
 
-      var valueCell = TableDataRowsTableDataRows()
-        ..text = item['value']
-        ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Value'
-        ..id = item['id'];
-      row.add(valueCell);
+        var farmsCell = TableDataRowsTableDataRows()
+          ..text = (sector['stats']?['totalFarms']?.toString() ?? '0')
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = 'Farms'
+          ..id = sector['id'].toString();
+        row.add(farmsCell);
 
-      // Add action cell for the icon button
-      var actionCell = TableDataRowsTableDataRows()
-        ..text = ""
-        ..dataType = CellDataType.ACTION.type
-        ..columnName = 'Action'
-        ..id = item['id'];
-      row.add(actionCell);
+        var yieldVolumeCell = TableDataRowsTableDataRows()
+          ..text =
+              (sector['stats']?['totalYieldVolume']?.toString() ?? '0') + ' kg'
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = 'Yield Volume'
+          ..id = sector['id'].toString();
+        row.add(yieldVolumeCell);
 
-      rows.add(row);
+        var actionCell = TableDataRowsTableDataRows()
+          ..text = ""
+          ..dataType = CellDataType.ACTION.type
+          ..columnName = 'Action'
+          ..id = sector['id'].toString();
+        row.add(actionCell);
+
+        rows.add(row);
+      }
+
+      TableDataEntity tableData = TableDataEntity()
+        ..headers = headers
+        ..rows = rows;
+
+      tableDataEntity = tableData;
+    } catch (e) {
+      // Handle error
+      print('Error loading sectors: $e');
+      // You might want to show an error message to the user
     }
-
-    TableDataEntity tableData = TableDataEntity()
-      ..headers = headers
-      ..rows = rows;
-
-    tableDataEntity = tableData;
   }
 }

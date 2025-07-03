@@ -31,7 +31,7 @@ class ChannelWidget extends StatelessWidget {
             const SizedBox(
               width: 16,
             ),
-            const Expanded(flex: 1, child: ChatsWidget()),
+            const Expanded(flex: 1, child: TopContributorsWidget()),
           ],
         ));
   }
@@ -46,9 +46,7 @@ class ChannelWidget extends StatelessWidget {
         const SizedBox(
           height: 16,
         ),
-        const SizedBox(
-            height: 380,
-            child: ChatsWidget()),
+        const SizedBox(height: 380, child: TopContributorsWidget()),
       ],
     );
   }

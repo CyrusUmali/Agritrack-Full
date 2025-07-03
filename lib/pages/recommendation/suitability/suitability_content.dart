@@ -17,12 +17,28 @@ class SuitabilityContent extends StatefulWidget {
 class SuitabilityContentState extends State<SuitabilityContent> {
   final SuitabilityModel model = SuitabilityModel(); // Updated model type
   final List<String> availableCrops = [
-    'Rice',
-    'Maize',
-    'Tomato',
-    'Cotton',
-    'Apple',
-    'Banana'
+    "grapes",
+    "mango",
+    "mothbeans",
+    "kidneybeans",
+    "mungbean",
+    "maize",
+    "lentil",
+    "cotton",
+    "coffee",
+    "coconut",
+    "banana",
+    "jute",
+    "apple",
+    "chickpea",
+    "watermelon",
+    "pomegranate",
+    "pigeonpeas",
+    "rice",
+    "blackgram",
+    "papaya",
+    "muskmelon",
+    "orange"
   ];
 
   void _navigateToRequirements() {
@@ -233,16 +249,16 @@ class SuitabilityContentState extends State<SuitabilityContent> {
                 hintStyle: TextStyle(color: Colors.grey[600]),
               ),
             ),
-            if (model.modelAccuracy != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                model.modelAccuracy!,
-                style: TextStyle(
-                  color: Colors.green[800],
-                  fontSize: 14,
-                ),
-              ),
-            ],
+            // if (model.modelAccuracy != null) ...[
+            //   const SizedBox(height: 8),
+            //   Text(
+            //     model.modelAccuracy!,
+            //     style: TextStyle(
+            //       color: Colors.green[800],
+            //       fontSize: 14,
+            //     ),
+            //   ),
+            // ],
           ],
         ),
       ),

@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-class FlarelineColors{
+class FlarelineColors {
   static const Color primary = Color(0xFF3C50E0);
 
   static const Color background = Color(0xFFEFF4FB);
@@ -16,10 +16,9 @@ class FlarelineColors{
   static const Color darkTextBody = Color(0xFF8A99AF);
 
   static const Color gray = Color(0xFFEFF4FB);
-
 }
 
-class ButtonColors{
+class ButtonColors {
   static const Color primary = Color(0xFF3C50E0);
 
   static const Color normal = Color(0xFF606266);

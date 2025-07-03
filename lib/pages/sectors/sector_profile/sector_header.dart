@@ -16,6 +16,9 @@ class SectorHeader extends StatelessWidget {
     final size = isMobile ? 80.0 : 120.0;
     final coverHeight = isMobile ? 160.0 : 240.0;
 
+    // Get the image URL from sector data, default to null if not available
+    final imgUrl = sector['imgUrl'] as String?;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -23,8 +26,11 @@ class SectorHeader extends StatelessWidget {
           height: coverHeight,
           width: double.infinity,
           decoration: BoxDecoration(
-            image: const DecorationImage(
-              image: AssetImage('assets/cover/cover-01.png'),
+            image: DecorationImage(
+              image: imgUrl != null && imgUrl.isNotEmpty
+                  ? NetworkImage(imgUrl) // Use network image if URL exists
+                  : const AssetImage('assets/cover/cover-01.png')
+                      as ImageProvider, // Fallback to asset
               fit: BoxFit.cover,
             ),
             color: theme.colorScheme.primaryContainer,
@@ -41,30 +47,8 @@ class SectorHeader extends StatelessWidget {
                 width: 4,
               ),
             ),
-            child: CircleAvatar(
-              radius: size / 2,
-              backgroundColor: theme.colorScheme.primaryContainer,
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/user/user-01.png',
-                  width: size - 8,
-                  height: size - 8,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
           ),
         ),
-        if (!isMobile)
-          Positioned(
-            bottom: 16,
-            right: 24,
-            child: FilledButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('Edit Cover'),
-            ),
-          ),
       ],
     );
   }

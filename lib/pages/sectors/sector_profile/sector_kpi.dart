@@ -12,6 +12,8 @@ class SectorKpiCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // print('sectorcurrent');
+    // print(sector);
     return isMobile ? _buildMobileGrid(context) : _buildDesktopRow(context);
   }
 
@@ -46,46 +48,58 @@ class SectorKpiCards extends StatelessWidget {
   }
 
   List<Widget> _buildAllCards(BuildContext context) {
+    // Access stats from the nested object
+    final stats = sector['stats'] ?? {};
+
+    // Calculate growth percentage if annual yield data exists
+    double? growthPercent;
+    final annualYield = sector['annualYield'] as List?;
+    if (annualYield != null && annualYield.length >= 2) {
+      final currentYear = annualYield[0]['totalVolume'] as int?;
+      final previousYear = annualYield[1]['totalVolume'] as int?;
+      if (currentYear != null && previousYear != null && previousYear != 0) {
+        growthPercent = ((currentYear - previousYear) / previousYear) * 100;
+      }
+    }
+
     return [
       _buildKpiCard(
         context,
         title: 'Total Farms',
-        value: sector['totalFarms']?.toString() ?? 'N/A',
+        value: stats['totalFarms']?.toString() ?? 'N/A',
         icon: Icons.agriculture,
       ),
       _buildKpiCard(
         context,
         title: 'Total Farmers',
-        value: sector['totalFarmers']?.toString() ?? 'N/A',
+        value: stats['totalFarmers']?.toString() ?? 'N/A',
         icon: Icons.people,
       ),
       _buildKpiCard(
         context,
         title: 'Avg Farm Size',
-        value: sector['avgFarmSize'] != null
-            ? '${sector['avgFarmSize']} ha'
-            : 'N/A',
+        value:
+            stats['avgFarmSize'] != null ? '${stats['avgFarmSize']} ha' : 'N/A',
         icon: Icons.landscape,
       ),
       _buildKpiCard(
         context,
         title: 'Annual Yield',
-        value: sector['annualYield'] != null
-            ? '${sector['annualYield']} tons'
+        value: stats['totalYieldVolume'] != null
+            ? '${stats['totalYieldVolume']} tons'
             : 'N/A',
         icon: Icons.assessment,
       ),
       _buildKpiCard(
         context,
         title: 'Growth %',
-        value: sector['growthPercent'] != null
-            ? '${sector['growthPercent']}%'
+        value: growthPercent != null
+            ? '${growthPercent.toStringAsFixed(1)}%'
             : 'N/A',
-        icon: sector['growthPercent'] != null && sector['growthPercent'] > 0
+        icon: growthPercent != null && growthPercent > 0
             ? Icons.trending_up
             : Icons.trending_down,
-        isPositive:
-            sector['growthPercent'] != null && sector['growthPercent'] > 0,
+        isPositive: growthPercent != null && growthPercent > 0,
       ),
     ];
   }

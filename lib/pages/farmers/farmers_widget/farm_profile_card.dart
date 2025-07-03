@@ -1,12 +1,14 @@
+import 'package:flareline/pages/test/map_widget/farm_service.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import './section_header.dart';
 import './detail_field.dart';
 import '../../farms/farm_widgets/farm_map_card.dart';
 import 'package:flareline/pages/farms/farm_profile.dart';
 
-class FarmProfileCard extends StatelessWidget {
+class FarmProfileCard extends StatefulWidget {
   final Map<String, dynamic> farmer;
   final bool isMobile;
   final int selectedFarmIndex;
@@ -21,15 +23,55 @@ class FarmProfileCard extends StatelessWidget {
   });
 
   @override
+  State<FarmProfileCard> createState() => _FarmProfileCardState();
+}
+
+class _FarmProfileCardState extends State<FarmProfileCard> {
+  List<dynamic> _farms = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFarms();
+  }
+
+  Future<void> _fetchFarms() async {
+    try {
+      final farmService = RepositoryProvider.of<FarmService>(context);
+      final farmerFarms = await farmService.fetchFarmsByFarmerId(
+        widget.farmer['id'].toString(),
+      );
+
+      if (mounted) {
+        setState(() {
+          _farms = farmerFarms;
+          _isLoading = false;
+          _error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final farms = farmer['farms'] as List<dynamic>? ?? [];
-    final currentFarm = farms.isNotEmpty ? farms[selectedFarmIndex] : null;
+    final farms = _farms;
+    final currentFarm =
+        farms.isNotEmpty ? farms[widget.selectedFarmIndex] : null;
     final hasMultipleFarms = farms.length > 1;
 
     return CommonCard(
-      padding: EdgeInsets.all(isMobile ? 12 : 16),
+      padding: EdgeInsets.all(widget.isMobile ? 12 : 16),
       child: Padding(
-        padding: EdgeInsets.all(isMobile ? 12 : 16),
+        padding: EdgeInsets.all(widget.isMobile ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -47,7 +89,8 @@ class FarmProfileCard extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => FarmProfile(farm: currentFarm),
+                          builder: (context) =>
+                              FarmProfile(farmId: currentFarm['id']),
                         ),
                       );
                     },
@@ -55,42 +98,88 @@ class FarmProfileCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            if (hasMultipleFarms) ...[
-              _FarmSelector(
-                farms: farms,
-                selectedIndex: selectedFarmIndex,
-                onSelected: (index) {
-                  if (onFarmSelected != null) {
-                    onFarmSelected!(
-                        index); // This triggers the parent's setState
-                  }
-                },
+            if (_isLoading) ...[
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: CircularProgressIndicator(),
+                ),
               ),
-              const SizedBox(height: 16),
-            ],
-            if (currentFarm != null) ...[
-              _FarmDetails(farm: currentFarm),
-              const SizedBox(height: 16),
-              const SectionHeader(title: 'Farm Location', icon: Icons.map),
-              const SizedBox(height: 16),
-              FarmMapCard(
-                farm: currentFarm,
-                isMobile: isMobile,
+            ] else if (_error != null) ...[
+              Center(
+                child: Column(
+                  children: [
+                    const Icon(Icons.error_outline,
+                        size: 48, color: Colors.red),
+                    const SizedBox(height: 8),
+                    Text('Error loading farms: $_error'),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: _fetchFarms,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
               ),
-              if (currentFarm['gpsCoordinates'] != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Coordinates: ${currentFarm['gpsCoordinates']['latitude']}, ${currentFarm['gpsCoordinates']['longitude']}',
-                  style: Theme.of(context).textTheme.bodySmall,
+            ] else if (farms.isEmpty) ...[
+              const Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.agriculture_outlined,
+                        size: 48, color: Colors.grey),
+                    SizedBox(height: 8),
+                    Text('No farms found for this farmer'),
+                  ],
+                ),
+              ),
+            ] else ...[
+              if (hasMultipleFarms) ...[
+                _FarmSelector(
+                  farms: farms,
+                  selectedIndex: widget.selectedFarmIndex,
+                  onSelected: (index) {
+                    if (widget.onFarmSelected != null) {
+                      widget.onFarmSelected!(index);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (currentFarm != null) ...[
+                _FarmDetails(farm: currentFarm),
+                const SizedBox(height: 16),
+                const SectionHeader(title: 'Farm Location', icon: Icons.map),
+                const SizedBox(height: 16),
+                FarmMapCard(
+                  key: ValueKey(currentFarm['id']), // Add this line
+                  farm: _prepareFarmDataForMap(currentFarm),
+                  isMobile: widget.isMobile,
                 ),
               ],
-            ] else ...[
-              const Center(child: Text('No farm information available')),
             ],
           ],
         ),
       ),
     );
+  }
+
+  // Helper method to prepare farm data for the map widget
+  Map<String, dynamic> _prepareFarmDataForMap(Map<String, dynamic> farm) {
+    // Convert vertices to the format expected by FarmMapCard
+    final vertices = farm['vertices'] as List<dynamic>?;
+    final preparedVertices = vertices?.map((vertex) {
+      return {
+        'latitude': vertex['lat'] ?? 0.0,
+        'longitude': vertex['lng'] ?? 0.0,
+      };
+    }).toList();
+
+    return {
+      ...farm,
+      'vertices': preparedVertices ?? [],
+      'hectare': farm['area'] ?? 0.0,
+      'sector': farm['sectorName'] ?? '',
+    };
   }
 }
 
@@ -139,9 +228,8 @@ class _FarmSelector extends StatelessWidget {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(4),
                       onTap: () {
-                        onSelected?.call(index); // This triggers the callback
-                        HapticFeedback
-                            .lightImpact(); // Optional: Add haptic feedback
+                        onSelected?.call(index);
+                        HapticFeedback.lightImpact();
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -149,7 +237,7 @@ class _FarmSelector extends StatelessWidget {
                         child: Column(
                           children: [
                             Text(
-                              'Farm ${index + 1}',
+                              farm['name']?.toString() ?? 'Farm ${index + 1}',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -164,22 +252,21 @@ class _FarmSelector extends StatelessWidget {
                                         : null,
                                   ),
                             ),
-                            if (farm['farmName'] != null)
-                              Text(
-                                farm['farmName'].toString(),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: isSelected
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .onPrimaryContainer
-                                          : null,
-                                    ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                            Text(
+                              farm['sectorName']?.toString() ?? 'No sector',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: isSelected
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onPrimaryContainer
+                                        : null,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ],
                         ),
                       ),
@@ -200,20 +287,11 @@ class _FarmDetails extends StatelessWidget {
 
   const _FarmDetails({required this.farm});
 
-  String _getCommoditiesString() {
-    try {
-      if (farm['commodities'] is List) {
-        final commodities =
-            List<Map<String, dynamic>>.from(farm['commodities']);
-        return commodities
-            .map((c) => c['type']?.toString() ?? '')
-            .where((s) => s.isNotEmpty)
-            .join(', ');
-      }
-      return 'Not specified';
-    } catch (e) {
-      return 'Not specified';
+  String _getAreaString() {
+    if (farm['area'] != null) {
+      return '${farm['area']} hectares';
     }
+    return 'Not specified';
   }
 
   @override
@@ -226,65 +304,35 @@ class _FarmDetails extends StatelessWidget {
             Expanded(
               child: DetailField(
                   label: 'Farm Name',
-                  value: farm['farmName']?.toString() ?? 'Unnamed Farm'),
+                  value: farm['name']?.toString() ?? 'Unnamed Farm'),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: DetailField(
-                  label: 'Ownership',
-                  value: farm['ownershipType']?.toString() ?? 'Not specified'),
+                  label: 'Sector',
+                  value: farm['sectorName']?.toString() ?? 'Not specified'),
             ),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-              child: DetailField(
-                  label: 'Location',
-                  value: farm['location']?.toString() ?? 'Not specified'),
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: DetailField(
                   label: 'Barangay',
-                  value: farm['barangay']?.toString() ?? 'Not specified'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: DetailField(
-                  label: 'City/Municipality',
-                  value: farm['city']?.toString() ?? 'Not specified'),
+                  value: farm['parentBarangay']?.toString() ?? 'Not specified'),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: DetailField(
-                  label: 'Area (hectares)',
-                  value: farm['areaHectares']?.toString() ?? 'Not specified'),
+              child: DetailField(label: 'Area', value: _getAreaString()),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        DetailField(
-          label: 'Main Commodities',
-          value: _getCommoditiesString(),
-        ),
-        const SizedBox(height: 12),
-        if (farm['soilType'] != null) ...[
+        if (farm['description'] != null) ...[
           DetailField(
-            label: 'Soil Type',
-            value: farm['soilType']?.toString() ?? 'Not specified',
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (farm['irrigationType'] != null) ...[
-          DetailField(
-            label: 'Irrigation',
-            value: farm['irrigationType']?.toString() ?? 'Not specified',
+            label: 'Description',
+            value: farm['description'].toString(),
           ),
           const SizedBox(height: 12),
         ],

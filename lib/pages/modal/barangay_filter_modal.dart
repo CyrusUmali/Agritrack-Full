@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
+
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
@@ -13,6 +15,8 @@ void showBarangayFilterModal(BuildContext context) {
     'Barangay 5',
     'Barangay 6'
   ];
+
+  final double screenWidth = MediaQuery.of(context).size.width;
 
   // State management
   final selectedBarangays = <String>{};
@@ -108,6 +112,9 @@ void showBarangayFilterModal(BuildContext context) {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       visualDensity: VisualDensity.compact,
+                      activeColor:
+                          FlarelineColors.primary, // Set the active color
+                      checkColor: Colors.white, // Set the checkmark color
                     ),
                     const Text(
                       'Select All',
@@ -163,6 +170,10 @@ void showBarangayFilterModal(BuildContext context) {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               visualDensity: VisualDensity.compact,
+                              activeColor: FlarelineColors
+                                  .primary, // Set the active color
+                              checkColor:
+                                  Colors.white, // Set the checkmark color
                             ),
                             Text(
                               barangay,
@@ -187,32 +198,24 @@ void showBarangayFilterModal(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 120,
-              child: FilledButton.tonal(
-                onPressed: () => Navigator.of(context).pop(),
-                style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text('Cancel'),
+              width: screenWidth < 600 ? 100 : 120,
+              child: ButtonWidget(
+                btnText: 'Cancel',
+                textColor: FlarelineColors.darkBlackText,
+                onTap: () {
+                  Navigator.of(context).pop(); // Close the modal
+                },
               ),
             ),
             const SizedBox(width: 20),
             SizedBox(
-              width: 120,
-              child: FilledButton(
-                onPressed: () {
-                  // Handle selected barangays
-                  print('Selected barangays: $selectedBarangays');
-                  Navigator.of(context).pop();
+              width: screenWidth < 600 ? 100 : 120,
+              child: ButtonWidget(
+                btnText: 'Apply',
+                onTap: () {
+                  Navigator.of(context).pop(); // Close the modal
                 },
-                style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text('Apply'),
+                type: ButtonType.primary.type,
               ),
             ),
           ],

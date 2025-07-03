@@ -1,6 +1,9 @@
 // ignore_for_file: avoid_print
 
+import 'package:flareline/core/models/farmer_model.dart';
+import 'package:flareline/core/models/product_model.dart';
 import 'package:flareline/pages/test/map_widget/farm_list_panel/barangay_filter_panel.dart';
+import 'package:flareline/pages/test/map_widget/farm_service.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/barangay_modal.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/brgy_prev.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/farm_creation/farm_creation_modal.dart';
@@ -10,14 +13,13 @@ import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
 import 'package:latlong2/latlong.dart';
-// Import the developer library for logging
-import 'package:flutter/foundation.dart'; // For ValueNotifier
-import 'package:flutter/material.dart'; // For Colors
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:turf/turf.dart' as turf;
-import 'package:flutter_map_animations/flutter_map_animations.dart'; // Add this import
+import 'package:flutter_map_animations/flutter_map_animations.dart';
+import 'package:toastification/toastification.dart';
 
 class PolygonManager with RouteAware {
-  // Add this field
   final AnimatedMapController mapController;
   List<PolygonData> polygons = [];
   List<LatLng> currentPolygon = [];
@@ -28,7 +30,7 @@ class PolygonManager with RouteAware {
   bool isEditing = false;
   ValueNotifier<PolygonData?> selectedPolygonNotifier = ValueNotifier(null);
   final Function()? onPolygonSelected;
-
+  final BuildContext context;
   PolyEditor? polyEditor;
 
   List<PolygonHistoryEntry> undoHistory = [];
@@ -38,17 +40,213 @@ class PolygonManager with RouteAware {
 
   bool _isModalShowing = false;
   PolygonData? _lastShownPolygon;
-  // Filter-related properties
   List<String> selectedBarangays = [];
-
-  // New overlay controller
   OverlayEntry? _infoCardOverlay;
+  final FarmService farmService;
+  final List<Product> products; // Add this
+  final List<Farmer> farmers; // Add this
 
   PolygonManager({
     required this.mapController,
+    required this.context,
     this.onPolygonSelected,
     this.onFiltersChanged,
+    required this.farmService,
+    required this.products, // Add this
+    required this.farmers, // Add this
   });
+
+  Future<void> completeCurrentPolygon(BuildContext context) async {
+    _saveState();
+    if (currentPolygon.length > 2) {
+      final tempPolygon = PolygonData(
+        vertices: List.from(currentPolygon),
+        name: 'New Farm ${polygons.length + 1}',
+        color: Colors.blue,
+      );
+
+      tempPolygon.area = calculateAreaInHectares(tempPolygon.vertices);
+
+      final shouldSave = await FarmCreationModal.show(
+        context: context,
+        polygon: tempPolygon,
+        onNameChanged: (name) => tempPolygon.name = name,
+        onPinStyleChanged: (style) => tempPolygon.pinStyle = style,
+        farmers: farmers, // Pass the farmers list
+        onFarmerChanged: (id, name) {
+          // print('id' + id! as int);
+          // Format as "id: name" directly in parent
+          tempPolygon.owner = id != null ? "$id: $name" : null;
+          tempPolygon.farmerId = id;
+          // print('tempPolygon.farmerId');
+          // print(tempPolygon.farmerId);
+          // If you also want to store the name somewhere, you can do that here
+        },
+      );
+
+      if (shouldSave) {
+        try {
+          final response = await farmService.createFarm(tempPolygon);
+          // Update tempPolygon with the ID from response
+          tempPolygon.id = response['id'];
+          polygons.add(tempPolygon);
+          currentPolygon.clear();
+          isDrawing = false;
+          clearFilters();
+          selectedPolygonNotifier.value = tempPolygon;
+
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.flat,
+            title: const Text('Farm created successfully!'),
+            autoCloseDuration: const Duration(seconds: 4),
+          );
+        } catch (e) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.error,
+            style: ToastificationStyle.flat,
+            title: Text('Failed to create farm: ${e.toString()}'),
+            alignment: Alignment.topRight,
+            autoCloseDuration: const Duration(seconds: 4),
+          );
+          debugPrint('Failed to create farm: ${e.toString()}');
+          currentPolygon.clear();
+          isDrawing = false;
+        }
+      } else {
+        currentPolygon.clear();
+        isDrawing = false;
+        isEditing = false;
+        selectedPolygon = null;
+        selectedPolygonIndex = null;
+        polyEditor = null;
+        selectedPolygonNotifier.value = null;
+
+        if (onFiltersChanged != null) {
+          onFiltersChanged!();
+        }
+      }
+    }
+  }
+
+  Future<void> deletePolygon(BuildContext context, int polygonId) async {
+    try {
+      // Attempt to delete the farm from the server
+      final success = await farmService.deleteFarm(polygonId);
+
+      if (success) {
+        polygons.removeWhere((polygon) => polygon.id == polygonId);
+        selectedPolygonNotifier.value = null;
+
+        toastification.show(
+          context: context,
+          type: ToastificationType.success,
+          style: ToastificationStyle.flat,
+          title: const Text('Farm deleted successfully!'),
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+
+        if (onFiltersChanged != null) {
+          onFiltersChanged!();
+        }
+      } else {
+        throw Exception('Deletion failed');
+      }
+    } catch (e) {
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.flat,
+        title: Text('Failed to delete farm: ${e.toString()}'),
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+      debugPrint('Failed to delete farm: ${e.toString()}');
+    }
+  }
+
+  Future<void> saveEditedPolygon() async {
+    // Early exit if no polygon is selected
+    if (selectedPolygonIndex == null || selectedPolygon == null) {
+      debugPrint('No polygon selected.');
+      return;
+    }
+
+    // Store references locally to avoid race conditions
+    final polygonToSave = selectedPolygon!;
+    final indexToUpdate = selectedPolygonIndex!;
+
+    try {
+      await farmService.updateFarm(polygonToSave); // API call
+
+      // Verify indices and data are still valid before updating
+      if (indexToUpdate < polygons.length &&
+          polygons[indexToUpdate].id == polygonToSave.id) {
+        polygons[indexToUpdate] = polygonToSave.copyWith();
+        selectedPolygonNotifier.value = polygonToSave;
+      }
+
+      toastification.show(
+        context: context,
+        type: ToastificationType.success,
+        title: const Text('Farm updated successfully!'),
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        title: Text('Failed to update farm: ${e.toString()}'),
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+      debugPrint('Error saving polygon: $e');
+    }
+  }
+
+  void initializePolyEditor(PolygonData polygon) {
+    polyEditor = PolyEditor(
+      points: polygon.vertices,
+      pointIcon: Container(
+        width: 40, // Adjust the size of the container
+        height: 40, // Adjust the size of the container
+        decoration: BoxDecoration(
+          shape: BoxShape.circle, // Make the container circular
+          color: Colors.orange, // Fill color of the circle
+          border: Border.all(
+            color: Colors.white, // Border color
+            width: 2.0, // Border width
+          ),
+        ),
+      ),
+      intermediateIcon: Icon(
+        Icons.lens,
+        size: 25,
+        color: Colors.grey,
+      ),
+      callbackRefresh: () {
+        // Refresh the state or update the map
+        selectedPolygonNotifier.value = selectedPolygon;
+      },
+      addClosePathMarker: true, // Set to true for polygons
+    );
+  }
+
+  double calculateAreaInHectares(List<LatLng> vertices) {
+    if (vertices.length < 3) return 0.0;
+
+    final coordinates = [
+      vertices
+          .map((point) => turf.Position(point.longitude, point.latitude))
+          .toList()
+    ];
+
+    final geoJsonPolygon = turf.Polygon(coordinates: coordinates);
+    final areaInSqMeters = turf.area(geoJsonPolygon);
+    final areaInHectares = areaInSqMeters! / 10000;
+
+    return double.parse(areaInHectares.toStringAsFixed(3));
+  }
 
   void didPush() {
     removeInfoCardOverlay();
@@ -204,15 +402,17 @@ class PolygonManager with RouteAware {
     }
   }
 
-  // Existing showPolygonModal method remains unchanged
   Future<void> showPolygonModal(
       BuildContext context, PolygonData polygon) async {
+    // debugPrint('Initial products: ${polygon.products?.join(', ') ?? 'none'}');
     _isModalShowing = true;
     selectedPolygon = polygon;
     selectedPolygonNotifier.value = polygon;
 
     await PolygonModal.show(
       context: context,
+      products: products,
+      farmers: farmers,
       polygon: polygon,
       onUpdateCenter: (newCenter) {
         selectedPolygon?.center = newCenter;
@@ -221,19 +421,59 @@ class PolygonManager with RouteAware {
       onUpdatePinStyle: (newStyle) {
         selectedPolygon?.pinStyle = newStyle;
         selectedPolygonNotifier.value = selectedPolygon;
+        debugPrint('Products update triggered');
       },
       onUpdateColor: (color) {
         selectedPolygon?.color = color;
         selectedPolygonNotifier.value = selectedPolygon;
+        debugPrint('Products update triggered');
+      },
+      onUpdateProducts: (newProducts) {
+        // Debug print before update
+        debugPrint('Products update triggered');
+        debugPrint(
+            'Current products: ${selectedPolygon?.products?.join(', ') ?? 'none'}');
+        debugPrint('New products: ${newProducts.join(', ')}');
+
+        if (selectedPolygon == null) {
+          debugPrint('Warning: selectedPolygon is null during product update');
+          return;
+        }
+
+        // Create a new list to avoid reference issues
+        final updatedProducts = List<String>.from(newProducts);
+
+        // Update the polygon
+        selectedPolygon = selectedPolygon!.copyWith(products: updatedProducts);
+
+        // Debug print after update but before notifying
+        debugPrint(
+            'Updated polygon products: ${selectedPolygon!.products?.join(', ') ?? 'none'}');
+
+        // Notify listeners
+        selectedPolygonNotifier.value = selectedPolygon;
+
+        // Final verification print
+        debugPrint(
+            'Notifier updated with products: ${selectedPolygonNotifier.value?.products?.join(', ') ?? 'none'}');
       },
       onSave: () {
         saveEditedPolygon();
+        debugPrint('Updsaddwqeducts: ');
       },
       selectedYear: DateTime.now().year.toString(),
       onYearChanged: (newYear) {
         // Store year in polygon data when implemented
         print('Year changed to: $newYear');
       },
+      onDeletePolygon: (id) {
+        deletePolygon(context, id);
+        debugPrint('qewsaasqe');
+        // Add any additional UI updates or navigation here
+      },
+      onUpdateFarmName: (String) {},
+      onUpdateFarmOwner: (String) {},
+      onUpdateBarangay: (String) {},
     );
 
     _isModalShowing = false;
@@ -357,92 +597,6 @@ class PolygonManager with RouteAware {
     selectedPolygonNotifier.value = null;
   }
 
-  Future<void> completeCurrentPolygon(BuildContext context) async {
-    _saveState();
-    if (currentPolygon.length > 2) {
-      // Create temporary polygon
-      final tempPolygon = PolygonData(
-        vertices: List.from(currentPolygon),
-        name: 'New Farm ${polygons.length + 1}',
-        color: Colors.blue,
-      );
-
-      // Show creation modal
-      final shouldSave = await FarmCreationModal.show(
-        context: context,
-        polygon: tempPolygon,
-        onNameChanged: (name) => tempPolygon.name = name,
-      );
-
-      if (shouldSave) {
-        polygons.add(tempPolygon);
-        currentPolygon.clear();
-        isDrawing = false;
-        clearFilters();
-        selectedPolygonNotifier.value = tempPolygon;
-      } else {
-        // Reset drawing state completely
-        currentPolygon.clear();
-        isDrawing = false;
-        isEditing = false;
-        selectedPolygon = null;
-        selectedPolygonIndex = null;
-        polyEditor = null;
-
-        // Notify listeners
-        selectedPolygonNotifier.value = null;
-
-        // Trigger state refresh using existing callback
-        if (onFiltersChanged != null) {
-          onFiltersChanged!();
-        }
-      }
-    }
-  }
-
-  void initializePolyEditor(PolygonData polygon) {
-    polyEditor = PolyEditor(
-      points: polygon.vertices,
-      pointIcon: Container(
-        width: 40, // Adjust the size of the container
-        height: 40, // Adjust the size of the container
-        decoration: BoxDecoration(
-          shape: BoxShape.circle, // Make the container circular
-          color: Colors.orange, // Fill color of the circle
-          border: Border.all(
-            color: Colors.white, // Border color
-            width: 2.0, // Border width
-          ),
-        ),
-      ),
-      intermediateIcon: Icon(
-        Icons.lens,
-        size: 25,
-        color: Colors.grey,
-      ),
-      callbackRefresh: () {
-        // Refresh the state or update the map
-        selectedPolygonNotifier.value = selectedPolygon;
-      },
-      addClosePathMarker: true, // Set to true for polygons
-    );
-  }
-
-  void saveEditedPolygon() {
-    if (selectedPolygonIndex != null && selectedPolygon != null) {
-      polygons[selectedPolygonIndex!] = PolygonData(
-        vertices: List<LatLng>.from(selectedPolygon!.vertices),
-        name: selectedPolygon!.name,
-        color: selectedPolygon!.color,
-        description: selectedPolygon!.description,
-        pinStyle: selectedPolygon!.pinStyle,
-      );
-      selectedPolygonNotifier.value = selectedPolygon;
-    } else {
-      print('Cannot save polygon: No polygon is selected.');
-    }
-  }
-
   /// Logs all polygon data to the console
   void logPolygons() {
     if (polygons.isEmpty) {
@@ -519,34 +673,6 @@ class PolygonManager with RouteAware {
       } else {
         selectedPolygon = polygon;
       }
-    }
-  }
-
-  void updateVertex(int vertexIndex, LatLng newPoint) {
-    _saveState();
-
-    if (selectedPolygonIndex == null) return;
-
-    PolygonData polygon = polygons[selectedPolygonIndex!];
-
-    if (vertexIndex >= 0 && vertexIndex < polygon.vertices.length) {
-      polygon.vertices[vertexIndex] = newPoint;
-      initializePolyEditor(
-          polygon); // Reinitialize the editor with updated points
-    }
-  }
-
-  void addMidpoint(int beforeIndex, LatLng newPoint) {
-    _saveState();
-
-    if (selectedPolygonIndex == null) return;
-
-    PolygonData polygon = polygons[selectedPolygonIndex!];
-
-    if (beforeIndex >= 0 && beforeIndex < polygon.vertices.length) {
-      polygon.vertices.insert(beforeIndex + 1, newPoint);
-      initializePolyEditor(
-          polygon); // Reinitialize the editor with updated points
     }
   }
 
@@ -636,90 +762,41 @@ class PolygonHistoryEntry {
 enum PolygonType { farm, barangay }
 
 class PolygonData {
+  int? id; // Changed to int type
   List<LatLng> vertices;
   String name;
+  String? owner;
+  int? farmerId;
   LatLng center;
   Color color;
   String? description;
   PinStyle pinStyle;
   PolygonType type;
-  String? barangay; // Add barangay reference
-  String? parentBarangay; // For farms, reference which barangay they belong to
+  String? barangay;
+  String? parentBarangay;
+  List<String> products;
+  double? area;
 
   PolygonData({
+    this.id,
     required this.vertices,
     required this.name,
+    this.farmerId,
+    this.owner,
     LatLng? center,
     this.color = Colors.blue,
     this.description,
-    this.pinStyle = PinStyle.fishery,
+    this.pinStyle = PinStyle.Fishery,
     this.type = PolygonType.farm,
-    this.barangay, // For barangay polygons
-    this.parentBarangay, // For farm polygons
-  }) : center = center ?? _calculateCenter(vertices);
+    this.barangay,
+    this.parentBarangay,
+    List<String>? products,
+    this.area,
+  })  : center = center ?? calculateCenter(vertices),
+        products = products ?? [];
 
-  Map<String, dynamic> toMap() {
-    return {
-      'vertices': vertices
-          .map((point) => {'lat': point.latitude, 'lng': point.longitude})
-          .toList(),
-      'name': name,
-      'center': {'lat': center.latitude, 'lng': center.longitude},
-      'color': color.value,
-      'description': description,
-      'pinStyle': pinStyle.toString().split('.').last,
-      'type': type.toString().split('.').last,
-      'barangay': barangay,
-      'parentBarangay': parentBarangay,
-    };
-  }
-
-  /// Update fromMap() to include barangay/parentBarangay
-  factory PolygonData.fromMap(Map<String, dynamic> map) {
-    return PolygonData(
-      vertices: (map['vertices'] as List)
-          .map((point) => LatLng(point['lat'], point['lng']))
-          .toList(),
-      name: map['name'],
-      center: map.containsKey('center')
-          ? LatLng(map['center']['lat'], map['center']['lng'])
-          : _calculateCenter((map['vertices'] as List)
-              .map((point) => LatLng(point['lat'], point['lng']))
-              .toList()),
-      color: Color(map['color']),
-      description: map['description'],
-      pinStyle: parsePinStyle(map['pinStyle']),
-      type: map['type'] == 'barangay' ? PolygonType.barangay : PolygonType.farm,
-      barangay: map['barangay'],
-      parentBarangay: map['parentBarangay'],
-    );
-  }
-
-  PolygonData copyWith() {
-    return PolygonData(
-      name: name,
-      center: LatLng(center.latitude, center.longitude),
-      vertices: List.from(vertices),
-      color: color,
-      pinStyle: pinStyle,
-      description: description,
-      parentBarangay: parentBarangay,
-      // Copy all other properties
-    );
-  }
-
-  void updateFrom(PolygonData other) {
-    name = other.name;
-    center = other.center;
-    vertices = List.from(other.vertices);
-    color = other.color;
-    pinStyle = other.pinStyle;
-    description = other.description;
-    parentBarangay = other.parentBarangay;
-    // Update all other properties that should be copied
-  }
-
-  static LatLng _calculateCenter(List<LatLng> vertices) {
+  /// Helper method to calculate the center of a polygon
+  static LatLng calculateCenter(List<LatLng> vertices) {
     if (vertices.isEmpty) return const LatLng(0, 0);
 
     double latSum = 0, lngSum = 0;
@@ -728,6 +805,119 @@ class PolygonData {
       lngSum += vertex.longitude;
     }
     return LatLng(latSum / vertices.length, lngSum / vertices.length);
+  }
+
+  void parseOwnerString(String ownerString) {
+    if (ownerString.isEmpty) {
+      farmerId = null;
+      owner = null;
+      return;
+    }
+
+    // Split the string at the first occurrence of ":"
+    final parts = ownerString.split(':');
+    if (parts.length >= 2) {
+      // Parse the ID part (trim whitespace)
+      farmerId = int.tryParse(parts[0].trim());
+      // The rest is the owner name (trim whitespace)
+      owner = parts.sublist(1).join(':').trim();
+    } else {
+      // If no colon found, assume it's just the name
+      farmerId = null;
+      owner = ownerString.trim();
+    }
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id, // Include id in serialization
+      'vertices': vertices
+          .map((point) => {'lat': point.latitude, 'lng': point.longitude})
+          .toList(),
+      'name': name,
+      'farmerId': farmerId,
+      'owner': owner,
+      'center': {'lat': center.latitude, 'lng': center.longitude},
+      'color': color.value,
+      'description': description,
+      'pinStyle': pinStyle.toString().split('.').last,
+      'type': type.toString().split('.').last,
+      'barangay': barangay,
+      'parentBarangay': parentBarangay,
+      'products': products,
+      'area': area,
+    };
+  }
+
+  factory PolygonData.fromMap(Map<String, dynamic> map) {
+    return PolygonData(
+      id: map['id'], // Deserialize id
+      vertices: (map['vertices'] as List)
+          .map((point) => LatLng(point['lat'], point['lng']))
+          .toList(),
+      name: map['name'],
+      owner: map['owner'],
+      farmerId: map['farmerId'],
+      center: map.containsKey('center')
+          ? LatLng(map['center']['lat'], map['center']['lng'])
+          : calculateCenter((map['vertices'] as List)
+              .map((point) => LatLng(point['lat'], point['lng']))
+              .toList()),
+      color: Color(map['color']),
+      description: map['description'],
+      pinStyle: parsePinStyle(map['pinStyle']),
+      type: map['type'] == 'barangay' ? PolygonType.barangay : PolygonType.farm,
+      barangay: map['barangay'],
+      parentBarangay: map['parentBarangay'],
+      products:
+          map['products'] != null ? List<String>.from(map['products']) : [],
+      area: map['area']?.toDouble(),
+    );
+  }
+
+  PolygonData copyWith({
+    int? id, // Add id to copyWith
+    String? name,
+    String? owner,
+    int? farmerId,
+    LatLng? center,
+    List<LatLng>? vertices,
+    Color? color,
+    String? description,
+    PinStyle? pinStyle,
+    String? parentBarangay,
+    List<String>? products,
+    double? area,
+  }) {
+    return PolygonData(
+      id: id ?? this.id, // Include id in copy
+      name: name ?? this.name,
+      owner: owner ?? this.owner,
+      farmerId: farmerId ?? this.farmerId,
+      center: center ?? this.center,
+      vertices: vertices ?? List.from(this.vertices),
+      color: color ?? this.color,
+      description: description ?? this.description,
+      pinStyle: pinStyle ?? this.pinStyle,
+      parentBarangay: parentBarangay ?? this.parentBarangay,
+      products: products ?? this.products?.toList(),
+      area: area ?? this.area,
+    );
+  }
+
+  void updateFrom(PolygonData other) {
+    id = other.id; // Update id
+    name = other.name;
+    owner = other.owner;
+    farmerId = other.farmerId;
+    center = other.center;
+    vertices = List.from(other.vertices);
+    color = other.color;
+    pinStyle = other.pinStyle;
+    description = other.description;
+    parentBarangay = other.parentBarangay;
+    products = other.products.toList();
+    area = other.area;
   }
 
   /// Updates the center manually

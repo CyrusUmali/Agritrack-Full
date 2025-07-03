@@ -22,7 +22,7 @@ class SectorOverviewPanel extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(2),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -31,7 +31,7 @@ class SectorOverviewPanel extends StatelessWidget {
                 Icon(Icons.assessment_outlined, color: colors.primary),
                 const SizedBox(width: 12),
                 Text(
-                  'Rice Sector Overview',
+                  '${sector['name']} Sector Overview',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colors.onSurface,
@@ -44,26 +44,19 @@ class SectorOverviewPanel extends StatelessWidget {
               context,
               icon: Icons.description_outlined,
               label: 'Description',
-              value:
-                  'The rice sector is the backbone of agricultural economy, providing staple food for over half the world\'s population. It encompasses cultivation, processing, distribution and trade of rice varieties.',
-            ),
-            const SizedBox(height: 16),
-            _buildInfoRow(
-              context,
-              icon: Icons.person_outline,
-              label: 'Sector Coordinator',
-              value:
-                  'Dr. Nguyen Van Minh\nminh.rice@sector.org | +84 987 654 321',
+              value: sector['description'] ??
+                  'No description available for this sector.',
             ),
             const SizedBox(height: 16),
             _buildInfoRow(
               context,
               icon: Icons.flag_outlined,
               label: 'Mission',
-              value:
-                  'To ensure sustainable rice production, improve farmer livelihoods, and maintain food security through innovative farming techniques and fair trade practices.',
+              value: sector['mission'] ??
+                  'No mission statement available for this sector.',
               isHighlighted: true,
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -121,31 +114,6 @@ class SectorOverviewPanel extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// Example usage with rice sector data
-class RiceSectorExample extends StatelessWidget {
-  const RiceSectorExample({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rice Sector Dashboard'),
-        elevation: 24,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            SectorOverviewPanel(
-                sector: {}), // Empty map as we're using hardcoded values
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
     );
   }
 }

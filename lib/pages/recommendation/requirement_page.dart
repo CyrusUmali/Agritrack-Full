@@ -1,8 +1,6 @@
 import 'package:flareline/pages/recommendation/requirement.dart';
 import 'package:flutter/material.dart';
-import 'package:flareline/pages/layout.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:flareline/pages/layout.dart'; 
 
 class RequirementPage extends LayoutWidget {
   const RequirementPage({super.key});

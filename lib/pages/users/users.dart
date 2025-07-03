@@ -1,29 +1,65 @@
-import 'dart:math';
-
+import 'package:flareline/core/models/farmer_model.dart';
+import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/pages/farmers/add_farmer_modal_2.dart';
+import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/users/add_user_modal.dart';
+import 'package:flareline/pages/users/account_creation_modal.dart';
+import 'package:flareline/pages/users/auth_service.dart';
 import 'package:flareline/pages/users/da_personel_profile.dart';
+import 'package:flareline/pages/users/farmer_option_modal.dart';
+import 'package:flareline/pages/users/farmer_registration.dart';
+import 'package:flareline/pages/users/user_bloc/user_bloc.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
 import 'package:responsive_builder/responsive_builder.dart';
-import 'package:flareline/pages/farmers/farmer_profile.dart'; // Import the new widget
-import 'package:flareline_uikit/components/buttons/button_widget.dart'; // Import the ButtonWidget
-import 'package:flareline_uikit/core/theme/flareline_colors.dart'; // Import FlarelineColors
+import 'package:flareline/pages/farmers/farmer_profile.dart';
+import 'package:flareline_uikit/components/buttons/button_widget.dart';
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:toastification/toastification.dart';
 
 class Users extends StatefulWidget {
   const Users({super.key});
 
   @override
-  State<Users> createState() => UsersState();
+  State<Users> createState() => _UsersState();
 }
 
-class UsersState extends State<Users> {
-  Map<String, dynamic>? selectedFarmer;
+class _UsersState extends State<Users> {
+  String selectedRole = '';
+  String selectedStatus = '';
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
-    return _channels();
+    return BlocListener<UserBloc, UserState>(
+      listener: (context, state) {
+        if (state is UsersLoaded && state.message != null) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.flat,
+            title: Text(state.message!),
+            alignment: Alignment.topRight,
+            showProgressBar: false,
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+        } else if (state is UsersError) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.error,
+            style: ToastificationStyle.flat,
+            title: Text(state.message),
+            alignment: Alignment.topRight,
+            showProgressBar: false,
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+        }
+      },
+      child: _channels(),
+    );
   }
 
   _channels() {
@@ -39,27 +75,77 @@ class UsersState extends State<Users> {
       height: 450,
       child: Column(
         children: [
-          _buildSearchBar(), // Add the search bar here
+          _buildSearchBar(),
           const SizedBox(height: 16),
           Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: DataTableWidget(
-                    onFarmerSelected: (farmer) {
-                      setState(() {
-                        selectedFarmer = farmer;
-                      });
-                    },
-                  ),
-                ),
-                // const SizedBox(width: 16),
-                // Expanded(
-                //   flex: 1,
-                //   child: FarmerDetailWidget(farmer: selectedFarmer),
-                // ),
-              ],
+            child: BlocBuilder<UserBloc, UserState>(
+              builder: (context, state) {
+                if (state is UsersLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (state is UsersError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Wrap the Text widget with SingleChildScrollView
+                        SizedBox(
+                          height: 100, // Set a fixed height or use constraints
+                          child: SingleChildScrollView(
+                            child: Text(
+                              state.message,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.red[700],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GlobalColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                          ),
+                          onPressed: () {
+                            context.read<UserBloc>().add(LoadUsers());
+                          },
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.refresh,
+                                  size: 20, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text("Reload"),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                } else if (state is UsersLoaded) {
+                  if (state.users.isEmpty) {
+                    return _buildNoResultsWidget();
+                  }
+                  return Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: DataTableWidget(
+                          key: ValueKey('users_table_${state.users.length}'),
+                          users:
+                              state.users.map((user) => user.toJson()).toList(),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return _buildNoResultsWidget();
+              },
             ),
           ),
         ],
@@ -70,15 +156,62 @@ class UsersState extends State<Users> {
   Widget _channelMobile(BuildContext context) {
     return Column(
       children: [
-        _buildSearchBar(), // Add the search bar here
+        _buildSearchBar(),
         const SizedBox(height: 16),
         SizedBox(
           height: 500,
-          child: DataTableWidget(
-            onFarmerSelected: (farmer) {
-              setState(() {
-                selectedFarmer = farmer;
-              });
+          child: BlocBuilder<UserBloc, UserState>(
+            builder: (context, state) {
+              if (state is UsersLoading) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (state is UsersError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        state.message,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.red[700],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GlobalColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                        ),
+                        onPressed: () {
+                          context.read<UserBloc>().add(LoadUsers());
+                        },
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.refresh, size: 20, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text("Reload"),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              } else if (state is UsersLoaded) {
+                if (state.users.isEmpty) {
+                  return _buildNoResultsWidget();
+                }
+                return DataTableWidget(
+                  key: ValueKey('users_table_${state.users.length}'),
+                  users: state.users.map((user) => user.toJson()).toList(),
+                );
+              }
+              return _buildNoResultsWidget();
             },
           ),
         ),
@@ -86,110 +219,377 @@ class UsersState extends State<Users> {
     );
   }
 
-  // Search Bar Widget
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
+  Widget _buildNoResultsWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search Users...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-              ),
+          Icon(
+            Icons.people_outline,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No users found',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
             ),
           ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: () {
-              // Example data for the farmer
-              String farmerName = "John Doe";
-              String farmerId = "123";
-
-              AddUserModal.show(
-                context: context,
-                onUserAdded:
-                    (String name, String email, String password, String role) {
-                  // Handle the new user data here
-                  print('New User Added:');
-                  print('Name: $name');
-                  print('Email: $email');
-                  print('Password: $password');
-                  print('Role: $role');
-
-                  // You can call your ViewModel or API here to save the user
-                },
-              );
-            },
-            child: const Text("Add User"),
+          const SizedBox(height: 8),
+          Text(
+            'Try adjusting your search or filter criteria',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildSearchBar() {
+    return SizedBox(
+      height: 48,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Role ComboBox
+          buildComboBox(
+            hint: 'User Role',
+            options: const ['All', 'Admin', 'DA', 'Farmer'],
+            selectedValue: selectedRole,
+            onSelected: (value) {
+              setState(() => selectedRole = value);
+              // context.read<UserBloc>().add(FilterUsers(
+              //       role: (value == 'All' || value.isEmpty) ? null : value,
+              //       status: selectedStatus,
+              //       query: _searchQuery,
+              //     ));
+            },
+            width: 150,
+          ),
+          const SizedBox(width: 8),
+
+          // Status ComboBox
+          buildComboBox(
+            hint: 'Status',
+            options: const ['All', 'Active', 'Pending', 'Rejected'],
+            selectedValue: selectedStatus,
+            onSelected: (value) {
+              setState(() => selectedStatus = value);
+              context.read<UserBloc>().add(FilterUsers(
+                    role: selectedRole,
+                    // status: (value == 'All' || value.isEmpty) ? null : value,
+                    // query: _searchQuery,
+                  ));
+            },
+            width: 150,
+          ),
+          const SizedBox(width: 8),
+
+          // Search Field
+          Expanded(
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search users...',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onChanged: (value) {
+                  setState(() => _searchQuery = value);
+                  context.read<UserBloc>().add(SearchUsers(value));
+                },
+              ),
+            ),
+          ),
+
+          // Add User Button
+          const SizedBox(width: 8),
+          SizedBox(
+            height: 48,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GlobalColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              onPressed: () {
+                // AddUserModal.show(
+                //   context: context,
+                //   onUserAdded: (name, email, password) {},
+                // );
+
+                // To show the modal:
+
+                AccountCreationMethodModal.show(
+                  context: context,
+                  onMethodSelected: (role, method) async {
+                    if (role == 'admin' || role == 'officer') {
+                      if (method == 'email') {
+                        AddUserModal.show(
+                          context: context,
+                          role: role,
+                          onUserAdded: (userData) {
+                            // Handle admin/officer user creation
+                            print('User created: $userData');
+                            context.read<UserBloc>().add(AddUser(
+                                name: userData.name,
+                                email: userData.email,
+                                password: userData.password,
+                                role: userData.role));
+                          },
+                        );
+                      } else {
+                        final googleUser =
+                            await AuthService.getGoogleUserIsolated();
+                        if (googleUser != null) {
+                          print('role' + role);
+                          print(googleUser);
+                          context.read<UserBloc>().add(AddUser(
+                                name: googleUser['name']!,
+                                email: googleUser['email']!,
+                                idToken: googleUser['idToken'],
+                                role: role,
+                              ));
+                        }
+                      }
+                    } else if (role == 'farmer') {
+                      // if (method == 'email') {
+                      showFarmerOptionsModal(context, 'farmer', method,
+                          // Callback when a method is selected
+                          (String role, String method) {
+                        print('Selected role: $role, method: $method');
+                        // Handle the method selection here
+                      },
+                          // Callback for linking existing farmer
+                          () {
+                        print('Linking existing farmer');
+                        // Handle linking existing farmer here
+                      },
+
+                          // Pass the farmers data from the FarmerBloc
+                          farmers:
+                              (context.read<FarmerBloc>().state is FarmersLoaded
+                                  ? () {
+                                      final allFarmers = (context
+                                              .read<FarmerBloc>()
+                                              .state as FarmersLoaded)
+                                          .farmers;
+                                      final filteredFarmers = allFarmers
+                                          .where((farmer) =>
+                                              farmer.userId == null ||
+                                              farmer.userId == 0)
+                                          .toList();
+
+                                      return filteredFarmers;
+                                    }()
+                                  : <Farmer>[]));
+                    }
+                  },
+                  onLinkExistingFarmer: () {
+                    AddFarmerModal.show(
+                      context: context,
+                      onFarmerAdded: (farmerData) {
+                        context.read<FarmerBloc>().add(AddFarmer(
+                              name: farmerData.name,
+                              email: farmerData.email,
+                              sector: farmerData.sector,
+                              phone: farmerData.phone,
+                              barangay: farmerData.barangay,
+                              imageUrl: farmerData.imageUrl,
+                            ));
+                      },
+                    );
+                  },
+                );
+              },
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, size: 20, color: FlarelineColors.background),
+                  SizedBox(width: 4),
+                  Text("Add User", style: TextStyle(fontSize: 14)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildComboBox({
+    required String hint,
+    required List<String> options,
+    required String selectedValue,
+    required ValueChanged<String> onSelected,
+    double? width,
+  }) {
+    return SizedBox(
+      height: 48,
+      width: width,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Tooltip(
+              message: hint,
+              child: Autocomplete<String>(
+                fieldViewBuilder: (context, textEditingController, focusNode,
+                    onFieldSubmitted) {
+                  if (selectedValue.isNotEmpty) {
+                    textEditingController.text = selectedValue;
+                  }
+                  return TextField(
+                    controller: textEditingController,
+                    focusNode: focusNode,
+                    decoration: InputDecoration(
+                      hintText: hint,
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      suffixIconConstraints: const BoxConstraints(
+                        minHeight: 24,
+                        minWidth: 24,
+                      ),
+                      suffixIcon: const Icon(Icons.arrow_drop_down, size: 24),
+                    ),
+                    style: const TextStyle(fontSize: 14),
+                  );
+                },
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return options;
+                  }
+                  return options.where((option) => option
+                      .toLowerCase()
+                      .contains(textEditingValue.text.toLowerCase()));
+                },
+                onSelected: onSelected,
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      child: SizedBox(
+                        width: width,
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, index) {
+                            final option = options.elementAt(index);
+                            return ListTile(
+                              title: Text(option),
+                              minVerticalPadding: 12,
+                              dense: true,
+                              onTap: () => onSelected(option),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class DataTableWidget extends TableWidget<FarmersViewModel> {
-  final Function(Map<String, dynamic>)? onFarmerSelected;
+class DataTableWidget extends TableWidget<UsersViewModel> {
+  final List<Map<String, dynamic>> users;
 
-  DataTableWidget({this.onFarmerSelected, Key? key}) : super(key: key) {
-    print("DataTableWidget initialized");
+  DataTableWidget({
+    required this.users,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  UsersViewModel viewModelBuilder(BuildContext context) {
+    return UsersViewModel(context, users);
   }
 
   @override
-  FarmersViewModel viewModelBuilder(BuildContext context) {
-    return FarmersViewModel(
-      context,
-      onFarmerSelected,
-      (id) {
-        print("Deleted User ID: $id");
-        // Add logic to remove the farmer from the list or show a confirmation dialog
+  Widget headerBuilder(
+      BuildContext context, String headerName, UsersViewModel viewModel) {
+    if (headerName == 'Action') {
+      return Text(headerName);
+    }
+
+    return InkWell(
+      onTap: () {
+        context.read<UserBloc>().add(SortUsers(headerName));
       },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              headerName,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 4),
+          BlocBuilder<UserBloc, UserState>(
+            builder: (context, state) {
+              if (state is UsersLoaded) {
+                final bloc = context.read<UserBloc>();
+                return Icon(
+                  bloc.sortColumn == headerName
+                      ? (bloc.sortAscending
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward)
+                      : Icons.unfold_more,
+                  size: 16,
+                  color: bloc.sortColumn == headerName
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey,
+                );
+              }
+              return const Icon(Icons.unfold_more,
+                  size: 16, color: Colors.grey);
+            },
+          ),
+        ],
+      ),
     );
   }
 
   @override
-  Widget actionWidgetsBuilder(BuildContext context,
-      TableDataRowsTableDataRows columnData, FarmersViewModel viewModel) {
-    // Get all the row data from the current table row
-    final rowData = viewModel.tableDataEntity?.rows
-        ?.firstWhere((row) => row.any((cell) => cell.id == columnData.id));
-
-    // Extract the actual values from the table row
-    final username = rowData
-            ?.firstWhere((cell) => cell.columnName == 'Username',
-                orElse: () => TableDataRowsTableDataRows()..text = '')
-            ?.text ??
-        '';
-
-    final userRole = rowData
-            ?.firstWhere((cell) => cell.columnName == 'UserRole',
-                orElse: () => TableDataRowsTableDataRows()..text = '')
-            ?.text ??
-        '';
-
-    final contact = rowData
-            ?.firstWhere((cell) => cell.columnName == 'Contact',
-                orElse: () => TableDataRowsTableDataRows()..text = '')
-            ?.text ??
-        '';
-
-    // Create user object from the actual table data
-    final user = {
-      'id': columnData.id,
-      'Username': username,
-      'UserRole': userRole,
-      'contact': contact,
-    };
-
-    // Parse the ID for use in delete operations
-    final userId = int.tryParse(columnData.id ?? '0') ?? 0;
+  Widget actionWidgetsBuilder(
+    BuildContext context,
+    TableDataRowsTableDataRows columnData,
+    UsersViewModel viewModel,
+  ) {
+    final user = viewModel.users.firstWhere(
+      (u) => u['id'].toString() == columnData.id,
+    );
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -197,29 +597,20 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
         IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),
           onPressed: () {
-            print("Delete icon clicked for User ${user['id']}");
-
             ModalDialog.show(
               context: context,
               title: 'Delete User',
               showTitle: true,
               showTitleDivider: true,
               modalType: ModalType.medium,
-              onCancelTap: () {
-                Navigator.of(context).pop(); // Close the modal
-              },
+              onCancelTap: () => Navigator.of(context).pop(),
               onSaveTap: () {
-                // Perform the delete operation here
-                if (viewModel.onFarmerDeleted != null) {
-                  viewModel.onFarmerDeleted!(userId);
-                }
-                Navigator.of(context).pop(); // Close the modal
+                context.read<UserBloc>().add(DeleteUser(user['id'] as int));
+                Navigator.of(context).pop();
               },
               child: Center(
                 child: Text(
-                  'Are you sure you want to delete ${user['Username']}?',
-                  textAlign: TextAlign.center,
-                ),
+                    'Are you sure you want to delete ${user['Username']}?'),
               ),
               footer: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -233,9 +624,7 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
                         child: ButtonWidget(
                           btnText: 'Cancel',
                           textColor: FlarelineColors.darkBlackText,
-                          onTap: () {
-                            Navigator.of(context).pop(); // Close the modal
-                          },
+                          onTap: () => Navigator.of(context).pop(),
                         ),
                       ),
                       const SizedBox(width: 20),
@@ -244,11 +633,10 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
                         child: ButtonWidget(
                           btnText: 'Delete',
                           onTap: () {
-                            // Perform the delete operation here
-                            if (viewModel.onFarmerDeleted != null) {
-                              viewModel.onFarmerDeleted!(userId);
-                            }
-                            Navigator.of(context).pop(); // Close the modal
+                            context
+                                .read<UserBloc>()
+                                .add(DeleteUser(user['id'] as int));
+                            Navigator.of(context).pop();
                           },
                           type: ButtonType.primary.type,
                         ),
@@ -263,16 +651,20 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
-            print(
-                "Navigating to profile for ${user['Username']} with role ${user['UserRole']}");
+            final role = (user['role'] ?? '').toLowerCase();
+            final status = (user['Status'] ?? '').toLowerCase();
 
-            if (viewModel.onFarmerSelected != null) {
-              viewModel.onFarmerSelected!(user);
-            }
+            print(user);
 
-            final role = (user['UserRole'] ?? '').toLowerCase();
-
-            if (role.contains('officer') || role.contains('admin')) {
+            if (role.contains('farmer') && status.contains('pending')) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      FarmerRegistrationPage(farmerData: user),
+                ),
+              );
+            } else if (role.contains('officer') || role.contains('admin')) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -283,11 +675,11 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => FarmersProfile(farmer: user),
+                  builder: (context) =>
+                      FarmersProfile(farmerID: user['id'] as int),
                 ),
               );
             } else {
-              // Default to officer profile if role not recognized
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -311,121 +703,91 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
   }
 
   Widget _buildDesktopTable(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minWidth: 1000, // Set minimum width for desktop
-        maxWidth: 1200, // Set maximum width for desktop
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: 1200, // Fixed width for desktop
-          child: super.build(context),
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double tableWidth = constraints.maxWidth > 1200
+            ? 1200
+            : constraints.maxWidth > 800
+                ? constraints.maxWidth * 0.9
+                : constraints.maxWidth;
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+            child: SizedBox(
+              width: tableWidth,
+              child: super.build(context),
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildMobileTable(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: MediaQuery.of(context).size.width, // Full width on mobile
-        ),
-        child: SizedBox(
-          width: 600, // Wider than mobile screen to enable scrolling
-          child: super.build(context),
-        ),
+      child: SizedBox(
+        width: 800,
+        child: super.build(context),
       ),
     );
   }
 }
 
-// Helper function to get weighted random role
-String _getWeightedRandomRole(List<Map<String, dynamic>> roles) {
-  // Calculate total weight
-  int totalWeight = roles.fold(0, (sum, role) => sum + (role['weight'] as int));
+class UsersViewModel extends BaseTableProvider {
+  final List<Map<String, dynamic>> users;
 
-  // Generate random number
-  int random = Random().nextInt(totalWeight);
-  int cumulativeWeight = 0;
-
-  for (var role in roles) {
-    cumulativeWeight += role['weight'] as int;
-    if (random < cumulativeWeight) {
-      return role['role'] as String;
-    }
-  }
-
-  return 'Farmer'; // fallback
-}
-
-class FarmersViewModel extends BaseTableProvider {
-  final Function(Map<String, dynamic>)? onFarmerSelected;
-  final Function(int)? onFarmerDeleted; // Add this line
-
-  @override
-  String get TAG => 'FarmersViewModel';
-
-  FarmersViewModel(super.context, this.onFarmerSelected,
-      this.onFarmerDeleted); // Modify constructor
+  UsersViewModel(super.context, this.users);
 
   @override
   Future loadData(BuildContext context) async {
-    const headers = ["Username", "UserRole", "Contact", "Action"];
+    const headers = ["Username", "UserRole", "Email", "Status", "Action"];
 
     List<List<TableDataRowsTableDataRows>> rows = [];
 
-    for (int i = 0; i < 50; i++) {
+    for (var user in users) {
       List<TableDataRowsTableDataRows> row = [];
-      var id = i;
 
-      // List of possible roles with weights for randomization
-      final roles = [
-        {'role': 'Admin', 'weight': 1},
-        {'role': 'DA Officer', 'weight': 3},
-        {'role': 'Farmer', 'weight': 10},
-      ];
-
-      // Generate weighted random role
-      String randomRole = _getWeightedRandomRole(roles);
-
-      var item = {
-        'id': id.toString(),
-        'Username': 'User $id',
-        'UserRole': randomRole,
-        'contact': 'user$id@example.com',
-      };
-
-      // Create regular cells
+      // Username
       var userNameCell = TableDataRowsTableDataRows()
-        ..text = item['Username']
+        ..text = user['name']
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Username'
-        ..id = item['id'];
+        ..id = user['id'].toString();
       row.add(userNameCell);
 
+      // User Role
       var roleCell = TableDataRowsTableDataRows()
-        ..text = item['UserRole']
+        ..text = user['role']
         ..dataType = CellDataType.TEXT.type
-        ..columnName = 'UserRole'
-        ..id = item['id'];
+        ..columnName = 'role'
+        ..id = user['id'].toString();
       row.add(roleCell);
 
-      var contactCell = TableDataRowsTableDataRows()
-        ..text = item['contact']
+      // Email
+      var emailCell = TableDataRowsTableDataRows()
+        ..text = user['email']
         ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Contact'
-        ..id = item['id'];
-      row.add(contactCell);
+        ..columnName = 'email'
+        ..id = user['id'].toString();
+      row.add(emailCell);
 
-      // Add action cell for the icon button
+      // Status
+      var statusCell = TableDataRowsTableDataRows()
+        ..text = user['status']
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = 'Status'
+        ..id = user['id'].toString();
+      row.add(statusCell);
+
+      // Action
       var actionCell = TableDataRowsTableDataRows()
         ..text = ""
         ..dataType = CellDataType.ACTION.type
         ..columnName = 'Action'
-        ..id = item['id'];
+        ..id = user['id'].toString();
       row.add(actionCell);
 
       rows.add(row);

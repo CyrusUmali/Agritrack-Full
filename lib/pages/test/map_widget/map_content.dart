@@ -67,6 +67,7 @@ class MapContent extends StatelessWidget {
             : barangayManager.barangays;
 
     return SizedBox(
+      // height: MediaQuery.of(context).size.height,
       height: MediaQuery.of(context).size.height * 0.88,
       width: MediaQuery.of(context).size.width,
       child: FlutterMap(

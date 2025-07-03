@@ -84,7 +84,7 @@ class FarmWorkersCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => FarmersProfile(farmer: worker.toMap()),
+            builder: (context) => FarmersProfile(farmerID: 1),
           ),
         );
       },

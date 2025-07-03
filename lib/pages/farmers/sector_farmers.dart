@@ -1,14 +1,24 @@
 // ignore_for_file: must_be_immutable, avoid_print, use_super_parameters, non_constant_identifier_names
 
-import 'package:flareline/pages/farmers/add_farmer_modal.dart';
-import 'package:flareline_uikit/components/modal/modal_dialog.dart';
+import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:responsive_builder/responsive_builder.dart';
+import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/pages/farmers/add_farmer_modal.dart';
+import 'package:flareline/pages/farmers/farmer_data.dart';
+import 'package:flareline/pages/farmers/farmer_profile.dart';
+import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
+import 'package:flareline/pages/modal/barangay_filter_modal.dart';
+import 'package:flareline/pages/widget/combo_box.dart';
+import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
-import 'package:responsive_builder/responsive_builder.dart';
-import 'package:flareline/pages/farmers/farmer_profile.dart'; // Import the new widget
-import 'package:flareline_uikit/components/buttons/button_widget.dart'; // Import the ButtonWidget
-import 'package:flareline_uikit/core/theme/flareline_colors.dart'; // Import FlarelineColors
+import 'package:flareline_uikit/components/buttons/button_widget.dart';
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
+import 'package:toastification/toastification.dart';
+
+import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
 
 class FarmersPerSectorWidget extends StatefulWidget {
   const FarmersPerSectorWidget({super.key});
@@ -18,11 +28,45 @@ class FarmersPerSectorWidget extends StatefulWidget {
 }
 
 class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
-  Map<String, dynamic>? selectedFarmer;
+  String selectedSector = '';
+  String selectedBarangay = '';
+  late List<String> barangayNames;
+  String _barangayFilter = ''; // Add this as a class variable
+
+  @override
+  void initState() {
+    super.initState();
+    barangayNames = barangays.map((b) => b['name'] as String).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return _channels();
+    return BlocListener<FarmerBloc, FarmerState>(
+      listener: (context, state) {
+        if (state is FarmersLoaded && state.message != null) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.flat,
+            title: Text(state.message!),
+            alignment: Alignment.topRight,
+            showProgressBar: false,
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+        } else if (state is FarmersError) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.error,
+            style: ToastificationStyle.flat,
+            title: Text(state.message),
+            alignment: Alignment.topRight,
+            showProgressBar: false,
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+        }
+      },
+      child: _channels(),
+    );
   }
 
   _channels() {
@@ -33,32 +77,40 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
     );
   }
 
+  // Update the _channelsWeb widget
   Widget _channelsWeb(BuildContext context) {
     return SizedBox(
       height: 450,
       child: Column(
         children: [
-          _buildSearchBar(), // Add the search bar here
+          _buildSearchBar(),
           const SizedBox(height: 16),
           Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: DataTableWidget(
-                    onFarmerSelected: (farmer) {
-                      setState(() {
-                        selectedFarmer = farmer;
-                      });
-                    },
-                  ),
-                ),
-                // const SizedBox(width: 16),
-                // Expanded(
-                //   flex: 1,
-                //   child: FarmerDetailWidget(farmer: selectedFarmer),
-                // ),
-              ],
+            child: BlocBuilder<FarmerBloc, FarmerState>(
+              builder: (context, state) {
+                if (state is FarmersLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (state is FarmersError) {
+                  return Center(child: Text(state.message));
+                } else if (state is FarmersLoaded) {
+                  if (state.farmers.isEmpty) {
+                    return _buildNoResultsWidget();
+                  }
+                  return Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: DataTableWidget(
+                          key:
+                              ValueKey('farmers_table_${state.farmers.length}'),
+                          farmers: state.farmers,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return _buildNoResultsWidget();
+              },
             ),
           ),
         ],
@@ -66,18 +118,30 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
     );
   }
 
+// Update the _channelMobile widget
   Widget _channelMobile(BuildContext context) {
     return Column(
       children: [
-        _buildSearchBar(), // Add the search bar here
+        _buildSearchBar(),
         const SizedBox(height: 16),
         SizedBox(
           height: 500,
-          child: DataTableWidget(
-            onFarmerSelected: (farmer) {
-              setState(() {
-                selectedFarmer = farmer;
-              });
+          child: BlocBuilder<FarmerBloc, FarmerState>(
+            builder: (context, state) {
+              if (state is FarmersLoading) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (state is FarmersError) {
+                return Center(child: Text(state.message));
+              } else if (state is FarmersLoaded) {
+                if (state.farmers.isEmpty) {
+                  return _buildNoResultsWidget();
+                }
+                return DataTableWidget(
+                  key: ValueKey('farmers_table_${state.farmers.length}'),
+                  farmers: state.farmers,
+                );
+              }
+              return _buildNoResultsWidget();
             },
           ),
         ),
@@ -85,44 +149,165 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
     );
   }
 
-  // Search Bar Widget
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
+// Add this new helper widget
+  Widget _buildNoResultsWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Icon(
+            Icons.people_outline,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No farmers found',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Try adjusting your search or filter criteria',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return SizedBox(
+      height: 48, // Fixed height to match first example
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Sector ComboBox
+          buildComboBox(
+            hint: 'Sector',
+            options: const [
+              'All',
+              'Rice',
+              'Livestock',
+              'Fishery',
+              'Corn',
+              'HVC',
+              'Organic'
+            ],
+            selectedValue: selectedSector,
+            onSelected: (value) {
+              setState(() => selectedSector = value);
+              context.read<FarmerBloc>().add(FilterFarmers(
+                    name: '',
+                    sector: (value == 'All' || value.isEmpty)
+                        ? null
+                        : value, // Modified this line
+                    barangay: selectedBarangay,
+                  ));
+            },
+            width: 150,
+          ),
+          const SizedBox(width: 8),
+
+          // Barangay ComboBox
+          buildComboBox(
+            hint: 'Barangay',
+            options: [
+              'All',
+              ...barangayNames.where((String option) {
+                return option
+                    .toLowerCase()
+                    .contains(_barangayFilter.toLowerCase());
+              })
+            ],
+            selectedValue: selectedBarangay,
+            onSelected: (value) {
+              setState(() => selectedBarangay = value);
+              context.read<FarmerBloc>().add(FilterFarmers(
+                    name: '',
+
+                    barangay: value == 'All'
+                        ? null
+                        : value, // This will trigger "All" in bloc
+                    sector: selectedSector,
+                  ));
+            },
+            width: 150,
+          ),
+          const SizedBox(width: 8),
+
+          // Search Field
           Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search farmers...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search farmers...',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                onChanged: (value) {
+                  context.read<FarmerBloc>().add(SearchFarmers(value));
+                },
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: () {
-              // Add your logic for the "Add Farmer" button here
-              print("Add Farmer button pressed");
 
-              // Example data for the farmer
-              String farmerName = "John Doe";
-              String farmerId = "123";
-
-              AddFarmerModal.show(
-                context: context,
-                onUserAdded:
-                    (String name, String email, String password, String role) {
-                  // You can call your ViewModel or API here to save the user
-                },
-              );
-            },
-            child: const Text("Add Farmer"),
+          // Add Farmer Button
+          const SizedBox(width: 8),
+          SizedBox(
+            height: 48,
+            // width: 24,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF66CDAA), // mediumaquamarine
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              onPressed: () {
+                AddFarmerModal.show(
+                  context: context,
+                  onFarmerAdded: (farmerData) {
+                    // Handle the farmer data here
+                    context.read<FarmerBloc>().add(AddFarmer(
+                          name: farmerData.name,
+                          email: farmerData.email,
+                          sector: farmerData.sector,
+                          phone: farmerData.phone,
+                          barangay: farmerData.barangay,
+                          imageUrl: farmerData.imageUrl,
+                        ));
+                  },
+                );
+              },
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.add,
+                    size: 20,
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 4),
+                  Text("Add Farmer", style: TextStyle(fontSize: 14)),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -131,38 +316,89 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
 }
 
 class DataTableWidget extends TableWidget<FarmersViewModel> {
-  final Function(Map<String, dynamic>)? onFarmerSelected;
+  final List<Farmer> farmers;
 
-  DataTableWidget({this.onFarmerSelected, Key? key}) : super(key: key) {
-    print("DataTableWidget initialized");
-  }
+  DataTableWidget({
+    required this.farmers,
+    Key? key,
+  }) : super(key: key);
 
   @override
   FarmersViewModel viewModelBuilder(BuildContext context) {
-    print("Building FarmersViewModel");
+    return FarmersViewModel(context, farmers);
+  }
 
-    return FarmersViewModel(
-      context,
-      onFarmerSelected,
-      (id) {
-        print("Deleted Farmer ID: $id");
-        // Add logic to remove the farmer from the list or show a confirmation dialog
+  @override
+  Widget headerBuilder(
+      BuildContext context, String headerName, FarmersViewModel viewModel) {
+    if (headerName == 'Action') {
+      return Text(headerName);
+    }
+
+    return InkWell(
+      onTap: () {
+        context.read<FarmerBloc>().add(SortFarmers(headerName));
       },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              headerName,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 4),
+          BlocBuilder<FarmerBloc, FarmerState>(
+            builder: (context, state) {
+              if (state is FarmersLoaded) {
+                final bloc = context.read<FarmerBloc>();
+                return Icon(
+                  bloc.sortColumn == headerName
+                      ? (bloc.sortAscending
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward)
+                      : Icons.unfold_more,
+                  size: 16,
+                  color: bloc.sortColumn == headerName
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey,
+                );
+              }
+              return const Icon(Icons.unfold_more,
+                  size: 16, color: Colors.grey);
+            },
+          ),
+        ],
+      ),
     );
   }
 
   @override
-  Widget actionWidgetsBuilder(BuildContext context,
-      TableDataRowsTableDataRows columnData, FarmersViewModel viewModel) {
-    // Create a farmer object from the data
-    int id = int.tryParse(columnData.id ?? '0') ?? 0;
-    final farmer = {
-      'farmerName': 'Farmer $id',
-      'sector': 'Agriculture',
-      'farmSize': '${id + 1} hectares',
-      'contact': 'farmer$id@example.com',
-      'lastHarvest': 'March ${2024 - id}',
-    };
+  Widget actionWidgetsBuilder(
+    BuildContext context,
+    TableDataRowsTableDataRows columnData,
+    FarmersViewModel viewModel,
+  ) {
+    final farmer = viewModel.farmers.firstWhere(
+      (p) => p.id.toString() == columnData.id,
+    );
+
+    // final farmer = farmers.firstWhere(
+    //   (f) => f.id == columnData.id,
+    //   orElse: () => Farmer(
+    //     id: columnData.id is String ? columnData.id as String : '5',
+    //     name: 'Unknown',
+    //     sector: 'Unknown',
+    //     barangay: 'Unknown',
+    //     contact: 'Unknown',
+    //     imageUrl: '',
+    //     email: '',
+    //     phone: '',
+    //     address: '',
+    //   ),
+    // );
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -170,54 +406,33 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
         IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),
           onPressed: () {
-            print("Delete icon clicked for Farmer $id");
-
-            // Add your delete logic here
-            // if (viewModel.onFarmerDeleted != null) {
-            //   viewModel.onFarmerDeleted!(id);
-            // }
-
             ModalDialog.show(
               context: context,
               title: 'Delete Farmer',
               showTitle: true,
               showTitleDivider: true,
               modalType: ModalType.medium,
-              onCancelTap: () {
-                Navigator.of(context).pop(); // Close the modal
-              },
+              onCancelTap: () => Navigator.of(context).pop(),
               onSaveTap: () {
-                // Perform the delete operation here
-                if (viewModel.onFarmerDeleted != null) {
-                  viewModel.onFarmerDeleted!(id);
-                }
-                Navigator.of(context).pop(); // Close the modal
+                context.read<FarmerBloc>().add(DeleteFarmer(farmer.id as int));
+                Navigator.of(context).pop();
               },
               child: Center(
-                child: Text(
-                  'Are you sure you want to delete ${farmer['farmerName']}?',
-                  textAlign:
-                      TextAlign.center, // Optional: Center-align the text
-                ),
+                child: Text('Are you sure you want to delete ${farmer.name}?'),
               ),
               footer: Padding(
-                // Add padding to the footer
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 10.0), // Adjust padding as needed
+                    horizontal: 20.0, vertical: 10.0),
                 child: Center(
                   child: Row(
-                    mainAxisSize: MainAxisSize
-                        .min, // Ensure the Row takes only the space it needs
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(
                         width: 120,
                         child: ButtonWidget(
                           btnText: 'Cancel',
                           textColor: FlarelineColors.darkBlackText,
-                          onTap: () {
-                            Navigator.of(context).pop(); // Close the modal
-                          },
+                          onTap: () => Navigator.of(context).pop(),
                         ),
                       ),
                       const SizedBox(width: 20),
@@ -226,11 +441,10 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
                         child: ButtonWidget(
                           btnText: 'Delete',
                           onTap: () {
-                            // Perform the delete operation here
-                            if (viewModel.onFarmerDeleted != null) {
-                              viewModel.onFarmerDeleted!(id);
-                            }
-                            Navigator.of(context).pop(); // Close the modal
+                            context
+                                .read<FarmerBloc>()
+                                .add(DeleteFarmer(farmer.id as int));
+                            Navigator.of(context).pop();
                           },
                           type: ButtonType.primary.type,
                         ),
@@ -245,16 +459,11 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
-            print("Arrow icon clicked for Farmer $id");
-
-            if (viewModel.onFarmerSelected != null) {
-              viewModel.onFarmerSelected!(farmer);
-            }
-
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => FarmersProfile(farmer: farmer),
+                builder: (context) =>
+                    FarmersProfile(farmerID: int.parse(farmer.id.toString())),
               ),
             );
           },
@@ -275,22 +484,16 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
   Widget _buildDesktopTable() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Responsive width calculation for desktop
-        double tableWidth;
-        if (constraints.maxWidth > 1200) {
-          tableWidth = 1200;
-        } else if (constraints.maxWidth > 800) {
-          tableWidth = constraints.maxWidth * 0.9;
-        } else {
-          tableWidth = constraints.maxWidth;
-        }
+        double tableWidth = constraints.maxWidth > 1200
+            ? 1200
+            : constraints.maxWidth > 800
+                ? constraints.maxWidth * 0.9
+                : constraints.maxWidth;
 
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: constraints.maxWidth,
-            ),
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
             child: SizedBox(
               width: tableWidth,
               child: super.build(context),
@@ -305,7 +508,7 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 1000, // Fixed maximum width for mobile
+        width: 800,
         child: super.build(context),
       ),
     );
@@ -313,82 +516,59 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
 }
 
 class FarmersViewModel extends BaseTableProvider {
-  final Function(Map<String, dynamic>)? onFarmerSelected;
-  final Function(int)? onFarmerDeleted; // Add this line
+  final List<Farmer> farmers;
 
-  @override
-  String get TAG => 'FarmersViewModel';
-
-  FarmersViewModel(super.context, this.onFarmerSelected,
-      this.onFarmerDeleted); // Modify constructor
+  FarmersViewModel(super.context, this.farmers);
 
   @override
   Future loadData(BuildContext context) async {
-    const headers = [
-      "Farmer Name",
-      "Sector",
-      "Farm Size",
-      "Contact",
-      "Last Harvest",
-      "Action"
-    ];
+    const headers = ["Farmer Name", "Sector", "Barangay", "Contact", "Action"];
 
     List<List<TableDataRowsTableDataRows>> rows = [];
 
-    for (int i = 0; i < 50; i++) {
+    for (var farmer in farmers) {
       List<TableDataRowsTableDataRows> row = [];
-      var id = i;
-      var item = {
-        'id': id.toString(),
-        'farmerName': 'Farmer $id',
-        'sector': 'Agriculture',
-        'farmSize': '${id + 1} hectares',
-        'contact': 'farmer$id@example.com',
-        'lastHarvest': 'March ${2024 - id}',
-      };
 
-      // Create regular cells
+      // Farmer Name with Image
       var farmerNameCell = TableDataRowsTableDataRows()
-        ..text = item['farmerName']
-        ..dataType = CellDataType.TEXT.type
+        ..text = farmer.name
+        ..dataType = CellDataType.IMAGE_TEXT.type
         ..columnName = 'Farmer Name'
-        ..id = item['id'];
+        ..imageUrl = farmer.imageUrl
+        ..id = farmer.id.toString();
       row.add(farmerNameCell);
 
+      // Sector
       var sectorCell = TableDataRowsTableDataRows()
-        ..text = item['sector']
+        ..text = farmer.sector ?? 'Not specified' // Handle null sector
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Sector'
-        ..id = item['id'];
+        ..id = farmer.id.toString();
+      ;
       row.add(sectorCell);
 
-      var farmSizeCell = TableDataRowsTableDataRows()
-        ..text = item['farmSize']
+      // Barangay
+      var barangayCell = TableDataRowsTableDataRows()
+        ..text = farmer.barangay
         ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Farm Size'
-        ..id = item['id'];
-      row.add(farmSizeCell);
+        ..columnName = 'Barangay'
+        ..id = farmer.id.toString();
+      row.add(barangayCell);
 
+      // Contact
       var contactCell = TableDataRowsTableDataRows()
-        ..text = item['contact']
+        ..text = farmer.contact
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Contact'
-        ..id = item['id'];
+        ..id = farmer.id.toString();
       row.add(contactCell);
 
-      var harvestCell = TableDataRowsTableDataRows()
-        ..text = item['lastHarvest']
-        ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Last Harvest'
-        ..id = item['id'];
-      row.add(harvestCell);
-
-      // Add action cell for the icon button
+      // Action
       var actionCell = TableDataRowsTableDataRows()
         ..text = ""
         ..dataType = CellDataType.ACTION.type
         ..columnName = 'Action'
-        ..id = item['id'];
+        ..id = farmer.id.toString();
       row.add(actionCell);
 
       rows.add(row);

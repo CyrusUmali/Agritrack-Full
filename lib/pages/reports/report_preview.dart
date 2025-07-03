@@ -1,6 +1,10 @@
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
-import 'package:data_table_2/data_table_2.dart';
+import 'package:flareline_uikit/components/tables/table_widget.dart';
+import 'package:flareline_uikit/entity/table_data_entity.dart';
+import 'package:responsive_builder/responsive_builder.dart';
+
+import 'package:collection/collection.dart';
 
 class ReportPreview extends StatefulWidget {
   final List<Map<String, dynamic>> reportData;
@@ -9,10 +13,11 @@ class ReportPreview extends StatefulWidget {
   final Set<String> selectedColumns;
   final bool isLoading;
   final DateTimeRange dateRange;
-  final String? selectedCropType;
+  final String? selectedProductType;
   final String? selectedFarmer;
-  final Set<String> selectedBarangay;
-  final Set<String> selectedSector;
+  final String? selectedView;
+  final String selectedBarangay;
+  final String selectedSector;
 
   const ReportPreview({
     super.key,
@@ -22,8 +27,9 @@ class ReportPreview extends StatefulWidget {
     required this.selectedColumns,
     required this.isLoading,
     required this.dateRange,
-    required this.selectedCropType,
+    required this.selectedProductType,
     required this.selectedFarmer,
+    required this.selectedView,
     required this.selectedBarangay,
     required this.selectedSector,
   });
@@ -33,47 +39,6 @@ class ReportPreview extends StatefulWidget {
 }
 
 class _ReportPreviewState extends State<ReportPreview> {
-  final Set<int> _selectedRows = {};
-  bool _selectAll = false;
-  late _ReportAsyncDataSource _source;
-
-  @override
-  void initState() {
-    super.initState();
-    _source = _ReportAsyncDataSource(
-      widget.reportData,
-      widget.selectedColumns.toList(),
-      _selectedRows,
-      _handleRowSelection,
-    );
-  }
-
-  @override
-  void didUpdateWidget(ReportPreview oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.reportData != oldWidget.reportData ||
-        widget.selectedColumns != oldWidget.selectedColumns) {
-      _source = _ReportAsyncDataSource(
-        widget.reportData,
-        widget.selectedColumns.toList(),
-        _selectedRows,
-        _handleRowSelection,
-      );
-    }
-  }
-
-  void _handleRowSelection(int index, bool selected) {
-    setState(() {
-      if (selected) {
-        _selectedRows.add(index);
-      } else {
-        _selectedRows.remove(index);
-        _selectAll = false;
-      }
-    });
-    // No need to rebuild the table - the DataTableSource will handle it
-  }
-
   @override
   Widget build(BuildContext context) {
     if (widget.isLoading) {
@@ -96,252 +61,260 @@ class _ReportPreviewState extends State<ReportPreview> {
       );
     }
 
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: ShapeDecoration(
-        color: Theme.of(context).cardTheme.color,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            color: Theme.of(context).cardTheme.surfaceTintColor ??
-                Colors.transparent,
-          ),
-          borderRadius: BorderRadius.circular(2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: _buildReportContent(context),
         ),
-        shadows: [
-          BoxShadow(
-            color:
-                Theme.of(context).cardTheme.shadowColor ?? Colors.transparent,
-            blurRadius: 13,
-            offset: const Offset(0, 8),
-            spreadRadius: -3,
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_selectedRows.isNotEmpty) _buildSelectionActions(context),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: _buildReportContent(context),
-          ),
-        ],
-      ),
+      ],
     );
-  }
-
-  Widget _buildSelectionActions(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        children: [
-          Text(
-            '${_selectedRows.length} selected',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(width: 16),
-          IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: _clearSelection,
-            tooltip: 'Clear selection',
-          ),
-          // Add more action buttons here as needed
-        ],
-      ),
-    );
-  }
-
-  void _clearSelection() {
-    setState(() {
-      _selectedRows.clear();
-      _selectAll = false;
-    });
-    _source.notifyListeners();
   }
 
   Widget _buildReportContent(BuildContext context) {
     return SizedBox(
       height: 600,
-      child: _buildDataTable(context),
-    );
-  }
-
-  Widget _buildDataTable(context) {
-    if (widget.reportData.isEmpty || widget.selectedColumns.isEmpty) {
-      return Center(
-        child: Text(
-          'No data to display in table',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-      );
-    }
-
-    final visibleColumns = widget.selectedColumns.toList();
-
-    return Theme(
-      data: Theme.of(context).copyWith(
-        cardTheme: CardTheme(
-          elevation: 0,
-          margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Theme.of(context).colorScheme.outlineVariant,
-              width: 1,
-            ),
-          ),
-        ),
-        dataTableTheme: DataTableThemeData(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Theme.of(context).colorScheme.surfaceContainerLowest,
-          ),
-          headingRowColor: MaterialStateProperty.resolveWith<Color?>(
-            (Set<MaterialState> states) {
-              return Theme.of(context).colorScheme.surfaceContainerLow;
-            },
-          ),
-          dataRowColor: MaterialStateProperty.resolveWith<Color?>(
-            (Set<MaterialState> states) {
-              if (states.contains(MaterialState.selected)) {
-                return Theme.of(context).colorScheme.primaryContainer;
-              }
-              return null;
-            },
-          ),
-        ),
-      ),
-      child: AsyncPaginatedDataTable2(
-        checkboxHorizontalMargin: 12,
-        columnSpacing: 12,
-        horizontalMargin: 12,
-        minWidth: 600,
-        rowsPerPage: 8,
-        wrapInCard: false,
-        smRatio: 0.5,
-        lmRatio: 1.5,
-        empty: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Text(
-              'No matching records found',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ),
-        ),
-        columns: [
-          DataColumn2(
-            label: Checkbox(
-              value: _selectAll,
-              onChanged: (value) {
-                setState(() {
-                  _selectAll = value ?? false;
-                  if (_selectAll) {
-                    _selectedRows.addAll(List.generate(
-                        widget.reportData.length, (index) => index));
-                  } else {
-                    _selectedRows.clear();
-                  }
-                });
-              },
-            ),
-            size: ColumnSize.S,
-          ),
-          ...visibleColumns.map(
-            (column) => DataColumn2(
-              label: Text(
-                column,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-              ),
-              size: ColumnSize.L,
-              onSort: (columnIndex, ascending) {
-                // Sorting would be implemented in parent widget
-              },
-            ),
-          ),
-        ],
-        source: _ReportAsyncDataSource(
-          widget.reportData,
-          visibleColumns,
-          _selectedRows,
-          (index, selected) {
-            setState(() {
-              if (selected) {
-                _selectedRows.add(index);
-              } else {
-                _selectedRows.remove(index);
-                _selectAll = false;
-              }
-            });
-          },
-        ),
+      child: ReportDataTable(
+        reportData: widget.reportData,
+        selectedColumns: widget.selectedColumns.toList(),
       ),
     );
   }
 }
 
-class _ReportAsyncDataSource extends AsyncDataTableSource {
-  final List<Map<String, dynamic>> data;
-  final List<String> columns;
-  final Set<int> selectedRows;
-  final Function(int index, bool selected) onRowSelected;
+class ReportDataTable extends StatefulWidget {
+  final List<Map<String, dynamic>> reportData;
+  final List<String> selectedColumns;
 
-  _ReportAsyncDataSource(
-    this.data,
-    this.columns,
-    this.selectedRows,
-    this.onRowSelected,
-  );
+  const ReportDataTable({
+    required this.reportData,
+    required this.selectedColumns,
+    Key? key,
+  }) : super(key: key);
 
   @override
-  Future<AsyncRowsResponse> getRows(int startIndex, int count) async {
-    if (data.isEmpty) {
-      return AsyncRowsResponse(0, []);
-    }
+  State<ReportDataTable> createState() => _ReportDataTableState();
+}
 
-    final endIndex = startIndex + count;
-    final actualEndIndex = endIndex > data.length ? data.length : endIndex;
+class _ReportDataTableState extends State<ReportDataTable> {
+  String? _sortColumn;
+  bool _sortAscending = true;
 
-    if (startIndex >= data.length) {
-      return AsyncRowsResponse(data.length, []);
-    }
+  List<Map<String, dynamic>> get _sortedData {
+    if (_sortColumn == null) return widget.reportData;
 
-    final rows = List<DataRow2>.generate(
-      actualEndIndex - startIndex,
-      (index) {
-        final absoluteIndex = startIndex + index;
-        return DataRow2(
-          cells: [
-            DataCell(
-              Checkbox(
-                value: selectedRows.contains(absoluteIndex),
-                onChanged: (value) {
-                  onRowSelected(absoluteIndex, value ?? false);
-                  notifyListeners();
-                },
-              ),
-            ),
-            ...columns
-                .map((column) => DataCell(
-                      Text(data[absoluteIndex][column]?.toString() ?? 'N/A'),
-                    ))
-                .toList(),
-          ],
-        );
-      },
-    );
+    final sorted = List<Map<String, dynamic>>.from(widget.reportData);
+    sorted.sort((a, b) {
+      final aValue = a[_sortColumn]?.toString() ?? '';
+      final bValue = b[_sortColumn]?.toString() ?? '';
 
-    return AsyncRowsResponse(data.length, rows);
+      return _sortAscending
+          ? aValue.compareTo(bValue)
+          : bValue.compareTo(aValue);
+    });
+    return sorted;
   }
 
   @override
-  bool get isRowCountApproximate => false;
+  Widget build(BuildContext context) {
+    return ScreenTypeLayout.builder(
+      desktop: (context) => _buildDesktopTable(),
+      mobile: (context) => _buildMobileTable(context),
+      tablet: (context) => _buildMobileTable(context),
+    );
+  }
+
+  Widget _buildDesktopTable() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+            child: SizedBox(
+              width: constraints.maxWidth > 1200 ? 1200 : constraints.maxWidth,
+              child: _ReportTableWidget(
+                key: ValueKey(
+                    widget.selectedColumns.join(',')), // Force rebuild with key
+                reportData: _sortedData,
+                selectedColumns: widget.selectedColumns,
+                sortColumn: _sortColumn,
+                sortAscending: _sortAscending,
+                onSort: _onSort,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMobileTable(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: 800,
+        child: _ReportTableWidget(
+          key: ValueKey(
+              widget.selectedColumns.join(',')), // Force rebuild with key
+          reportData: _sortedData,
+          selectedColumns: widget.selectedColumns,
+          sortColumn: _sortColumn,
+          sortAscending: _sortAscending,
+          onSort: _onSort,
+        ),
+      ),
+    );
+  }
+
+  void _onSort(String columnName) {
+    setState(() {
+      if (_sortColumn == columnName) {
+        _sortAscending = !_sortAscending;
+      } else {
+        _sortColumn = columnName;
+        _sortAscending = true;
+      }
+    });
+  }
+}
+
+class _ReportTableWidget extends TableWidget<ReportTableViewModel> {
+  final List<Map<String, dynamic>> reportData;
+  final List<String> selectedColumns;
+  final String? sortColumn;
+  final bool sortAscending;
+  final Function(String) onSort;
+
+  _ReportTableWidget({
+    required this.reportData,
+    required this.selectedColumns,
+    required this.sortColumn,
+    required this.sortAscending,
+    required this.onSort,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  ReportTableViewModel viewModelBuilder(BuildContext context) {
+    return ReportTableViewModel(
+      context,
+      reportData,
+      selectedColumns,
+    );
+  }
+
+  @override
+  bool get reloadOnUpdate => true;
+
+  @override
+  Widget build(BuildContext context) {
+    print('selectedColumns');
+    print(selectedColumns);
+    return super.build(context);
+  }
+
+  // Override this to ensure the widget rebuilds when properties change
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _ReportTableWidget &&
+        other.reportData == reportData &&
+        const ListEquality().equals(other.selectedColumns, selectedColumns) &&
+        other.sortColumn == sortColumn &&
+        other.sortAscending == sortAscending;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      reportData,
+      const ListEquality().hash(selectedColumns),
+      sortColumn,
+      sortAscending,
+    );
+  }
+
+  @override
+  Widget headerBuilder(
+      BuildContext context, String headerName, ReportTableViewModel viewModel) {
+    return InkWell(
+      onTap: () => onSort(headerName),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              headerName,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            sortColumn == headerName
+                ? (sortAscending ? Icons.arrow_upward : Icons.arrow_downward)
+                : Icons.unfold_more,
+            size: 16,
+            color: sortColumn == headerName
+                ? Theme.of(context).primaryColor
+                : Colors.grey,
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget actionWidgetsBuilder(
+    BuildContext context,
+    TableDataRowsTableDataRows columnData,
+    ReportTableViewModel viewModel,
+  ) {
+    return const SizedBox.shrink();
+  }
+}
+
+class ReportTableViewModel extends BaseTableProvider {
+  final List<Map<String, dynamic>> reportData;
+  final List<String> selectedColumns;
+
+  ReportTableViewModel(
+    super.context,
+    this.reportData,
+    this.selectedColumns,
+  );
+
+  @override
+  Future loadData(BuildContext context) async {
+    final headers = [...selectedColumns];
+
+    List<List<TableDataRowsTableDataRows>> rows = [];
+
+    for (var i = 0; i < reportData.length; i++) {
+      final rowData = reportData[i];
+      List<TableDataRowsTableDataRows> row = [];
+
+      for (var column in selectedColumns) {
+        var cell = TableDataRowsTableDataRows()
+          ..text = rowData[column]?.toString() ?? 'N/A'
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = column
+          ..id = i.toString();
+        row.add(cell);
+      }
+
+      rows.add(row);
+    }
+
+    TableDataEntity tableData = TableDataEntity()
+      ..headers = headers
+      ..rows = rows;
+
+    tableDataEntity = tableData;
+  }
 }

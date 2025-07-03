@@ -1,90 +1,151 @@
-// ignore_for_file: avoid_print
-
+import 'package:flareline/core/models/product_model.dart';
+import 'package:flareline/pages/products/product/product_filter_widget.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:responsive_builder/responsive_builder.dart';
+import 'package:flareline/pages/products/product/product_bloc.dart';
 import 'package:flareline/pages/products/add_product_modal.dart';
 import 'package:flareline/pages/products/product_profile.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
-import 'package:flareline_uikit/core/theme/flareline_colors.dart';
-import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
-import 'package:responsive_builder/responsive_builder.dart';
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
+import 'package:toastification/toastification.dart';
 
-class ProductsTable extends StatefulWidget {
+class ProductsTable extends StatelessWidget {
   const ProductsTable({super.key});
 
   @override
-  State<ProductsTable> createState() => _ProductsTableState();
-}
-
-class _ProductsTableState extends State<ProductsTable> {
-  Map<String, dynamic>? selectedProduct;
-  String searchQuery = ''; // To store the search query
-  String selectedType = "All"; // To store the selected filter type
-
-  @override
   Widget build(BuildContext context) {
-    return _products();
-  }
-
-  _products() {
     return ScreenTypeLayout.builder(
-      desktop: _productsWeb,
-      mobile: _productsMobile,
-      tablet: _productsMobile,
+      desktop: (context) => _productsWeb(context),
+      mobile: (context) => _productsMobile(context),
+      tablet: (context) => _productsMobile(context),
     );
   }
 
   Widget _productsWeb(BuildContext context) {
-    return SizedBox(
-      height: 600,
+    return BlocListener<ProductBloc, ProductState>(
+      listenWhen: (previous, current) {
+        print(
+            'State change: ${previous.runtimeType} -> ${current.runtimeType}');
+        print('Equal: ${previous == current}');
+        return current is ProductsLoaded || current is ProductsError;
+      },
+      listener: (context, state) {
+        print('Received state: ${state.runtimeType}');
+        if (state is ProductsLoaded && state.message != null) {
+          print('Message received: ${state.message}');
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.flat,
+            title: Text(state.message!),
+            alignment: Alignment.topRight,
+            showProgressBar: false,
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+        } else if (state is ProductsError) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.error,
+            style: ToastificationStyle.flat,
+            title: Text(state.message),
+            alignment: Alignment.topRight,
+            showProgressBar: false,
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+        }
+      },
+      child: SizedBox(
+        height: 600,
+        child: Column(
+          children: [
+            const ProductFilterWidget(),
+            const SizedBox(height: 16),
+            Expanded(
+              child: BlocBuilder<ProductBloc, ProductState>(
+                builder: (context, state) {
+                  if (state is ProductsLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is ProductsError) {
+                    return Center(child: Text(state.message));
+                  } else if (state is ProductsLoaded) {
+                    if (state.products.isEmpty) {
+                      return _buildNoResultsWidget();
+                    }
+                    return Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: DataTableWidget(
+                            key: ValueKey(
+                                'products_table_${state.products.length}'),
+                            products: state.products,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return _buildNoResultsWidget();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _productsMobile(BuildContext context) {
+    return BlocListener<ProductBloc, ProductState>(
+      listener: (context, state) {
+        if (state is ProductsLoaded && state.message != null) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.flat,
+            title: Text(state.message!),
+            alignment: Alignment.topRight,
+            showProgressBar: false,
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+        } else if (state is ProductsError) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.error,
+            style: ToastificationStyle.flat,
+            title: Text(state.message),
+            alignment: Alignment.topRight,
+            showProgressBar: false,
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+        }
+      },
       child: Column(
         children: [
-          // Add the ProductFilterWidget here
-          ProductFilterWidget(
-            onSearchChanged: (query) {
-              setState(() {
-                searchQuery = query;
-              });
-            },
-            onFilterChanged: (type) {
-              setState(() {
-                selectedType = type;
-              });
-            },
-            onAddProductPressed: () {
-              // Handle Add Product functionality
-              print("Add Product button pressed");
-
-              AddProductModal.show(
-                context: context,
-                onProductAdded: (
-                  String name,
-                  String description,
-                  String category,
-                ) {
-                  // You can call your ViewModel or API here to save the user
-                },
-              );
-            },
-          ),
+          const ProductFilterWidget(),
           const SizedBox(height: 16),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: DataTableWidget(
-                    searchQuery: searchQuery,
-                    filterType: selectedType,
-                    onProductSelected: (product) {
-                      setState(() {
-                        selectedProduct = product;
-                      });
-                    },
-                  ),
-                ),
-              ],
+          SizedBox(
+            height: 380,
+            child: BlocBuilder<ProductBloc, ProductState>(
+              builder: (context, state) {
+                if (state is ProductsLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (state is ProductsError) {
+                  return Center(child: Text(state.message));
+                } else if (state is ProductsLoaded) {
+                  if (state.products.isEmpty) {
+                    return _buildNoResultsWidget();
+                  }
+                  return DataTableWidget(
+                    key: ValueKey('products_table_${state.products.length}'),
+                    products: state.products,
+                  );
+                }
+                return _buildNoResultsWidget();
+              },
             ),
           ),
         ],
@@ -92,79 +153,110 @@ class _ProductsTableState extends State<ProductsTable> {
     );
   }
 
-  Widget _productsMobile(BuildContext context) {
-    return Column(
-      children: [
-        // Add the ProductFilterWidget here
-        ProductFilterWidget(
-          onSearchChanged: (query) {
-            setState(() {
-              searchQuery = query;
-            });
-          },
-          onFilterChanged: (type) {
-            setState(() {
-              selectedType = type;
-            });
-          },
-          onAddProductPressed: () {
-            // Handle Add Product functionality
-            print("Add Product button pressed");
-          },
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 380,
-          child: DataTableWidget(
-            searchQuery: searchQuery,
-            filterType: selectedType,
-            onProductSelected: (product) {
-              setState(() {
-                selectedProduct = product;
-              });
-            },
+// Add this new helper widget
+  Widget _buildNoResultsWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.disabled_by_default,
+            size: 64,
+            color: Colors.grey[400],
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          Text(
+            'No Products found',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Try adjusting your search or filter criteria',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class DataTableWidget extends TableWidget<ProductsViewModel> {
-  final String searchQuery;
-  final String filterType;
-  final Function(Map<String, dynamic>)? onProductSelected;
+  final List<Product> products;
 
   DataTableWidget({
-    required this.searchQuery,
-    required this.filterType,
-    this.onProductSelected,
+    required this.products,
     Key? key,
   }) : super(key: key);
 
   @override
   ProductsViewModel viewModelBuilder(BuildContext context) {
-    return ProductsViewModel(
-      context,
-      onProductSelected,
-      (id) {
-        print("Deleted Product ID: $id");
+    return ProductsViewModel(context, products);
+  }
+
+  @override
+  Widget headerBuilder(
+      BuildContext context, String headerName, ProductsViewModel viewModel) {
+    // Skip sort icons for Action column
+    if (headerName == 'Action') {
+      return Text(headerName);
+    }
+
+    return InkWell(
+      onTap: () {
+        context.read<ProductBloc>().add(SortProducts(headerName));
       },
-      searchQuery: searchQuery,
-      filterType: filterType,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              headerName,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 4),
+          BlocBuilder<ProductBloc, ProductState>(
+            builder: (context, state) {
+              if (state is ProductsLoaded) {
+                final bloc = context.read<ProductBloc>();
+                return Icon(
+                  bloc.sortColumn == headerName
+                      ? (bloc.sortAscending
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward)
+                      : Icons.unfold_more,
+                  size: 16,
+                  color: bloc.sortColumn == headerName
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey,
+                );
+              }
+              return const Icon(Icons.unfold_more,
+                  size: 16, color: Colors.grey);
+            },
+          ),
+        ],
+      ),
     );
   }
 
   @override
-  Widget actionWidgetsBuilder(BuildContext context,
-      TableDataRowsTableDataRows columnData, ProductsViewModel viewModel) {
-    // Create a product object from the data
-    int id = int.tryParse(columnData.id ?? '0') ?? 0;
-    final product = {
-      'productName': 'Product $id',
-      'type': 'Type $id',
-      'description': 'Description for Product $id',
-    };
+  Widget actionWidgetsBuilder(
+    BuildContext context,
+    TableDataRowsTableDataRows columnData,
+    ProductsViewModel viewModel,
+  ) {
+    final product = viewModel.products.firstWhere(
+      (p) => p.id.toString() == columnData.id,
+    );
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -172,85 +264,69 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
         IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),
           onPressed: () {
-            print("Delete icon clicked for Product $id");
-
             ModalDialog.show(
-                context: context,
-                title: 'Delete Product',
-                showTitle: true,
-                showTitleDivider: true,
-                modalType: ModalType.medium,
-                onCancelTap: () {
-                  Navigator.of(context).pop(); // Close the modal
-                },
-                onSaveTap: () {
-                  // Perform the delete operation here
-                  if (viewModel.onProductDeleted != null) {
-                    viewModel.onProductDeleted!(id);
-                  }
-                  Navigator.of(context).pop(); // Close the modal
-                },
+              context: context,
+              title: 'Delete Product',
+              showTitle: true,
+              showTitleDivider: true,
+              modalType: ModalType.medium,
+              onCancelTap: () => Navigator.of(context).pop(),
+              onSaveTap: () {
+                context.read<ProductBloc>().add(DeleteProduct(product.id));
+                Navigator.of(context).pop();
+              },
+              child: Center(
+                child: Text(
+                  'Are you sure you want to delete ${product.name}?',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              footer: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 10.0,
+                ),
                 child: Center(
-                  child: Text(
-                    'Are you sure you want to delete ${product['productName']}?',
-                    textAlign:
-                        TextAlign.center, // Optional: Center-align the text
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 120,
+                        child: ButtonWidget(
+                          btnText: 'Cancel',
+                          textColor: FlarelineColors.darkBlackText,
+                          onTap: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      SizedBox(
+                        width: 120,
+                        child: ButtonWidget(
+                          btnText: 'Delete',
+                          onTap: () {
+                            context
+                                .read<ProductBloc>()
+                                .add(DeleteProduct(product.id));
+                            Navigator.of(context).pop();
+                          },
+                          type: ButtonType.primary.type,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                footer: Padding(
-                  // Add padding to the footer
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 10.0), // Adjust padding as needed
-                  child: Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize
-                          .min, // Ensure the Row takes only the space it needs
-                      children: [
-                        SizedBox(
-                          width: 120,
-                          child: ButtonWidget(
-                            btnText: 'Cancel',
-                            textColor: FlarelineColors.darkBlackText,
-                            onTap: () {
-                              Navigator.of(context).pop(); // Close the modal
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        SizedBox(
-                          width: 120,
-                          child: ButtonWidget(
-                            btnText: 'Delete',
-                            onTap: () {
-                              // Perform the delete operation here
-                              if (viewModel.onProductDeleted != null) {
-                                viewModel.onProductDeleted!(id);
-                              }
-                              Navigator.of(context).pop(); // Close the modal
-                            },
-                            type: ButtonType.primary.type,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ));
+              ),
+            );
           },
         ),
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
-            print("Arrow icon clicked for Product $id");
-
-            if (viewModel.onProductSelected != null) {
-              viewModel.onProductSelected!(product);
-            }
-
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ProductProfile(product: product),
+                builder: (context) => ProductProfile(
+                    product: product), // Lowercase 'p' in parameter
               ),
             );
           },
@@ -271,22 +347,16 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
   Widget _buildDesktopTable() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Responsive width calculation for desktop
-        double tableWidth;
-        if (constraints.maxWidth > 1200) {
-          tableWidth = 1200;
-        } else if (constraints.maxWidth > 800) {
-          tableWidth = constraints.maxWidth * 0.9;
-        } else {
-          tableWidth = constraints.maxWidth;
-        }
+        double tableWidth = constraints.maxWidth > 1200
+            ? 1200
+            : constraints.maxWidth > 800
+                ? constraints.maxWidth * 0.9
+                : constraints.maxWidth;
 
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: constraints.maxWidth,
-            ),
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
             child: SizedBox(
               width: tableWidth,
               child: super.build(context),
@@ -301,7 +371,7 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 800, // Fixed maximum width for mobile
+        width: 800,
         child: super.build(context),
       ),
     );
@@ -309,80 +379,54 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
 }
 
 class ProductsViewModel extends BaseTableProvider {
-  final Function(Map<String, dynamic>)? onProductSelected;
-  final Function(int)? onProductDeleted;
-  final String searchQuery;
-  final String filterType;
+  final List<Product> products;
 
   ProductsViewModel(
     super.context,
-    this.onProductSelected,
-    this.onProductDeleted, {
-    required this.searchQuery,
-    required this.filterType,
-  });
+    this.products,
+  );
 
   @override
   Future loadData(BuildContext context) async {
-    const headers = ["Product ", "Type", "Description", "Action"];
+    const headers = ["Product", "Sector", "Description", "Action"];
 
     List<List<TableDataRowsTableDataRows>> rows = [];
 
-    for (int i = 0; i < 50; i++) {
-      var id = i;
-      var item = {
-        'id': id.toString(),
-        'productName': 'Product $id',
-        'type': 'Type $id',
-        'description': 'Description for Product $id',
-        'imageUrl':
-            'https://picsum.photos/50/50?random=$id', // Random image URL
-      };
-
-      // Apply search and filter logic
-      if (searchQuery.isNotEmpty &&
-          !item['productName']!
-              .toLowerCase()
-              .contains(searchQuery.toLowerCase())) {
-        continue; // Skip if the Product  doesn't match the search query
-      }
-
-      if (filterType != "All" && item['type'] != filterType) {
-        continue; // Skip if the product type doesn't match the filter
-      }
-
-      // Add the product to the rows
+    for (final product in products) {
       List<TableDataRowsTableDataRows> row = [];
 
+      // Product name with image
       var productCell = TableDataRowsTableDataRows()
-        ..text = item['productName']
-        ..imageUrl = item['imageUrl'] // Add image URL
-        ..dataType = CellDataType.IMAGE_TEXT.type // Use IMAGE_TEXT type
+        ..text = product.name
+        ..imageUrl = product.imageUrl
+        ..dataType = CellDataType.IMAGE_TEXT.type
         ..columnName = 'Product'
-        ..id = item['id'];
+        ..id = product.id.toString();
       row.add(productCell);
 
-      var typeCell = TableDataRowsTableDataRows()
-        ..text = item['type']
+      // Sector
+      var sectorCell = TableDataRowsTableDataRows()
+        ..text = product.sector
         ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Type'
-        ..id = item['id'];
-      row.add(typeCell);
+        ..columnName = 'Sector'
+        ..id = product.id.toString();
+      row.add(sectorCell);
 
-      var descriptionCell = TableDataRowsTableDataRows()
-        ..text = item['description']
+      var descCell = TableDataRowsTableDataRows()
+        ..text = product.description
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Description'
-        ..id = item['id'];
-      row.add(descriptionCell);
+        ..id = product.id.toString();
+      row.add(descCell);
 
-      // Add action cell for the icon button
+      // Action
       var actionCell = TableDataRowsTableDataRows()
         ..text = ""
         ..dataType = CellDataType.ACTION.type
         ..columnName = 'Action'
-        ..id = item['id'];
+        ..id = product.id.toString();
       row.add(actionCell);
+
       rows.add(row);
     }
 
@@ -391,96 +435,5 @@ class ProductsViewModel extends BaseTableProvider {
       ..rows = rows;
 
     tableDataEntity = tableData;
-  }
-}
-
-class ProductFilterWidget extends StatefulWidget {
-  final Function(String) onSearchChanged;
-  final Function(String) onFilterChanged;
-  final VoidCallback onAddProductPressed;
-
-  const ProductFilterWidget({
-    super.key,
-    required this.onSearchChanged,
-    required this.onFilterChanged,
-    required this.onAddProductPressed,
-  });
-
-  @override
-  State<ProductFilterWidget> createState() => _ProductFilterWidgetState();
-}
-
-class _ProductFilterWidgetState extends State<ProductFilterWidget> {
-  String selectedType = "All"; // Default filter option
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Search Bar
-        TextField(
-          decoration: InputDecoration(
-            hintText: 'Search products...',
-            prefixIcon: const Icon(Icons.search),
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          ),
-          onChanged: (value) {
-            widget
-                .onSearchChanged(value); // Notify parent of search query change
-          },
-        ),
-        const SizedBox(height: 10), // Spacing between search and filter
-
-        // Filter Dropdown and Add Button in a Row
-        Row(
-          children: [
-            // Filter Dropdown
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                value: selectedType,
-                decoration: InputDecoration(
-                  labelText: 'Filter',
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0)),
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                ),
-                items: [
-                  "All",
-                  "Rice",
-                  "Livestock",
-                  "Fishery",
-                  "Corn",
-                  "High Value Crop",
-                  "Organic",
-                  "Etc"
-                ]
-                    .map((type) =>
-                        DropdownMenuItem(value: type, child: Text(type)))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedType = value!;
-                  });
-                  widget.onFilterChanged(
-                      value!); // Notify parent of filter change
-                },
-              ),
-            ),
-            const SizedBox(width: 10), // Spacing between filter and add button
-
-            // Add Product Button
-            ElevatedButton.icon(
-              onPressed: widget.onAddProductPressed,
-              icon: const Icon(Icons.add),
-              label: const Text("Add Product"),
-            ),
-          ],
-        ),
-      ],
-    );
   }
 }

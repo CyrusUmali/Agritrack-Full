@@ -8,6 +8,7 @@ class SectorLineChartWidget extends StatelessWidget {
   final List<SectorData> datas;
   final List<String> dropdownItems;
   final List<CartesianChartAnnotation>? annotations;
+  final String unit; // Add this line
 
   const SectorLineChartWidget({
     super.key,
@@ -15,6 +16,7 @@ class SectorLineChartWidget extends StatelessWidget {
     required this.datas,
     required this.dropdownItems,
     this.annotations,
+    this.unit = 'mt', // Default unit
   });
 
   @override
@@ -29,22 +31,29 @@ class SectorLineChartWidget extends StatelessWidget {
       ),
       legend: Legend(
         isVisible: true,
-        position: LegendPosition.right, // or left
+        position: LegendPosition.right,
         orientation: LegendItemOrientation.vertical,
         overflowMode: LegendItemOverflowMode.scroll,
         itemPadding: 8,
-        height: '300', // fixed height as a string (in pixels)
+        height: '300',
       ),
       primaryXAxis: CategoryAxis(
         labelStyle: const TextStyle(fontWeight: FontWeight.normal),
-        majorGridLines: const MajorGridLines(width: 0),
+        majorGridLines: const MajorGridLines(
+            width: 1,
+            color: Color.fromARGB(255, 230, 229, 229)), // Added grid lines
+        majorTickLines: const MajorTickLines(width: 0), // Hide tick marks
+        axisLine: const AxisLine(width: 1, color: Colors.black), // X-axis line
       ),
       primaryYAxis: NumericAxis(
-        title: AxisTitle(text: 'Production (kg)'),
+        title: AxisTitle(text: 'Production ($unit)'), // Use the unit here
         labelFormat: '{value}',
         numberFormat: NumberFormat("#,###"),
-        axisLine: const AxisLine(width: 0),
-        majorTickLines: const MajorTickLines(color: Colors.transparent),
+        axisLine: const AxisLine(width: 1, color: Colors.black), // Y-axis line
+        majorGridLines: const MajorGridLines(
+            width: 1,
+            color: Color.fromARGB(255, 230, 229, 229)), // Added grid lines
+        majorTickLines: const MajorTickLines(width: 0), // Hide tick marks
       ),
       series: _getLineSeries(),
       tooltipBehavior: _buildTooltipBehavior(),
@@ -71,27 +80,39 @@ class SectorLineChartWidget extends StatelessWidget {
 
           allAnnotations.add(
             CartesianChartAnnotation(
-              widget: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: sector.color),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+              widget: SizedBox(
+                width: 20, // Adjust to your needs
+                child: Tooltip(
+                  message: 'This is an annotation for ${sector.name}',
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: sector.color),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.label, size: 14, color: sector.color),
-                    const SizedBox(width: 4),
-                    Text(annotationText),
-                  ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.label, size: 14, color: sector.color),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            annotationText,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               coordinateUnit: CoordinateUnit.point,
@@ -140,7 +161,7 @@ class SectorLineChartWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '${data['x']}: ${NumberFormat("#,###").format(data['y'])} kg', // Changed to show kg
+                '${data['x']}: ${NumberFormat("#,###").format(data['y'])} $unit', // Use unit here
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               if (note != null)

@@ -1,6 +1,10 @@
 import 'dart:math';
+import 'package:flareline/core/models/farmer_model.dart';
+import 'package:flareline/core/models/product_model.dart';
 import 'package:flareline/pages/test/map_widget/farm_list_panel/barangay_filter_panel.dart';
+import 'package:flareline/pages/test/map_widget/farm_service.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/farm_info_card.dart';
+
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -16,9 +20,15 @@ class MapWidget extends StatefulWidget {
   const MapWidget({
     super.key,
     required this.routeObserver,
+    required this.farmService,
+    required this.products,
+    required this.farmers,
   });
 
-  final RouteObserver<ModalRoute> routeObserver; // Changed to ModalRoute
+  final RouteObserver<ModalRoute> routeObserver;
+  final FarmService farmService;
+  final List<Product> products;
+  final List<Farmer> farmers;
 
   @override
   _MapWidgetState createState() => _MapWidgetState();
@@ -26,13 +36,15 @@ class MapWidget extends StatefulWidget {
 
 class _MapWidgetState extends State<MapWidget>
     with TickerProviderStateMixin, RouteAware {
-  PolygonData?
-      _selectedPolygonForModal; // Track which polygon is being shown in modal
+  PolygonData? _selectedPolygonForModal;
 
   String selectedMap = "Google Satellite (No Labels)";
   bool _showFarmListPanel = false;
   double zoomLevel = 15.0;
   LatLng? previewPoint;
+
+  bool _isLoading = true;
+  String? _loadingError;
 
   late final AnimatedMapController _animatedMapController;
   late PolygonManager polygonManager;
@@ -46,6 +58,8 @@ class _MapWidgetState extends State<MapWidget>
   void initState() {
     super.initState();
 
+    _loadFarmsFromApi();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _renderBox = context.findRenderObject() as RenderBox;
     });
@@ -53,16 +67,53 @@ class _MapWidgetState extends State<MapWidget>
     barangayManager = BarangayManager();
     _animatedMapController = AnimatedMapController(vsync: this);
     polygonManager = PolygonManager(
+        context: context,
         mapController: _animatedMapController,
         onPolygonSelected: hideFarmListPanel,
+        products: widget.products, // Add this
+        farmers: widget.farmers, // Add this
+        farmService: widget.farmService,
         onFiltersChanged: () => setState(() {}));
-
-    List<PolygonData> polygonsToLoad =
-        storedPolygons.map((map) => PolygonData.fromMap(map)).toList();
-    polygonManager.loadPolygons(polygonsToLoad);
 
     barangayManager = BarangayManager();
     barangayManager.loadBarangays(barangays);
+  }
+
+  Future<void> _loadFarmsFromApi() async {
+    if (!mounted) return; // Add this check
+
+    setState(() {
+      _isLoading = true;
+      _loadingError = null;
+    });
+
+    try {
+      final farmsData = await widget.farmService.fetchFarms();
+      if (!mounted) return; // Check again after async operation
+
+      final polygonsToLoad =
+          farmsData.map((map) => PolygonData.fromMap(map)).toList();
+      polygonManager.loadPolygons(polygonsToLoad);
+    } catch (e) {
+      if (!mounted) return; // Check before error handling
+
+      setState(() {
+        _loadingError = e.toString();
+      });
+      if (mounted) {
+        // Additional check for ScaffoldMessenger
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load farms: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        // Check before final state update
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void hideFarmListPanel() {
@@ -123,6 +174,35 @@ class _MapWidgetState extends State<MapWidget>
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading farm data...'),
+          ],
+        ),
+      );
+    }
+
+    if (_loadingError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Error loading data', style: TextStyle(color: Colors.red)),
+            Text(_loadingError!),
+            ElevatedButton(
+              onPressed: _loadFarmsFromApi,
+              child: Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Stack(
       children: <Widget>[
         Listener(

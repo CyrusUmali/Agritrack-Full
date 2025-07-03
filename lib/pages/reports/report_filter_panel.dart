@@ -1,26 +1,31 @@
-import 'package:flareline/pages/reports/modal/filter_modal.dart';
+import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
+import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
+import 'package:flareline/pages/products/product/product_bloc.dart';
+import 'package:flareline/pages/reports/filter_configs/filter_combo-box.dart';
 import 'package:flutter/material.dart';
-import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'date_range_picker.dart';
 import 'filters/segmented_filter.dart';
 import 'filters/column_selector.dart';
 import 'filter_configs/filter_options.dart';
-import 'filter_configs/column_options.dart';
-import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 
 class ReportFilterPanel extends StatelessWidget {
   final DateTimeRange dateRange;
   final ValueChanged<DateTimeRange> onDateRangeChanged;
-  final Set<String> selectedBarangays;
-  final ValueChanged<Set<String>> onBarangaysChanged;
-  final Set<String> selectedSectors;
-  final ValueChanged<Set<String>> onSectorsChanged;
-  final Set<String> selectedCrops;
-  final ValueChanged<Set<String>> onCropsChanged;
-  final Set<String> selectedFarms;
-  final ValueChanged<Set<String>> onFarmsChanged;
+  final String selectedBarangay;
+  final String selectedFarmer;
+  final String selectedView;
+  final ValueChanged<String> onViewChanged;
+  final ValueChanged<String> onFarmerChanged;
+  final ValueChanged<String> onBarangayChanged;
+  final String selectedSector;
+  final ValueChanged<String> onSectorChanged;
+  final String selectedProduct;
+  final ValueChanged<String> onProductChanged;
+  final String selectedFarm;
+  final ValueChanged<String> onFarmChanged;
   final String reportType;
   final ValueChanged<String> onReportTypeChanged;
   final String outputFormat;
@@ -34,14 +39,18 @@ class ReportFilterPanel extends StatelessWidget {
     super.key,
     required this.dateRange,
     required this.onDateRangeChanged,
-    required this.selectedBarangays,
-    required this.onBarangaysChanged,
-    required this.selectedSectors,
-    required this.onSectorsChanged,
-    required this.selectedCrops,
-    required this.onCropsChanged,
-    required this.selectedFarms,
-    required this.onFarmsChanged,
+    required this.selectedBarangay,
+    required this.selectedFarmer,
+    required this.selectedView,
+    required this.onViewChanged,
+    required this.onBarangayChanged,
+    required this.onFarmerChanged,
+    required this.selectedSector,
+    required this.onSectorChanged,
+    required this.selectedProduct,
+    required this.onProductChanged,
+    required this.selectedFarm,
+    required this.onFarmChanged,
     required this.reportType,
     required this.onReportTypeChanged,
     required this.outputFormat,
@@ -51,7 +60,6 @@ class ReportFilterPanel extends StatelessWidget {
     required this.onGeneratePressed,
     required this.isLoading,
   });
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -87,54 +95,33 @@ class ReportFilterPanel extends StatelessWidget {
                       onChanged: onReportTypeChanged,
                     ),
                     const SizedBox(height: 16),
-
-                    // Date range picker and filters section
-                    if (reportType == 'crops' ||
-                        reportType == 'sectors' ||
-                        reportType == 'comparison')
-                      isDesktop
-                          ? Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                DateRangePickerWidget(
-                                  dateRange: dateRange,
-                                  onDateRangeChanged: onDateRangeChanged,
-                                ),
-                                const SizedBox(width: 16),
-                                _buildDesktopFilters(context),
-                              ],
-                            )
-                          : Column(
-                              children: [
-                                DateRangePickerWidget(
-                                  dateRange: dateRange,
-                                  onDateRangeChanged: onDateRangeChanged,
-                                ),
-                                const SizedBox(height: 16),
-                                isTablet
-                                    ? _buildTabletFilters(context)
-                                    : _buildMobileFilters(context),
-                              ],
-                            ),
-                    if (!(reportType == 'crops' ||
-                        reportType == 'sectors' ||
-                        reportType == 'comparison'))
-                      isDesktop
-                          ? Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [_buildDesktopFilters(context)],
-                            )
-                          : isTablet
-                              ? _buildTabletFilters(context)
-                              : _buildMobileFilters(context),
-
+                    // This will force a rebuild when reportType changes
+                    _FiltersSection(
+                      reportType: reportType,
+                      dateRange: dateRange,
+                      onDateRangeChanged: onDateRangeChanged,
+                      selectedBarangay: selectedBarangay,
+                      selectedFarmer: selectedFarmer,
+                      selectedView: selectedView,
+                      selectedSector: selectedSector,
+                      selectedProduct: selectedProduct,
+                      selectedFarm: selectedFarm,
+                      onBarangayChanged: onBarangayChanged,
+                      onFarmerChanged: onFarmerChanged,
+                      onSectorChanged: onSectorChanged,
+                      onProductChanged: onProductChanged,
+                      onFarmChanged: onFarmChanged,
+                      onViewChanged: onViewChanged,
+                      isDesktop: isDesktop,
+                      isTablet: isTablet,
+                    ),
                     const SizedBox(height: 16),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               Container(
-                width: double.infinity, // Ensures full width
+                width: double.infinity,
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
@@ -152,24 +139,105 @@ class ReportFilterPanel extends StatelessWidget {
               const SizedBox(height: 16),
               Center(
                 child: SizedBox(
-                  width: isDesktop ? 200 : double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : onGeneratePressed,
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Generate Report'),
-                  ),
-                ),
+                    width: isDesktop ? 201 : double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : onGeneratePressed,
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Generate Report'),
+                    )),
               ),
             ],
           ),
         );
       },
     );
+  }
+}
+
+class _FiltersSection extends StatelessWidget {
+  final String reportType;
+  final DateTimeRange dateRange;
+  final ValueChanged<DateTimeRange> onDateRangeChanged;
+  final String selectedBarangay;
+  final String selectedFarmer;
+  final String selectedView;
+  final String selectedSector;
+  final String selectedProduct;
+  final String selectedFarm;
+  final ValueChanged<String> onBarangayChanged;
+  final ValueChanged<String> onFarmerChanged;
+  final ValueChanged<String> onSectorChanged;
+  final ValueChanged<String> onProductChanged;
+  final ValueChanged<String> onFarmChanged;
+  final ValueChanged<String> onViewChanged;
+  final bool isDesktop;
+  final bool isTablet;
+
+  const _FiltersSection({
+    required this.reportType,
+    required this.dateRange,
+    required this.onDateRangeChanged,
+    required this.selectedBarangay,
+    required this.selectedFarmer,
+    required this.selectedView,
+    required this.selectedSector,
+    required this.selectedProduct,
+    required this.selectedFarm,
+    required this.onBarangayChanged,
+    required this.onFarmerChanged,
+    required this.onSectorChanged,
+    required this.onProductChanged,
+    required this.onFarmChanged,
+    required this.onViewChanged,
+    required this.isDesktop,
+    required this.isTablet,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (reportType == 'products' ||
+        reportType == 'sectors' ||
+        reportType == 'farmer' ||
+        reportType == 'comparison') {
+      return isDesktop
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DateRangePickerWidget(
+                  dateRange: dateRange,
+                  onDateRangeChanged: onDateRangeChanged,
+                ),
+                const SizedBox(width: 16),
+                _buildDesktopFilters(context),
+              ],
+            )
+          : Column(
+              children: [
+                DateRangePickerWidget(
+                  dateRange: dateRange,
+                  onDateRangeChanged: onDateRangeChanged,
+                ),
+                const SizedBox(height: 16),
+                isTablet
+                    ? _buildTabletFilters(context)
+                    : _buildMobileFilters(context),
+              ],
+            );
+    } else {
+      return isDesktop
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [_buildDesktopFilters(context)],
+            )
+          : isTablet
+              ? _buildTabletFilters(context)
+              : _buildMobileFilters(context);
+    }
   }
 
   Widget _buildDesktopFilters(BuildContext context) {
@@ -208,168 +276,155 @@ class ReportFilterPanel extends StatelessWidget {
     switch (reportType) {
       case 'farmers':
         return [
-          _buildFilterButton(
-            context: context,
-            label: 'Barangay',
-            selectedValues: selectedBarangays,
-            items: FilterOptions.barangays,
-            onChanged: onBarangaysChanged,
-            isDesktop: isDesktop,
+          buildComboBox(
+            hint: 'Barangay',
+            options: FilterOptions.barangays,
+            selectedValue: selectedBarangay,
+            onSelected: onBarangayChanged,
+            width: isDesktop ? 150 : double.infinity,
           ),
-          _buildFilterButton(
-            context: context,
-            label: 'Sector',
-            selectedValues: selectedSectors,
-            items: FilterOptions.sectors,
-            onChanged: onSectorsChanged,
-            isDesktop: isDesktop,
+          buildComboBox(
+            hint: 'Sector',
+            options: FilterOptions.sectors,
+            selectedValue: selectedSector,
+            onSelected: onSectorChanged,
+            width: isDesktop ? 150 : double.infinity,
           ),
         ];
-      case 'crops':
+      case 'farmer':
         return [
-          _buildFilterButton(
-            context: context,
-            label: 'Crop',
-            selectedValues: selectedCrops,
-            items: FilterOptions.crops,
-            onChanged: onCropsChanged,
-            isDesktop: isDesktop,
+          BlocBuilder<FarmerBloc, FarmerState>(
+            builder: (context, state) {
+              return buildComboBox(
+                hint: 'Farmer',
+                options: FilterOptions.getFarmers(context),
+                selectedValue: selectedFarmer,
+                onSelected: onFarmerChanged,
+                width: isDesktop ? 150 : double.infinity,
+              );
+            },
           ),
-          _buildFilterButton(
-            context: context,
-            label: 'Farm',
-            selectedValues: selectedFarms,
-            items: FilterOptions.farms,
-            onChanged: onFarmsChanged,
-            isDesktop: isDesktop,
+          BlocBuilder<ProductBloc, ProductState>(
+            builder: (context, state) {
+              return buildComboBox(
+                hint: 'Product',
+                options: FilterOptions.getProducts(context),
+                selectedValue: selectedProduct,
+                onSelected: onProductChanged,
+                width: isDesktop ? 150 : double.infinity,
+              );
+            },
+          ),
+          BlocBuilder<FarmBloc, FarmState>(
+            builder: (context, state) {
+              return buildComboBox(
+                hint: 'Farm',
+                options: FilterOptions.getFarms(context),
+                selectedValue: selectedFarm,
+                onSelected: onFarmChanged,
+                width: isDesktop ? 150 : double.infinity,
+              );
+            },
+          ),
+          buildComboBox(
+            hint: 'View By',
+            options: FilterOptions.viewBy,
+            selectedValue: selectedView,
+            onSelected: onViewChanged,
+            width: isDesktop ? 150 : double.infinity,
           ),
         ];
-      case 'sectors':
+      case 'products':
         return [
-          _buildFilterButton(
-            context: context,
-            label: 'Sector',
-            selectedValues: selectedSectors,
-            items: FilterOptions.sectors,
-            onChanged: onSectorsChanged,
-            isDesktop: isDesktop,
+          BlocBuilder<ProductBloc, ProductState>(
+            builder: (context, state) {
+              return buildComboBox(
+                hint: 'Product',
+                options: FilterOptions.getProducts(context),
+                selectedValue: selectedProduct,
+                onSelected: onProductChanged,
+                width: isDesktop ? 150 : double.infinity,
+              );
+            },
+          ),
+          buildComboBox(
+            hint: 'View By',
+            options: FilterOptions.viewBy,
+            selectedValue: selectedView,
+            onSelected: onViewChanged,
+            width: isDesktop ? 150 : double.infinity,
+          ),
+          buildComboBox(
+            hint: 'Barangay',
+            options: FilterOptions.barangays,
+            selectedValue: selectedBarangay,
+            onSelected: onBarangayChanged,
+            width: isDesktop ? 150 : double.infinity,
+          ),
+          buildComboBox(
+            hint: 'Sector',
+            options: FilterOptions.sectors,
+            selectedValue: selectedSector,
+            onSelected: onSectorChanged,
+            width: isDesktop ? 150 : double.infinity,
           ),
         ];
 
+      case 'barangay':
+        return [
+          buildComboBox(
+            hint: 'Barangay',
+            options: FilterOptions.barangays,
+            selectedValue: selectedBarangay,
+            onSelected: onBarangayChanged,
+            width: isDesktop ? 150 : double.infinity,
+          ),
+          BlocBuilder<ProductBloc, ProductState>(
+            builder: (context, state) {
+              return buildComboBox(
+                hint: 'Product',
+                options: FilterOptions.getProducts(context),
+                selectedValue: selectedProduct,
+                onSelected: onProductChanged,
+                width: isDesktop ? 150 : double.infinity,
+              );
+            },
+          ),
+          buildComboBox(
+            hint: 'View By',
+            options: FilterOptions.viewBy,
+            selectedValue: selectedView,
+            onSelected: onViewChanged,
+            width: isDesktop ? 150 : double.infinity,
+          ),
+          buildComboBox(
+            hint: 'Sector',
+            options: FilterOptions.sectors,
+            selectedValue: selectedSector,
+            onSelected: onSectorChanged,
+            width: isDesktop ? 150 : double.infinity,
+          ),
+        ];
+
+      case 'sectors':
+        return [
+          buildComboBox(
+            hint: 'Sector',
+            options: FilterOptions.sectors,
+            selectedValue: selectedSector,
+            onSelected: onSectorChanged,
+            width: isDesktop ? 150 : double.infinity,
+          ),
+          buildComboBox(
+            hint: 'View By',
+            options: FilterOptions.viewBy,
+            selectedValue: selectedView,
+            onSelected: onViewChanged,
+            width: isDesktop ? 150 : double.infinity,
+          ),
+        ];
       default:
         return [];
     }
-  }
-
-  Widget _buildFilterButton({
-    required BuildContext context,
-    required String label,
-    required Set<String> selectedValues,
-    required List<String> items,
-    required ValueChanged<Set<String>> onChanged,
-    required bool isDesktop,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10), // More chip-like
-        ),
-        backgroundColor: selectedValues.isNotEmpty
-            ? Colors.blue[200] // Light blue background when selected
-            : Colors.grey[200], // Light grey background when not selected
-        foregroundColor: selectedValues.isNotEmpty
-            ? Colors.blue[900] // Dark blue text/icon when selected
-            : Colors.black, // Black text/icon when not selected
-        textStyle: theme.textTheme.bodyMedium?.copyWith(
-          color: selectedValues.isNotEmpty ? Colors.blue[900] : Colors.black,
-        ),
-      ),
-      onPressed: () => isDesktop
-          ? showDesktopModal(
-              context: context,
-              title: 'Filter by $label',
-              items: items,
-              selectedItems: selectedValues,
-              onSelected: onChanged,
-              multiple: true,
-            )
-          : showMobileModal(
-              context: context,
-              title: 'Filter by $label',
-              items: items,
-              selectedItems: selectedValues,
-              onSelected: onChanged,
-              multiple: true,
-            ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.arrow_drop_down,
-            size: 20,
-            color: selectedValues.isNotEmpty ? Colors.blue[900] : Colors.black,
-          ),
-        ],
-      ),
-    );
-  }
-
-  void showMultiSelectModal({
-    required BuildContext context,
-    required String title,
-    required List<String> items,
-    required Set<String> selectedItems,
-    required ValueChanged<Set<String>> onSelectedItemsChanged,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-                const Divider(),
-                Expanded(
-                  child: ListView(
-                    children: items.map((item) {
-                      final isSelected = selectedItems.contains(item);
-                      return CheckboxListTile(
-                        title: Text(item),
-                        value: isSelected,
-                        onChanged: (selected) {
-                          setState(() {
-                            if (selected == true) {
-                              selectedItems.add(item);
-                            } else {
-                              selectedItems.remove(item);
-                            }
-                          });
-                          onSelectedItemsChanged(selectedItems);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Done'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
   }
 }

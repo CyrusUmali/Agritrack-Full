@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart'; // Add this import
 import 'package:latlong2/latlong.dart';
 
-class FarmMapCard extends StatelessWidget {
+class FarmMapCard extends StatefulWidget {
   final Map<String, dynamic> farm;
   final bool isMobile;
 
@@ -13,36 +14,144 @@ class FarmMapCard extends StatelessWidget {
   });
 
   @override
+  State<FarmMapCard> createState() => _FarmMapCardState();
+}
+
+class _FarmMapCardState extends State<FarmMapCard> {
+  late final MapController _mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  double _calculateZoomLevel(double hectare) {
+    if (hectare < 1) return 20.0;
+    if (hectare < 5) return 18.0;
+    if (hectare < 20) return 16.0;
+    if (hectare < 50) return 14.0;
+    return 10.0;
+  }
+
+  Color _getColorForSector(String sector) {
+    switch (sector?.toLowerCase()) {
+      case 'Rice':
+        return Colors.green;
+      case 'Corn':
+        return Colors.yellow;
+      case 'HVC':
+        return Colors.purple;
+      case 'Livestock':
+        return Colors.deepOrange;
+      case 'Fishery':
+        return Colors.blue;
+      case 'Organic':
+        return Colors.grey;
+      default:
+        return Colors.blue; // Default color
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Extract vertices from farm data
+    final List<dynamic> verticesData = widget.farm['vertices'] ?? [];
+    final List<LatLng> polygonPoints = verticesData.map((vertex) {
+      if (vertex is Map) {
+        return LatLng(vertex['latitude'], vertex['longitude']);
+      } else if (vertex is LatLng) {
+        return vertex;
+      }
+      return LatLng(0, 0);
+    }).toList();
+
+    // If no valid vertices, show placeholder
+    if (polygonPoints.isEmpty ||
+        polygonPoints
+            .every((point) => point.latitude == 0 && point.longitude == 0)) {
+      return Card(
+        elevation: 1,
+        child: SizedBox(
+          height: widget.isMobile ? 200 : 300,
+          child: const Center(child: Text('No location data available')),
+        ),
+      );
+    }
+
+    // Calculate center point
+    double centerLat = 0;
+    double centerLng = 0;
+    for (var point in polygonPoints) {
+      centerLat += point.latitude;
+      centerLng += point.longitude;
+    }
+    centerLat /= polygonPoints.length;
+    centerLng /= polygonPoints.length;
+
+    // Get hectare value
+    final double hectare = widget.farm['hectare']?.toDouble() ?? 0.0;
+    final double zoomLevel = _calculateZoomLevel(hectare);
+
+    // Get sector and corresponding color
+    final String sector = widget.farm['sector']?.toString() ?? '';
+    final Color sectorColor = _getColorForSector(sector);
+
     return Card(
       elevation: 1,
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        height: isMobile ? 200 : 300,
+        height: widget.isMobile ? 200 : 300,
         child: FlutterMap(
+          mapController: _mapController,
           options: MapOptions(
-            center: LatLng(14.077557, 121.328938),
-            zoom: 13,
-            minZoom: 13,
-            maxBounds: LatLngBounds(
-              LatLng(13.927557, 121.178938),
-              LatLng(14.227557, 121.478938),
-            ),
+            center: LatLng(centerLat, centerLng),
+            zoom: zoomLevel,
+            minZoom: 10,
+            onMapReady: () {
+              // Calculate bounds after map is ready
+              final bounds = LatLngBounds.fromPoints(polygonPoints);
+              _mapController.fitBounds(
+                bounds,
+                options: FitBoundsOptions(
+                  padding: EdgeInsets.all(20),
+                ),
+              );
+            },
           ),
           children: [
             TileLayer(
+              tileProvider:
+                  CancellableNetworkTileProvider(), // Use cancellable provider
               urlTemplate: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
               userAgentPackageName: 'com.example.app',
+            ),
+            PolygonLayer(
+              polygons: [
+                Polygon(
+                  points: polygonPoints,
+                  color: sectorColor.withOpacity(0.3),
+                  borderColor: sectorColor,
+                  borderStrokeWidth: 2,
+                  isFilled: true,
+                ),
+              ],
             ),
             MarkerLayer(
               markers: [
                 Marker(
                   width: 40.0,
                   height: 40.0,
-                  point: LatLng(14.077557, 121.328938),
-                  child: Icon(
+                  point: LatLng(centerLat, centerLng),
+                  child: const Icon(
                     Icons.location_on,
-                    color: Theme.of(context).colorScheme.error,
+                    color: Color.fromARGB(255, 8, 244, 141),
                     size: 40,
                   ),
                 ),

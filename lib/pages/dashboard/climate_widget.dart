@@ -86,7 +86,7 @@ class _ClimateInfoWidgetState extends State<ClimateInfoWidget> {
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 16 : 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        // color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

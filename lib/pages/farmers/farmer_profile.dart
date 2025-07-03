@@ -1,113 +1,285 @@
+import 'dart:convert';
+
+import 'package:flareline/core/models/farmer_model.dart';
+import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farmers/farmers_widget/personal_info_card.dart';
+import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flareline/pages/layout.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:toastification/toastification.dart';
 import './farmers_widget/household_info_card.dart';
 import './farmers_widget/farm_profile_card.dart';
+import 'package:http/http.dart' as http;
 import './farmers_widget/emergency_contacts_card.dart';
 
 class FarmersProfile extends LayoutWidget {
-  final Map<String, dynamic> farmer;
+  final int farmerID;
 
-  const FarmersProfile({super.key, required this.farmer});
+  const FarmersProfile({super.key, required this.farmerID});
 
   @override
-  String breakTabTitle(BuildContext context) {
-    return 'Farmer Profile';
+  String breakTabTitle(BuildContext context) => 'Farmer Profile';
+
+  Widget _buildContent(BuildContext context, bool isMobile) {
+    return BlocProvider(
+      create: (context) => FarmerBloc(
+        farmerRepository: context.read<FarmerBloc>().farmerRepository,
+      )..add(GetFarmerById(farmerID)),
+      child: _FarmersProfileContent(isMobile: isMobile),
+    );
   }
 
   @override
-  Widget contentDesktopWidget(BuildContext context) {
-    return FarmersProfileDesktop(farmer: farmerData);
-  }
-
+  Widget contentDesktopWidget(BuildContext context) =>
+      _buildContent(context, false);
   @override
-  Widget contentMobileWidget(BuildContext context) {
-    return FarmersProfileMobile(farmer: farmerData);
-  }
+  Widget contentMobileWidget(BuildContext context) =>
+      _buildContent(context, true);
 }
 
-class FarmersProfileDesktop extends StatefulWidget {
-  final Map<String, dynamic> farmer;
+class _FarmersProfileContent extends StatelessWidget {
+  final bool isMobile;
 
-  const FarmersProfileDesktop({super.key, required this.farmer});
+  const _FarmersProfileContent({required this.isMobile});
 
-  @override
-  State<FarmersProfileDesktop> createState() => _FarmersProfileDesktopState();
-}
-
-class _FarmersProfileDesktopState extends State<FarmersProfileDesktop> {
-  int _selectedFarmIndex = 0;
+  void _showToast(BuildContext context,
+      {required String message, bool isError = false}) {
+    toastification.show(
+      context: context,
+      type: isError ? ToastificationType.error : ToastificationType.success,
+      style: ToastificationStyle.flat,
+      title: Text(message),
+      alignment: Alignment.topRight,
+      autoCloseDuration: const Duration(seconds: 3),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _ProfileHeader(farmer: widget.farmer),
-            const SizedBox(height: 24),
-            PersonalInfoCard(farmer: widget.farmer),
-            const SizedBox(height: 16),
-            HouseholdInfoCard(farmer: widget.farmer),
-            const SizedBox(height: 16),
-            EmergencyContactsCard(farmer: widget.farmer),
-            const SizedBox(height: 16),
-            FarmProfileCard(
-              farmer: widget.farmer,
-              selectedFarmIndex: _selectedFarmIndex,
-              onFarmSelected: (index) {
-                setState(() {
-                  _selectedFarmIndex = index;
-                });
-              },
-            ),
-          ],
-        ),
-      ),
+    return BlocConsumer<FarmerBloc, FarmerState>(
+      listener: (context, state) {
+        if (state is FarmerUpdated) {
+          _showToast(context, message: 'Farmer updated successfully');
+        } else if (state is FarmersError) {
+          _showToast(context, message: state.message, isError: true);
+        }
+      },
+      builder: (context, state) {
+        if (state is FarmerLoaded) {
+          return isMobile
+              ? FarmersProfileView(
+                  farmer: state.farmer.toJson(), isMobile: true)
+              : FarmersProfileView(
+                  farmer: state.farmer.toJson(), isMobile: false);
+        } else if (state is FarmersError) {
+          return Center(child: Text(state.message));
+        }
+        return const Center(child: CircularProgressIndicator());
+      },
     );
   }
 }
 
-class FarmersProfileMobile extends StatefulWidget {
-  final Map<String, dynamic> farmer;
-
-  const FarmersProfileMobile({super.key, required this.farmer});
+abstract class _BaseFarmersProfileState<T extends StatefulWidget>
+    extends State<T> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  int _selectedFarmIndex = 0;
+  bool isEditing = false;
+  late Map<String, dynamic> editedFarmer;
+  late Map<String, dynamic> currentFarmer;
+  late List<String> barangayNames;
 
   @override
-  State<FarmersProfileMobile> createState() => _FarmersProfileMobileState();
+  void initState() {
+    super.initState();
+    final widgetFarmer = (widget as dynamic).farmer;
+    currentFarmer = Map.from(widgetFarmer);
+    editedFarmer = Map.from(widgetFarmer);
+    barangayNames = barangays.map((b) => b['name'] as String).toList();
+  }
+
+  Future<String?> uploadImageToCloudinary(XFile file) async {
+    const cloudName = 'dk41ykxsq';
+    const uploadPreset = 'my_upload_preset';
+    final url = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
+
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse(url))
+        ..fields['upload_preset'] = uploadPreset;
+
+      if (kIsWeb) {
+        final fileBytes = await file.readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes(
+          'file',
+          fileBytes,
+          filename: file.name,
+        ));
+      } else {
+        request.files.add(await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+        ));
+      }
+
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+      final jsonResponse = json.decode(responseData);
+
+      if (response.statusCode == 200 && jsonResponse['secure_url'] != null) {
+        return jsonResponse['secure_url'];
+      }
+      throw Exception(
+          'Upload failed: ${jsonResponse['error']?['message'] ?? 'Unknown error'}');
+    } catch (e) {
+      debugPrint('Error uploading image: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> uploadAndUpdateImage(XFile file) async {
+    try {
+      final imageUrl = await uploadImageToCloudinary(file);
+      if (imageUrl != null) {
+        setState(() {
+          editedFarmer['imageUrl'] = imageUrl;
+          currentFarmer['imageUrl'] = imageUrl;
+        });
+      }
+    } catch (e) {
+      _showToast('Failed to upload image: ${e.toString()}', isError: true);
+    }
+  }
+
+  void toggleEdit() {
+    setState(() {
+      isEditing = !isEditing;
+      if (!isEditing) {
+        editedFarmer = Map.from(currentFarmer);
+      }
+    });
+  }
+
+  void saveChanges() {
+    if (_formKey.currentState?.validate() != true) {
+      _showToast('Please fix all errors in the form', isError: true);
+      return;
+    }
+
+    final updatedFarmer = Farmer.fromJson(editedFarmer);
+    context.read<FarmerBloc>().add(UpdateFarmer(updatedFarmer));
+  }
+
+  void handleFieldChange(MapEntry<String, String> entry) {
+    final numericFields = [
+      'household_num',
+      'male_members_num',
+      'female_members_num',
+    ];
+
+    setState(() {
+      if (numericFields.contains(entry.key)) {
+        editedFarmer[entry.key] =
+            entry.value.isEmpty ? null : int.tryParse(entry.value);
+      } else {
+        editedFarmer[entry.key] = entry.value;
+      }
+    });
+  }
+
+  void _showToast(String message, {bool isError = false}) {
+    toastification.show(
+      context: context,
+      type: isError ? ToastificationType.error : ToastificationType.success,
+      style: ToastificationStyle.flat,
+      title: Text(message),
+      alignment: Alignment.topRight,
+      autoCloseDuration: const Duration(seconds: 3),
+    );
+  }
 }
 
-class _FarmersProfileMobileState extends State<FarmersProfileMobile> {
-  int _selectedFarmIndex = 0;
+class FarmersProfileView extends StatefulWidget {
+  final Map<String, dynamic> farmer;
+  final bool isMobile;
+
+  const FarmersProfileView({
+    super.key,
+    required this.farmer,
+    required this.isMobile,
+  });
 
   @override
+  State<FarmersProfileView> createState() => _FarmersProfileViewState();
+}
+
+class _FarmersProfileViewState
+    extends _BaseFarmersProfileState<FarmersProfileView> {
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          children: [
-            _ProfileHeader(farmer: widget.farmer, isMobile: true),
-            const SizedBox(height: 16),
-            PersonalInfoCard(farmer: widget.farmer, isMobile: true),
-            const SizedBox(height: 16),
-            HouseholdInfoCard(farmer: widget.farmer, isMobile: true),
-            const SizedBox(height: 16),
-            EmergencyContactsCard(farmer: widget.farmer, isMobile: true),
-            const SizedBox(height: 16),
-            FarmProfileCard(
-              farmer: widget.farmer,
-              isMobile: true,
-              selectedFarmIndex: _selectedFarmIndex,
-              onFarmSelected: (index) {
-                setState(() {
-                  _selectedFarmIndex = index;
-                });
-              },
+    final displayFarmer = isEditing ? editedFarmer : currentFarmer;
+
+    return BlocListener<FarmerBloc, FarmerState>(
+      listener: (context, state) {
+        if (state is FarmerUpdated) {
+          setState(() {
+            isEditing = false;
+            currentFarmer = state.farmer.toJson();
+            editedFarmer = Map.from(currentFarmer);
+          });
+        }
+      },
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _ProfileHeader(
+                  farmer: displayFarmer,
+                  isMobile: widget.isMobile,
+                  isEditing: isEditing,
+                  onEdit: toggleEdit,
+                  onSave: saveChanges,
+                  onImageUpload: uploadAndUpdateImage,
+                ),
+                const SizedBox(height: 24),
+                PersonalInfoCard(
+                  farmer: displayFarmer,
+                  isMobile: widget.isMobile,
+                  isEditing: isEditing,
+                  onFieldChanged: handleFieldChange,
+                  barangayNames: barangayNames,
+                ),
+                const SizedBox(height: 16),
+                HouseholdInfoCard(
+                  farmer: displayFarmer,
+                  isMobile: widget.isMobile,
+                  isEditing: isEditing,
+                  onFieldChanged: handleFieldChange,
+                ),
+                const SizedBox(height: 16),
+                EmergencyContactsCard(
+                  farmer: displayFarmer,
+                  isMobile: widget.isMobile,
+                  isEditing: isEditing,
+                  onFieldChanged: handleFieldChange,
+                ),
+                const SizedBox(height: 16),
+                FarmProfileCard(
+                  farmer: displayFarmer,
+                  isMobile: widget.isMobile,
+                  selectedFarmIndex: _selectedFarmIndex,
+                  onFarmSelected: (index) =>
+                      setState(() => _selectedFarmIndex = index),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -117,8 +289,46 @@ class _FarmersProfileMobileState extends State<FarmersProfileMobile> {
 class _ProfileHeader extends StatelessWidget {
   final Map<String, dynamic> farmer;
   final bool isMobile;
+  final bool isEditing;
+  final VoidCallback onEdit;
+  final VoidCallback onSave;
+  final Function(XFile) onImageUpload;
 
-  const _ProfileHeader({required this.farmer, this.isMobile = false});
+  const _ProfileHeader({
+    required this.farmer,
+    this.isMobile = false,
+    required this.isEditing,
+    required this.onEdit,
+    required this.onSave,
+    required this.onImageUpload,
+  });
+
+  Future<void> _pickAndUploadImage(BuildContext context) async {
+    try {
+      final pickedFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (pickedFile == null) return;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      await onImageUpload(pickedFile);
+      Navigator.of(context).pop();
+    } catch (e) {
+      Navigator.of(context).pop();
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.flat,
+        title: Text('Failed to upload image: ${e.toString()}'),
+        alignment: Alignment.topRight,
+        autoCloseDuration: const Duration(seconds: 3),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,17 +349,41 @@ class _ProfileHeader extends StatelessWidget {
             left: 0,
             right: 0,
             child: Center(
-              child: CircleAvatar(
-                radius: isMobile ? 48 : 72,
-                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/user/user-01.png',
-                    width: isMobile ? 80 : 120,
-                    height: isMobile ? 80 : 120,
-                    fit: BoxFit.cover,
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: isMobile ? 48 : 72,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceVariant,
+                    child: ClipOval(
+                      child: _buildProfileImage(),
+                    ),
                   ),
-                ),
+                  if (isEditing)
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () => _pickAndUploadImage(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.edit,
+                            size: isMobile ? 16 : 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -159,10 +393,9 @@ class _ProfileHeader extends StatelessWidget {
             right: 0,
             child: Center(
               child: Text(
-                farmer['farmerName'] ?? 'Unknown Farmer',
+                farmer['name'] ?? 'Unknown Farmer',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: Colors.white,
                     ),
               ),
             ),
@@ -170,91 +403,66 @@ class _ProfileHeader extends StatelessWidget {
           Positioned(
             top: 16,
             right: 16,
-            child: FilledButton.tonalIcon(
-              onPressed: () {},
-              icon: const Icon(Icons.edit),
-              label: const Text('Edit Profile'),
-            ),
+            child: isEditing
+                ? FilledButton.tonal(
+                    onPressed: onSave,
+                    child: _buildButtonContent(Icons.save, 'Save Profile'),
+                  )
+                : FilledButton.tonal(
+                    onPressed: onEdit,
+                    child: _buildButtonContent(Icons.edit, 'Edit Profile'),
+                  ),
           ),
         ],
       ),
     );
   }
-}
 
-final farmerData = {
-  'farmerName': 'Juan Dela Cruz',
-  'surname': 'Dela Cruz',
-  'firstName': 'Juan',
-  'middleName': 'Santos',
-  'extension': 'Jr.',
-  'gender': 'Male',
-  'addressLine1': '123 Purok 5',
-  'addressLine2': 'Sitio Pag-asa',
-  'barangay': 'Barangay 1',
-  'city': 'Cityville',
-  'province': 'Provinceville',
-  'region': 'Regionville',
-  'contactNumber': '09123456789',
-  'birthDate': 'January 1, 1980',
-  'birthPlace': 'Cityville',
-  'education': 'College Graduate',
-  'disability': 'None',
-  'is4ps': false,
-  'isIndigenous': false,
-  'governmentId': '123-456-789-000',
-  'association': 'Farmers Cooperative',
-  'farms': [
-    {
-      'farmName': 'Riverbank Farm',
-      'location': 'Near the river',
-      'barangay': 'Barangay 1',
-      'city': 'Cityville',
-      'areaHectares': 5.2,
-      'ownershipType': 'Owned',
-      'commodities': [
-        {'type': 'Rice', 'area': 3.0},
-        {'type': 'Corn', 'area': 2.2}
-      ],
-      'soilType': 'Clay loam',
-      'irrigationType': 'Gravity irrigation',
-      'gpsCoordinates': {'latitude': 14.5995, 'longitude': 120.9842},
-      'livestockCount': 0,
-      'poultryCount': 0,
-    },
-    {
-      'farmName': 'Hilltop Farm',
-      'location': 'Mountain area',
-      'barangay': 'Barangay 2',
-      'city': 'Cityville',
-      'areaHectares': 8.5,
-      'ownershipType': 'Leased',
-      'commodities': [
-        {'type': 'Coffee', 'area': 5.0},
-        {'type': 'Banana', 'area': 3.5}
-      ],
-      'soilType': 'Volcanic loam',
-      'irrigationType': 'Rain-fed',
-      'gpsCoordinates': {'latitude': 14.6012, 'longitude': 120.9828},
-      'livestockCount': 10,
-      'poultryCount': 50,
-    },
-    {
-      'farmName': 'Hilltop Farm',
-      'location': 'Mountain area',
-      'barangay': 'Barangay 2',
-      'city': 'Cityville',
-      'areaHectares': 8.5,
-      'ownershipType': 'Leased',
-      'commodities': [
-        {'type': 'Coffee', 'area': 5.0},
-        {'type': 'Banana', 'area': 3.5}
-      ],
-      'soilType': 'Volcanic loam',
-      'irrigationType': 'Rain-fed',
-      'gpsCoordinates': {'latitude': 14.6012, 'longitude': 120.9828},
-      'livestockCount': 10,
-      'poultryCount': 50,
-    }
-  ]
-};
+  Widget _buildButtonContent(IconData icon, String text) {
+    return isMobile
+        ? Icon(icon)
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon),
+              const SizedBox(width: 8),
+              Text(text),
+            ],
+          );
+  }
+
+  Widget _buildProfileImage() {
+    final imageUrl = farmer['imageUrl'];
+    final hasValidImage =
+        imageUrl != null && imageUrl != '---' && imageUrl.toString().isNotEmpty;
+
+    return hasValidImage
+        ? Image.network(
+            imageUrl,
+            width: isMobile ? 80 : 120,
+            height: isMobile ? 80 : 120,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) => _buildDefaultIcon(),
+          )
+        : _buildDefaultIcon();
+  }
+
+  Widget _buildDefaultIcon() {
+    return Icon(
+      Icons.person,
+      size: isMobile ? 40 : 60,
+      color: Colors.grey,
+    );
+  }
+}

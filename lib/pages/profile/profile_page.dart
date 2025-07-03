@@ -1,6 +1,7 @@
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flareline/pages/layout.dart';
 import 'package:flareline/flutter_gen/app_localizations.dart';
 
@@ -14,6 +15,11 @@ class ProfilePage extends LayoutWidget {
 
   @override
   Widget contentDesktopWidget(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final fname = userProvider.user?.fname ?? '';
+    final lname = userProvider.user?.lname ?? '';
+    final fullName = '$fname $lname'.trim().isEmpty ? 'Guest' : '$fname $lname';
+
     return CommonCard(
       margin: EdgeInsets.zero,
       child: Stack(children: [
@@ -84,9 +90,9 @@ class ProfilePage extends LayoutWidget {
               const SizedBox(
                 height: 16,
               ),
-              const Text(
-                'Danish Heilium',
-                style: TextStyle(fontSize: 16),
+              Text(
+                fullName,
+                style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(
                 height: 16,

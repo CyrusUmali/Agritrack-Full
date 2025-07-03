@@ -12,6 +12,8 @@ class OutBorderTextFormField extends StatelessWidget {
   final int? maxLines;
   final TextEditingController? controller;
   final bool? enabled;
+  final bool showErrorText;
+  final Color errorBorderColor;
   final Widget? suffixWidget;
   final bool? obscureText;
   final TextInputType? keyboardType;
@@ -20,42 +22,47 @@ class OutBorderTextFormField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
   final TextStyle? textStyle;
+  final int? maxLength;
   final TextStyle? hintStyle;
   final Color? focusColor;
+  final TextStyle? errorTextStyle;
 
-  const OutBorderTextFormField(
-      {super.key,
-      this.labelText,
-      this.initialValue,
-      this.hintText,
-      this.hintStyle,
-      this.maxLines = 1,
-      this.enabled,
-      this.controller,
-      this.suffixWidget,
-      this.obscureText,
-      this.keyboardType,
-      this.icon,
-      this.validator,
-      this.textInputAction,
-      this.onFieldSubmitted,
-      this.textStyle,
-      this.focusColor});
+  const OutBorderTextFormField({
+    super.key,
+    this.labelText,
+    this.initialValue,
+    this.hintText,
+    this.hintStyle,
+    this.showErrorText = true,
+    this.errorBorderColor = Colors.redAccent,
+    this.maxLines = 1,
+    this.enabled,
+    this.controller,
+    this.suffixWidget,
+    this.obscureText,
+    this.keyboardType,
+    this.icon,
+    this.validator,
+    this.textInputAction,
+    this.onFieldSubmitted,
+    this.textStyle,
+    this.focusColor,
+    this.errorTextStyle,
+    this.maxLength,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (labelText != null)
+        if (labelText != null) ...[
           Text(
             labelText ?? '',
             style: TextStyle(fontSize: 14),
           ),
-        if (labelText != null)
-          const SizedBox(
-            height: 8,
-          ),
+          const SizedBox(height: 8),
+        ],
         SizedBox(
           width: double.maxFinite,
           height: maxLines == 1 ? 50 : null,
@@ -75,29 +82,46 @@ class OutBorderTextFormField extends StatelessWidget {
                   onFieldSubmitted: onFieldSubmitted,
                   style: textStyle,
                   decoration: InputDecoration(
-                      prefixIcon: icon,
-                      prefixIconConstraints: const BoxConstraints(
-                        maxWidth: 35,
-                        maxHeight: 35,
+                    prefixIcon: icon,
+                    prefixIconConstraints: const BoxConstraints(
+                      maxWidth: 35,
+                      maxHeight: 35,
+                    ),
+                    border: const OutlineInputBorder(
+                      borderSide:
+                          BorderSide(color: FlarelineColors.border, width: 1),
+                    ),
+                    enabledBorder: const OutlineInputBorder(
+                      borderSide:
+                          BorderSide(color: FlarelineColors.border, width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: (focusColor ?? FlarelineColors.primary),
+                        width: 1,
                       ),
-                      labelText: '',
-                      border: const OutlineInputBorder(
-                          borderSide: BorderSide(
-                              color: FlarelineColors.border, width: 1)),
-                      enabledBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(
-                              color: FlarelineColors.border, width: 1)),
-                      focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                              color: (focusColor ?? FlarelineColors.primary),
-                              width: 1)),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      floatingLabelBehavior: FloatingLabelBehavior.always,
-                      hintText: hintText,
-                      hintStyle: hintStyle),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    hintText: hintText,
+                    hintStyle: hintStyle,
+                    // This is the key fix:
+                    errorStyle: showErrorText
+                        ? errorTextStyle ??
+                            TextStyle(
+                              color: errorBorderColor,
+                              fontSize: 9,
+                            )
+                        : TextStyle(height: 0, fontSize: 0),
+                    errorBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: errorBorderColor),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: errorBorderColor),
+                    ),
+                  ),
                 ),
               ),
               if (suffixWidget != null)

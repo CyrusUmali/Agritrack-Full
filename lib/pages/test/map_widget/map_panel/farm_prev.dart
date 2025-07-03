@@ -92,7 +92,7 @@ class InfoCard extends StatelessWidget {
                   _buildMetadataChip(
                     icon: Icons.landscape,
                     label: 'Area',
-                    value: ' hectares',
+                    value: polygon.area != null ? '${polygon.area} Ha' : 'N/A',
                     theme: theme,
                   ),
                   if (polygon.parentBarangay != null)

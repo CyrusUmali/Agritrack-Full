@@ -45,30 +45,56 @@ class BarangayModal {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
+    // Create a completely custom header
+    Widget _buildHeader(BuildContext context) {
+      return Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Barangay Details',
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.black),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+    }
+
     await WoltModalSheet.show(
       context: context,
       pageListBuilder: (modalContext) {
         return [
           WoltModalSheetPage(
-            hasSabGradient: true,
-            topBarTitle: Text(
-              'Barangay Details',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            isTopBarLayerAlwaysVisible: true,
-            trailingNavBarWidget: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => Navigator.of(modalContext).pop(),
-            ),
-            child: _buildContent(
-              context: modalContext,
-              barangay: barangay,
-              farms: farms,
-              theme: theme,
-              polygonManager: polygonManager,
+            backgroundColor: Colors.white,
+            hasSabGradient: false,
+            isTopBarLayerAlwaysVisible: false, // Disable default header
+            topBarTitle: const SizedBox(), // Empty title
+            trailingNavBarWidget: const SizedBox(), // Empty trailing widget
+            child: Column(
+              children: [
+                _buildHeader(modalContext), // Add custom header
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
+                    child: _buildContent(
+                      context: modalContext,
+                      barangay: barangay,
+                      farms: farms,
+                      theme: theme,
+                      polygonManager: polygonManager,
+                    ),
+                  ),
+                ),
+              ],
             ),
           )
         ];

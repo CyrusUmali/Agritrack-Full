@@ -25,7 +25,7 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 const Iconify(Mdi.rice),
-                '2,000 Farmers',
+                '120 Farmers',
                 '10,000 ha',
                 '85%',
                 true,
@@ -35,7 +35,7 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 const Iconify(Mdi.corn),
-                '1,500 Farmers',
+                '90 Farmers',
                 '8,500 ha',
                 '78%',
                 true,
@@ -43,13 +43,13 @@ class SectorsGridCard extends StatelessWidget {
         const SizedBox(width: 16),
         Expanded(
             child: _itemCardWidget(context, const Iconify(Mdi.cow),
-                '800 Farmers', 'N/A', '90%', true, DeviceScreenType.desktop)),
+                '100 Farmers', 'N/A', '90%', true, DeviceScreenType.desktop)),
         const SizedBox(width: 16),
         Expanded(
             child: _itemCardWidget(
                 context,
                 const Iconify(Mdi.leaf),
-                '600 Farmers',
+                '35 Farmers',
                 '5,200 ha',
                 '88%',
                 true,
@@ -59,7 +59,7 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 const Iconify(Mdi.fish),
-                '1,200 Farmers',
+                '60 Farmers',
                 '15,000 ha',
                 '82%',
                 true,
@@ -69,7 +69,7 @@ class SectorsGridCard extends StatelessWidget {
             child: _itemCardWidget(
                 context,
                 const Iconify(Mdi.fruit_grapes_outline),
-                '900 Farmers',
+                '50 Farmers',
                 '7,300 ha',
                 '87%',
                 true,
@@ -87,18 +87,18 @@ class SectorsGridCard extends StatelessWidget {
       mainAxisSpacing: 12,
       childAspectRatio: 1.0,
       children: [
-        _itemCardWidget(context, const Iconify(Mdi.rice), '2,000 Farmers',
+        _itemCardWidget(context, const Iconify(Mdi.rice), '120 Farmers',
             '10,000 ha', '85%', true, DeviceScreenType.mobile),
-        _itemCardWidget(context, const Iconify(Mdi.corn), '1,500 Farmers',
+        _itemCardWidget(context, const Iconify(Mdi.corn), '90 Farmers',
             '8,500 ha', '78%', true, DeviceScreenType.mobile),
-        _itemCardWidget(context, const Iconify(Mdi.cow), '800 Farmers', 'N/A',
+        _itemCardWidget(context, const Iconify(Mdi.cow), '100 Farmers', 'N/A',
             '90%', true, DeviceScreenType.mobile),
-        _itemCardWidget(context, const Iconify(Mdi.leaf), '600 Farmers',
+        _itemCardWidget(context, const Iconify(Mdi.leaf), '35 Farmers',
             '5,200 ha', '88%', true, DeviceScreenType.mobile),
-        _itemCardWidget(context, const Iconify(Mdi.fish), '1,200 Farmers',
+        _itemCardWidget(context, const Iconify(Mdi.fish), '60 Farmers',
             '15,000 ha', '82%', true, DeviceScreenType.mobile),
         _itemCardWidget(context, const Iconify(Mdi.fruit_grapes_outline),
-            '900 Farmers', '7,300 ha', '87%', true, DeviceScreenType.mobile),
+            '50 Farmers', '7,300 ha', '87%', true, DeviceScreenType.mobile),
       ],
     );
   }

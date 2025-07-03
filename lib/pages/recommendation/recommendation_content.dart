@@ -238,6 +238,8 @@ class RecommendationContentState extends State<RecommendationContent> {
 
   Widget _buildModelSelectionCard() {
     return Card(
+        child: Padding(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -302,30 +304,32 @@ class RecommendationContentState extends State<RecommendationContent> {
             icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
             iconSize: 24,
           ),
-          if (model.modelAccuracy != null) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              decoration: BoxDecoration(
-                color: Colors.green[50],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                model.modelAccuracy!,
-                style: TextStyle(
-                  color: Colors.green[800],
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ],
+          // if (model.modelAccuracy != null) ...[
+          //   const SizedBox(height: 8),
+          //   Container(
+          //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+          //     decoration: BoxDecoration(
+          //       color: Colors.green[50],
+          //       borderRadius: BorderRadius.circular(8),
+          //     ),
+          //     child: Text(
+          //       model.modelAccuracy!,
+          //       style: TextStyle(
+          //         color: Colors.green[800],
+          //         fontSize: 14,
+          //       ),
+          //     ),
+          //   ),
+          // ],
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildInputParametersCard(bool isMobile) {
     return Card(
+        child: Padding(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
           Center(
@@ -391,6 +395,6 @@ class RecommendationContentState extends State<RecommendationContent> {
           ),
         ],
       ),
-    );
+    ));
   }
 }

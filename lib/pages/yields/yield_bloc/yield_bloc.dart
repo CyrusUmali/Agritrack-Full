@@ -1,0 +1,320 @@
+import 'dart:async';
+import 'package:flareline/repositories/yield_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:equatable/equatable.dart';
+import 'package:flareline/core/models/yield_model.dart';
+
+part 'yield_event.dart';
+part 'yield_state.dart';
+
+class YieldBloc extends Bloc<YieldEvent, YieldState> {
+  final YieldRepository yieldRepository;
+
+  YieldBloc({required this.yieldRepository}) : super(YieldInitial()) {
+    on<LoadYields>(_onLoadYields);
+    on<AddYield>(_onAddYield);
+    on<DeleteYield>(_onDeleteYield);
+    on<FilterYields>(_onFilterYields);
+    on<SearchYields>(_onSearchYields);
+    on<SortYields>(_onSortYields);
+    on<GetYieldById>(_onGetYieldById);
+    on<GetYieldByFarmId>(_onGetYieldByFarmId);
+    on<UpdateYield>(_onUpdateYield);
+    on<LoadYieldsByFarmer>(_onLoadYieldsByFarmer);
+    on<LoadYieldsByProduct>(_onLoadYieldsByProduct);
+  }
+
+  List<Yield> _yields = [];
+  String _searchQuery = '';
+  String _sectorFilter = "All";
+  String _productFilter = "All";
+  String _farmerFilter = "All";
+  String _yearFilter = "All";
+  String _barangayFilter = "All";
+  String _statusFilter = "All";
+  String? _sortColumn;
+  bool _sortAscending = true;
+
+  // Getters for all filter values
+  List<Yield> get allYields => _yields;
+  String get sectorFilter => _sectorFilter;
+  String get productFilter => _productFilter;
+  String get farmerFilter => _farmerFilter;
+  String get yearFilter => _yearFilter;
+  String get barangayFilter => _barangayFilter;
+  String get statusFilter => _statusFilter;
+  String get searchQuery => _searchQuery;
+  String? get sortColumn => _sortColumn;
+  bool get sortAscending => _sortAscending;
+
+  Future<void> _onLoadYields(
+    LoadYields event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+
+    try {
+      _yields = await yieldRepository.fetchYields();
+      emit(YieldsLoaded(_applyFilters()));
+    } catch (e) {
+      emit(YieldsError(e.toString()));
+    }
+  }
+
+  Future<void> _onUpdateYield(
+    UpdateYield event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+
+    try {
+      final updatedYield = await yieldRepository.updateYield(event.yieldRecord);
+
+      final index = _yields.indexWhere((y) => y.id == updatedYield.id);
+      if (index != -1) {
+        _yields[index] = updatedYield;
+      }
+
+      emit(YieldUpdated(updatedYield));
+      emit(YieldsLoaded(_applyFilters()));
+    } catch (e) {
+      emit(YieldsError(e.toString()));
+    }
+  }
+
+  Future<void> _onGetYieldById(
+    GetYieldById event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+
+    try {
+      final yieldRecord = await yieldRepository.getYieldById(event.id);
+      emit(YieldLoaded(yieldRecord as List<Yield>));
+    } catch (e) {
+      emit(YieldsError(e.toString()));
+    }
+  }
+
+  Future<void> _onGetYieldByFarmId(
+    GetYieldByFarmId event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+
+    try {
+      _yields =
+          (await yieldRepository.getYieldByFarmId(event.farmId)) as List<Yield>;
+
+      // emit(YieldsLoaded(yieldRecord as List<Yield>));
+      emit(YieldsLoaded(_applyFilters()));
+    } catch (e) {
+      print('[_onGetYieldByFarmId] Error occurred: $e');
+      emit(YieldsError(e.toString()));
+      print('[_onGetYieldByFarmId] Emitted YieldsError state');
+    }
+  }
+
+  Future<void> _onLoadYieldsByFarmer(
+    LoadYieldsByFarmer event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+
+    try {
+      _yields = await yieldRepository.fetchYieldsByFarmer(event.farmerId);
+      emit(YieldsLoaded(_applyFilters()));
+    } catch (e) {
+      emit(YieldsError(e.toString()));
+    }
+  }
+
+  Future<void> _onLoadYieldsByProduct(
+    LoadYieldsByProduct event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+
+    try {
+      _yields = await yieldRepository.fetchYieldsByProduct(event.productId);
+      emit(YieldsLoaded(_applyFilters()));
+    } catch (e) {
+      emit(YieldsError(e.toString()));
+    }
+  }
+
+  Future<void> _onAddYield(
+    AddYield event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+    try {
+      final newYield = Yield(
+        id: 0, // Will be assigned by server
+        farmerId: event.farmerId,
+        productId: event.productId,
+        harvestDate: event.harvestDate,
+        farmId: event.farmId,
+        volume: event.volume,
+        notes: event.notes,
+        value: event.value,
+        images: event.images,
+      );
+
+      await yieldRepository.addYield(newYield);
+      _yields = await yieldRepository.fetchYields(); // Refresh list
+      emit(YieldsLoaded(_applyFilters(),
+          message: 'Yield record added successfully!'));
+    } catch (e) {
+      emit(YieldsError('Failed to add yield record: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onDeleteYield(
+    DeleteYield event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+    try {
+      await yieldRepository.deleteYield(event.id);
+      _yields = _yields.where((y) => y.id != event.id).toList();
+      emit(YieldsLoaded(_applyFilters(),
+          message: 'Yield record deleted successfully!'));
+    } catch (e) {
+      emit(YieldsError('Failed to delete yield record: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onFilterYields(
+    FilterYields event,
+    Emitter<YieldState> emit,
+  ) async {
+    _sectorFilter = event.sector ?? "All";
+    _productFilter = event.productName ?? "All";
+    _farmerFilter = event.farmer ?? "All";
+    _yearFilter = event.year ?? "All";
+    _barangayFilter = event.barangay ?? "All";
+    _statusFilter = event.status ?? "All";
+
+    emit(YieldsLoaded(_applyFilters()));
+  }
+
+  Future<void> _onSearchYields(
+    SearchYields event,
+    Emitter<YieldState> emit,
+  ) async {
+    _searchQuery = event.query.trim().toLowerCase();
+    emit(YieldsLoaded(_applyFilters()));
+  }
+
+  Future<void> _onSortYields(
+    SortYields event,
+    Emitter<YieldState> emit,
+  ) async {
+    if (_sortColumn == event.columnName) {
+      _sortAscending = !_sortAscending;
+    } else {
+      _sortColumn = event.columnName;
+      _sortAscending = true;
+    }
+    emit(YieldsLoaded(_applyFilters()));
+  }
+
+  List<Yield> _applyFilters() {
+    List<Yield> filteredYields = _yields.where((yield) {
+      // Sector filter
+      final matchesSector = _sectorFilter == "All" ||
+          _sectorFilter.isEmpty ||
+          (yield.sector != null && yield.sector == _sectorFilter);
+
+      if (!matchesSector) return false;
+
+      // Product filter
+      final matchesProduct = _productFilter == "All" ||
+          _productFilter.isEmpty ||
+          (yield.productName != null && yield.productName == _productFilter);
+
+      if (!matchesProduct) return false;
+
+      // Farmer filter
+      final matchesFarmer = _farmerFilter == "All" ||
+          _farmerFilter.isEmpty ||
+          (yield.farmerId != null &&
+              yield.farmerId.toString() == _farmerFilter);
+
+      if (!matchesFarmer) return false;
+
+      // Year filter
+      final matchesYear = _yearFilter == "All" ||
+          _yearFilter.isEmpty ||
+          (yield.harvestDate != null &&
+              yield.harvestDate.year.toString() == _yearFilter);
+
+      if (!matchesYear) return false;
+
+      // Barangay filter
+      final matchesBarangay = _barangayFilter == "All" ||
+          _barangayFilter.isEmpty ||
+          (yield.barangay != null &&
+              yield.barangay!.toLowerCase() == _barangayFilter.toLowerCase());
+
+      if (!matchesBarangay) return false;
+
+      // Status filter
+      final matchesStatus = _statusFilter == "All" ||
+          _statusFilter.isEmpty ||
+          (yield.status != null &&
+              yield.status!.toLowerCase() == _statusFilter.toLowerCase());
+
+      if (!matchesStatus) return false;
+
+      // Search filter
+      if (_searchQuery.isEmpty) return true;
+
+      final matchesSearch =
+          (yield.notes?.toLowerCase().contains(_searchQuery) ?? false) ||
+              (yield.farmerName?.toLowerCase().contains(_searchQuery) ??
+                  false) ||
+              (yield.sector?.toLowerCase().contains(_searchQuery) ?? false) ||
+              (yield.barangay?.toLowerCase().contains(_searchQuery) ?? false) ||
+              (yield.status?.toLowerCase().contains(_searchQuery) ?? false) ||
+              (yield.harvestDate?.toString().contains(_searchQuery) ?? false) ||
+              (yield.volume?.toString().contains(_searchQuery) ?? false) ||
+              (yield.value?.toString().contains(_searchQuery) ?? false);
+
+      return matchesSearch;
+    }).toList();
+
+    // Sorting logic
+    if (_sortColumn != null) {
+      filteredYields.sort((a, b) {
+        int compareResult;
+        switch (_sortColumn) {
+          case 'HarvestDate':
+            compareResult = a.harvestDate.compareTo(b.harvestDate);
+            break;
+          case 'Volume':
+            compareResult = a.volume.compareTo(b.volume);
+            break;
+          case 'Value':
+            compareResult = (a.value ?? 0).compareTo(b.value ?? 0);
+            break;
+          case 'Sector':
+            compareResult = (a.sector ?? '').compareTo(b.sector ?? '');
+            break;
+          case 'Barangay':
+            compareResult = (a.barangay ?? '').compareTo(b.barangay ?? '');
+            break;
+          case 'Status':
+            compareResult = (a.status ?? '').compareTo(b.status ?? '');
+            break;
+          default:
+            compareResult = 0;
+        }
+        return _sortAscending ? compareResult : -compareResult;
+      });
+    }
+
+    return filteredYields;
+  }
+}

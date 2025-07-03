@@ -1,11 +1,13 @@
-import 'package:flareline/pages/sectors/sector_table.dart';
+import 'package:flareline/pages/sectors/sectorKPI.dart';
 import 'package:flutter/material.dart';
-import 'package:flareline/pages/sectors/grid_card.dart';
+import 'package:flareline/pages/sectors/sector_table.dart';
 import 'package:flareline/pages/layout.dart';
-import 'package:flareline/pages/sectors/year_filter_dropdown.dart'; // Import the new widget
-
 import 'package:flareline/pages/sectors/sector_line_Chart.dart';
 import 'package:flareline/pages/sectors/sector_bar_Chart.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
+import 'package:flareline/repositories/yield_repository.dart';
+import 'package:flareline/services/api_service.dart';
 
 class SectorsPage extends LayoutWidget {
   const SectorsPage({super.key});
@@ -17,34 +19,53 @@ class SectorsPage extends LayoutWidget {
 
   @override
   Widget contentDesktopWidget(BuildContext context) {
-    // State to hold the selected year
-    int selectedYear = DateTime.now().year;
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider(
+          create: (context) => YieldRepository(apiService: ApiService()),
+        ),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => YieldBloc(
+              yieldRepository: RepositoryProvider.of<YieldRepository>(context),
+            )..add(LoadYields()),
+          ),
+          // You could add a SectorBloc here if needed
+        ],
+        child: Builder(
+          builder: (context) {
+            return const _SectorsContent();
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SectorsContent extends StatefulWidget {
+  const _SectorsContent();
+
+  @override
+  State<_SectorsContent> createState() => _SectorsContentState();
+}
+
+class _SectorsContentState extends State<_SectorsContent> {
+  @override
+  Widget build(BuildContext context) {
+    // You can access the SectorService anywhere in this widget tree using:
+    // final sectorService = RepositoryProvider.of<SectorService>(context);
 
     return Column(
       children: [
-        // Year Filter Dropdown
-        YearFilterDropdown(
-          selectedYear: selectedYear,
-          onYearChanged: (int? newValue) {
-            if (newValue != null) {
-              // Update the selected year
-              selectedYear = newValue;
-              // You can add logic here to refresh the data based on the selected year
-            }
-          },
-        ),
+        const SectorKpi(),
         const SizedBox(height: 16),
-        const SectorsGridCard(),
-        const SizedBox(height: 16),
-
         SectorTableWidget(),
-        // const FarmersPerSectorWidget(),
         const SizedBox(height: 16),
-
         SectorLineChart(),
         const SizedBox(height: 16),
-        SectorBarChart()
-        // const SectorYieldAndGrowthWidget(),
+        SectorBarChart(),
       ],
     );
   }

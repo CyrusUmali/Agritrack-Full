@@ -1,18 +1,17 @@
+import 'package:flareline/core/models/farms_model.dart';
 import 'package:flareline/pages/farms/farm_profile.dart';
+import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
 
 class FarmsTable extends StatelessWidget {
-  final List<dynamic> farms;
+  final List<Farm> farms;
 
   const FarmsTable({super.key, required this.farms});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return CommonCard(
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -34,7 +33,7 @@ class FarmsTable extends StatelessWidget {
               LayoutBuilder(
                 builder: (context, constraints) {
                   double columnWidth =
-                      constraints.maxWidth / 5; // Divide by number of columns
+                      constraints.maxWidth / 6; // Adjusted for the new column
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
@@ -55,19 +54,26 @@ class FarmsTable extends StatelessWidget {
                         DataColumn(
                           label: SizedBox(
                             width: columnWidth,
-                            child: Text('Area (acres)'),
+                            child: Text('Area (hectares)'),
                           ),
                         ),
                         DataColumn(
                           label: SizedBox(
                             width: columnWidth,
-                            child: Text('Est. Yield'),
+                            child: Text('Volume'),
                           ),
                         ),
                         DataColumn(
                           label: SizedBox(
                             width: columnWidth,
                             child: Text('Status'),
+                          ),
+                        ),
+                        DataColumn(
+                          label: SizedBox(
+                            width:
+                                columnWidth * 0.5, // Smaller width for action
+                            child: Text('Actions'),
                           ),
                         ),
                       ],
@@ -78,7 +84,7 @@ class FarmsTable extends StatelessWidget {
                               SizedBox(
                                 width: columnWidth,
                                 child: Text(
-                                  farm['name'] ?? 'Unknown',
+                                  farm.name ?? 'Unknown',
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -87,7 +93,7 @@ class FarmsTable extends StatelessWidget {
                               SizedBox(
                                 width: columnWidth,
                                 child: Text(
-                                  farm['location'] ?? 'Unknown',
+                                  farm.barangay ?? 'Unknown location',
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -96,7 +102,7 @@ class FarmsTable extends StatelessWidget {
                               SizedBox(
                                 width: columnWidth,
                                 child: Text(
-                                  farm['area']?.toString() ?? 'N/A',
+                                  farm.hectare?.toString() ?? 'N/A',
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -105,7 +111,7 @@ class FarmsTable extends StatelessWidget {
                               SizedBox(
                                 width: columnWidth,
                                 child: Text(
-                                  farm['yield']?.toString() ?? 'N/A',
+                                  farm.volume?.toString() ?? 'N/A',
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -115,13 +121,28 @@ class FarmsTable extends StatelessWidget {
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: _getStatusColor(farm['status']),
+                                  color: _getStatusColor(
+                                      'active'), // Setting all as active for now
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  farm['status'] ?? 'Unknown',
+                                  'Active',
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                              ),
+                            ),
+                            DataCell(
+                              IconButton(
+                                icon: const Icon(Icons.arrow_forward),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          FarmProfile(farmId: farm.id ?? 0),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ],

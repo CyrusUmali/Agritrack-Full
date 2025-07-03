@@ -10,6 +10,14 @@ import 'package:logger/logger.dart';
 
 abstract class BaseViewModel extends ChangeNotifier {
   var logger = Logger();
+  bool _isLoading = false;
+
+  bool get isLoading => _isLoading;
+
+  void setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
+  }
 
   bool _isDisposed = false;
 

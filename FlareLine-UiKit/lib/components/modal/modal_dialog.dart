@@ -19,11 +19,16 @@ class ModalDialog {
     bool? showCancel = true,
     ModalType modalType = ModalType.large,
     double? width,
+    double? maxHeight, // New parameter for maximum height
     GestureTapCallback? onCancelTap,
     GestureTapCallback? onSaveTap,
   }) {
-    // Get screen width
+    // Get screen dimensions
     final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
+
+    // Set default max height if not provided (70% of screen height)
+    maxHeight ??= screenHeight * 0.7;
 
     // Adjust modal width for mobile devices
     if (width == null) {
@@ -60,112 +65,114 @@ class ModalDialog {
     return showGeneralDialog(
       context: context,
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
+        return Center(
+          child: SingleChildScrollView(
+            child: Padding(
               padding: EdgeInsets.all(screenWidth < 600 ? 10 : 20),
               child: Material(
                 type: MaterialType.transparency,
-                child: Container(
-                  width: width,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: width!,
+                    maxHeight: maxHeight!,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (showTitle != null)
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: screenWidth < 600 ? 10 : 20,
-                          ),
-                          alignment: Alignment.center,
-                          height: 50,
-                          child: Stack(
-                            children: [
-                              if (title != null)
-                                Align(
-                                  alignment: titleAlign!,
-                                  child: Text(
-                                    title,
-                                    style: TextStyle(
-                                      fontSize: screenWidth < 600 ? 14 : 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: InkWell(
-                                  child: const Icon(Icons.close),
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (showTitleDivider ?? false)
-                        const Divider(
-                          thickness: 0,
-                          height: 0.2,
-                          color: FlarelineColors.darkBorder,
-                        ),
-                      SingleChildScrollView(
-                        child: Padding(
-                          padding: EdgeInsets.all(screenWidth < 600 ? 10 : 20),
-                          child: child,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 16,
-                      ),
-                      if (showFooter ?? true)
-                        if (footer != null)
-                          footer
-                        else
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (showTitle != null)
                           Container(
-                            margin: EdgeInsets.only(
-                              left: screenWidth < 600 ? 10 : 20,
-                              right: screenWidth < 600 ? 10 : 20,
-                              bottom: screenWidth < 600 ? 10 : 20,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: screenWidth < 600 ? 10 : 20,
                             ),
-                            child: Row(
+                            alignment: Alignment.center,
+                            height: 50,
+                            child: Stack(
                               children: [
-                                if (showCancel) const Spacer(),
-                                if (showCancel)
-                                  SizedBox(
-                                    width: 120,
-                                    child: ButtonWidget(
-                                      btnText: 'Cancel',
-                                      textColor: FlarelineColors.darkBlackText,
-                                      onTap: () {
-                                        Navigator.of(context).pop();
-                                        if (onCancelTap != null) {
-                                          onCancelTap();
-                                        }
-                                      },
+                                if (title != null)
+                                  Align(
+                                    alignment: titleAlign!,
+                                    child: Text(
+                                      title,
+                                      style: TextStyle(
+                                        fontSize: screenWidth < 600 ? 14 : 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                if (showCancel)
-                                  const SizedBox(
-                                    width: 20,
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: InkWell(
+                                    child: const Icon(Icons.close),
+                                    onTap: () {
+                                      Navigator.of(context).pop();
+                                    },
                                   ),
-                                confirmWidget,
+                                ),
                               ],
                             ),
                           ),
-                    ],
+                        if (showTitleDivider ?? false)
+                          const Divider(
+                            thickness: 0,
+                            height: 0.2,
+                            color: FlarelineColors.darkBorder,
+                          ),
+                        Flexible(
+                          child: SingleChildScrollView(
+                            child: Padding(
+                              padding:
+                                  EdgeInsets.all(screenWidth < 600 ? 10 : 20),
+                              child: child,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (showFooter ?? true)
+                          if (footer != null)
+                            footer
+                          else
+                            Container(
+                              margin: EdgeInsets.only(
+                                left: screenWidth < 600 ? 10 : 20,
+                                right: screenWidth < 600 ? 10 : 20,
+                                bottom: screenWidth < 600 ? 10 : 20,
+                              ),
+                              child: Row(
+                                children: [
+                                  if (showCancel) const Spacer(),
+                                  if (showCancel)
+                                    SizedBox(
+                                      width: 120,
+                                      child: ButtonWidget(
+                                        btnText: 'Cancel',
+                                        textColor:
+                                            FlarelineColors.darkBlackText,
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          if (onCancelTap != null) {
+                                            onCancelTap();
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  if (showCancel) const SizedBox(width: 20),
+                                  confirmWidget,
+                                ],
+                              ),
+                            ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         );
       },
     );

@@ -1,11 +1,12 @@
-import 'package:flareline/pages/sectors/components/annotation_dialog.dart';
+import 'package:flareline/core/models/yield_model.dart';
+import 'package:flareline/pages/sectors/components/sector_annotation_handler.dart';
+import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
-import 'package:intl/intl.dart';
-import 'package:syncfusion_flutter_charts/charts.dart' as chart;
-import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'components/sector_line_chart_widget.dart';
 import './components/sector_data_model.dart';
+import 'dart:convert';
 
 class SectorLineChart extends StatefulWidget {
   const SectorLineChart({super.key});
@@ -15,11 +16,89 @@ class SectorLineChart extends StatefulWidget {
 }
 
 class _SectorLineChartState extends State<SectorLineChart> {
-  String selectedSector = 'Rice';
+  String selectedSector = 'All';
   int selectedFromYear = 2020;
   int selectedToYear = 2025;
-  List<CartesianChartAnnotation> customAnnotations = [];
+  List<Yield> yieldData = [];
   final GlobalKey _chartKey = GlobalKey();
+  late SectorAnnotationHandler annotationHandler;
+
+  @override
+  void initState() {
+    super.initState();
+    annotationHandler = SectorAnnotationHandler(
+      chartKey: _chartKey,
+      onEditAnnotation: _editAnnotation,
+      onDeleteAnnotation: _deleteAnnotation,
+    );
+
+    final yieldBloc = context.read<YieldBloc>();
+    if (yieldBloc.state is YieldsLoaded) {
+      yieldData = (yieldBloc.state as YieldsLoaded).yields;
+      sectorData = buildSectorDataFromYields(yieldData);
+      // _printYieldData();
+    }
+
+    yieldBloc.stream.listen((state) {
+      if (state is YieldsLoaded) {
+        setState(() {
+          yieldData = state.yields;
+          sectorData = buildSectorDataFromYields(yieldData);
+
+          // Print the raw structure
+          // print('=== RAW SECTOR DATA ===');
+          // sectorData.forEach((sector, products) {
+          //   print('$sector: [');
+          //   for (var product in products) {
+          //     print('  ${product.toString()},');
+          //   }
+          //   print(']');
+          // });
+
+          // Alternative JSON output (requires all elements to be encodable)
+          try {
+            final jsonData = {
+              for (var entry in sectorData.entries)
+                entry.key: entry.value.map((e) => e.toJson()).toList()
+            };
+            // print('\n=== JSON STRUCTURE ===');
+            // print(jsonEncode(jsonData));
+          } catch (e) {
+            print('\nFailed to encode as JSON: $e');
+          }
+        });
+
+        // _printYieldData();
+      }
+    });
+  }
+
+  void _printYieldData() {
+    if (yieldData.isEmpty) {
+      print('No yield data available');
+      return;
+    }
+
+    print('\n===== YIELD DATA (${yieldData.length} records) =====');
+
+    for (var i = 0; i < yieldData.length; i++) {
+      final yield = yieldData[i];
+      print('\nRecord #${i + 1}:');
+      print('  ID: ${yield.id}');
+      print('  Farmer: ${yield.farmerName} (ID: ${yield.farmerId})');
+      print('  Product: ${yield.productName} (ID: ${yield.productId})');
+      print('  Sector: ${yield.sector} (ID: ${yield.sectorId})');
+      print('  Barangay: ${yield.barangay}');
+      print('  Volume: ${yield.volume}');
+      print('  Area (ha): ${yield.hectare}');
+      print('  Status: ${yield.status}');
+      print('  Created At: ${yield.createdAt}');
+      print('  Farm ID: ${yield.farmId}');
+      print('----------------------------------');
+    }
+
+    print('===== END OF YIELD DATA =====\n');
+  }
 
   Future<void> _selectYearRange(BuildContext context) async {
     final List<int>? picked = await showDialog<List<int>>(
@@ -99,236 +178,15 @@ class _SectorLineChartState extends State<SectorLineChart> {
     }
   }
 
-  void _handleChartTap(TapDownDetails details) {
-    final renderBox =
-        _chartKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
-
-    final offset = details.localPosition;
-    final chartSize = renderBox.size;
-
-    // Get the chart widget to access its properties
-    final chartWidget = _chartKey.currentWidget as SectorLineChartWidget?;
-    if (chartWidget == null) return;
-
-    // Convert tap position to chart coordinates
-    final xValue = _convertXToValue(offset.dx, chartSize.width, chartWidget);
-    final yValue = _convertYToValue(offset.dy, chartSize.height, chartWidget);
-
-    _showAnnotationDialog(xValue, yValue);
-  }
-
-  String _convertXToValue(
-      double x, double width, SectorLineChartWidget chartWidget) {
-    // If you want to use the simple version without chart state:
-    final years = selectedToYear - selectedFromYear + 1;
-    final yearIndex = (x / width * years).clamp(0, years - 1).floor();
-    return (selectedFromYear + yearIndex).toString();
-
-    // OR if you want to use the chart state version:
-    // final chartState = _chartKey.currentState as chart.SfCartesianChartState?;
-    // if (chartState == null) return selectedFromYear.toString();
-    // final point = chartState.chartPointToLocal(Offset(x, 0));
-    // final xValue = chartState.pointToXValue(point);
-    // return xValue.round().toString();
-  }
-
-  double _convertYToValue(
-      double y, double height, SectorLineChartWidget chartWidget) {
-    // Simple version:
-    double minValue = double.infinity;
-    double maxValue = -double.infinity;
-
-    for (final sector in _getFilteredData()) {
-      for (final point in sector.data) {
-        final value = point['y'].toDouble();
-        if (value < minValue) minValue = value;
-        if (value > maxValue) maxValue = value;
-      }
-    }
-
-    final range = maxValue - minValue;
-    minValue = (minValue - range * 0.1).clamp(0, double.infinity);
-    maxValue = maxValue + range * 0.1;
-
-    final normalizedY = 1 - (y / height);
-    return minValue + normalizedY * (maxValue - minValue);
-
-    // OR chart state version:
-    // final chartState = _chartKey.currentState as chart.SfCartesianChartState?;
-    // if (chartState == null) return 0;
-    // final point = chartState.chartPointToLocal(Offset(0, y));
-    // return chartState.pointToYValue(point);
-  }
-
-  Future<void> _showAnnotationDialog(String xValue, double yValue) async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => SimpleAnnotationDialog(
-        year: xValue,
-        initialValue: yValue,
-        initialText: '',
-      ),
-    );
-
-    if (result != null && result['text'] != null) {
-      setState(() {
-        customAnnotations.add(
-          CartesianChartAnnotation(
-            widget: _buildAnnotationWidget(
-              result['text'],
-              customAnnotations.length,
-              result['value'],
-            ),
-            x: xValue,
-            y: result['value'],
-            coordinateUnit: chart.CoordinateUnit.point,
-            horizontalAlignment: chart.ChartAlignment.near,
-            verticalAlignment: ChartAlignment.far,
-          ),
-        );
-      });
-    }
-  }
-
-  Widget _buildAnnotationWidget(String text, int index, double value) {
-    // Add a key to make it easier to identify this widget
-    final key = ValueKey('annotation_${index}_${value}');
-
-    return GestureDetector(
-      key: key,
-      onTap: () => _editAnnotation(index),
-      onLongPress: () => _deleteAnnotation(index),
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.red),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.label, size: 14, color: Colors.red),
-            const SizedBox(width: 4),
-            // Use a key for the Text widget too
-            Text(text, key: ValueKey('annotation_text_$index')),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _editAnnotation(int index) async {
-    print('Starting edit annotation at index $index');
-    if (index < 0 || index >= customAnnotations.length) {
-      print('Invalid index: $index');
-      return;
-    }
-
-    final annotation = customAnnotations[index];
-    print('Editing annotation at position: ${annotation.x}, ${annotation.y}');
-
-    // Extract current text from the annotation widget
-    String currentText = '';
-    double currentValue = annotation.y;
-
-    try {
-      print('Attempting to extract annotation text...');
-
-      // First try to get the widget
-      final widget = annotation.widget;
-      print('Widget type: ${widget.runtimeType}');
-
-      if (widget is GestureDetector) {
-        print('Widget is GestureDetector');
-        final child = widget.child;
-        print('Child type: ${child.runtimeType}');
-
-        if (child is Container) {
-          print('Child is Container');
-          final containerChild = child.child;
-          print('Container child type: ${containerChild.runtimeType}');
-
-          if (containerChild is Row) {
-            print('Container child is Row');
-            for (var i = 0; i < containerChild.children.length; i++) {
-              print(
-                  'Row child $i type: ${containerChild.children[i].runtimeType}');
-            }
-
-            // Try to find the Text widget - it might be in different positions
-            for (final child in containerChild.children) {
-              if (child is Text) {
-                currentText = child.data ?? '';
-                print('Found Text widget with content: "$currentText"');
-                break;
-              }
-              // Also check if text is inside other widgets like Padding
-              if (child is Padding) {
-                final paddedChild = child.child;
-                if (paddedChild is Text) {
-                  currentText = paddedChild.data ?? '';
-                  print(
-                      'Found Text widget inside Padding with content: "$currentText"');
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
-    } catch (e, stackTrace) {
-      print('Error extracting annotation text: $e');
-      print('Stack trace: $stackTrace');
-    }
-
-    print('Extracted text: "$currentText", value: $currentValue');
-
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => SimpleAnnotationDialog(
-        year: annotation.x,
-        initialValue: currentValue,
-        initialText: currentText,
-        isEditing: true,
-      ),
-    );
-
-    if (result != null && result['text'] != null) {
-      print(
-          'Received updated annotation: ${result['text']}, ${result['value']}');
-      setState(() {
-        customAnnotations[index] = CartesianChartAnnotation(
-          widget: _buildAnnotationWidget(
-            result['text'],
-            index,
-            result['value'],
-          ),
-          x: annotation.x,
-          y: result['value'],
-          coordinateUnit: annotation.coordinateUnit,
-          horizontalAlignment: annotation.horizontalAlignment,
-          verticalAlignment: annotation.verticalAlignment,
-        );
-      });
-    } else if (result != null && result['delete'] == true) {
-      _deleteAnnotation(index);
-    } else {
-      print('Annotation edit was cancelled');
-    }
+  void _editAnnotation(int index) {
+    annotationHandler.editAnnotation(context, index).then((_) {
+      setState(() {});
+    });
   }
 
   void _deleteAnnotation(int index) {
     setState(() {
-      customAnnotations.removeAt(index);
+      annotationHandler.deleteAnnotation(index);
     });
   }
 
@@ -395,7 +253,13 @@ class _SectorLineChartState extends State<SectorLineChart> {
             ),
           ),
           GestureDetector(
-            onTapDown: _handleChartTap,
+            onTapDown: (details) => annotationHandler.handleChartTap(
+              details,
+              context,
+              selectedFromYear,
+              selectedToYear,
+              filteredData,
+            ),
             child: SizedBox(
               height: 380,
               child: needsScrolling
@@ -409,7 +273,8 @@ class _SectorLineChartState extends State<SectorLineChart> {
                           title: '',
                           dropdownItems: [],
                           datas: filteredData,
-                          annotations: customAnnotations,
+                          annotations: annotationHandler.customAnnotations,
+                          unit: selectedSector == 'Livestock' ? 'heads' : 'mt',
                         ),
                       ),
                     )
@@ -418,11 +283,12 @@ class _SectorLineChartState extends State<SectorLineChart> {
                       title: '',
                       dropdownItems: [],
                       datas: filteredData,
-                      annotations: customAnnotations,
+                      annotations: annotationHandler.customAnnotations,
+                      unit: selectedSector == 'Livestock' ? 'heads' : 'mt',
                     ),
             ),
           ),
-          if (customAnnotations.isNotEmpty)
+          if (annotationHandler.customAnnotations.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
@@ -439,22 +305,68 @@ class _SectorLineChartState extends State<SectorLineChart> {
   }
 
   List<SectorData> _getFilteredData() {
-    return (sectorData[selectedSector] ?? [])
-        .map((sector) {
-          final filteredSeriesData = sector.data.where((point) {
-            final year = int.parse(point['x']);
-            return year >= selectedFromYear && year <= selectedToYear;
-          }).toList();
+    if (selectedSector == 'All') {
+      final Map<String, List<Map<String, dynamic>>> sectorGroupedData = {};
+      final Map<String, Color> sectorColors = {};
 
-          return SectorData(
-            name: sector.name,
-            color: sector.color,
-            data: filteredSeriesData,
-            annotations: sector.annotations,
-          );
-        })
-        .where((sector) => sector.data.isNotEmpty)
-        .toList();
+      sectorData.forEach((sectorKey, sectorItems) {
+        for (final item in sectorItems) {
+          for (final point in item.data) {
+            final year = point['x'];
+            final value = point['y'].toDouble();
+
+            final yearInt = int.parse(year);
+            if (yearInt >= selectedFromYear && yearInt <= selectedToYear) {
+              if (!sectorGroupedData.containsKey(sectorKey)) {
+                sectorGroupedData[sectorKey] = [];
+                sectorColors[sectorKey] = item.color;
+              }
+
+              final existingIndex = sectorGroupedData[sectorKey]!
+                  .indexWhere((e) => e['x'] == year);
+
+              if (existingIndex >= 0) {
+                sectorGroupedData[sectorKey]![existingIndex]['y'] += value;
+              } else {
+                sectorGroupedData[sectorKey]!.add({
+                  'x': year,
+                  'y': value,
+                });
+              }
+            }
+          }
+        }
+      });
+
+      return sectorGroupedData.entries
+          .map((entry) {
+            return SectorData(
+              name: entry.key,
+              color: sectorColors[entry.key] ?? Colors.grey,
+              data: entry.value,
+              annotations: null,
+            );
+          })
+          .where((sector) => sector.data.isNotEmpty)
+          .toList();
+    } else {
+      return (sectorData[selectedSector] ?? [])
+          .map((sector) {
+            final filteredSeriesData = sector.data.where((point) {
+              final year = int.parse(point['x']);
+              return year >= selectedFromYear && year <= selectedToYear;
+            }).toList();
+
+            return SectorData(
+              name: sector.name,
+              color: sector.color,
+              data: filteredSeriesData,
+              annotations: sector.annotations,
+            );
+          })
+          .where((sector) => sector.data.isNotEmpty)
+          .toList();
+    }
   }
 
   Widget _buildSectorDropdown() {
@@ -466,7 +378,7 @@ class _SectorLineChartState extends State<SectorLineChart> {
         });
       },
       itemBuilder: (BuildContext context) {
-        return ['Rice', 'Corn', 'Fishery', 'Livestock', 'Organic', 'HVC']
+        return ['All', 'Rice', 'Corn', 'Fishery', 'Livestock', 'Organic', 'HVC']
             .map((String item) {
           return PopupMenuItem<String>(
             value: item,

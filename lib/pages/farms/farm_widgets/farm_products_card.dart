@@ -31,11 +31,16 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
 
   void _initializeSelections() {
     final products = widget.farm['products'] as List?;
-    if (products == null || products.isEmpty) return;
+
+    if (products == null || products.isEmpty) {
+      return;
+    }
 
     // Safely get first product name
     final firstProduct = products.first;
-    if (firstProduct is! Map<String, dynamic>) return;
+    if (firstProduct is! Map<String, dynamic>) {
+      return;
+    }
 
     _selectedProduct = firstProduct['name']?.toString();
 
@@ -43,8 +48,10 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
     final yields = (firstProduct['yields'] as List?)
         ?.whereType<Map<String, dynamic>>()
         .toList();
+
     if (yields != null && yields.isNotEmpty) {
       yields.sort((a, b) => (a['year'] ?? '').compareTo(b['year'] ?? ''));
+
       _selectedYear = yields.last['year']?.toString();
       _startYear = yields.first['year']?.toString();
       _endYear = yields.last['year']?.toString();
@@ -74,12 +81,9 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Farm Products',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
+                      Text('Farm Products',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
                       if (products.isNotEmpty) _buildProductDropdown(products),
                     ],
                   );
@@ -274,13 +278,16 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
   }
 
   Widget _buildMonthlyChart(List<Map<String, dynamic>> yields) {
+    // Convert selectedYear to same type as stored in yields (int vs String)
+    final selectedYear = _selectedYear;
     final selectedYield = yields.firstWhere(
-      (y) => y['year'] == _selectedYear,
+      (y) => y['year'].toString() == selectedYear,
       orElse: () => {'monthly': List.filled(12, 0), 'year': ''},
     );
 
     final monthlyData =
         selectedYield['monthly'] as List<dynamic>? ?? List.filled(12, 0);
+
     final months = [
       'Jan',
       'Feb',
@@ -300,7 +307,7 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
       return _ChartData(
         months[index],
         (monthlyData[index] as num?)?.toDouble() ?? 0,
-        0, // We don't have value data in this example
+        0,
       );
     });
 
@@ -414,8 +421,6 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
             value: name,
             child: Row(
               children: [
-                Icon(_getProductIcon(product['type']?.toString() ?? '')),
-                const SizedBox(width: 8),
                 Text(name),
               ],
             ),
@@ -431,8 +436,6 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(_getCurrentProductIcon(), size: 20),
-            const SizedBox(width: 8),
             Text(_selectedProduct ?? 'Select Product'),
             const SizedBox(width: 8),
             const Icon(Icons.arrow_drop_down, size: 20),
@@ -470,27 +473,6 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
       (p) => p['name'] == _selectedProduct,
       orElse: () => products.first,
     );
-  }
-
-  IconData _getCurrentProductIcon() {
-    final product = _getSelectedProduct();
-    if (product == null) return Icons.spa;
-    return _getProductIcon(product['type']?.toString() ?? '');
-  }
-
-  IconData _getProductIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'vegetable':
-        return Icons.eco;
-      case 'fruit':
-        return Icons.apple;
-      case 'grain':
-        return Icons.grain;
-      case 'livestock':
-        return Icons.agriculture;
-      default:
-        return Icons.spa;
-    }
   }
 }
 

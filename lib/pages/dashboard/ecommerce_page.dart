@@ -1,11 +1,12 @@
-import 'package:flareline/components/charts/map_chart.dart';
 import 'package:flareline/pages/dashboard/analytics_widget.dart';
+import 'package:flareline/pages/dashboard/channel_widget.dart';
+import 'package:flareline/pages/dashboard/grid_card.dart';
+import 'package:flareline/pages/dashboard/map/map_chart_widget.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flareline/pages/dashboard/grid_card.dart';
-import 'package:flareline/pages/dashboard/revenue_widget.dart';
-import 'package:flareline/pages/dashboard/channel_widget.dart';
 import 'package:flareline/pages/layout.dart';
+
+import 'revenue_widget.dart';
 
 class EcommercePage extends LayoutWidget {
   const EcommercePage({super.key});
@@ -19,28 +20,23 @@ class EcommercePage extends LayoutWidget {
   Widget contentDesktopWidget(BuildContext context) {
     return Column(
       children: [
-        const GridCard(), // GridCard now includes AnalyticsWidget
+        const GridCard(),
         const SizedBox(
           height: 16,
         ),
-
         const AnalyticsWidget(),
-
         const SizedBox(
           height: 30,
         ),
-
         const SizedBox(height: 20),
         RevenueWidget(),
         SizedBox(
           height: 16,
         ),
         ChannelWidget(),
-
         const SizedBox(
           height: 30,
         ),
-
         SizedBox(
           height: 700, // Fixed height
           child: CommonCard(

@@ -1,11 +1,15 @@
 // ignore_for_file: library_prefixes, unused_import
 
+import 'package:flareline/auth_guard.dart';
 import 'package:flareline/deferred_widget.dart';
+import 'package:flareline/pages/auth/not_found.dart';
+import 'package:flareline/pages/auth/sign_in/sign_in_page.dart';
 import 'package:flareline/pages/farms/farms_page.dart';
 import 'package:flareline/pages/modal/modal_page.dart' deferred as modal;
 import 'package:flareline/pages/table/contacts_page.dart' deferred as contacts;
 import 'package:flareline/pages/toast/toast_page.dart' deferred as toast;
 import 'package:flareline/pages/tools/tools_page.dart' deferred as tools;
+import 'package:flareline/services/roleguard.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/alerts/alert_page.dart' deferred as alert;
 import 'package:flareline/pages/button/button_page.dart' deferred as button;
@@ -197,25 +201,47 @@ class RouteConfiguration {
   static BuildContext? get navigatorContext =>
       navigatorKey.currentState?.context;
 
-  static Route<dynamic>? onGenerateRoute(
-    RouteSettings settings,
-  ) {
-    String path = settings.name!;
+  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    final path = settings.name!;
+    final context = navigatorContext!;
 
-    dynamic map =
-        MAIN_PAGES.firstWhere((element) => element['routerPath'] == path);
-
-    if (map == null) {
-      return null;
+    // First handle public routes
+    if (AuthGuard.isPublicRoute(path)) {
+      final map = MAIN_PAGES.firstWhere(
+        (element) => element['routerPath'] == path,
+        orElse: () => {'widget': const NotFoundPage()},
+      );
+      final targetPage = map['widget'] as Widget;
+      return NoAnimationMaterialPageRoute<void>(
+        builder: (context) => targetPage,
+        settings: settings,
+      );
     }
-    Widget targetPage = map['widget'];
 
-    builder(context, match) {
-      return targetPage;
+    // Then check authentication for protected routes
+    // if (!AuthGuard.isAuthenticated(context)) {
+    //   return NoAnimationMaterialPageRoute<void>(
+    //     builder: (context) => SignInWidget(),
+    //     settings: const RouteSettings(name: '/signIn'),
+    //   );
+    // }
+
+    // Then check role access
+    if (!RoleGuard.canAccess(path, context)) {
+      return NoAnimationMaterialPageRoute<void>(
+        builder: (context) => const NotFoundPage(),
+        settings: settings,
+      );
     }
 
+    // Handle protected routes
+    final map = MAIN_PAGES.firstWhere(
+      (element) => element['routerPath'] == path,
+      orElse: () => {'widget': const NotFoundPage()},
+    );
+    final targetPage = map['widget'] as Widget;
     return NoAnimationMaterialPageRoute<void>(
-      builder: (context) => builder(context, null),
+      builder: (context) => targetPage,
       settings: settings,
     );
   }

@@ -1,10 +1,11 @@
-import 'package:flareline/pages/farms/farms_table.dart';
+import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flareline/pages/layout.dart';
-import 'package:flareline/pages/sectors/year_filter_dropdown.dart'; // Import the new widget
-
-import 'package:flareline/pages/sectors/sector_line_Chart.dart';
-import 'package:flareline/pages/sectors/sector_bar_Chart.dart';
+import 'package:flareline/pages/farms/farms_kpi.dart';
+import 'package:flareline/pages/farms/farms_table.dart';
+import 'package:flareline/repositories/farm_repository.dart';
+import 'package:flareline/services/api_service.dart';
 
 class FarmsPage extends LayoutWidget {
   const FarmsPage({super.key});
@@ -16,34 +17,24 @@ class FarmsPage extends LayoutWidget {
 
   @override
   Widget contentDesktopWidget(BuildContext context) {
-    // State to hold the selected year
-    int selectedYear = DateTime.now().year;
-
-    return Column(
-      children: [
-        // Year Filter Dropdown
-        // YearFilterDropdown(
-        //   selectedYear: selectedYear,
-        //   onYearChanged: (int? newValue) {
-        //     if (newValue != null) {
-        //       // Update the selected year
-        //       selectedYear = newValue;
-        //       // You can add logic here to refresh the data based on the selected year
-        //     }
-        //   },
-        // ),
-        // const SizedBox(height: 16),
-
-        FarmsTableWidget(),
-        // FarmsTableWidget(),
-        // const FarmersPerSectorWidget(),
-        // const SizedBox(height: 16),
-
-        // SectorLineChart(),
-        // const SizedBox(height: 16),
-        // SectorBarChart()
-        // const SectorYieldAndGrowthWidget(),
-      ],
+    return RepositoryProvider(
+      create: (context) => FarmRepository(apiService: ApiService()),
+      child: BlocProvider(
+        create: (context) => FarmBloc(
+          farmRepository: RepositoryProvider.of<FarmRepository>(context),
+        )..add(LoadFarms()),
+        child: Builder(
+          builder: (context) {
+            return Column(
+              children: [
+                const FarmKpi(),
+                const SizedBox(height: 16),
+                const FarmsTableWidget(),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

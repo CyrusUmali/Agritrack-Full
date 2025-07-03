@@ -1,27 +1,184 @@
 // ignore_for_file: unnecessary_string_escapes
 
 import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/pages/sectors/sector_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:responsive_builder/responsive_builder.dart';
-import 'package:flareline/pages/dashboard/analytics_widget.dart';
 
-import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
-import 'package:iconify_flutter_plus/icons/mdi.dart';
-
-class GridCard extends StatelessWidget {
+class GridCard extends StatefulWidget {
   const GridCard({super.key});
 
   @override
+  State<GridCard> createState() => _GridCardState();
+}
+
+class _GridCardState extends State<GridCard> {
+  Map<String, dynamic>? _shiValues;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchShiValues();
+  }
+
+  Future<void> _fetchShiValues() async {
+    final sectorService = RepositoryProvider.of<SectorService>(context);
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final shiValues = await sectorService.fetchShiValues();
+      setState(() {
+        _shiValues = shiValues;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return _buildLoadingLayout(context);
+    }
+
+    if (_error != null) {
+      return _buildErrorLayout(context, _error!);
+    }
+
     return ScreenTypeLayout.builder(
-      desktop: contentDesktopWidget,
-      mobile: contentMobileWidget,
-      tablet: contentMobileWidget,
+      desktop: (context) => _contentDesktopWidget(context, _shiValues!),
+      mobile: (context) => _contentMobileWidget(context, _shiValues!),
+      tablet: (context) => _contentMobileWidget(context, _shiValues!),
     );
   }
 
-  Widget contentDesktopWidget(BuildContext context) {
+  Widget _buildLoadingLayout(BuildContext context) {
+    return ScreenTypeLayout.builder(
+      desktop: (context) => Row(
+        children: [
+          Expanded(child: _buildShimmerCard(context, DeviceScreenType.desktop)),
+          const SizedBox(width: 16),
+          Expanded(child: _buildShimmerCard(context, DeviceScreenType.desktop)),
+          const SizedBox(width: 16),
+          Expanded(child: _buildShimmerCard(context, DeviceScreenType.desktop)),
+          const SizedBox(width: 16),
+          Expanded(child: _buildShimmerCard(context, DeviceScreenType.desktop)),
+        ],
+      ),
+      mobile: (context) => GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.0,
+        children: [
+          _buildShimmerCard(context, DeviceScreenType.mobile),
+          _buildShimmerCard(context, DeviceScreenType.mobile),
+          _buildShimmerCard(context, DeviceScreenType.mobile),
+          _buildShimmerCard(context, DeviceScreenType.mobile),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorLayout(BuildContext context, String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Error loading data: $error',
+              style: TextStyle(color: Colors.red)),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _fetchShiValues,
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerCard(BuildContext context, DeviceScreenType screenType) {
+    return CommonCard(
+      height: screenType == DeviceScreenType.desktop ? 166 : 140,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Icon placeholder (circular)
+            ClipOval(
+              child: Container(
+                width: 36,
+                height: 36,
+                color: Colors.grey.shade200,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Title placeholder
+            Container(
+              height: screenType == DeviceScreenType.desktop ? 20 : 16,
+              width: screenType == DeviceScreenType.desktop ? 120 : 80,
+              color: Colors.grey.shade200,
+            ),
+            const SizedBox(height: 12),
+            // First row of data
+            Row(
+              children: [
+                Container(
+                  height: 14,
+                  width: screenType == DeviceScreenType.desktop ? 40 : 30,
+                  color: Colors.grey.shade200,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Container(
+                    height: 14,
+                    color: Colors.grey.shade200,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Second row of data (if present)
+            Row(
+              children: [
+                Container(
+                  height: 14,
+                  width: screenType == DeviceScreenType.desktop ? 40 : 30,
+                  color: Colors.grey.shade200,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Container(
+                    height: 14,
+                    color: Colors.grey.shade200,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _contentDesktopWidget(
+      BuildContext context, Map<String, dynamic> shiValues) {
     return Row(
       children: [
         Expanded(
@@ -33,8 +190,8 @@ class GridCard extends StatelessWidget {
             '',
             true,
             'Plots:',
-            '1,200 acres',
-            '24',
+            '${shiValues['totalLandArea']?.toStringAsFixed(2) ?? '0'} acres',
+            '${shiValues['numberOfFarms'] ?? '0'}',
             DeviceScreenType.desktop,
           ),
         ),
@@ -44,12 +201,12 @@ class GridCard extends StatelessWidget {
             context,
             Icons.nature_outlined,
             'Total Products',
-            'Types:',
+            'Varieties:',
             '',
             true,
-            'Varieties:',
-            '12',
-            '48',
+            '',
+            '${shiValues['productVariety'] ?? '0'}',
+            '',
             DeviceScreenType.desktop,
           ),
         ),
@@ -63,8 +220,8 @@ class GridCard extends StatelessWidget {
             '',
             true,
             'Value:',
-            '2,450 tons',
-            '\$1.2M',
+            '${shiValues['totalYield']?.toStringAsFixed(2) ?? '0'} tons',
+            '\$${(shiValues['totalValue'] ?? 0).toStringAsFixed(2)}',
             DeviceScreenType.desktop,
           ),
         ),
@@ -78,8 +235,8 @@ class GridCard extends StatelessWidget {
             '',
             false,
             'Inactive:',
-            '3,456',
-            '124',
+            '${shiValues['activeFarmers'] ?? '0'}',
+            '${shiValues['inactiveFarmers'] ?? '0'}',
             DeviceScreenType.desktop,
           ),
         ),
@@ -87,7 +244,8 @@ class GridCard extends StatelessWidget {
     );
   }
 
-  Widget contentMobileWidget(BuildContext context) {
+  Widget _contentMobileWidget(
+      BuildContext context, Map<String, dynamic> shiValues) {
     return Column(
       children: [
         GridView.count(
@@ -106,20 +264,20 @@ class GridCard extends StatelessWidget {
               '',
               true,
               'Plots:',
-              '1,200 acres',
-              '24',
+              '${shiValues['totalLandArea']?.toStringAsFixed(2) ?? '0'} acres',
+              '${shiValues['numberOfFarms'] ?? '0'}',
               DeviceScreenType.mobile,
             ),
             _itemCardWidget(
               context,
               Icons.nature_outlined,
               'Total Products',
-              'Types:',
+              'Varieties:',
               '',
               true,
-              'Varieties:',
-              '12',
-              '48',
+              '',
+              '${shiValues['productVariety'] ?? '0'}',
+              '',
               DeviceScreenType.mobile,
             ),
             _itemCardWidget(
@@ -130,8 +288,8 @@ class GridCard extends StatelessWidget {
               '',
               true,
               'Value:',
-              '2,450 tons',
-              '\$1.2M',
+              '${shiValues['totalYield']?.toStringAsFixed(2) ?? '0'} tons',
+              '\$${(shiValues['totalValue'] ?? 0).toStringAsFixed(2)}',
               DeviceScreenType.mobile,
             ),
             _itemCardWidget(
@@ -142,8 +300,8 @@ class GridCard extends StatelessWidget {
               '',
               false,
               'Inactive:',
-              '3,456',
-              '124',
+              '${shiValues['activeFarmers'] ?? '0'}',
+              '${shiValues['inactiveFarmers'] ?? '0'}',
               DeviceScreenType.mobile,
             ),
           ],
@@ -210,34 +368,49 @@ class GridCard extends StatelessWidget {
                   subTitle1Value,
                   style: TextStyle(
                     fontSize: subtitleSize,
-                    color: Colors.grey,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            Row(
-              children: [
-                Text(
-                  subTitle2,
-                  style: TextStyle(
-                    fontSize: subtitleSize,
-                    color: Colors.grey,
+            if (subTitle2.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    subTitle2,
+                    style: TextStyle(
+                      fontSize: subtitleSize,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  subTitle2Value,
-                  style: TextStyle(
-                    fontSize: subtitleSize,
-                    color: Colors.grey,
+                  const SizedBox(width: 4),
+                  Text(
+                    subTitle2Value,
+                    style: TextStyle(
+                      fontSize: subtitleSize,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+}
+
+extension _InsertBetween on List<Widget> {
+  List<Widget> insertBetween(Widget widget) {
+    if (length <= 1) return this;
+
+    for (var i = length - 1; i > 0; i--) {
+      insert(i, widget);
+    }
+    return this;
   }
 }

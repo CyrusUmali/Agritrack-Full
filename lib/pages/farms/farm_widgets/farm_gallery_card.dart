@@ -31,7 +31,7 @@ class FarmGalleryCard extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: SizedBox(
-                    height: 130, // Fixed height
+                    height: 135, // Fixed height
                     width: double.infinity, // Full width
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),

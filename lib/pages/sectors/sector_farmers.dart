@@ -238,7 +238,7 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => FarmersProfile(farmer: farmer),
+                builder: (context) => FarmersProfile(farmerID: 1),
               ),
             );
           },

@@ -1,6 +1,6 @@
-import 'package:flareline_uikit/components/toolbar/toolbar.dart';
-import 'package:flareline_uikit/service/localization_provider.dart';
-import 'package:flareline_uikit/widget/flareline_layout.dart';
+import 'package:flareline/pages/flareline_layout.dart';
+import 'package:flareline/pages/toolbar.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,7 +9,14 @@ abstract class LayoutWidget extends FlarelineLayoutWidget {
 
   @override
   String sideBarAsset(BuildContext context) {
-    return 'assets/routes/menu_route_${context.watch<LocalizationProvider>().languageCode}.json';
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final role = userProvider.user?.role ?? 'guest';
+
+    // Optional: fall back to English if localization still matters
+    // final lang = context.watch<LocalizationProvider>().languageCode;
+
+    // Example: assets/routes/menu_route_admin.json
+    return 'assets/routes/menu_route_$role.json';
   }
 
   @override
@@ -33,7 +40,7 @@ abstract class LayoutWidget extends FlarelineLayoutWidget {
           width: 10,
         ),
         CircleAvatar(
-          backgroundImage: AssetImage('assets/user/user-02.png'),
+          backgroundImage: AssetImage('assets/user/user-01.png'),
           radius: 22,
         )
       ],

@@ -139,6 +139,13 @@ dependencies:
   flutter_date_range_picker: ^0.1.1
   excel: ^4.0.6
   universal_html: ^2.2.4
+  animated_login: ^1.7.2
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.3
+  google_sign_in: ^6.1.0
+  cached_network_image: ^3.2.0
+  fluttertoast: ^8.2.12
+  shimmer: ^3.0.0
 
 
 dependency_overrides:
@@ -193,6 +200,14 @@ flutter:
     - assets/barangays.json
     - assets/barangay.json
     - assets/map/barangays.geojson
+    - assets/DA_image.jpg
+    - assets/DA2.jpg
+    - assets/DA3.jpg
+    - assets/rice.svg
+    - assets/loginBG.jpg
+    - assets/loginBG2.jpg
+
+    
   #   - assets/a_dot_burr.jpeg
   #   - assets/a_dot_ham.jpeg
 

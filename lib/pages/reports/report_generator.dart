@@ -1,152 +1,183 @@
 // report_generator.dart
+import 'dart:math';
+
+import 'package:flareline/services/report_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ReportGenerator {
   static Future<List<Map<String, dynamic>>> generateReport({
+    required BuildContext context, // Add this parameter
     required String reportType,
     DateTimeRange? dateRange,
-    required Set<String> selectedBarangays,
-    required Set<String> selectedSectors,
-    required Set<String> selectedCrops,
-    required Set<String> selectedFarms,
+    required String selectedBarangay,
+    required String selectedSector,
+    required String selectedView,
+    required String selectedProduct,
+    required String selectedFarm,
+    required selectedFarmer, // Added for farmer-specific reports
   }) async {
-    await Future.delayed(const Duration(seconds: 2)); // Simulate API delay
+    await Future.delayed(
+        const Duration(seconds: 2)); // Simulate API delay    print(reportType);
+    print(dateRange);
+    print(selectedBarangay);
+    print(selectedSector);
+    print(selectedProduct);
+    print("reportType:" + reportType);
+    print(selectedFarm);
+    print(selectedFarmer);
 
     // Generate different data based on report type
     switch (reportType) {
       case 'farmers':
-        return _generateFarmersData();
-      case 'farms':
-        return _generateFarmsData();
-      case 'crops':
-        return _generateCropsData();
+        return _generateFarmersData(
+          context: context,
+          selectedBarangay:
+              selectedBarangay.isNotEmpty ? selectedBarangay : null,
+          selectedSector: selectedSector.isNotEmpty ? selectedSector : null,
+        );
+      case 'farmer':
+        return await _generateFarmerYieldData(
+          context: context,
+          farmerId: selectedFarmer.isNotEmpty ? selectedFarmer : null,
+          productId: selectedProduct.isNotEmpty ? selectedProduct : null,
+          farmId: selectedFarm.isNotEmpty ? selectedFarm : null,
+          startDate: dateRange?.start.toString(),
+          endDate: dateRange?.end.toString(),
+          viewBy: selectedView.isNotEmpty ? selectedView : null,
+        );
+      case 'products':
+        return await _generateProductsData(
+          context: context,
+          dateRange: dateRange,
+          selectedBarangay: selectedBarangay,
+          selectedSector: selectedSector,
+          selectedView: selectedView,
+          selectedProduct: selectedProduct,
+        );
+
       case 'barangay':
-        return _generateBarangayData();
+        return await _generateBarangayData(
+          context: context,
+          dateRange: dateRange,
+          selectedBarangay: selectedBarangay,
+          selectedSector: selectedSector,
+          selectedView: selectedView,
+          selectedProduct: selectedProduct,
+        );
+
       case 'sectors':
-        return _generateSectorsData();
+        return await _generateSectorsData(
+          context: context,
+          dateRange: dateRange,
+          selectedSector: selectedSector,
+          selectedView: selectedView,
+        );
+
+      // case 'sectors':
+      //   return _generateSectorsData();
+
       default:
         return [];
     }
   }
 
-  static List<Map<String, dynamic>> _generateFarmersData() {
-    final barangays = ['Brgy. 1', 'Brgy. 2', 'Brgy. 3', 'Brgy. 4'];
-    final sectors = [
-      'Fisherfolk',
-      'Farmers',
-      'Livestock',
-      'Agri-Entrepreneurs'
-    ];
-    final farms = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
-    final products = ['Rice', 'Corn', 'Vegetables', 'Fish', 'Poultry'];
+  static Future<List<Map<String, dynamic>>> _generateSectorsData({
+    required BuildContext context,
+    DateTimeRange? dateRange,
+    String? selectedSector,
+    String? selectedView,
+  }) async {
+    final reportService = RepositoryProvider.of<ReportService>(context);
 
-    return List.generate(15, (index) {
-      final barangay = barangays[index % barangays.length];
-      final sector = sectors[index % sectors.length];
-
-      return {
-        'Name': 'Farmer ${String.fromCharCode(65 + index)}',
-        'Contact': '09${index + 10}${index + 20}${index + 30}${index + 40}',
-        'Barangay': barangay,
-        'Sector': sector,
-        'Farms': [farms[index % farms.length]],
-        'Products': [products[index % products.length]],
-        'Membership': ['Coop A', 'Coop B', 'None'][index % 3],
-        'Status': ['Active', 'Inactive'][index % 2]
-      };
-    });
+    return await reportService.fetchSectorYields(
+      viewBy: selectedView,
+      sectorId: selectedSector,
+      startDate: dateRange?.start.toString(),
+      endDate: dateRange?.end.toString(),
+    );
   }
 
-  static List<Map<String, dynamic>> _generateFarmsData() {
-    final barangays = ['Brgy. 1', 'Brgy. 2', 'Brgy. 3', 'Brgy. 4'];
-    final farmTypes = ['Crop Farm', 'Fish Farm', 'Livestock Farm', 'Mixed'];
-    final owners = ['Farmer A', 'Farmer B', 'Farmer C', 'Farmer D'];
+  static Future<List<Map<String, dynamic>>> _generateBarangayData({
+    required BuildContext context,
+    DateTimeRange? dateRange,
+    String? selectedBarangay,
+    String? selectedSector,
+    String? selectedView,
+    String? selectedProduct,
+  }) async {
+    final reportService = RepositoryProvider.of<ReportService>(context);
 
-    return List.generate(10, (index) {
-      return {
-        'Farm Name': 'Farm ${String.fromCharCode(65 + index)}',
-        'Owner': owners[index % owners.length],
-        'Barangay': barangays[index % barangays.length],
-        'Farm Type': farmTypes[index % farmTypes.length],
-        'Area (ha)': (5 + (index % 10)).toString(),
-        'Primary Crop': ['Rice', 'Corn', 'Vegetables', 'Fish'][index % 4],
-        'Status': ['Active', 'Inactive'][index % 2],
-        'Establishment Year': (2010 + index % 10).toString(),
-      };
-    });
+    return await reportService.fetchBarangayYields(
+      viewBy: selectedView,
+      productId: selectedProduct,
+      sectorId: selectedSector,
+      startDate: dateRange?.start.toString(),
+      endDate: dateRange?.end.toString(),
+    );
   }
 
-  static List<Map<String, dynamic>> _generateCropsData() {
-    final crops = ['Rice', 'Corn', 'Vegetables', 'Fruits', 'Root Crops'];
-    final farms = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
-    final barangays = ['Brgy. 1', 'Brgy. 2', 'Brgy. 3', 'Brgy. 4'];
-    final farmers = ['Farmer A', 'Farmer B', 'Farmer C', 'Farmer D'];
+  static Future<List<Map<String, dynamic>>> _generateProductsData({
+    required BuildContext context,
+    DateTimeRange? dateRange,
+    String? selectedBarangay,
+    String? selectedSector,
+    String? selectedView,
+    String? selectedProduct,
+  }) async {
+    final reportService = RepositoryProvider.of<ReportService>(context);
 
-    return List.generate(20, (index) {
-      final plantingDate =
-          DateTime.now().subtract(Duration(days: 120 + index * 5));
-      final harvestDate = plantingDate.add(Duration(days: 90 + index % 30));
-      final yield = 1000 + (index % 10) * 200;
-      final price = [20, 25, 30, 35, 40][index % 5].toDouble();
-
-      return {
-        'Crop': crops[index % crops.length],
-        'Variety':
-            '${crops[index % crops.length].substring(0, 3)}-${index % 10 + 1}',
-        'Planting Date': plantingDate.toString(),
-        'Harvest Date': harvestDate.toString(),
-        'Yield (kg/ha)': yield.toString(),
-        'Farm': farms[index % farms.length],
-        'Barangay': barangays[index % barangays.length],
-        'Farmer': farmers[index % farmers.length],
-      };
-    });
+    return await reportService.fetchProductYields(
+      viewBy: selectedView,
+      productId: selectedProduct,
+      sectorId: selectedSector,
+      startDate: dateRange?.start.toString(),
+      endDate: dateRange?.end.toString(),
+    );
   }
 
-  static List<Map<String, dynamic>> _generateBarangayData() {
-    final barangays = ['Brgy. 1', 'Brgy. 2', 'Brgy. 3', 'Brgy. 4'];
-    final sectors = [
-      'Fisherfolk',
-      'Farmers',
-      'Livestock',
-      'Agri-Entrepreneurs'
-    ];
-
-    return barangays.map((barangay) {
-      final index = barangays.indexOf(barangay);
-      return {
-        'Barangay': barangay,
-        'Total Farmers': (50 + index * 20).toString(),
-        'Total Farms': (10 + index * 5).toString(),
-        'Primary Sector': sectors[index % sectors.length],
-        'Main Crops': ['Rice', 'Corn', 'Vegetables'][index % 3],
-        'Average Yield': (1000 + index * 200).toString(),
-      };
-    }).toList();
+  static Future<List<Map<String, dynamic>>> _generateFarmerYieldData({
+    required BuildContext context,
+    String? farmerId,
+    String? productId,
+    String? farmId,
+    String? startDate,
+    String? endDate,
+    String? viewBy,
+  }) async {
+    final reportService = RepositoryProvider.of<ReportService>(context);
+    return await reportService.fetchYields(
+      farmerId: farmerId,
+      productId: productId,
+      farmId: farmId,
+      startDate: startDate,
+      endDate: endDate,
+      viewBy: viewBy,
+    );
   }
 
-  static List<Map<String, dynamic>> _generateSectorsData() {
-    final sectors = [
-      'Fisherfolk',
-      'Farmers',
-      'Livestock',
-      'Agri-Entrepreneurs'
-    ];
-    final barangays = ['Brgy. 1', 'Brgy. 2', 'Brgy. 3', 'Brgy. 4'];
+  static Future<List<Map<String, dynamic>>> _generateFarmersData({
+    required BuildContext context,
+    String? selectedBarangay,
+    String? selectedSector,
+  }) async {
+    try {
+      final reportService = RepositoryProvider.of<ReportService>(context);
+      final farmers = await reportService.fetchFarmers(
+        barangay: selectedBarangay,
+        sector: selectedSector,
+      );
 
-    return sectors.map((sector) {
-      final index = sectors.indexOf(sector);
-      return {
-        'Sector': sector,
-        'Number of Members': (30 + index * 15).toString(),
-        'Total Production': (1000 + index * 500).toString(),
-      };
-    }).toList();
+      return farmers;
+    } catch (e) {
+      print('Error fetching farmers: $e');
+      return []; // Return empty list on error
+    }
   }
 
   static String buildReportTitle(String reportType, DateTimeRange dateRange) {
     String title =
-        '${reportType[0].toUpperCase()}${reportType.substring(1)} Report';
+        '${reportType[0].toUpperCase()}${reportType.substring(1).replaceAll('_', ' ')} Report';
     title += ' from ${dateRange.start.toLocal().toString().split(' ')[0]}';
     title += ' to ${dateRange.end.toLocal().toString().split(' ')[0]}';
     return title;

@@ -1,60 +1,112 @@
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/flutter_gen/app_localizations.dart';
-import 'package:flareline_uikit/components/badge/anim_badge.dart';
+import 'package:flareline/pages/dashboard/yield_service.dart';
 import 'package:flutter/material.dart';
-
 import 'package:flareline_uikit/components/card/common_card.dart';
-import 'package:provider/provider.dart';
-
-class ChatsWidget extends StatelessWidget {
-  const ChatsWidget({super.key});
+import 'package:flutter_bloc/flutter_bloc.dart';
+ 
+class TopContributorsWidget extends StatelessWidget {
+  const TopContributorsWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return CommonCard(
+    return RepositoryProvider.value(
+      value: context.read<YieldService>(),
+      child: CommonCard(
         child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Top Contibutor',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Top Contributors',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Expanded(
+                child: _TopContributorsList(),
+              ),
+            ],
           ),
-          const SizedBox(
-            height: 16,
-          ),
-          Expanded(
-              child: ChangeNotifierProvider(
-            create: (context) => _DataProvider(),
-            builder: (ctx, child) => _buildWidget(ctx),
-          )),
-        ],
+        ),
       ),
-    ));
+    );
+  }
+}
+
+class _TopContributorsList extends StatefulWidget {
+  const _TopContributorsList();
+
+  @override
+  State<_TopContributorsList> createState() => _TopContributorsListState();
+}
+
+class _TopContributorsListState extends State<_TopContributorsList> {
+  late Future<List<Map<String, dynamic>>> _contributorsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final yieldService = context.read<YieldService>();
+    _contributorsFuture = yieldService.getTopContributors();
   }
 
-  _buildWidget(BuildContext context) {
-    return FutureBuilder<List<Conversation>>(
-        future: context.read<_DataProvider>().loadData(),
-        builder: ((context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting ||
-              snapshot.data == null) {
-            return Text(AppLocalizations.of(context)!.loading);
-          }
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _contributorsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: Text(AppLocalizations.of(context)!.loading));
+        }
 
-          return ListView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (c, index) {
-              return itemBuilder(c, index, snapshot.data!.elementAt(index));
-            },
-            itemCount: snapshot.data!.length,
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Error: ${snapshot.error}',
+              style: TextStyle(color: GlobalColors.danger),
+            ),
           );
-        }));
-  }
+        }
 
-  Widget itemBuilder(
-      BuildContext context, int index, Conversation conversation) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('No contributors found'));
+        }
+
+        return ListView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: snapshot.data!.length,
+          itemBuilder: (context, index) => _ContributorItem(
+            contributor: snapshot.data![index],
+            index: index,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ContributorItem extends StatelessWidget {
+  final Map<String, dynamic> contributor;
+  final int index;
+
+  const _ContributorItem({
+    required this.contributor,
+    required this.index,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final badgeColors = [
+      GlobalColors.danger,
+      GlobalColors.success,
+      GlobalColors.warn,
+      GlobalColors.primary,
+      Colors.yellowAccent,
+      Colors.pink,
+    ];
+    final badgeColor = badgeColors[index % badgeColors.length];
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -66,137 +118,62 @@ class ChatsWidget extends StatelessWidget {
             child: Stack(
               children: [
                 CircleAvatar(
-                  backgroundImage: AssetImage('assets${conversation.avatar}'),
+                  backgroundColor: badgeColor.withOpacity(0.2),
                   radius: 22,
+                  child: Text(
+                    contributor['farmerName'].substring(0, 1).toUpperCase(),
+                    style: TextStyle(
+                      color: badgeColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 Align(
                   alignment: Alignment.bottomRight,
-                  child: AnimBadge(
-                    glowColor: conversation.badgeColor,
+                  child: Badge(
+                    backgroundColor: badgeColor,
+                    label: Text(contributor['yieldCount'].toString()),
+                    child: const SizedBox(width: 16, height: 16),
                   ),
                 )
               ],
             ),
           ),
-          const SizedBox(
-            width: 16,
-          ),
+          const SizedBox(width: 16),
           Expanded(
-              child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(conversation.name),
-              const SizedBox(
-                height: 5,
-              ),
-              Text(
-                conversation.text,
-                style: const TextStyle(fontSize: 8),
-              ),
-            ],
-          )),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(contributor['farmerName']),
+                const SizedBox(height: 4),
+                Text(
+                  '${contributor['totalValue'].toStringAsFixed(2)} - ${contributor['sector']}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
           Container(
             height: 30,
+            width: 30,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-                color: Colors.blue, borderRadius: BorderRadius.circular(25)),
-            constraints: const BoxConstraints(minWidth: 30),
-            child: Text(
-              '${conversation.dot > 999 ? '+99' : conversation.dot}',
-              style: const TextStyle(color: Colors.white, fontSize: 12),
+              color: Colors.transparent,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey, width: 1),
+            ),
+            child: const Icon(
+              Icons.more_horiz,
+              color: Colors.grey,
+              size: 16,
             ),
           ),
         ],
       ),
     );
-  }
-}
-
-class Conversation {
-  Conversation(
-      {required this.name,
-      required this.avatar,
-      required this.text,
-      required this.time,
-      required this.textCount,
-      required this.dot,
-      this.badgeColor});
-
-  late String avatar;
-
-  late String name;
-
-  late String text;
-
-  late int time;
-
-  late int textCount;
-
-  late int dot;
-
-  Color? badgeColor;
-}
-
-class _DataProvider extends ChangeNotifier {
-  List<Conversation> employees = <Conversation>[];
-
-  List<Conversation> chatData = [
-    Conversation(
-        avatar: "/user/user-01.png",
-        name: "Devid Heilo",
-        text: "How are you?",
-        time: 12,
-        textCount: 3,
-        dot: 3,
-        badgeColor: GlobalColors.danger),
-    Conversation(
-        avatar: "/user/user-02.png",
-        name: "Henry Fisher",
-        text: "Waiting for you!",
-        time: 12,
-        textCount: 0,
-        dot: 1,
-        badgeColor: GlobalColors.success),
-    Conversation(
-        avatar: "/user/user-04.png",
-        name: "Jhon Doe",
-        text: "What's up?",
-        time: 32,
-        textCount: 0,
-        dot: 3,
-        badgeColor: GlobalColors.warn),
-    Conversation(
-        avatar: "/user/user-05.png",
-        name: "Jane Doe",
-        text: "Great",
-        time: 32,
-        textCount: 2,
-        dot: 66,
-        badgeColor: GlobalColors.primary),
-    Conversation(
-        avatar: "/user/user-01.png",
-        name: "Jhon Doe",
-        text: "How are you?",
-        time: 32,
-        textCount: 0,
-        dot: 3,
-        badgeColor: Colors.yellowAccent),
-    Conversation(
-        avatar: "/user/user-03.png",
-        name: "Jhon Doe",
-        text: "How are you?",
-        time: 32,
-        textCount: 3,
-        dot: 6549,
-        badgeColor: Colors.pink),
-  ];
-
-  Future<List<Conversation>> loadData() async {
-    await Future.delayed(const Duration(seconds: 2));
-
-    employees = chatData;
-
-    return employees;
   }
 }

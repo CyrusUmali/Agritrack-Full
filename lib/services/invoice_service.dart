@@ -6,7 +6,7 @@ class InvoiceService {
   Future<String> fetchInvoiceData() async {
     try {
       final response = await _dio.get(
-        'http://192.168.56.1:3001/api',
+        'http://localhost:3001/api',
         options: Options(
           // For web compatibility, only use receiveTimeout
           receiveTimeout: const Duration(seconds: 5),

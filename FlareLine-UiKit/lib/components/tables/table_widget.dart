@@ -503,7 +503,7 @@ class BaseDataGridSource<F extends BaseTableProvider> extends DataGridSource {
                 onBackgroundImageError: (exception, stackTrace) {
                   // Error handling
                 },
-                child: const Icon(Icons.image, size: 20),
+                // child: const Icon(Icons.image, size: 20),
               ),
             ),
           Expanded(

@@ -17,7 +17,7 @@ class BarangayFilterPanel extends StatefulWidget {
     'Corn': true,
     'Organic': true,
     'Livestock': true,
-    'Highvaluecrop': true,
+    'HVC': true,
   };
 
   const BarangayFilterPanel({

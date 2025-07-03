@@ -1,9 +1,11 @@
-import 'dart:math';
-
+import 'package:flareline/core/models/yield_model.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/monthly_data_table.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/yearly_data_table.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
+import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
-import '../../pin_style.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class YieldDataTable extends StatefulWidget {
   final PolygonData polygon;
@@ -17,431 +19,571 @@ class YieldDataTable extends StatefulWidget {
 class _YieldDataTableState extends State<YieldDataTable> {
   late String _selectedProduct;
   bool _showMonthlyData = false;
-  String _selectedYear = '2024';
-  late Map<String, String> _productImages;
-  late Map<String, Map<String, double>> _yieldData;
-  late Map<String, Map<String, Map<String, double>>> _monthlyData;
+  int selectedYear = DateTime.now().year;
+  List<Yield> _yields = [];
 
   @override
   void initState() {
     super.initState();
-    _initializeData();
+    _selectedProduct = _getInitialProduct(); // Move this after _loadYieldData
+    _loadYieldData();
   }
 
-  @override
-  void didUpdateWidget(covariant YieldDataTable oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.polygon.pinStyle != widget.polygon.pinStyle) {
-      _initializeData();
+  String _getInitialProduct() {
+    // Get unique products from yields or fall back to polygon products
+    final products = _getUniqueProducts();
+
+    // Safe access to first element
+    if (products.isNotEmpty) {
+      return products.first;
     }
-  }
 
-  void _initializeData() {
-    final products = _getFarmProducts(widget.polygon.pinStyle);
-    _selectedProduct = products.first;
-    _productImages = _getProductImages(products);
-    _yieldData = _generateYieldData(products);
-    _monthlyData = _generateMonthlyData(products);
-  }
-
-  List<String> _getFarmProducts(PinStyle pinStyle) {
-    switch (pinStyle) {
-      case PinStyle.fishery:
-        return ["Tilapia", "Bangus", "Hipon"];
-      case PinStyle.rice:
-        return ["Rice"];
-      case PinStyle.corn:
-        return ["Corn"];
-      case PinStyle.organic:
-        return ["Carrot"];
-      case PinStyle.highvaluecrop:
-        return ["Cucumber", "Tomato"];
-      case PinStyle.livestock:
-        return ["Carabao", "Cow", "Horse"];
-      default:
-        return ["Mixed Crops", "Vegetables", "Fruits"];
+    // Safe access to polygon products
+    if (widget.polygon.products != null &&
+        widget.polygon.products!.isNotEmpty) {
+      return widget.polygon.products!.first;
     }
+
+    // Final fallback
+    return 'Mixed Crops';
   }
 
-  Map<String, String> _getProductImages(List<String> products) {
-    final imageMap = {
-      "Cow":
-          "https://tse1.mm.bing.net/th/id/OIP.rYY066FUrcasLXCSjpu7nAHaFj?rs=1&pid=ImgDetMain",
-      "Carabao":
-          "https://tse3.mm.bing.net/th/id/OIP.oiSUKijwLvV_6VhKEHTCzAAAAA?rs=1&pid=ImgDetMain",
-      "Horse":
-          "https://cms.bbcearth.com/sites/default/files/factfiles/2024-07/horse1.jpg?imwidth=1008",
-      "Rice":
-          "https://tse2.mm.bing.net/th/id/OIP.8t3f-Mku5Gv2sm3mPXUvSgHaE7?rs=1&pid=ImgDetMain",
-      "Corn": "https://www.drupal.org/files/issues/Corn.jpg",
-      "Tomato":
-          "https://tse2.mm.bing.net/th/id/OIP.BDihZZH52qoMZXSR-PCLBQHaHa?rs=1&pid=ImgDetMain",
-      "Carrot":
-          "https://assets-shop.voltz-maraichage.com/photos/var/r3/caro-miamif1.jpg",
-      "Cucumber":
-          "https://chefsmandala.com/wp-content/uploads/2018/03/Cucumber.jpg",
-      "Tilapia":
-          "https://tse2.mm.bing.net/th/id/OIP.NvFLxnMJXfjOsnwbpbfZzwHaE8?rs=1&pid=ImgDetMain",
-      "Hipon":
-          "https://tse3.mm.bing.net/th/id/OIP.tcGziAgKYkEULjonK2K9BAHaFj?rs=1&pid=ImgDetMain",
-      "Bangus":
-          "https://farmtodoorstep.co/wp-content/uploads/2021/09/bangus-alcantara.jpeg",
-    };
-
-    return Map.fromEntries(
-      products.map((product) => MapEntry(product, imageMap[product] ?? '')),
-    );
+  List<String> _getUniqueProducts() {
+    if (_yields.isEmpty) return [];
+    return _yields.map((y) => y.productName ?? 'Unknown').toSet().toList();
   }
 
-  Map<String, Map<String, double>> _generateYieldData(List<String> products) {
-    final random = Random();
+  void _loadYieldData() {
+    final yieldBloc = context.read<YieldBloc>();
+    yieldBloc.add(GetYieldByFarmId(widget.polygon.id!));
+
+    yieldBloc.stream.listen((state) {
+      if (state is YieldsLoaded && mounted) {
+        setState(() {
+          _yields = state.yields;
+          // Update selected product if current one doesn't exist in new yields
+          final currentProducts = _getUniqueProducts();
+          if (currentProducts.isNotEmpty &&
+              !currentProducts.contains(_selectedProduct)) {
+            _selectedProduct = _getInitialProduct();
+          }
+        });
+      }
+    });
+  }
+
+  Map<String, Map<String, double>> _getYieldData() {
     final data = <String, Map<String, double>>{};
+    final products = _getUniqueProducts();
 
     for (final product in products) {
       final productData = <String, double>{};
-      for (var year = 2018; year <= 2024; year++) {
-        if (year != 2021 && year != 2022) {
-          // Skip some years for realism
-          productData[year.toString()] =
-              (random.nextDouble() * 1000 + 500).roundToDouble();
-        }
+
+      // Group by year
+      final yearGroups = <int, List<Yield>>{};
+      for (final yield in _yields.where((y) => y.productName == product)) {
+        final year = yield.createdAt?.year ?? DateTime.now().year;
+        yearGroups.putIfAbsent(year, () => []).add(yield);
       }
+
+      // Calculate total yield per year
+      for (final entry in yearGroups.entries) {
+        final totalYield = entry.value
+            .fold<double>(0, (sum, yield) => sum + (yield.volume ?? 0));
+        productData[entry.key.toString()] = totalYield;
+      }
+
       data[product] = productData;
     }
 
     return data;
   }
 
-  Map<String, Map<String, Map<String, double>>> _generateMonthlyData(
-      List<String> products) {
-    final random = Random();
-    final data = <String, Map<String, Map<String, double>>>{};
+  Map<String, double> _getMonthlyYieldData(String product, int year) {
+    final monthlyData = <String, double>{};
+    final monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
 
-    for (var year = 2023; year <= 2024; year++) {
-      final yearData = <String, Map<String, double>>{};
-      for (final product in products) {
-        final productData = <String, double>{};
-        for (var month = 1; month <= 6; month++) {
-          // Only first half year for demo
-          final monthName = _getMonthName(month);
-          productData[monthName] =
-              (random.nextDouble() * 200 + 50).roundToDouble();
-        }
-        yearData[product] = productData;
-      }
-      data[year.toString()] = yearData;
+    // Initialize all months with 0
+    for (final month in monthNames) {
+      monthlyData[month] = 0;
     }
 
-    return data;
+    // Filter yields for selected product and year
+    final relevantYields = _yields.where((yield) {
+      final yieldYear = yield.createdAt?.year ?? DateTime.now().year;
+      return yield.productName == product && yieldYear == year;
+    });
+
+    // Sum yields by month
+    for (final yield in relevantYields) {
+      final month = yield.createdAt?.month ?? 1;
+      final monthName = monthNames[month - 1];
+      monthlyData[monthName] =
+          (monthlyData[monthName] ?? 0) + (yield.volume ?? 0);
+    }
+
+    return monthlyData;
   }
 
-  String _getMonthName(int month) {
-    return [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ][month - 1];
+  Future<void> _showYearPicker(BuildContext context) async {
+    final int? pickedYear = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        int tempYear = selectedYear;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Select Year',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+              content: SizedBox(
+                height: 300,
+                width: 300,
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: ColorScheme.light(
+                      primary: Colors.blue,
+                      onPrimary: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+                  ),
+                  child: YearPicker(
+                    selectedDate: DateTime(tempYear),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2030),
+                    onChanged: (DateTime dateTime) {
+                      setState(() {
+                        tempYear = dateTime.year;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, tempYear);
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (pickedYear != null) {
+      setState(() {
+        selectedYear = pickedYear;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final yieldData = _getYieldData();
+    final products = _getUniqueProducts();
+    final isWeb = kIsWeb;
+    final screenWidth = MediaQuery.of(context).size.width;
 
-    final years = _yieldData.values
-        .expand((product) => product.keys)
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
+    return BlocBuilder<YieldBloc, YieldState>(
+      builder: (context, state) {
+        if (state is YieldsLoaded) {
+          _yields = state.yields;
+          // Ensure we have a valid selected product when yields are loaded
+          final currentProducts = _getUniqueProducts();
+          if (currentProducts.isNotEmpty &&
+              !currentProducts.contains(_selectedProduct)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  _selectedProduct = _getInitialProduct();
+                });
+              }
+            });
+          }
+        }
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Padding(
+          padding: EdgeInsets.all(isWeb ? 24.0 : 16.0),
+          child: isWeb && screenWidth > 1200
+              ? _buildWideScreenLayout(theme, yieldData, products)
+              : _buildMobileLayout(theme, yieldData, products),
+        );
+      },
+    );
+  }
+
+  Widget _buildWideScreenLayout(ThemeData theme,
+      Map<String, Map<String, double>> yieldData, List<String> products) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 350,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Yield",
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              Text(
-                widget.polygon.pinStyle.toString().split('.').last,
-                style: textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.primary,
-                ),
-              ),
+              _buildProductSelectionCard(theme, products, isVertical: true),
+              const SizedBox(height: 20),
+              _buildControlPanel(theme),
             ],
           ),
-          const SizedBox(height: 16),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _buildDataDisplayCard(theme, yieldData),
+        ),
+      ],
+    );
+  }
 
-          // Product selection cards
-          SizedBox(
-            height: 140,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: _yieldData.keys.map((product) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      setState(() {
-                        _selectedProduct = product;
-                      });
-                    },
-                    child: Container(
-                      width: 100,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: _selectedProduct == product
-                            ? colorScheme.primaryContainer
-                            : colorScheme.surfaceContainerLow,
-                        border: _selectedProduct == product
-                            ? Border.all(color: colorScheme.primary, width: 2)
-                            : null,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _selectedProduct == product
-                                  ? colorScheme.primary
-                                  : colorScheme.secondaryContainer,
-                              image: DecorationImage(
-                                image: NetworkImage(_productImages[product]!),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            product,
-                            style: textTheme.labelLarge?.copyWith(
-                              color: colorScheme.onSurface,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
+  Widget _buildMobileLayout(ThemeData theme,
+      Map<String, Map<String, double>> yieldData, List<String> products) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildProductSelectionCard(theme, products, isVertical: false),
+        const SizedBox(height: 16),
+        _buildControlPanel(theme),
+        const SizedBox(height: 16),
+        _buildDataDisplayCard(theme, yieldData),
+      ],
+    );
+  }
+
+  Widget _buildProductSelectionCard(ThemeData theme, List<String> products,
+      {required bool isVertical}) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.agriculture, color: theme.primaryColor, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'Select Product',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.primaryColor,
                   ),
-                );
-              }).toList(),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Time period toggle and year selector
-          Row(
-            children: [
-              Expanded(
-                child: SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(
-                      value: false,
-                      label: Text('Yearly'),
-                      icon: Icon(Icons.calendar_today),
-                    ),
-                    ButtonSegment(
-                      value: true,
-                      label: Text('Monthly'),
-                      icon: Icon(Icons.calendar_view_month),
-                    ),
-                  ],
-                  selected: {_showMonthlyData},
-                  onSelectionChanged: (Set<bool> newSelection) {
-                    setState(() {
-                      _showMonthlyData = newSelection.first;
-                    });
-                  },
-                ),
-              ),
-              if (_showMonthlyData) ...[
-                const SizedBox(width: 16),
-                DropdownButton<String>(
-                  value: _selectedYear,
-                  items: _monthlyData.keys.map((String year) {
-                    return DropdownMenuItem<String>(
-                      value: year,
-                      child: Text(year),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedYear = newValue!;
-                    });
-                  },
                 ),
               ],
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Data table
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: colorScheme.outlineVariant,
-                width: 1,
-              ),
             ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minWidth: constraints.maxWidth,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: _showMonthlyData
-                          ? _buildMonthlyDataTable(theme)
-                          : _buildYearlyDataTable(theme),
-                    ),
-                  ),
-                );
-              },
+            const SizedBox(height: 16),
+            SizedBox(
+              height: isVertical ? null : 100,
+              child: products.isEmpty
+                  ? const Center(child: Text('No products available'))
+                  : isVertical
+                      ? _buildVerticalProductList(products, theme)
+                      : _buildHorizontalProductList(products, theme),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildYearlyDataTable(ThemeData theme) {
-    final textTheme = theme.textTheme;
-    final years = _yieldData[_selectedProduct]!.keys.toList()
-      ..sort((a, b) => b.compareTo(a));
-
-    return DataTable(
-      columns: [
-        DataColumn(
-          label: Text('Year',
-              style: textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              )),
-          numeric: false,
-        ),
-        DataColumn(
-          label: Text('Yield (kg)',
-              style: textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              )),
-          numeric: true,
-        ),
-        DataColumn(
-          label: Text('Growth %',
-              style: textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              )),
-          numeric: true,
-        ),
-      ],
-      rows: years.map((year) {
-        final currentValue = _yieldData[_selectedProduct]![year]!;
-        final previousYear = (int.tryParse(year) ?? 0) - 1;
-        final previousValue =
-            _yieldData[_selectedProduct]![previousYear.toString()];
-        final growth = previousValue != null
-            ? ((currentValue - previousValue) / previousValue * 100)
-            : null;
-
-        return DataRow(
-          cells: [
-            DataCell(Text(year, style: textTheme.bodyMedium)),
-            DataCell(
-              Text(currentValue.toStringAsFixed(0),
-                  style: textTheme.bodyMedium),
-            ),
-            DataCell(
-              Text(
-                growth?.toStringAsFixed(1) ?? 'N/A',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: growth != null
-                      ? growth >= 0
-                          ? Colors.green
-                          : Colors.red
-                      : null,
+  Widget _buildVerticalProductList(List<String> products, ThemeData theme) {
+    return SizedBox(
+      height: 200,
+      child: SingleChildScrollView(
+        child: Column(
+          children: products.map((product) {
+            final isSelected = _selectedProduct == product;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _selectedProduct = product;
+                  });
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: isSelected
+                        ? theme.primaryColor.withOpacity(0.1)
+                        : Colors.transparent,
+                    border: Border.all(
+                      color:
+                          isSelected ? theme.primaryColor : theme.dividerColor,
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(
+                          // radius: 20,
+                          // backgroundImage: NetworkImage(
+                          //   _productImages[product] ??
+                          //       'https://via.placeholder.com/50',
+                          // ),
+                          ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          product,
+                          style: TextStyle(
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSelected ? theme.primaryColor : null,
+                          ),
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(Icons.check_circle, color: theme.primaryColor),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      }).toList(),
-      headingRowHeight: 48,
-      dataRowHeight: 48,
-      dividerThickness: 1,
-      horizontalMargin: 16,
-      columnSpacing: 24,
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 
-  Widget _buildMonthlyDataTable(ThemeData theme) {
-    final textTheme = theme.textTheme;
-    final monthlyDataForProduct =
-        _monthlyData[_selectedYear]?[_selectedProduct];
-    final months = monthlyDataForProduct?.keys.toList() ?? [];
+  Widget _buildHorizontalProductList(List<String> products, ThemeData theme) {
+    return ListView.separated(
+      scrollDirection: Axis.horizontal,
+      itemCount: products.length,
+      separatorBuilder: (context, index) => const SizedBox(width: 8),
+      itemBuilder: (context, index) {
+        final product = products[index];
+        return ChoiceChip(
+          label: Text(product),
+          selected: _selectedProduct == product,
+          onSelected: (selected) {
+            setState(() {
+              _selectedProduct = product;
+            });
+          },
+          avatar: const CircleAvatar(
+              // backgroundImage: NetworkImage(
+              //   _productImages[product] ?? 'https://via.placeholder.com/50',
+              // ),
+              ),
+          labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          selectedColor: theme.primaryColor.withOpacity(0.2),
+        );
+      },
+    );
+  }
 
-    return DataTable(
-      columns: [
-        DataColumn(
-          label: Text('Month',
-              style: textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              )),
-          numeric: false,
+  Widget _buildControlPanel(ThemeData theme) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.timeline, color: theme.primaryColor, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'Time Period',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.dividerColor),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildToggleOption(
+                      'Monthly',
+                      Icons.calendar_month,
+                      _showMonthlyData,
+                      () async {
+                        await _showYearPicker(context);
+                        setState(() {
+                          _showMonthlyData = true;
+                        });
+                      },
+                      theme,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildToggleOption(
+                      'Yearly',
+                      Icons.calendar_month,
+                      !_showMonthlyData,
+                      () {
+                        setState(() {
+                          _showMonthlyData = false;
+                        });
+                      },
+                      theme,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_showMonthlyData) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.event, color: theme.primaryColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Selected Year: $selectedYear',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => _showYearPicker(context),
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Change'),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ),
-        DataColumn(
-          label: Text('Yield (kg)',
-              style: textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              )),
-          numeric: true,
+      ),
+    );
+  }
+
+  Widget _buildToggleOption(String label, IconData icon, bool isSelected,
+      VoidCallback onTap, ThemeData theme) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? theme.primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
         ),
-      ],
-      rows: months.map((month) {
-        final value = monthlyDataForProduct![month]!;
-        return DataRow(
-          cells: [
-            DataCell(Text(month, style: textTheme.bodyMedium)),
-            DataCell(
-              Text(value.toStringAsFixed(0), style: textTheme.bodyMedium),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : theme.primaryColor,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : theme.primaryColor,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
-        );
-      }).toList(),
-      headingRowHeight: 48,
-      dataRowHeight: 48,
-      dividerThickness: 1,
-      horizontalMargin: 16,
-      columnSpacing: 24,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDataDisplayCard(
+      ThemeData theme, Map<String, Map<String, double>> yieldData) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.analytics, color: theme.primaryColor, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'Production Data - $_selectedProduct',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.primaryColor,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _showMonthlyData ? 'Monthly View' : 'Yearly View',
+                    style: TextStyle(
+                      color: theme.primaryColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.dividerColor),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: _showMonthlyData
+                    ? MonthlyDataTable(
+                        product: _selectedProduct,
+                        year: selectedYear,
+                        monthlyData: _getMonthlyYieldData(
+                            _selectedProduct, selectedYear),
+                      )
+                    : YearlyDataTable(
+                        product: _selectedProduct,
+                        yearlyData: yieldData[_selectedProduct] ?? {}),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

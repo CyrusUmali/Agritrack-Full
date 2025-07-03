@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flareline/pages/test/new_page.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 
 class MapMiniView extends StatefulWidget {
   final bool isMobile;
+  final VoidCallback? onTap; // Optional callback for more flexibility
 
-  const MapMiniView({super.key, this.isMobile = false});
+  const MapMiniView({super.key, this.isMobile = false, this.onTap});
 
   @override
   State<MapMiniView> createState() => _MapMiniViewState();
@@ -42,9 +43,10 @@ class _MapMiniViewState extends State<MapMiniView> {
                 onTapDown: (_) => setState(() => _isTapped = true),
                 onTapUp: (_) => setState(() => _isTapped = false),
                 onTapCancel: () => setState(() => _isTapped = false),
-                onTap: () {
-                  Navigator.pushNamed(context, '/newPage');
-                },
+                onTap: widget.onTap ??
+                    () {
+                      Navigator.pushNamed(context, '/newPage');
+                    },
                 child: Card(
                   elevation: (_isHovered || _isTapped) ? 4 : 1,
                   clipBehavior: Clip.antiAlias,
@@ -52,50 +54,61 @@ class _MapMiniViewState extends State<MapMiniView> {
                     children: [
                       FlutterMap(
                         options: MapOptions(
-                          center: LatLng(14.077557, 121.328938),
+                          center: const LatLng(14.077557, 121.328938),
                           zoom: 13,
                           minZoom: 13,
                           maxBounds: LatLngBounds(
-                            LatLng(13.927557, 121.178938),
-                            LatLng(14.227557, 121.478938),
+                            const LatLng(13.927557, 121.178938),
+                            const LatLng(14.227557, 121.478938),
                           ),
                         ),
                         children: [
                           TileLayer(
                             urlTemplate:
                                 "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+                            subdomains: const [
+                              'a',
+                              'b',
+                              'c'
+                            ], // Added subdomains for better tile loading
+                            tileProvider:
+                                CancellableNetworkTileProvider(), // Using cancellable provider
                             userAgentPackageName: 'com.example.app',
                           ),
                         ],
                       ),
                       if (_isHovered || _isTapped)
-                        Container(
-                          color: Colors.black.withOpacity(0.3),
-                          child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  widget.isMobile
-                                      ? Icons.touch_app
-                                      : Icons.zoom_in,
-                                  size: 48,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  widget.isMobile
-                                      ? 'Tap to View Map'
-                                      : 'View Full Map',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ],
+                        AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: (_isHovered || _isTapped) ? 1 : 0,
+                          child: Container(
+                            color: Colors.black.withOpacity(0.3),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    widget.isMobile
+                                        ? Icons.touch_app
+                                        : Icons.zoom_in,
+                                    size: 48,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    widget.isMobile
+                                        ? 'Tap to View Map'
+                                        : 'View Full Map',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),

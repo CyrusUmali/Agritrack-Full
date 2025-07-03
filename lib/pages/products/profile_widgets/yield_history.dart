@@ -134,21 +134,23 @@ class YieldHistoryState extends State<YieldHistory> {
         children: [
           Text('Year: '),
           const SizedBox(width: 8),
-          DropdownButton<String>(
-            value: _selectedYear,
-            items: years.map((year) {
-              return DropdownMenuItem<String>(
-                value: year,
-                child: Text(year),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _selectedYear = newValue;
-                });
-              }
-            },
+          InkWell(
+            onTap: () => _selectYear(context, isRange: false),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_selectedYear ?? 'Select Year'),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.calendar_today, size: 16),
+                ],
+              ),
+            ),
           ),
         ],
       );
@@ -158,49 +160,148 @@ class YieldHistoryState extends State<YieldHistory> {
         children: [
           Text('From: '),
           const SizedBox(width: 8),
-          DropdownButton<String>(
-            value: _startYear,
-            items: years.map((year) {
-              return DropdownMenuItem<String>(
-                value: year,
-                child: Text(year),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _startYear = newValue;
-                  if (_endYear != null &&
-                      _startYear!.compareTo(_endYear!) > 0) {
-                    _endYear = _startYear;
-                  }
-                });
-              }
-            },
-          ),
-          const SizedBox(width: 16),
-          Text('To: '),
-          const SizedBox(width: 8),
-          DropdownButton<String>(
-            value: _endYear,
-            items: years
-                .where((year) => year.compareTo(_startYear ?? '') >= 0)
-                .map((year) {
-              return DropdownMenuItem<String>(
-                value: year,
-                child: Text(year),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _endYear = newValue;
-                });
-              }
-            },
+          InkWell(
+            onTap: () => _selectYearRange(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('${_startYear} - ${_endYear}'),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.calendar_today, size: 16),
+                ],
+              ),
+            ),
           ),
         ],
       );
+    }
+  }
+
+  Future<void> _selectYear(BuildContext context,
+      {required bool isRange}) async {
+    final String? picked = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        String tempYear = _selectedYear ?? '';
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Select Year'),
+              content: SizedBox(
+                height: 300,
+                width: 300,
+                child: YearPicker(
+                  selectedDate: DateTime(tempYear.isNotEmpty
+                      ? int.parse(tempYear)
+                      : DateTime.now().year),
+                  firstDate: DateTime(2018),
+                  lastDate: DateTime(2025),
+                  onChanged: (DateTime dateTime) {
+                    Navigator.pop(context, dateTime.year.toString());
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedYear = picked;
+      });
+    }
+  }
+
+  Future<void> _selectYearRange(BuildContext context) async {
+    final List<int>? picked = await showDialog<List<int>>(
+      context: context,
+      builder: (BuildContext context) {
+        int tempFromYear = _startYear != null ? int.parse(_startYear!) : 2020;
+        int tempToYear = _endYear != null ? int.parse(_endYear!) : 2025;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Select Year Range'),
+              content: SizedBox(
+                height: 400,
+                width: 300,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('From Year:'),
+                    SizedBox(
+                      height: 150,
+                      child: YearPicker(
+                        selectedDate: DateTime(tempFromYear),
+                        firstDate: DateTime(2018),
+                        lastDate: DateTime(2025),
+                        onChanged: (DateTime dateTime) {
+                          setState(() {
+                            tempFromYear = dateTime.year;
+                            if (tempFromYear > tempToYear) {
+                              tempToYear = tempFromYear;
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text('To Year:'),
+                    SizedBox(
+                      height: 150,
+                      child: YearPicker(
+                        selectedDate: DateTime(tempToYear),
+                        firstDate: DateTime(tempFromYear),
+                        lastDate: DateTime(2025),
+                        onChanged: (DateTime dateTime) {
+                          setState(() {
+                            tempToYear = dateTime.year;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, [tempFromYear, tempToYear]);
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (picked != null && picked.length == 2) {
+      setState(() {
+        _startYear = picked[0].toString();
+        _endYear = picked[1].toString();
+      });
     }
   }
 

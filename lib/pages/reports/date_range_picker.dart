@@ -42,35 +42,45 @@ class DateRangePickerWidget extends StatelessWidget {
   }
 
   Widget _buildDateRangeButton(BuildContext context, bool isDesktop) {
-    return OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+    final dateFormat = DateFormat('MMM d, yyyy');
+    final isRangeSelected = dateRange.start != dateRange.end;
 
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10), // Chip-like roundness
+    return SizedBox(
+      height: 48,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.all(12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8), // Match the combo box
+          ),
+          side: BorderSide(color: Colors.grey[300]!), // Match border color
+          backgroundColor: Colors.white, // White background like combo box
+          foregroundColor: Colors.black, // Black text
+          textStyle: const TextStyle(fontSize: 14), // Same font size
         ),
-        backgroundColor: Colors.grey[200], // Light grey background
-        foregroundColor:
-            const Color.fromARGB(255, 32, 31, 31), // Black text and icon
-        textStyle: const TextStyle(fontSize: 14),
-      ),
-      onPressed: () async => await _showDatePicker(context, isDesktop),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              'Date Range',
-              overflow: TextOverflow.ellipsis,
+        onPressed: () async => await _showDatePicker(context, isDesktop),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                isRangeSelected
+                    ? '${dateFormat.format(dateRange.start)} - ${dateFormat.format(dateRange.end)}'
+                    : 'Date Range',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isRangeSelected ? Colors.black : Colors.grey[600],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          const Icon(
-            Icons.calendar_today,
-            size: 16,
-            color: Colors.grey,
-          ),
-        ],
+            const SizedBox(width: 8),
+            Icon(
+              isRangeSelected ? Icons.close : Icons.calendar_today,
+              size: 20, // Match the combo box icon size
+              color: Colors.grey[600],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -102,7 +112,7 @@ class DateRangePickerWidget extends StatelessWidget {
       controlsHeight: 50,
       controlsTextStyle: const TextStyle(
         fontSize: 15,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.normal,
       ),
     );
 
@@ -145,6 +155,14 @@ class DateRangePickerWidget extends StatelessWidget {
                       child: const Text('Cancel'),
                     ),
                     const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () {
+                        // Clear selection
+                        Navigator.of(context).pop([null, null]);
+                      },
+                      child: const Text('Clear'),
+                    ),
+                    const SizedBox(width: 8),
                     FilledButton(
                       onPressed: () => Navigator.of(context).pop(selectedDates),
                       child: const Text('Apply'),
@@ -158,14 +176,17 @@ class DateRangePickerWidget extends StatelessWidget {
       ),
     );
 
-    if (results != null &&
-        results.length == 2 &&
-        results[0] != null &&
-        results[1] != null) {
-      onDateRangeChanged(DateTimeRange(
-        start: results[0]!,
-        end: results[1]!,
-      ));
+    if (results != null) {
+      if (results.length == 2 && results[0] != null && results[1] != null) {
+        onDateRangeChanged(DateTimeRange(
+          start: results[0]!,
+          end: results[1]!,
+        ));
+      } else if (results.every((date) => date == null)) {
+        // Clear the range if both dates are null
+        final now = DateTime.now();
+        onDateRangeChanged(DateTimeRange(start: now, end: now));
+      }
     }
   }
 }

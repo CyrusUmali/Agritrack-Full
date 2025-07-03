@@ -37,10 +37,12 @@ class _ReportContentState extends State<ReportContent> {
     start: DateTime.now().subtract(const Duration(days: 30)),
     end: DateTime.now(),
   );
-  Set<String> selectedBarangay = {};
-  Set<String> selectedSector = {};
-  Set<String> selectedCrop = {};
-  Set<String> selectedFarm = {};
+  String selectedBarangay = '';
+  String selectedFarmer = '';
+  String selectedView = '';
+  String selectedSector = '';
+  String selectedProduct = '';
+  String selectedFarm = '';
   String reportType = 'farmers';
   String outputFormat = 'table';
   Set<String> selectedColumns = {};
@@ -53,12 +55,15 @@ class _ReportContentState extends State<ReportContent> {
     setState(() => isLoading = true);
 
     final data = await ReportGenerator.generateReport(
+      context: context, // Pass the context here
       reportType: reportType,
       dateRange: dateRange,
-      selectedBarangays: selectedBarangay,
-      selectedSectors: selectedSector,
-      selectedCrops: selectedCrop,
-      selectedFarms: selectedFarm,
+      selectedBarangay: selectedBarangay,
+      selectedFarmer: selectedFarmer,
+      selectedView: selectedView,
+      selectedSector: selectedSector,
+      selectedProduct: selectedProduct,
+      selectedFarm: selectedFarm,
     );
 
     // Auto-select all columns if none are selected
@@ -90,6 +95,14 @@ class _ReportContentState extends State<ReportContent> {
     });
   }
 
+  // This function will be called when columns change
+  void handleColumnsChanged(Set<String> newColumns) {
+    setState(() {
+      selectedColumns = newColumns;
+      // No need to manually rebuild - setState will trigger a rebuild
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -102,21 +115,39 @@ class _ReportContentState extends State<ReportContent> {
           dateRange: dateRange,
           onDateRangeChanged: (newRange) =>
               setState(() => dateRange = newRange),
-          selectedBarangays: selectedBarangay,
-          onBarangaysChanged: (newValue) =>
+          selectedBarangay: selectedBarangay,
+          selectedView: selectedView,
+          onViewChanged: (newValue) => setState(() => selectedView = newValue),
+          selectedFarmer: selectedFarmer,
+          onFarmerChanged: (newValue) =>
+              setState(() => selectedFarmer = newValue),
+          onBarangayChanged: (newValue) =>
               setState(() => selectedBarangay = newValue),
-          selectedSectors: selectedSector,
-          onSectorsChanged: (newValue) =>
+          selectedSector: selectedSector,
+          onSectorChanged: (newValue) =>
               setState(() => selectedSector = newValue),
-          selectedCrops: selectedCrop,
-          onCropsChanged: (newValue) => setState(() => selectedCrop = newValue),
-          selectedFarms: selectedFarm,
-          onFarmsChanged: (newValue) => setState(() => selectedFarm = newValue),
+          selectedProduct: selectedProduct,
+          onProductChanged: (newValue) =>
+              setState(() => selectedProduct = newValue),
+          selectedFarm: selectedFarm,
+          onFarmChanged: (newValue) => setState(() => selectedFarm = newValue),
           reportType: reportType,
           onReportTypeChanged: (newValue) {
             setState(() {
               reportType = newValue;
-              selectedColumns = {}; // Reset selected columns
+              // Reset all filter values
+              dateRange = DateTimeRange(
+                start: DateTime.now(),
+                end: DateTime.now(),
+              );
+              selectedBarangay = '';
+              selectedFarmer = '';
+              selectedView = '';
+              selectedSector = '';
+              selectedProduct = '';
+              selectedFarm = '';
+              // Reset columns and data
+              selectedColumns = {};
               reportData = [];
               filteredReportData = [];
               searchQuery = '';
@@ -126,8 +157,7 @@ class _ReportContentState extends State<ReportContent> {
           onOutputFormatChanged: (newValue) =>
               setState(() => outputFormat = newValue),
           selectedColumns: selectedColumns,
-          onColumnsChanged: (newColumns) =>
-              setState(() => selectedColumns = newColumns),
+          onColumnsChanged: handleColumnsChanged, // Use the new handler
           onGeneratePressed: generateReport,
           isLoading: isLoading,
         ),
@@ -201,8 +231,10 @@ class _ReportContentState extends State<ReportContent> {
                 dateRange: dateRange,
                 selectedBarangay: selectedBarangay,
                 selectedSector: selectedSector,
-                selectedCropType: '',
-                selectedFarmer: '',
+                selectedProductType: '',
+                selectedFarmer: selectedFarmer,
+                selectedView: selectedView,
+                // onDeleteSelected: (List<int> selectedIndices) {},
               ),
             ),
           ),
