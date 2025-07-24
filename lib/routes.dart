@@ -2,6 +2,8 @@
 
 import 'package:flareline/auth_guard.dart';
 import 'package:flareline/deferred_widget.dart';
+import 'package:flareline/pages/auth/forgot_password/forgot_password.dart'
+    deferred as forgotPwd;
 import 'package:flareline/pages/auth/not_found.dart';
 import 'package:flareline/pages/auth/sign_in/sign_in_page.dart';
 import 'package:flareline/pages/farms/farms_page.dart';
@@ -60,7 +62,7 @@ typedef PathWidgetBuilder = Widget Function(BuildContext, String?);
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 final List<Map<String, Object>> MAIN_PAGES = [
-  {'routerPath': '/', 'widget': const EcommercePage()},
+  {'routerPath': '/', 'widget': const Dashboard()},
   {
     'routerPath': '/calendar',
     'widget':
@@ -89,9 +91,9 @@ final List<Map<String, Object>> MAIN_PAGES = [
     'widget': DeferredWidget(signUp.loadLibrary, () => signUp.SignUpWidget())
   },
   {
-    'routerPath': '/resetPwd',
-    'widget':
-        DeferredWidget(resetPwd.loadLibrary, () => resetPwd.ResetPwdWidget()),
+    'routerPath': '/forgotPwd',
+    'widget': DeferredWidget(
+        forgotPwd.loadLibrary, () => forgotPwd.ForgotPasswordWidget()),
   },
   {
     'routerPath': '/invoice',
@@ -219,12 +221,12 @@ class RouteConfiguration {
     }
 
     // Then check authentication for protected routes
-    // if (!AuthGuard.isAuthenticated(context)) {
-    //   return NoAnimationMaterialPageRoute<void>(
-    //     builder: (context) => SignInWidget(),
-    //     settings: const RouteSettings(name: '/signIn'),
-    //   );
-    // }
+    if (!AuthGuard.isAuthenticated(context)) {
+      return NoAnimationMaterialPageRoute<void>(
+        builder: (context) => SignInWidget(),
+        settings: const RouteSettings(name: '/signIn'),
+      );
+    }
 
     // Then check role access
     if (!RoleGuard.canAccess(path, context)) {

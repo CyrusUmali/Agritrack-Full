@@ -125,7 +125,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -206,48 +206,3 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
     );
   }
 }
-
-final List<Map<String, dynamic>> dummyFarms = [
-  {
-    'name': 'Mountain View Orchards',
-    'location': 'San Juan',
-    'area': 210,
-    'yield': 7800,
-    'status': 'Active',
-  },
-  {
-    'name': 'Riverbend Farm',
-    'location': 'San Vicente',
-    'area': 65,
-    'yield': 2400,
-    'status': 'active',
-  },
-  {
-    'name': 'Golden Harvest',
-    'location': 'Soledad',
-    'area': 350,
-    'yield': 12500,
-    'status': 'Active',
-  },
-  {
-    'name': 'Old Mill Farm',
-    'location': 'San Cristobal',
-    'area': 42,
-    'yield': 1500,
-    'status': 'Inactive',
-  },
-  {
-    'name': 'Prairie Winds',
-    'location': 'San Vicente',
-    'area': 180,
-    'yield': 6700,
-    'status': 'Active',
-  },
-  {
-    'name': 'Blue Sky Farms',
-    'location': 'San Joaquin',
-    'area': 95,
-    'yield': 3800,
-    'status': 'active',
-  },
-];

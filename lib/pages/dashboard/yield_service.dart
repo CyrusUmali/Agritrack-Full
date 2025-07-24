@@ -7,7 +7,7 @@ class YieldService {
 
   Future<List<Map<String, dynamic>>> getTopContributors() async {
     try {
-      final response = await _apiService.get('/auth/yields/top-contributors');
+      final response = await _apiService.get('/auth/top-contributors');
 
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;

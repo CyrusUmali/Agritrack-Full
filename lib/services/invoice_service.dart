@@ -6,7 +6,8 @@ class InvoiceService {
   Future<String> fetchInvoiceData() async {
     try {
       final response = await _dio.get(
-        'http://localhost:3001/api',
+        // 'http://localhost:3001/api',
+        'https://agritrack-server.onrender.com/api',
         options: Options(
           // For web compatibility, only use receiveTimeout
           receiveTimeout: const Duration(seconds: 5),

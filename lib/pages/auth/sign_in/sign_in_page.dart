@@ -154,6 +154,7 @@ class SignInWidget extends BaseWidget<SignInProvider> {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {
+                Navigator.of(context).pushNamed('/forgotPwd');
                 // Add forgot password functionality
               },
               child: Text(
@@ -229,8 +230,7 @@ class SignInWidget extends BaseWidget<SignInProvider> {
               TextButton(
                 onPressed: () {
                   // Add navigation to sign up
-
-                  Navigator.of(context).popAndPushNamed('/signUp');
+                  Navigator.of(context).pushNamed('/signUp');
                 },
                 child: Text(
                   'Sign Up',

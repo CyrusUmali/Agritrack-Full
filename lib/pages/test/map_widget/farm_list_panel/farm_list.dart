@@ -92,6 +92,8 @@ class _FarmListPanelState extends State<FarmListPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (showBarangayFilter) {
       return BarangayFilterPanel(
         barangayManager: widget.barangayManager,
@@ -110,8 +112,12 @@ class _FarmListPanelState extends State<FarmListPanel> {
     return Container(
       width: 250,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(left: BorderSide(color: Colors.grey, width: 2.0)),
+        color: theme.cardTheme.color ?? Colors.white,
+        border: Border(
+          left: BorderSide(
+              color: theme.cardTheme.surfaceTintColor ?? Colors.grey,
+              width: 2.0),
+        ),
       ),
       padding: EdgeInsets.all(16),
       child: Column(
@@ -135,8 +141,8 @@ class _FarmListPanelState extends State<FarmListPanel> {
               IconButton(
                 icon: Icon(Icons.tune_sharp,
                     color: widget.selectedBarangays.isNotEmpty
-                        ? Colors.blue
-                        : Colors.grey),
+                        ? theme.colorScheme.primary
+                        : theme.disabledColor),
                 onPressed: () {
                   setState(() => showBarangayFilter = true);
                 },
@@ -145,7 +151,8 @@ class _FarmListPanelState extends State<FarmListPanel> {
           ),
           SizedBox(height: 16),
           Text('Farms',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontSize: 20, fontWeight: FontWeight.w400)),
           SizedBox(height: 16),
           Expanded(
             child: ListView.builder(
@@ -158,32 +165,28 @@ class _FarmListPanelState extends State<FarmListPanel> {
                 return ListTile(
                   title: Text(
                     polygon.name,
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   subtitle: polygon.parentBarangay != null
                       ? Text(
                           'Barangay: ${polygon.parentBarangay}',
-                          style: TextStyle(
-                              fontSize:
-                                  12), // Make sure this is smaller than title
+                          style: TextStyle(fontSize: 12),
                         )
                       : null,
                   tileColor: widget.polygonManager.selectedPolygonIndex ==
                           originalIndex
-                      ? Colors.blue.withOpacity(0.3)
+                      ? theme.colorScheme.primary.withOpacity(0.3)
                       : null,
                   onTap: () {
-                    // Get the root navigator context
-                    // final rootContext =
-                    //     Navigator.of(context, rootNavigator: true).context;
-
-                    debugPrint('FarmList context: ${context.runtimeType}');
+                    final overlayContext =
+                        Navigator.of(context, rootNavigator: true).context;
 
                     widget.polygonManager.selectPolygon(
                       originalIndex,
-                      context: context, // Pass the root context
+                      context: overlayContext,
                     );
-                    // widget.onPolygonSelected(originalIndex);
                   },
                 );
               },

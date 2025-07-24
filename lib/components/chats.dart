@@ -4,7 +4,7 @@ import 'package:flareline/pages/dashboard/yield_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
- 
+
 class TopContributorsWidget extends StatelessWidget {
   const TopContributorsWidget({super.key});
 
@@ -62,9 +62,18 @@ class _TopContributorsListState extends State<_TopContributorsList> {
 
         if (snapshot.hasError) {
           return Center(
-            child: Text(
-              'Error: ${snapshot.error}',
-              style: TextStyle(color: GlobalColors.danger),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, color: GlobalColors.danger, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  'Failed to load contributors\n${snapshot.error}',
+                  style: TextStyle(color: GlobalColors.danger),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           );
         }

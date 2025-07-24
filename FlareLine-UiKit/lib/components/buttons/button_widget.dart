@@ -29,8 +29,10 @@ class ButtonWidget extends StatelessWidget {
   final String? type;
   final double? height;
   final double? fontSize;
+  final bool isLoading;
 
-  const ButtonWidget({required this.btnText,
+  const ButtonWidget({
+    required this.btnText,
     this.onTap,
     this.color,
     this.borderRadius,
@@ -41,34 +43,55 @@ class ButtonWidget extends StatelessWidget {
     this.borderWidth,
     this.height,
     this.fontSize,
-    super.key});
+    this.isLoading = false,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       child: Container(
         width: double.maxFinite,
         height: height ?? 40,
         alignment: Alignment.center,
         decoration: buildBoxDecoration(context),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            if (iconWidget != null) iconWidget!,
-            if (iconWidget != null && btnText != '')
-              const SizedBox(
-                width: 5,
+            // Text and icon (hidden when loading)
+            if (!isLoading) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (iconWidget != null) iconWidget!,
+                  if (iconWidget != null && btnText.isNotEmpty)
+                    const SizedBox(width: 5),
+                  if (btnText.isNotEmpty)
+                    Text(
+                      btnText,
+                      style: TextStyle(
+                        color: textColor ??
+                            (type != null ? Colors.white : ButtonColors.normal),
+                        fontSize: fontSize ?? 14,
+                      ),
+                    ),
+                ],
               ),
-            if (btnText != '')
-              Text(
-                btnText,
-                style: TextStyle(
-                    color: textColor ??
-                        (type != null ? Colors.white : ButtonColors.normal),
-                    fontSize: fontSize ?? 14),
-              )
+            ],
+
+            // Loading indicator (only shown when loading)
+            if (isLoading)
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    textColor ?? Colors.white,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -77,13 +100,14 @@ class ButtonWidget extends StatelessWidget {
 
   BoxDecoration buildBoxDecoration(BuildContext context) {
     return BoxDecoration(
-        border: (borderColor != null
-            ? Border.all(color: borderColor!, width: borderWidth ?? 0)
-            : (type == null
-            ? Border.all(color: ButtonColors.normal, width: 1)
-            : null)),
-        color: color ?? getTypeColor(type),
-        borderRadius: BorderRadius.circular(borderRadius ?? 4));
+      border: (borderColor != null
+          ? Border.all(color: borderColor!, width: borderWidth ?? 0)
+          : (type == null
+              ? Border.all(color: ButtonColors.normal, width: 1)
+              : null)),
+      color: color ?? getTypeColor(type),
+      borderRadius: BorderRadius.circular(borderRadius ?? 4),
+    );
   }
 
   Color getTypeColor(String? type) {

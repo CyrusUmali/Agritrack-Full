@@ -3,12 +3,38 @@ import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../components/sector_data_model.dart';
 
+// Enhanced annotation data structure
+class AnnotationData {
+  final String text;
+  final dynamic x;
+  final dynamic y;
+  final CoordinateUnit coordinateUnit;
+  final AnnotationRegion region;
+  final ChartAlignment horizontalAlignment;
+  final ChartAlignment verticalAlignment;
+  final IconData? icon;
+  final Color? color;
+
+  const AnnotationData({
+    required this.text,
+    required this.x,
+    required this.y,
+    this.coordinateUnit = CoordinateUnit.point,
+    this.region = AnnotationRegion.chart,
+    this.horizontalAlignment = ChartAlignment.center,
+    this.verticalAlignment = ChartAlignment.center,
+    this.icon,
+    this.color,
+  });
+}
+
 class SectorLineChartWidget extends StatelessWidget {
   final String title;
   final List<SectorData> datas;
   final List<String> dropdownItems;
   final List<CartesianChartAnnotation>? annotations;
-  final String unit; // Add this line
+  final List<AnnotationData>? annotationData;
+  final String unit;
 
   const SectorLineChartWidget({
     super.key,
@@ -16,7 +42,8 @@ class SectorLineChartWidget extends StatelessWidget {
     required this.datas,
     required this.dropdownItems,
     this.annotations,
-    this.unit = 'mt', // Default unit
+    this.annotationData,
+    this.unit = 'mt',
   });
 
   @override
@@ -40,20 +67,18 @@ class SectorLineChartWidget extends StatelessWidget {
       primaryXAxis: CategoryAxis(
         labelStyle: const TextStyle(fontWeight: FontWeight.normal),
         majorGridLines: const MajorGridLines(
-            width: 1,
-            color: Color.fromARGB(255, 230, 229, 229)), // Added grid lines
-        majorTickLines: const MajorTickLines(width: 0), // Hide tick marks
-        axisLine: const AxisLine(width: 1, color: Colors.black), // X-axis line
+            width: 1, color: Color.fromARGB(255, 230, 229, 229)),
+        majorTickLines: const MajorTickLines(width: 0),
+        axisLine: const AxisLine(width: 1, color: Colors.black),
       ),
       primaryYAxis: NumericAxis(
-        title: AxisTitle(text: 'Production ($unit)'), // Use the unit here
+        title: AxisTitle(text: 'Production ($unit)'),
         labelFormat: '{value}',
         numberFormat: NumberFormat("#,###"),
-        axisLine: const AxisLine(width: 1, color: Colors.black), // Y-axis line
+        axisLine: const AxisLine(width: 1, color: Colors.black),
         majorGridLines: const MajorGridLines(
-            width: 1,
-            color: Color.fromARGB(255, 230, 229, 229)), // Added grid lines
-        majorTickLines: const MajorTickLines(width: 0), // Hide tick marks
+            width: 1, color: Color.fromARGB(255, 230, 229, 229)),
+        majorTickLines: const MajorTickLines(width: 0),
       ),
       series: _getLineSeries(),
       tooltipBehavior: _buildTooltipBehavior(),
@@ -62,71 +87,69 @@ class SectorLineChartWidget extends StatelessWidget {
 
   List<CartesianChartAnnotation> _getAllAnnotations() {
     final allAnnotations = <CartesianChartAnnotation>[];
+    int annotationCounter = 0;
 
-    if (annotations != null) {
-      allAnnotations.addAll(annotations!);
+    // Handle new annotation data structure
+    if (annotationData != null) {
+      for (final annotation in annotationData!) {
+        allAnnotations.add(
+          CartesianChartAnnotation(
+            widget:
+                _buildAnnotationWidgetFromData(annotation, annotationCounter++),
+            coordinateUnit: annotation.coordinateUnit,
+            region: annotation.region,
+            x: annotation.x,
+            y: annotation.y,
+            horizontalAlignment: annotation.horizontalAlignment,
+            verticalAlignment: annotation.verticalAlignment,
+          ),
+        );
+      }
     }
 
-    for (final sector in datas) {
-      if (sector.annotations != null) {
-        for (final entry in sector.annotations!.entries) {
-          final xValue = entry.key;
-          final annotationText = entry.value;
-
-          final point = sector.data.firstWhere(
-            (point) => point['x'] == xValue,
-            orElse: () => {'x': xValue, 'y': 0},
-          );
-
-          allAnnotations.add(
-            CartesianChartAnnotation(
-              widget: SizedBox(
-                width: 20, // Adjust to your needs
-                child: Tooltip(
-                  message: 'This is an annotation for ${sector.name}',
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: sector.color),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.label, size: 14, color: sector.color),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            annotationText,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              coordinateUnit: CoordinateUnit.point,
-              x: xValue,
-              y: point['y'],
-              horizontalAlignment: ChartAlignment.near,
-              verticalAlignment: ChartAlignment.far,
-            ),
-          );
-        }
+    // Handle legacy annotations
+    if (annotations != null) {
+      for (final annotation in annotations!) {
+        allAnnotations.add(
+          CartesianChartAnnotation(
+            widget: annotation.widget, // Keep original widget
+            coordinateUnit: annotation.coordinateUnit,
+            region: annotation.region,
+            x: annotation.x,
+            y: annotation.y,
+            horizontalAlignment: annotation.horizontalAlignment,
+            verticalAlignment: annotation.verticalAlignment,
+          ),
+        );
       }
     }
 
     return allAnnotations;
+  }
+
+  Widget _buildAnnotationWidgetFromData(AnnotationData annotation, int index) {
+    return Container(
+      key: ValueKey('annotation_$index'),
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        color: annotation.color ?? Colors.blue,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          )
+        ],
+      ),
+      child: Icon(
+        annotation.icon ?? Icons.info,
+        color: Colors.white,
+        size: 12,
+      ),
+    );
   }
 
   List<LineSeries<Map<String, dynamic>, String>> _getLineSeries() {
@@ -138,6 +161,8 @@ class SectorLineChartWidget extends StatelessWidget {
         xValueMapper: (Map<String, dynamic> data, _) => data['x'] as String,
         yValueMapper: (Map<String, dynamic> data, _) => data['y'] as num,
         markerSettings: const MarkerSettings(isVisible: true),
+        // Add this to enable tooltips for the series points
+        enableTooltip: true,
       );
     }).toList();
   }
@@ -147,6 +172,9 @@ class SectorLineChartWidget extends StatelessWidget {
       enable: true,
       header: '',
       canShowMarker: true,
+      // Add this to ensure tooltips work properly
+      shouldAlwaysShow: false,
+      activationMode: ActivationMode.singleTap,
       builder: (dynamic data, dynamic point, dynamic series, int pointIndex,
           int seriesIndex) {
         final note = series.dataSource[pointIndex]['note'];
@@ -161,7 +189,7 @@ class SectorLineChartWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '${data['x']}: ${NumberFormat("#,###").format(data['y'])} $unit', // Use unit here
+                '${data['x']}: ${NumberFormat("#,###").format(data['y'])} $unit',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               if (note != null)

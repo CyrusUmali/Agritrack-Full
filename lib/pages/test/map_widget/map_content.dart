@@ -68,7 +68,7 @@ class MapContent extends StatelessWidget {
 
     return SizedBox(
       // height: MediaQuery.of(context).size.height,
-      height: MediaQuery.of(context).size.height * 0.88,
+      height: MediaQuery.of(context).size.height * 0.92,
       width: MediaQuery.of(context).size.width,
       child: FlutterMap(
         mapController: mapController,
@@ -127,7 +127,7 @@ class MapContent extends StatelessWidget {
                 });
               }
             },
-            circleColor: Colors.blue,
+            circleColor: Colors.redAccent,
             iconColor: Colors.white,
             size: 30.0,
             filteredBarangays: barangayFilter,
@@ -229,8 +229,16 @@ class MapContent extends StatelessWidget {
         setState(() {
           if (polygonManager.isDrawing) {
             polygonManager.handleDrawingTap(point);
+            // print('tap3');
+          } else if (polygonManager.isEditing) {
+            // polygonManager.toggleEditing();
+            polygonManager.handleSelectionTap(point, context);
+            // polygonManager.undoLastPoint();
+            // polygonManager.currentPolygon.clear();
+            // print('tap2');
           } else {
             polygonManager.handleSelectionTap(point, context);
+            // print('tap1');
           }
         });
       },

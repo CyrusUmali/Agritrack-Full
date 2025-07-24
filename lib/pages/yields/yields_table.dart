@@ -1,16 +1,20 @@
 // ignore_for_file: must_be_immutable, avoid_print, use_super_parameters, non_constant_identifier_names
 
 import 'package:flareline/core/models/yield_model.dart';
+import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flareline/pages/products/product/product_bloc.dart';
+import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flareline/pages/yields/add_yield_modal.dart';
 import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
 import 'package:flareline/pages/yields/yield_profile.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
@@ -87,11 +91,14 @@ class _YieldsWidgetState extends State<YieldsWidget> {
   }
 
   Widget _channelsWeb(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final farmerId = userProvider.farmer?.id?.toString();
+
     return SizedBox(
       height: 550,
       child: Column(
         children: [
-          _buildSearchBar(),
+          _buildSearchBarDesktop(),
           const SizedBox(height: 16),
           Expanded(
             child: BlocBuilder<YieldBloc, YieldState>(
@@ -99,7 +106,16 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                 if (state is YieldsLoading) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is YieldsError) {
-                  return Center(child: Text(state.message));
+                  // return Center(child: Text(state.message));
+
+                  return NetworkErrorWidget(
+                    error: state.message,
+                    onRetry: () {
+                      context.read<YieldBloc>().add(farmerId != null
+                          ? LoadYieldsByFarmer(int.parse(farmerId))
+                          : LoadYields());
+                    },
+                  );
                 } else if (state is YieldsLoaded) {
                   if (state.yields.isEmpty) {
                     return _buildNoResultsWidget();
@@ -126,9 +142,12 @@ class _YieldsWidgetState extends State<YieldsWidget> {
   }
 
   Widget _channelMobile(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final farmerId = userProvider.farmer?.id?.toString();
+
     return Column(
       children: [
-        _buildSearchBar(),
+        _buildSearchBarMobile(),
         const SizedBox(height: 16),
         SizedBox(
           height: 380,
@@ -137,7 +156,16 @@ class _YieldsWidgetState extends State<YieldsWidget> {
               if (state is YieldsLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is YieldsError) {
-                return Center(child: Text(state.message));
+                // return Center(child: Text(state.message));
+
+                return NetworkErrorWidget(
+                  error: state.message,
+                  onRetry: () {
+                    context.read<YieldBloc>().add(farmerId != null
+                        ? LoadYieldsByFarmer(int.parse(farmerId))
+                        : LoadYields());
+                  },
+                );
               } else if (state is YieldsLoaded) {
                 if (state.yields.isEmpty) {
                   return _buildNoResultsWidget();
@@ -187,62 +215,284 @@ class _YieldsWidgetState extends State<YieldsWidget> {
     );
   }
 
-  Future<void> _showYearPicker(BuildContext context) async {
-    final int? pickedYear = await showDialog<int>(
-      context: context,
-      builder: (context) {
-        int tempYear = int.tryParse(selectedYear) ?? DateTime.now().year;
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Select Year'),
-              content: SizedBox(
-                height: 300,
-                width: 300,
-                child: YearPicker(
-                  selectedDate: DateTime(tempYear),
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2030),
-                  onChanged: (DateTime dateTime) {
-                    setState(() {
-                      tempYear = dateTime.year;
-                    });
-                  },
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context, tempYear);
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+  Widget _buildSearchBarMobile() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
 
-    // if (pickedYear != null) {
-    //   setState(() {
-    //     selectedYear = pickedYear.toString();
-    //   });
-    //   context.read<YieldBloc>().add(FilterYields(
-    //         year: selectedYear,
-    //         sector: selectedSector == 'All' ? null : selectedSector,
-    //         barangay: selectedBarangay == 'All' ? null : selectedBarangay,
-    //         product: selectedProduct == 'All' ? null : selectedProduct,
-    //         status: selectedStatus == 'All' ? null : selectedStatus,
-    //       ));
-    // }
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<ProductBloc, ProductState>(
+          listener: (context, state) {
+            if (state is ProductsError) {
+              toastification.show(
+                context: context,
+                type: ToastificationType.error,
+                style: ToastificationStyle.flat,
+                title: Text(state.message),
+                alignment: Alignment.topRight,
+                autoCloseDuration: const Duration(seconds: 3),
+              );
+            }
+          },
+        ),
+        // Add similar listeners for FarmerBloc and FarmBloc if needed
+      ],
+      child: Builder(
+        builder: (context) {
+          // Get all states at once
+          final productState = context.watch<ProductBloc>().state;
+          final farmerState = context.watch<FarmerBloc>().state;
+          final farmState = context.watch<FarmBloc>().state;
+
+          // Check if all data is loaded
+          final allDataLoaded = productState is ProductsLoaded &&
+              farmerState is FarmersLoaded &&
+              farmState is FarmsLoaded;
+
+          // Get product names if loaded
+          final productOptions = productState is ProductsLoaded
+              ? ['All', ...productState.products.map((p) => p.name)]
+              : ['All']; // Fallback if not loaded yet
+
+          return SizedBox(
+            height: 48,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Wrap(
+                direction: Axis.horizontal,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  // Sector ComboBox
+                  buildComboBox(
+                    hint: 'Sector',
+                    context: context,
+                    options: const [
+                      'All',
+                      'Rice',
+                      'Livestock',
+                      'Fishery',
+                      'Corn',
+                      'High Value Crop'
+                    ],
+                    selectedValue: selectedSector,
+                    onSelected: (value) {
+                      setState(() => selectedSector = value);
+                      context.read<YieldBloc>().add(FilterYields(
+                            sector: value == 'All' ? null : value,
+                            barangay: selectedBarangay == 'All'
+                                ? null
+                                : selectedBarangay,
+                            productName: selectedProduct == 'All'
+                                ? null
+                                : selectedProduct,
+                            status:
+                                selectedStatus == 'All' ? null : selectedStatus,
+                            year: selectedYear,
+                          ));
+                    },
+                    width: 150,
+                  ),
+
+                  if (!isFarmer)
+                    buildComboBox(
+                      context: context,
+                      hint: 'Barangay',
+                      options: [
+                        'All',
+                        ...barangayNames.where((String option) {
+                          return option
+                              .toLowerCase()
+                              .contains(_barangayFilter.toLowerCase());
+                        })
+                      ],
+                      selectedValue: selectedBarangay,
+                      onSelected: (value) {
+                        setState(() => selectedBarangay = value);
+                        context.read<YieldBloc>().add(FilterYields(
+                              barangay: value == 'All' ? null : value,
+                              sector: selectedSector == 'All'
+                                  ? null
+                                  : selectedSector,
+                              productName: selectedProduct == 'All'
+                                  ? null
+                                  : selectedProduct,
+                              status: selectedStatus == 'All'
+                                  ? null
+                                  : selectedStatus,
+                              year: selectedYear,
+                            ));
+                      },
+                      width: 150,
+                    ),
+
+                  // Product ComboBox
+                  buildComboBox(
+                    context: context,
+                    hint: 'Product',
+                    options: productOptions,
+                    selectedValue: selectedProduct,
+                    onSelected: (value) {
+                      setState(() => selectedProduct = value);
+                      context.read<YieldBloc>().add(FilterYields(
+                            productName: value == 'All' ? null : value,
+                            sector:
+                                selectedSector == 'All' ? null : selectedSector,
+                            barangay: selectedBarangay == 'All'
+                                ? null
+                                : selectedBarangay,
+                            status:
+                                selectedStatus == 'All' ? null : selectedStatus,
+                            year: selectedYear,
+                          ));
+                    },
+                    width: 150,
+                  ),
+
+                  // Status ComboBox
+                  buildComboBox(
+                    context: context,
+                    hint: 'Status',
+                    options: const ['All', 'Pending', 'Accepted', 'Rejected'],
+                    selectedValue: selectedStatus,
+                    onSelected: (value) {
+                      setState(() => selectedStatus = value);
+                      context.read<YieldBloc>().add(FilterYields(
+                            status: value == 'All' ? null : value,
+                            sector:
+                                selectedSector == 'All' ? null : selectedSector,
+                            barangay: selectedBarangay == 'All'
+                                ? null
+                                : selectedBarangay,
+                            productName: selectedProduct == 'All'
+                                ? null
+                                : selectedProduct,
+                            year: selectedYear,
+                          ));
+                    },
+                    width: 150,
+                  ),
+
+                  Container(
+                    width: 200,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color ??
+                          Colors.white, // Use card color from theme
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Theme.of(context).cardTheme.surfaceTintColor ??
+                            Colors.grey[300]!, // Use border color from theme
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).cardTheme.shadowColor ??
+                              Colors.transparent,
+                          blurRadius: 13,
+                          offset: const Offset(0, 8),
+                          spreadRadius: -3,
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      style: TextStyle(
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color, // Use text color from theme
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Search yields...',
+                        hintStyle: TextStyle(
+                          color: Theme.of(context)
+                              .hintColor, // Use hint color from theme
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          size: 20,
+                          color: Theme.of(context)
+                              .iconTheme
+                              .color, // Use icon color from theme
+                        ),
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onChanged: (value) {
+                        context.read<YieldBloc>().add(SearchYields(value));
+                      },
+                    ),
+                  ),
+
+                  // Add Yield Button
+                  SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            allDataLoaded ? GlobalColors.primary : Colors.grey,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      onPressed: allDataLoaded
+                          ? () {
+                              AddYieldModal.show(
+                                context: context,
+                                products: (productState).products,
+                                farmers: (farmerState).farmers,
+                                farms: (farmState).farms,
+                                onYieldAdded: (
+                                  int cropTypeId,
+                                  int farmerId,
+                                  int farmId,
+                                  double yieldAmount,
+                                  double? areaHa,
+                                  DateTime date,
+                                  String notes,
+                                  List<String> images,
+                                ) {
+                                  context.read<YieldBloc>().add(
+                                        AddYield(
+                                          farmerId: farmerId,
+                                          productId: cropTypeId,
+                                          harvestDate: date,
+                                          farmId: farmId,
+                                          volume: yieldAmount,
+                                          notes: notes,
+                                          images: images,
+                                        ),
+                                      );
+                                },
+                              );
+                            }
+                          : null,
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add, size: 20, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text("Add Record", style: TextStyle(fontSize: 14)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBarDesktop() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
+
     return MultiBlocListener(
       listeners: [
         BlocListener<ProductBloc, ProductState>(
@@ -285,6 +535,7 @@ class _YieldsWidgetState extends State<YieldsWidget> {
               children: [
                 // Sector ComboBox
                 buildComboBox(
+                  context: context,
                   hint: 'Sector',
                   options: const [
                     'All',
@@ -313,37 +564,42 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                 ),
                 const SizedBox(width: 8),
 
-                // Barangay ComboBox
-                buildComboBox(
-                  hint: 'Barangay',
-                  options: [
-                    'All',
-                    ...barangayNames.where((String option) {
-                      return option
-                          .toLowerCase()
-                          .contains(_barangayFilter.toLowerCase());
-                    })
-                  ],
-                  selectedValue: selectedBarangay,
-                  onSelected: (value) {
-                    setState(() => selectedBarangay = value);
-                    context.read<YieldBloc>().add(FilterYields(
-                          barangay: value == 'All' ? null : value,
-                          sector:
-                              selectedSector == 'All' ? null : selectedSector,
-                          productName:
-                              selectedProduct == 'All' ? null : selectedProduct,
-                          status:
-                              selectedStatus == 'All' ? null : selectedStatus,
-                          year: selectedYear,
-                        ));
-                  },
-                  width: 150,
-                ),
+                if (!isFarmer) ...[
+                  buildComboBox(
+                    context: context,
+                    hint: 'Barangay',
+                    options: [
+                      'All',
+                      ...barangayNames.where((String option) {
+                        return option
+                            .toLowerCase()
+                            .contains(_barangayFilter.toLowerCase());
+                      })
+                    ],
+                    selectedValue: selectedBarangay,
+                    onSelected: (value) {
+                      setState(() => selectedBarangay = value);
+                      context.read<YieldBloc>().add(FilterYields(
+                            barangay: value == 'All' ? null : value,
+                            sector:
+                                selectedSector == 'All' ? null : selectedSector,
+                            productName: selectedProduct == 'All'
+                                ? null
+                                : selectedProduct,
+                            status:
+                                selectedStatus == 'All' ? null : selectedStatus,
+                            year: selectedYear,
+                          ));
+                    },
+                    width: 150,
+                  ),
+                ],
+
                 const SizedBox(width: 8),
 
                 // Product ComboBox
                 buildComboBox(
+                  context: context,
                   hint: 'Product',
                   options: productOptions,
                   selectedValue: selectedProduct,
@@ -367,6 +623,7 @@ class _YieldsWidgetState extends State<YieldsWidget> {
 
                 // Status ComboBox
                 buildComboBox(
+                  context: context,
                   hint: 'Status',
                   options: const ['All', 'Pending', 'Accepted', 'Rejected'],
                   selectedValue: selectedStatus,
@@ -388,43 +645,47 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                 ),
                 const SizedBox(width: 8),
 
-                // Year Picker Button
-                // SizedBox(
-                //   width: 120,
-                //   child: ElevatedButton(
-                //     onPressed: () => _showYearPicker(context),
-                //     style: ElevatedButton.styleFrom(
-                //       backgroundColor: Colors.white,
-                //       foregroundColor: Colors.black,
-                //       shape: RoundedRectangleBorder(
-                //         borderRadius: BorderRadius.circular(8),
-                //         side: BorderSide(color: Colors.grey[300]!),
-                //       ),
-                //     ),
-                //     child: Row(
-                //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                //       children: [
-                //         Text(selectedYear),
-                //         const Icon(Icons.calendar_today, size: 16),
-                //       ],
-                //     ),
-                //   ),
-                // ),
-                // const SizedBox(width: 8),
-
-                // Search Field
                 Expanded(
                   child: Container(
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardTheme.color ??
+                          Colors.white, // Use card color from theme
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[300]!),
+                      border: Border.all(
+                        color: Theme.of(context).cardTheme.surfaceTintColor ??
+                            Colors.grey[300]!, // Use border color from theme
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).cardTheme.shadowColor ??
+                              Colors.transparent,
+                          blurRadius: 13,
+                          offset: const Offset(0, 8),
+                          spreadRadius: -3,
+                        ),
+                      ],
                     ),
                     child: TextField(
+                      style: TextStyle(
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color, // Use text color from theme
+                      ),
                       decoration: InputDecoration(
                         hintText: 'Search yields...',
-                        prefixIcon: const Icon(Icons.search, size: 20),
+                        hintStyle: TextStyle(
+                          color: Theme.of(context)
+                              .hintColor, // Use hint color from theme
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          size: 20,
+                          color: Theme.of(context)
+                              .iconTheme
+                              .color, // Use icon color from theme
+                        ),
                         border: InputBorder.none,
                         contentPadding:
                             const EdgeInsets.symmetric(vertical: 14),
@@ -435,14 +696,13 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                     ),
                   ),
                 ),
-
                 // Add Yield Button
                 const SizedBox(width: 8),
                 SizedBox(
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF66CDAA),
+                      backgroundColor: GlobalColors.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
@@ -464,7 +724,7 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                                 double? areaHa,
                                 DateTime date,
                                 String notes,
-                                List<XFile> images,
+                                List<String> images,
                               ) {
                                 context.read<YieldBloc>().add(
                                       AddYield(
@@ -476,8 +736,8 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                                         // Add other parameters if your AddYield event requires them
                                         // For example:
                                         // areaHa: areaHa,
-                                        // notes: notes,
-                                        // images: images,
+                                        notes: notes,
+                                        images: images,
                                       ),
                                     );
                               },
@@ -573,6 +833,9 @@ class DataTableWidget extends TableWidget<YieldsViewModel> {
       (p) => p.id.toString() == columnData.id,
     );
 
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -630,19 +893,23 @@ class DataTableWidget extends TableWidget<YieldsViewModel> {
             );
           },
         ),
-        IconButton(
-          icon: const Icon(Icons.check, color: Colors.green),
-          onPressed: () {
-            // context.read<YieldBloc>().add(ApproveYield(yield.id));
-          },
-        ),
+
+        // Farmer Name
+        if (!isFarmer)
+          IconButton(
+            icon: const Icon(Icons.check, color: Colors.green),
+            onPressed: () {
+              // context.read<YieldBloc>().add(ApproveYield(yield.id));
+            },
+          ),
+
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => YieldProfile(yieldID: yield.id),
+                builder: (context) => YieldProfile(yieldData: yield),
               ),
             );
           },
@@ -687,7 +954,7 @@ class DataTableWidget extends TableWidget<YieldsViewModel> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 800,
+        width: 1150,
         child: super.build(context),
       ),
     );
@@ -735,10 +1002,13 @@ class YieldsViewModel extends BaseTableProvider {
 
   @override
   Future loadData(BuildContext context) async {
-    const headers = [
-      "Farmer Name",
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
+
+    final headers = [
+      if (!isFarmer) "Farmer Name",
       "Sector",
-      "Barangay",
+      if (!isFarmer) "Barangay",
       "Product",
       "Area",
       "Reported Yield",
@@ -753,12 +1023,14 @@ class YieldsViewModel extends BaseTableProvider {
       List<TableDataRowsTableDataRows> row = [];
 
       // Farmer Name
-      var farmerNameCell = TableDataRowsTableDataRows()
-        ..text = yieldRecord.farmerName
-        ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Farmer Name'
-        ..id = yieldRecord.id.toString();
-      row.add(farmerNameCell);
+      if (!isFarmer) {
+        var farmerNameCell = TableDataRowsTableDataRows()
+          ..text = yieldRecord.farmerName
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = 'Farmer Name'
+          ..id = yieldRecord.id.toString();
+        row.add(farmerNameCell);
+      }
 
       // Sector
       var sectorCell = TableDataRowsTableDataRows()
@@ -768,13 +1040,14 @@ class YieldsViewModel extends BaseTableProvider {
         ..id = yieldRecord.id.toString();
       row.add(sectorCell);
 
-      // Barangay
-      var barangayCell = TableDataRowsTableDataRows()
-        ..text = yieldRecord.barangay
-        ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Barangay'
-        ..id = yieldRecord.id.toString();
-      row.add(barangayCell);
+      if (!isFarmer) {
+        var barangayCell = TableDataRowsTableDataRows()
+          ..text = yieldRecord.barangay
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = 'Barangay'
+          ..id = yieldRecord.id.toString();
+        row.add(barangayCell);
+      }
 
       // Product
       var productCell = TableDataRowsTableDataRows()

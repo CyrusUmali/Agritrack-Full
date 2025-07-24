@@ -1,3 +1,4 @@
+import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/modal/products_modal.dart';
 import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
@@ -123,6 +124,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
   Widget _buildOwnerField() {
     if (_isEditing) {
       return buildComboBox(
+        context: context,
         hint: 'Select Farm Owner',
         options: _farmers.map((farmer) => farmer['name'].toString()).toList(),
         selectedValue: _editedFarm['farmOwner'] ?? '',
@@ -149,6 +151,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
   Widget _buildSectorField() {
     if (_isEditing) {
       return buildComboBox(
+        context: context,
         hint: 'Select Sector',
         options: _sectors,
         selectedValue: _editedFarm['sector']?.toString() ?? _sectors.first,
@@ -166,6 +169,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
   Widget _buildLocationField() {
     if (_isEditing) {
       return buildComboBox(
+        context: context,
         hint: 'Select Barangay',
         options: barangayNames,
         selectedValue: _editedFarm['barangay'] ?? '',
@@ -209,7 +213,9 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                       CircleAvatar(
                         radius: widget.isMobile ? 32 : 48,
                         backgroundColor:
-                            Theme.of(context).colorScheme.primaryContainer,
+                            Theme.of(context).brightness == Brightness.dark
+                                ? GlobalColors.darkerCardColor
+                                : GlobalColors.surfaceColor,
                         child: Icon(
                           Icons.agriculture,
                           size: widget.isMobile ? 32 : 40,
@@ -247,164 +253,27 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                     ],
                   ),
                   const Divider(height: 32),
-                  Wrap(
-                    spacing: 0,
-                    runSpacing: 0,
-                    children: [
-                      // Primary Sector (already has the correct pattern)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(minWidth: 200),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceVariant,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(minWidth: 200),
-                                child: IntrinsicWidth(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceVariant,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                              top: 2, right: 8),
-                                          child: Icon(
-                                            Icons.business,
-                                            size: 16,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                        ),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Primary Sector',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelSmall
-                                                  ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurfaceVariant,
-                                                  ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            _buildSectorField(),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Location - updated to match pattern
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(minWidth: 200),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceVariant,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(minWidth: 200),
-                                child: IntrinsicWidth(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceVariant,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                              top: 2, right: 8),
-                                          child: Icon(
-                                            Icons.location_on,
-                                            size: 16,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                        ),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Location',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelSmall
-                                                  ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurfaceVariant,
-                                                  ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            _buildLocationField(),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Farm Size - updated to match pattern (only shown if exists)
-                      if (_editedFarm['farmSize'] != null)
+                  Container(
+                    width: double.infinity, // Takes full available width
+                    child: Wrap(
+                      alignment: WrapAlignment
+                          .center, // This centers the children in the main axis
+                      crossAxisAlignment: WrapCrossAlignment
+                          .center, // This centers the children in the cross axis
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        // Primary Sector (already has the correct pattern)
                         ConstrainedBox(
                           constraints: const BoxConstraints(minWidth: 200),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context).colorScheme.surfaceVariant,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? GlobalColors.darkerCardColor
+                                  : GlobalColors.surfaceColor,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Column(
@@ -418,9 +287,10 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 12, vertical: 8),
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surfaceVariant,
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? GlobalColors.darkerCardColor
+                                            : GlobalColors.surfaceColor,
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
@@ -432,7 +302,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                                             padding: const EdgeInsets.only(
                                                 top: 2, right: 8),
                                             child: Icon(
-                                              Icons.agriculture,
+                                              Icons.business,
                                               size: 16,
                                               color: Theme.of(context)
                                                   .colorScheme
@@ -445,7 +315,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                'Farm Size',
+                                                'Primary Sector',
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .labelSmall
@@ -456,12 +326,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                                                     ),
                                               ),
                                               const SizedBox(height: 4),
-                                              Text(
-                                                '${_editedFarm['farmSize']} hectares',
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium,
-                                              ),
+                                              _buildSectorField(),
                                             ],
                                           ),
                                         ],
@@ -473,13 +338,175 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                             ),
                           ),
                         ),
-                    ],
+
+                        // Location - updated to match pattern
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(minWidth: 200),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? GlobalColors.darkerCardColor
+                                  : GlobalColors.surfaceColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ConstrainedBox(
+                                  constraints:
+                                      const BoxConstraints(minWidth: 200),
+                                  child: IntrinsicWidth(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? GlobalColors.darkerCardColor
+                                            : GlobalColors.surfaceColor,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                top: 2, right: 8),
+                                            child: Icon(
+                                              Icons.location_on,
+                                              size: 16,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                          ),
+                                          Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Location',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelSmall
+                                                    ?.copyWith(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              _buildLocationField(),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Farm Size - updated to match pattern (only shown if exists)
+                        if (_editedFarm['farmSize'] != null)
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(minWidth: 200),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? GlobalColors.darkerCardColor
+                                    : GlobalColors.surfaceColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ConstrainedBox(
+                                    constraints:
+                                        const BoxConstraints(minWidth: 200),
+                                    child: IntrinsicWidth(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? GlobalColors.darkerCardColor
+                                              : GlobalColors.surfaceColor,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 2, right: 8),
+                                              child: Icon(
+                                                Icons.agriculture,
+                                                size: 16,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                            ),
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Farm Size',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .labelSmall
+                                                      ?.copyWith(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '${_editedFarm['farmSize']} hectares',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium,
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? GlobalColors.darkerCardColor
+                          : GlobalColors.surfaceColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -520,6 +547,8 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                                 children: List.generate(
                                   _editedFarm['products'].length,
                                   (index) => Chip(
+                                    backgroundColor:
+                                        Theme.of(context).cardTheme.color,
                                     label: Text(_getProductDisplayName(
                                         _editedFarm['products'][index])),
                                     deleteIcon:
@@ -540,6 +569,9 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
             top: 8,
             right: 8,
             child: FloatingActionButton.small(
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? GlobalColors.darkerCardColor
+                  : GlobalColors.surfaceColor,
               onPressed: _toggleEditing,
               child: Icon(_isEditing
                   ? (_hasChanges ? Icons.save : Icons.close)

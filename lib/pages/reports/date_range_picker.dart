@@ -51,12 +51,14 @@ class DateRangePickerWidget extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.all(12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8), // Match the combo box
+            borderRadius: BorderRadius.circular(8),
           ),
-          side: BorderSide(color: Colors.grey[300]!), // Match border color
-          backgroundColor: Colors.white, // White background like combo box
-          foregroundColor: Colors.black, // Black text
-          textStyle: const TextStyle(fontSize: 14), // Same font size
+          side: BorderSide(
+            color: Colors.grey[300]!,
+          ),
+          backgroundColor: Theme.of(context).cardTheme.color ?? Colors.white,
+          foregroundColor: Theme.of(context).textTheme.bodyMedium?.color,
+          textStyle: const TextStyle(fontSize: 14),
         ),
         onPressed: () async => await _showDatePicker(context, isDesktop),
         child: Row(
@@ -69,15 +71,17 @@ class DateRangePickerWidget extends StatelessWidget {
                     : 'Date Range',
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: isRangeSelected ? Colors.black : Colors.grey[600],
+                  color: isRangeSelected
+                      ? Theme.of(context).textTheme.bodyMedium?.color
+                      : Colors.grey[600],
                 ),
               ),
             ),
             const SizedBox(width: 8),
             Icon(
               isRangeSelected ? Icons.close : Icons.calendar_today,
-              size: 20, // Match the combo box icon size
-              color: Colors.grey[600],
+              size: 20,
+              color: Theme.of(context).iconTheme.color,
             ),
           ],
         ),
@@ -130,20 +134,34 @@ class DateRangePickerWidget extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'Select Date Range',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: CalendarDatePicker2(
-                    config: config,
-                    value: selectedDates,
-                    onValueChanged: (dates) {
-                      if (dates.length == 2) {
-                        selectedDates = dates;
-                      }
-                    },
+                  child: Material(
+                    color: Theme.of(context).cardTheme.color,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: Theme.of(context).cardTheme.surfaceTintColor ??
+                            Colors.grey[300]!,
+                      ),
+                    ),
+                    child: CalendarDatePicker2(
+                      config: config,
+                      value: selectedDates,
+                      onValueChanged: (dates) {
+                        if (dates.length == 2) {
+                          selectedDates = dates;
+                        }
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -152,18 +170,30 @@ class DateRangePickerWidget extends StatelessWidget {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     TextButton(
                       onPressed: () {
-                        // Clear selection
                         Navigator.of(context).pop([null, null]);
                       },
-                      child: const Text('Clear'),
+                      child: Text(
+                        'Clear',
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                      ),
                       onPressed: () => Navigator.of(context).pop(selectedDates),
                       child: const Text('Apply'),
                     ),
@@ -183,7 +213,6 @@ class DateRangePickerWidget extends StatelessWidget {
           end: results[1]!,
         ));
       } else if (results.every((date) => date == null)) {
-        // Clear the range if both dates are null
         final now = DateTime.now();
         onDateRangeChanged(DateTimeRange(start: now, end: now));
       }

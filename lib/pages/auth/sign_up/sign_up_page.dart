@@ -19,49 +19,50 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
     }
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background image with overlay
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/loginBG2.jpg'),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Container(
-            color: Colors.black.withOpacity(0.2),
-          ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Determine if we're on mobile based on width (common breakpoint is 600)
+          final isMobile = constraints.maxWidth < 600;
 
-          // Main content
-          Center(
-            child: SingleChildScrollView(
-              child: ResponsiveBuilder(
-                builder: (context, sizingInfo) {
-                  final isMobile = sizingInfo.isMobile;
-                  final maxWidth =
-                      isMobile ? double.infinity : 800.0; // Wider for desktop
-                  final horizontalPadding = isMobile ? 0.0 : 40.0;
+          return Stack(
+            children: [
+              // Background - image for desktop, white for mobile
+              if (!isMobile) ...[
+                Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/loginBG2.jpg'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Container(
+                  color: Colors.black.withOpacity(0.2),
+                ),
+              ] else ...[
+                Container(
+                  color: Colors.white, // White background for mobile
+                ),
+              ],
 
-                  return Container(
+              // Main content
+              Center(
+                child: SingleChildScrollView(
+                  child: Container(
                     constraints: BoxConstraints(
-                      maxWidth: maxWidth,
+                      maxWidth: isMobile ? double.infinity : 800.0,
                       minHeight: MediaQuery.of(context).size.height,
                     ),
                     padding: isMobile
-                        ? EdgeInsets.zero // Mobile: No padding
+                        ? EdgeInsets.zero
                         : EdgeInsets.symmetric(horizontal: 0, vertical: 50),
                     child: Center(
                       child: CommonCard(
                         padding: EdgeInsets.symmetric(
                           vertical: 30,
-                          horizontal: horizontalPadding,
+                          horizontal: isMobile ? 0.0 : 40.0,
                         ),
                         borderRadius: isMobile ? 0 : 12.0,
-
-                        //  padding:
-                        // elevation: isMobile ? 0 : 4,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -80,9 +81,7 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
                                       color: Theme.of(context).primaryColor,
                                       size: 14.0,
                                     ),
-                                    SizedBox(
-                                        width:
-                                            4), // Add some space between icon and text
+                                    SizedBox(width: 4),
                                     Text(
                                       'Login',
                                       style: TextStyle(
@@ -123,24 +122,24 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          // Loading indicator overlay
-          if (viewModel.isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).primaryColor),
+                  ),
                 ),
               ),
-            ),
-        ],
+
+              // Loading indicator overlay
+              if (viewModel.isLoading)
+                Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).primaryColor),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

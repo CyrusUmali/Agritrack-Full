@@ -6,9 +6,10 @@ class ApiService {
   final Dio _dio;
 
   ApiService() : _dio = Dio() {
-    _dio.options.baseUrl = 'http://localhost:3001';
+    _dio.options.baseUrl = 'https://agritrack-server.onrender.com';
+    // _dio.options.baseUrl = 'http://localhost:3001';
     _dio.options.connectTimeout = const Duration(seconds: 10);
-    _dio.options.receiveTimeout = const Duration(seconds: 5);
+    _dio.options.receiveTimeout = const Duration(seconds: 10);
 
     // Add interceptors for auth if needed
     _dio.interceptors.add(InterceptorsWrapper(

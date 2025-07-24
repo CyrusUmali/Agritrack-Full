@@ -218,6 +218,7 @@ class YearPickerWidget extends StatelessWidget {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Select Year'),
+          backgroundColor: Colors.red,
           content: SizedBox(
             width: 300,
             height: 400,

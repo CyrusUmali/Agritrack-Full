@@ -1,8 +1,7 @@
+import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/core/models/farms_model.dart';
-import 'package:flareline/core/models/yield_model.dart';
-import 'package:flareline/pages/farms/farm_widgets/farm_recent_yield.dart';
-import 'package:flareline/pages/farms/farm_widgets/recent_yield.dart';
-import 'package:flareline/repositories/farm_repository.dart';
+import 'package:flareline/pages/farms/farm_widgets/recent_records.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
@@ -12,7 +11,10 @@ import 'package:flareline/pages/farms/farm_widgets/farm_products_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
+import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:toastification/toastification.dart';
+import 'package:flareline_uikit/components/charts/circular_chart.dart';
 
 class FarmProfile extends LayoutWidget {
   final int farmId;
@@ -63,8 +65,15 @@ class FarmProfile extends LayoutWidget {
   }
 }
 
-class FarmProfileDesktop extends StatelessWidget {
+class FarmProfileDesktop extends StatefulWidget {
   const FarmProfileDesktop({super.key});
+
+  @override
+  State<FarmProfileDesktop> createState() => _FarmProfileDesktopState();
+}
+
+class _FarmProfileDesktopState extends State<FarmProfileDesktop> {
+  int _selectedViewIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -96,13 +105,14 @@ class FarmProfileDesktop extends StatelessWidget {
   Widget _buildContent(BuildContext context) {
     final farmState = context.watch<FarmBloc>().state;
     final yieldState = context.watch<YieldBloc>().state;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final _isFarmer = userProvider.isFarmer;
+    final _farmerId = userProvider.farmer?.id;
 
-    // Show loading if either farm or yield data is loading
     if (farmState is FarmsLoading || yieldState is YieldsLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Handle error states
     if (farmState is FarmsError) {
       return Center(child: Text('Error loading farm: ${farmState.message}'));
     }
@@ -111,7 +121,6 @@ class FarmProfileDesktop extends StatelessWidget {
       return Center(child: Text('Error loading yields: ${yieldState.message}'));
     }
 
-    // Only proceed if both data are loaded
     if (farmState is! FarmLoaded || yieldState is! YieldsLoaded) {
       return const Center(child: Text('Unexpected state'));
     }
@@ -121,13 +130,18 @@ class FarmProfileDesktop extends StatelessWidget {
         (transformedFarm['products'] as List).isNotEmpty;
     final hasYields = yieldState.yields.isNotEmpty;
 
+    // Check if we should show the toggle and content
+    final shouldShowToggleAndContent = !_isFarmer ||
+        (_isFarmer &&
+            yieldState.yields.isNotEmpty &&
+            yieldState.yields.first.farmerId == _farmerId);
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Map and Farm Info side by side
             CommonCard(
               margin: EdgeInsets.zero,
               padding: const EdgeInsets.all(16),
@@ -168,45 +182,144 @@ class FarmProfileDesktop extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            if (hasProducts || hasYields) ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (hasProducts)
-                    Expanded(
-                      flex: 7,
-                      child: FarmProductsCard(farm: transformedFarm),
-                    ),
-                  if (hasProducts && hasYields) const SizedBox(width: 24),
-                  if (hasYields)
-                    Expanded(
-                      flex: 3,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          minHeight: 300,
-                          maxHeight: 500,
-                          minWidth: 300,
-                          maxWidth: 400,
-                        ),
-                        child: RecentYieldWidget(
-                          yields: yieldState.yields,
-                          isLoading: false,
+            // Only show toggle and content if conditions are met
+            if (shouldShowToggleAndContent) ...[
+              // View toggle buttons
+              _buildViewToggle(context),
+              const SizedBox(height: 16),
+
+              // Content based on selection
+              if (_selectedViewIndex == 0) ...[
+                RecentRecord(yields: yieldState.yields),
+              ] else if (hasProducts || hasYields) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (hasProducts)
+                      Expanded(
+                        flex: 7,
+                        child: FarmProductsCard(farm: transformedFarm),
+                      ),
+                    if (hasProducts && hasYields) const SizedBox(width: 24),
+                    if (hasYields)
+                      Expanded(
+                        flex: 3,
+                        child: _buildProductDistributionCard(
+                          context,
+                          transformedFarm['products'],
                         ),
                       ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                  ],
+                ),
+              ],
             ],
           ],
         ),
       ),
     );
   }
+
+  Widget _buildViewToggle(BuildContext context) {
+    final theme = Theme.of(context);
+    return ToggleButtons(
+      isSelected: [
+        _selectedViewIndex == 0,
+        _selectedViewIndex == 1,
+      ],
+      onPressed: (int index) {
+        setState(() {
+          _selectedViewIndex = index;
+        });
+      },
+      borderRadius: BorderRadius.circular(8),
+      selectedColor: Colors.white,
+      fillColor: theme.colorScheme.primary,
+      color: theme.colorScheme.primary,
+      constraints: const BoxConstraints(
+        minHeight: 40.0,
+        minWidth: 100.0,
+      ),
+      children: const [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text('Recent Records'),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text('Products & Distribution'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProductDistributionCard(
+      BuildContext context, List<dynamic> products) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    // Calculate total yield per product
+    final chartData = products.map<Map<String, dynamic>>((product) {
+      final productName = product['name'] ?? 'Unknown Product';
+      final totalYield = (product['yields'] as List)
+          .fold<double>(0.0, (sum, yield) => sum + (yield['total'] ?? 0.0));
+
+      return {
+        'x': productName,
+        'y': totalYield,
+      };
+    }).toList();
+
+    return CommonCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const SizedBox(width: 12),
+              Text(
+                'Product Distribution',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colors.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 300,
+            child: CircularhartWidget(
+              title: '',
+              palette: const [
+                GlobalColors.warn,
+                GlobalColors.secondary,
+                GlobalColors.primary,
+                GlobalColors.success,
+                GlobalColors.danger,
+                GlobalColors.dark,
+              ],
+              chartData: chartData,
+              position: LegendPosition.bottom, // Explicitly set position
+              orientation: LegendItemOrientation.horizontal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class FarmProfileMobile extends StatelessWidget {
+class FarmProfileMobile extends StatefulWidget {
   const FarmProfileMobile({super.key});
+
+  @override
+  State<FarmProfileMobile> createState() => _FarmProfileMobileState();
+}
+
+class _FarmProfileMobileState extends State<FarmProfileMobile> {
+  int _selectedViewIndex =
+      0; // 0 for recent records, 1 for products/distribution
 
   @override
   Widget build(BuildContext context) {
@@ -239,12 +352,14 @@ class FarmProfileMobile extends StatelessWidget {
     final farmState = context.watch<FarmBloc>().state;
     final yieldState = context.watch<YieldBloc>().state;
 
-    // Show loading if either farm or yield data is loading
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final _isFarmer = userProvider.isFarmer;
+    final _farmerId = userProvider.farmer?.id;
+
     if (farmState is FarmsLoading || yieldState is YieldsLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Handle error states
     if (farmState is FarmsError) {
       return Center(child: Text('Error loading farm: ${farmState.message}'));
     }
@@ -253,7 +368,6 @@ class FarmProfileMobile extends StatelessWidget {
       return Center(child: Text('Error loading yields: ${yieldState.message}'));
     }
 
-    // Only proceed if both data are loaded
     if (farmState is! FarmLoaded || yieldState is! YieldsLoaded) {
       return const Center(child: Text('Unexpected state'));
     }
@@ -262,7 +376,11 @@ class FarmProfileMobile extends StatelessWidget {
     final hasProducts = transformedFarm['products'] != null &&
         (transformedFarm['products'] as List).isNotEmpty;
     final hasYields = yieldState.yields.isNotEmpty;
-
+    // Check if we should show the toggle and content
+    final shouldShowToggleAndContent = !_isFarmer ||
+        (_isFarmer &&
+            yieldState.yields.isNotEmpty &&
+            yieldState.yields.first.farmerId == _farmerId);
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -287,21 +405,135 @@ class FarmProfileMobile extends StatelessWidget {
               },
             ),
             const SizedBox(height: 16),
-            if (hasProducts) ...[
-              FarmProductsCard(farm: transformedFarm, isMobile: true),
+
+            // Only show toggle and content if conditions are met
+            if (shouldShowToggleAndContent) ...[
+              // View toggle buttons
+              _buildViewToggle(context),
               const SizedBox(height: 16),
-            ],
-            if (hasYields)
-              SizedBox(
-                height: 350,
-                width: 630,
-                child: RecentYieldWidget(
-                  yields: yieldState.yields,
-                  isLoading: false,
+
+              // Content based on selection
+              if (_selectedViewIndex == 0) ...[
+                RecentRecord(yields: yieldState.yields),
+              ] else if (hasProducts || hasYields) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (hasProducts)
+                      Expanded(
+                        flex: 7,
+                        child: FarmProductsCard(farm: transformedFarm),
+                      ),
+                    if (hasProducts && hasYields) const SizedBox(width: 24),
+                    if (hasYields)
+                      Expanded(
+                        flex: 3,
+                        child: _buildProductDistributionCard(
+                          context,
+                          transformedFarm['products'],
+                        ),
+                      ),
+                  ],
                 ),
-              ),
+              ],
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildViewToggle(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ToggleButtons(
+          isSelected: [
+            _selectedViewIndex == 0,
+            _selectedViewIndex == 1,
+          ],
+          onPressed: (int index) {
+            setState(() {
+              _selectedViewIndex = index;
+            });
+          },
+          borderRadius: BorderRadius.circular(8),
+          selectedColor: theme.colorScheme.onPrimary,
+          fillColor: theme.colorScheme.primary,
+          color: theme.colorScheme.primary,
+          constraints: const BoxConstraints(
+            minHeight: 40.0,
+            minWidth: 100.0,
+          ),
+          children: const [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text('Recent Records'),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text('Products & Distribution'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductDistributionCard(
+      BuildContext context, List<dynamic> products) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    final chartData = products.map<Map<String, dynamic>>((product) {
+      final productName = product['name'] ?? 'Unknown Product';
+      final totalYield = (product['yields'] as List)
+          .fold<double>(0.0, (sum, yield) => sum + (yield['total'] ?? 0.0));
+
+      return {
+        'x': productName,
+        'y': totalYield,
+      };
+    }).toList();
+
+    return CommonCard(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const SizedBox(width: 12),
+              Text(
+                'Product Distribution',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colors.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 300,
+            child: CircularhartWidget(
+              title: '',
+              palette: const [
+                GlobalColors.warn,
+                GlobalColors.secondary,
+                GlobalColors.primary,
+                GlobalColors.success,
+                GlobalColors.danger,
+                GlobalColors.dark,
+              ],
+              chartData: chartData,
+              position: LegendPosition.bottom, // Explicitly set position
+              orientation: LegendItemOrientation.horizontal,
+            ),
+          ),
+        ],
       ),
     );
   }

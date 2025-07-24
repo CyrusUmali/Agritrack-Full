@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 Widget buildComboBox({
+  required BuildContext context,
   required String hint,
   required List<String> options,
   required String selectedValue,
   required ValueChanged<String> onSelected,
   double? width,
   String? Function(String?)? validator,
+  Color? color,
 }) {
   return SizedBox(
     height: 48,
     width: width,
     child: Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: color ?? Theme.of(context).cardTheme.color ?? Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(
+          color:
+              Theme.of(context).cardTheme.surfaceTintColor ?? Colors.grey[300]!,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -45,11 +49,18 @@ Widget buildComboBox({
                     ),
                     suffixIcon: IconButton(
                       icon: selectedValue.isNotEmpty
-                          ? const Icon(Icons.close, size: 20)
-                          : const Icon(Icons.arrow_drop_down, size: 24),
+                          ? Icon(
+                              Icons.close,
+                              size: 20,
+                              color: Theme.of(context).iconTheme.color,
+                            )
+                          : Icon(
+                              Icons.arrow_drop_down,
+                              size: 24,
+                              color: Theme.of(context).iconTheme.color,
+                            ),
                       onPressed: () {
                         if (selectedValue.isNotEmpty) {
-                          // Clear the selection
                           textEditingController.clear();
                           onSelected('');
                           focusNode.unfocus();
@@ -58,7 +69,10 @@ Widget buildComboBox({
                       padding: EdgeInsets.zero,
                     ),
                   ),
-                  style: const TextStyle(fontSize: 14),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                 );
               },
               optionsBuilder: (TextEditingValue textEditingValue) {
@@ -80,6 +94,14 @@ Widget buildComboBox({
                   alignment: Alignment.topLeft,
                   child: Material(
                     elevation: 4,
+                    color: Theme.of(context).cardTheme.color,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: Theme.of(context).cardTheme.surfaceTintColor ??
+                            Colors.grey[300]!,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         maxWidth: width ?? MediaQuery.of(context).size.width,
@@ -93,27 +115,39 @@ Widget buildComboBox({
                           final option = options.elementAt(index);
                           final isSelected = option == selectedValue;
 
-                          return InkWell(
-                            onTap: () => onSelected(option),
-                            child: Container(
-                              height: itemHeight,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              alignment: Alignment.centerLeft,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      option,
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
+                          return SizedBox(
+                            height: itemHeight,
+                            child: InkWell(
+                              onTap: () => onSelected(option),
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                alignment: Alignment.centerLeft,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        option,
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.color,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
                                     ),
-                                  ),
-                                  if (isSelected)
-                                    const Icon(Icons.check, size: 16),
-                                ],
+                                    if (isSelected)
+                                      Icon(
+                                        Icons.check,
+                                        size: 16,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
                           );

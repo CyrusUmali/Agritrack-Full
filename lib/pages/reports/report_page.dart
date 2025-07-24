@@ -1,10 +1,13 @@
 import 'package:flareline/pages/reports/chart_data_provider.dart';
 import 'package:flareline/pages/reports/report_charts.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/flutter_gen/app_localizations.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
+import 'package:provider/provider.dart';
 import 'report_filter_panel.dart';
 import 'report_preview.dart';
 import 'report_export.dart';
@@ -43,7 +46,7 @@ class _ReportContentState extends State<ReportContent> {
   String selectedSector = '';
   String selectedProduct = '';
   String selectedFarm = '';
-  String reportType = 'farmers';
+  String reportType = 'farmer';
   String outputFormat = 'table';
   Set<String> selectedColumns = {};
   bool isLoading = false;
@@ -52,6 +55,9 @@ class _ReportContentState extends State<ReportContent> {
   String searchQuery = ''; // Search query state
 
   Future<void> generateReport() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final _isFarmer = userProvider.isFarmer;
+    final _farmerId = userProvider.farmer?.id;
     setState(() => isLoading = true);
 
     final data = await ReportGenerator.generateReport(
@@ -59,7 +65,7 @@ class _ReportContentState extends State<ReportContent> {
       reportType: reportType,
       dateRange: dateRange,
       selectedBarangay: selectedBarangay,
-      selectedFarmer: selectedFarmer,
+      selectedFarmer: _isFarmer ? _farmerId.toString() : selectedFarmer,
       selectedView: selectedView,
       selectedSector: selectedSector,
       selectedProduct: selectedProduct,
@@ -251,8 +257,6 @@ class _ReportContentState extends State<ReportContent> {
   }
 
   void _exportReport(String format) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exporting to $format...')),
-    );
+    ToastHelper.showInfoToast('Exporting to $format...', context);
   }
 }

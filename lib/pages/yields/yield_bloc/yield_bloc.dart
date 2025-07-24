@@ -47,17 +47,18 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
   String? get sortColumn => _sortColumn;
   bool get sortAscending => _sortAscending;
 
-  Future<void> _onLoadYields(
-    LoadYields event,
+  Future<void> _onDeleteYield(
+    DeleteYield event,
     Emitter<YieldState> emit,
   ) async {
     emit(YieldsLoading());
-
     try {
-      _yields = await yieldRepository.fetchYields();
-      emit(YieldsLoaded(_applyFilters()));
+      await yieldRepository.deleteYield(event.id);
+      _yields = _yields.where((y) => y.id != event.id).toList();
+      emit(YieldsLoaded(_applyFilters(),
+          message: 'Yield record deleted successfully!'));
     } catch (e) {
-      emit(YieldsError(e.toString()));
+      emit(YieldsError('Failed to delete yield record: ${e.toString()}'));
     }
   }
 
@@ -76,6 +77,27 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
       }
 
       emit(YieldUpdated(updatedYield));
+      emit(YieldsLoaded(_applyFilters()));
+    } catch (e) {
+      // Print the full error stack trace for debugging
+      print('Error in _onUpdateYield: $e');
+      if (e is Error) {
+        print(e.stackTrace);
+      }
+
+      // Emit error state with user-friendly message
+      emit(YieldsError('Failed to update yield record: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onLoadYields(
+    LoadYields event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+
+    try {
+      _yields = await yieldRepository.fetchYields();
       emit(YieldsLoaded(_applyFilters()));
     } catch (e) {
       emit(YieldsError(e.toString()));
@@ -167,21 +189,6 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
           message: 'Yield record added successfully!'));
     } catch (e) {
       emit(YieldsError('Failed to add yield record: ${e.toString()}'));
-    }
-  }
-
-  Future<void> _onDeleteYield(
-    DeleteYield event,
-    Emitter<YieldState> emit,
-  ) async {
-    emit(YieldsLoading());
-    try {
-      await yieldRepository.deleteYield(event.id);
-      _yields = _yields.where((y) => y.id != event.id).toList();
-      emit(YieldsLoaded(_applyFilters(),
-          message: 'Yield record deleted successfully!'));
-    } catch (e) {
-      emit(YieldsError('Failed to delete yield record: ${e.toString()}'));
     }
   }
 

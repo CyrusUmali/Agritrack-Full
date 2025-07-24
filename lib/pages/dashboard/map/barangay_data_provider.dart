@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'barangay_model.dart';
 
 class BarangayDataProvider extends ChangeNotifier {
+  int _selectedYear;
   List<BarangayModel> _data = [];
   bool _isLoading = true;
   String _selectedProduct = '';
@@ -23,7 +24,8 @@ class BarangayDataProvider extends ChangeNotifier {
   BarangayDataProvider({
     List<String>? initialProducts,
     List<Yield> yields = const [],
-  }) {
+    required int selectedYear,
+  }) : _selectedYear = selectedYear {
     if (initialProducts != null) {
       _availableProducts = initialProducts;
     }
@@ -32,31 +34,65 @@ class BarangayDataProvider extends ChangeNotifier {
     // Print raw yield data before processing
     // print('Raw yield data before processing:');
     // for (var yield in _yields) {
-    //   print('Barangay: ${yield.barangay}, Farm ID: ${yield.farmId}, '
-    //       'Product: ${yield.productName}, Volume: ${yield.volume}, '
-    //       'Hectare: ${yield.hectare}');
+    //   print(
+    //     'Barangay: ${yield.barangay}, Farm ID: ${yield.farmId}, '
+    //     'Product: ${yield.productName}, Volume: ${yield.volume}, '
+    //     'Hectare: ${yield.hectare} , Date: ${yield.harvestDate}    ',
+    //   );
     // }
 
     init();
   }
 
+  // Add a method to filter yields by year
+  List<Yield> _filterYieldsByYear(List<Yield> yields, int year) {
+    return yields.where((yield) {
+      if (yield.harvestDate == null) return false;
+
+      // Handle both String and DateTime cases
+      DateTime harvestDate;
+      if (yield.harvestDate is String) {
+        harvestDate = DateTime.parse(yield.harvestDate as String);
+      } else if (yield.harvestDate is DateTime) {
+        harvestDate = yield.harvestDate as DateTime;
+      } else {
+        return false;
+      }
+
+      return harvestDate.year == year;
+    }).toList();
+  }
+
   Future<void> init() async {
     try {
+      // Filter yields by selected year before processing
+      final filteredYields = _filterYieldsByYear(_yields, _selectedYear);
+
+      // Print raw yield data before processing
+      // print('Raw yield data before processing:');
+      for (var yields in filteredYields) {
+        // print(
+        //   'Barangay: ${yields.barangay}, Farm ID: ${yields.farmId}, '
+        //   'Product: ${yields.productName}, Volume: ${yields.volume}, '
+        //   'Hectare: ${yields.hectare} , Date: ${yields.harvestDate}    ',
+        // );
+      }
+
       final barangayNames =
           await GeoJsonParser.getBarangayNamesFromAsset('assets/barangay.json');
       barangayNames.sort();
 
       // If no products were passed in constructor, use fallback
       if (_availableProducts.isEmpty) {
-        _availableProducts = ['Rice', 'Corn', 'Cow', 'Coconut', 'Banana'];
-        print('Using fallback products');
+        _availableProducts = ['Rice'];
+        // print('Using fallback products');
       }
 
       // Group yields by barangay and farm to calculate total area per farm
       final Map<String, Map<int, double>> farmAreas = {};
       final Map<String, Map<String, double>> barangayYields = {};
 
-      for (var _yield in _yields) {
+      for (var _yield in filteredYields) {
         final barangay = _yield.barangay ?? 'Unknown';
         final farmId = _yield.farmId ?? 0;
         final productName = _yield.productName ?? 'Unknown';

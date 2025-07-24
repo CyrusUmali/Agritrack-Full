@@ -1,3 +1,5 @@
+import 'package:flareline/pages/recommendation/api_uri.dart';
+import 'package:flareline/pages/recommendation/api_uri.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -38,7 +40,9 @@ class SuitabilityModel extends ChangeNotifier {
     suitabilityResult = null;
     notifyListeners();
 
-    final uri = Uri.parse('http://localhost:8000/api/v1/check-suitability');
+    final uri = Uri.parse(ApiConstants.checkSuitability);
+    //  final uri = Uri.parse('http://localhost:8000/api/v1/check-suitability');
+
     try {
       // Prepare selected models array
       List<String> selectedModels = [];
@@ -93,7 +97,10 @@ class SuitabilityModel extends ChangeNotifier {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:8000/api/v1/get-suggestions'),
+        // Uri.parse('http://localhost:8000/api/v1/get-suggestions'),
+        // Uri.parse('https://aicrop.onrender.com/api/v1/get-suggestions'),
+        Uri.parse(ApiConstants.getSuggestions),
+
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "parameters": {

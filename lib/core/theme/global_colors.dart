@@ -1,9 +1,11 @@
 import 'dart:ui';
 
-class GlobalColors{
+class GlobalColors {
   static const Color primary = Color(0xFF3C50E0);
 
   static const Color darkBackgroundColor = Color(0xff1E1C2A);
+
+  static const Color darkerCardColor = Color(0xFF0E121C); // Example dark color
 
   static const Color darkAppBar = Color(0xFF1C2434);
 
@@ -39,8 +41,5 @@ class GlobalColors{
 
   static const Color lightGray = Color(0xFFF7F9FC);
 
-
+  static const Color surfaceColor = Color(0xFFF7F9FC);
 }
-
-
-

@@ -87,33 +87,40 @@ class RecommendationInputs extends StatelessWidget {
       children: [
         _buildSlider(context, 'Nitrogen (N)', model.nitrogen, 0, 100, (value) {
           model.nitrogen = value;
+          onChanged(); // Add this
         }),
         const SizedBox(height: 16),
         _buildSlider(context, 'Phosphorous (P)', model.phosphorous, 0, 100,
             (value) {
           model.phosphorous = value;
+          onChanged(); // Add this
         }),
         const SizedBox(height: 16),
         _buildSlider(context, 'Potassium (K)', model.potassium, 0, 100,
             (value) {
           model.potassium = value;
+          onChanged(); // Add this
         }),
         const SizedBox(height: 16),
         _buildSlider(context, 'Temperature (°C)', model.temperature, 0, 50,
             (value) {
           model.temperature = value;
+          onChanged(); // Add this
         }),
         const SizedBox(height: 16),
         _buildSlider(context, 'Humidity (%)', model.humidity, 0, 100, (value) {
           model.humidity = value;
+          onChanged(); // Add this
         }),
         const SizedBox(height: 16),
         _buildSlider(context, 'pH Level', model.ph, 3, 10, (value) {
           model.ph = value;
+          onChanged(); // Add this
         }),
         const SizedBox(height: 16),
         _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 300, (value) {
           model.rainfall = value;
+          onChanged(); // Add this
         }),
       ],
     );

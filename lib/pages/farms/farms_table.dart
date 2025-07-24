@@ -4,11 +4,14 @@ import 'package:flareline/pages/farms/farm_profile.dart';
 import 'package:flareline/pages/modal/barangay_filter_modal.dart';
 import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
 import 'package:flareline/pages/widget/combo_box.dart';
+import 'package:flareline/pages/widget/network_error.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
@@ -74,7 +77,7 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
       height: 600,
       child: Column(
         children: [
-          _buildSearchBar(context),
+          _buildSearchBarDesktop(context),
           const SizedBox(height: 16),
           Expanded(
             child: BlocBuilder<FarmBloc, FarmState>(
@@ -82,7 +85,15 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
                 if (state is FarmsLoading) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is FarmsError) {
-                  return Center(child: Text(state.message));
+                  // return Center(child: Text(state.message));
+
+                  return NetworkErrorWidget(
+                    error: state.message,
+                    onRetry: () {
+                      // Trigger your retry logic here
+                      context.read<FarmBloc>().add(LoadFarms());
+                    },
+                  );
                 } else if (state is FarmsLoaded) {
                   if (state.farms.isEmpty) {
                     return _buildNoResultsWidget();
@@ -111,7 +122,7 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
   Widget _farmsMobile(BuildContext context) {
     return Column(
       children: [
-        _buildSearchBar(context),
+        _buildSearchBarMobile(context),
         const SizedBox(height: 16),
         SizedBox(
           height: 450,
@@ -120,7 +131,15 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
               if (state is FarmsLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is FarmsError) {
-                return Center(child: Text(state.message));
+                // return Center(child: Text(state.message));
+
+                return NetworkErrorWidget(
+                  error: state.message,
+                  onRetry: () {
+                    // Trigger your retry logic here
+                    context.read<FarmBloc>().add(LoadFarms());
+                  },
+                );
               } else if (state is FarmsLoaded) {
                 if (state.farms.isEmpty) {
                   return _buildNoResultsWidget();
@@ -170,7 +189,121 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
+  Widget _buildSearchBarMobile(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Wrap(
+          direction: Axis.horizontal,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8, // Vertical spacing between lines when wrapping
+          children: [
+            // Sector ComboBox
+            buildComboBox(
+              context: context,
+              hint: 'Sector',
+              options: const [
+                'All',
+                'Rice',
+                'Livestock',
+                'Fishery',
+                'Corn',
+                'HVC',
+                'Organic'
+              ],
+              selectedValue: selectedSector,
+              onSelected: (value) {
+                setState(() => selectedSector = value);
+                context.read<FarmBloc>().add(FilterFarms(
+                      name: '',
+                      sector: (value == 'All' || value.isEmpty) ? null : value,
+                      barangay: selectedBarangay,
+                    ));
+              },
+              width: 150,
+            ),
+
+            // Barangay ComboBox
+            buildComboBox(
+              context: context,
+              hint: 'Barangay',
+              options: [
+                'All',
+                ...barangayNames.where((String option) {
+                  return option
+                      .toLowerCase()
+                      .contains(_barangayFilter.toLowerCase());
+                })
+              ],
+              selectedValue: selectedBarangay,
+              onSelected: (value) {
+                setState(() => selectedBarangay = value);
+                context.read<FarmBloc>().add(FilterFarms(
+                      name: '',
+                      barangay: value == 'All' ? null : value,
+                      sector: selectedSector,
+                    ));
+              },
+              width: 150,
+            ),
+            Container(
+              width: 200, // Set a minimum width for the search field
+              height: 48,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color ??
+                    Colors.white, // Use card color from theme
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).cardTheme.surfaceTintColor ??
+                      Colors.grey[300]!, // Use border color from theme
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).cardTheme.shadowColor ??
+                        Colors.transparent,
+                    blurRadius: 13,
+                    offset: const Offset(0, 8),
+                    spreadRadius: -3,
+                  ),
+                ],
+              ),
+              child: TextField(
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color, // Use text color from theme
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search yields...',
+                  hintStyle: TextStyle(
+                    color: Theme.of(context)
+                        .hintColor, // Use hint color from theme
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: 20,
+                    color: Theme.of(context)
+                        .iconTheme
+                        .color, // Use icon color from theme
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onChanged: (value) {
+                  context.read<FarmBloc>().add(SearchFarms(value));
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBarDesktop(BuildContext context) {
     return SizedBox(
       height: 48,
       child: Row(
@@ -178,6 +311,7 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
         children: [
           // Sector ComboBox
           buildComboBox(
+            context: context,
             hint: 'Sector',
             options: const [
               'All',
@@ -203,6 +337,7 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
 
           // Barangay ComboBox
           buildComboBox(
+            context: context,
             hint: 'Barangay',
             options: [
               'All',
@@ -230,14 +365,43 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color ??
+                    Colors.white, // Use card color from theme
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(
+                  color: Theme.of(context).cardTheme.surfaceTintColor ??
+                      Colors.grey[300]!, // Use border color from theme
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).cardTheme.shadowColor ??
+                        Colors.transparent,
+                    blurRadius: 13,
+                    offset: const Offset(0, 8),
+                    spreadRadius: -3,
+                  ),
+                ],
               ),
               child: TextField(
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color, // Use text color from theme
+                ),
                 decoration: InputDecoration(
-                  hintText: 'Search farms...',
-                  prefixIcon: const Icon(Icons.search, size: 20),
+                  hintText: 'Search Farms...',
+                  hintStyle: TextStyle(
+                    color: Theme.of(context)
+                        .hintColor, // Use hint color from theme
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: 20,
+                    color: Theme.of(context)
+                        .iconTheme
+                        .color, // Use icon color from theme
+                  ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -323,65 +487,74 @@ class DataTableWidget extends TableWidget<FarmsViewModel> {
       (f) => f.id.toString() == columnData.id,
     );
 
+    // Get the user provider
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isAdmin = userProvider.user?.role == 'admin';
+    final isFarmerOwner = userProvider.farmer?.id == farm.farmerId;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () {
-            ModalDialog.show(
-              context: context,
-              title: 'Delete Farm',
-              showTitle: true,
-              showTitleDivider: true,
-              modalType: ModalType.medium,
-              onCancelTap: () => Navigator.of(context).pop(),
-              onSaveTap: () {
-                context.read<FarmBloc>().add(DeleteFarm(farm.id!));
-                Navigator.of(context).pop();
-              },
-              child: Center(
-                child: Text(
-                  'Are you sure you want to delete ${farm.name}?',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              footer: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20.0,
-                  vertical: 10.0,
-                ),
+        // Only show delete button if admin or if the farmer owns this farm
+        if (isAdmin || isFarmerOwner)
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () {
+              ModalDialog.show(
+                context: context,
+                title: 'Delete Farm',
+                showTitle: true,
+                showTitleDivider: true,
+                modalType: ModalType.medium,
+                onCancelTap: () => Navigator.of(context).pop(),
+                onSaveTap: () {
+                  context.read<FarmBloc>().add(DeleteFarm(farm.id!));
+                  Navigator.of(context).pop();
+                },
                 child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: ButtonWidget(
-                          btnText: 'Cancel',
-                          textColor: FlarelineColors.darkBlackText,
-                          onTap: () => Navigator.of(context).pop(),
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      SizedBox(
-                        width: 120,
-                        child: ButtonWidget(
-                          btnText: 'Delete',
-                          onTap: () {
-                            context.read<FarmBloc>().add(DeleteFarm(farm.id!));
-                            Navigator.of(context).pop();
-                          },
-                          type: ButtonType.primary.type,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'Are you sure you want to delete ${farm.name}?',
+                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-            );
-          },
-        ),
+                footer: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 10.0,
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          child: ButtonWidget(
+                            btnText: 'Cancel',
+                            textColor: FlarelineColors.darkBlackText,
+                            onTap: () => Navigator.of(context).pop(),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        SizedBox(
+                          width: 120,
+                          child: ButtonWidget(
+                            btnText: 'Delete',
+                            onTap: () {
+                              context
+                                  .read<FarmBloc>()
+                                  .add(DeleteFarm(farm.id!));
+                              Navigator.of(context).pop();
+                            },
+                            type: ButtonType.primary.type,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {

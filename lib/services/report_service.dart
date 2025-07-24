@@ -210,7 +210,7 @@ class ReportService {
       }
 
       final response = await _apiService.get(
-        '/auth/yields-report',
+        '/auth/farmer-yields-report',
         queryParameters: queryParams,
       );
 

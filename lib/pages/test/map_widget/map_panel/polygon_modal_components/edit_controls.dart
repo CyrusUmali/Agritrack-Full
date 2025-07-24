@@ -1,6 +1,7 @@
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 
 import '../../pin_style.dart';
 import '../../polygon_manager.dart';
@@ -18,6 +19,16 @@ class EditControls {
   }) {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final _isFarmer = userProvider.isFarmer;
+    final _farmerId = userProvider.farmer?.id?.toString();
+
+    print(_isFarmer);
+    print(_farmerId);
+    print(polygon.farmerId);
+
+    print(polygon.pinStyle);
 
     return Card(
       elevation: 2,
@@ -51,9 +62,6 @@ class EditControls {
               ],
             ),
             const SizedBox(height: 16),
-
-            // Pin style selection
-            // _buildSectionHeader('Sector Type', Icons.category, theme),
             const SizedBox(height: 8),
             _buildPinStyleDropdown(
               context: context,
@@ -67,29 +75,13 @@ class EditControls {
             Divider(color: colorScheme.outlineVariant, height: 1),
             const SizedBox(height: 16),
 
-            // Delete button
-            _buildDeleteButton(context, onDelete, theme),
+            // _buildDeleteButton(context, onDelete, theme),
+
+            if (_isFarmer == false || polygon.farmerId?.toString() == _farmerId)
+              _buildDeleteButton(context, onDelete, theme),
           ],
         ),
       ),
-    );
-  }
-
-  static Widget _buildSectionHeader(
-      String title, IconData icon, ThemeData theme) {
-    return Row(
-      children: [
-        Icon(icon,
-            size: 18, color: theme.colorScheme.onSurface.withOpacity(0.6)),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.normal,
-            color: theme.colorScheme.onSurface.withOpacity(0.8),
-          ),
-        ),
-      ],
     );
   }
 
@@ -119,7 +111,7 @@ class EditControls {
           }
         },
         style: theme.textTheme.bodyMedium,
-        dropdownColor: theme.colorScheme.surface,
+        dropdownColor: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         elevation: 4,
         underline: const SizedBox(),

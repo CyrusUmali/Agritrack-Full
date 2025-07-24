@@ -2,27 +2,47 @@ import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farmers/farmer_data.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flareline/pages/products/product/product_bloc.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 class FilterOptions {
+  static List<String> getFarms(BuildContext context, int? _farmerId) {
+    final farmsState = context.read<FarmBloc>().state;
+
+    if (farmsState is FarmsLoaded) {
+      return farmsState.farms
+          .where((farm) => _farmerId == null || farm.farmerId == _farmerId)
+          .map((farm) => '${farm.id}: ${farm.name}')
+          .toList();
+    }
+
+    // Fallback to empty list if farms aren't loaded yet
+    return ['error'];
+  }
+
   static const Map<String, String> reportTypes = {
     'farmers': 'Farmers List',
     'farmer': 'Farmer Record',
-    // 'farms': 'Farms List',
     'products': 'Products & Yield',
     'barangay': 'Barangay Data',
     'sectors': 'Sector Performance',
   };
 
-  //  static List<String> get farmerNames => FarmerData.farmers
-  //     .map((farmer) => farmer['farmerName'] as String)
-  //     .toList();
+// Add this new method to get filtered report types
+  static Map<String, String> getFilteredReportTypes(bool isFarmer) {
+    if (isFarmer) {
+      return {
+        'farmer': 'Farmer Record', // Only show the farmer report for farmers
+        'products': 'Products & Yield',
+      };
+    } else {
+      return reportTypes; // Show all reports for admin/non-farmers
+    }
+  }
 
-  // Replace the const list with a getter
   static List<String> get products {
-    // Note: This approach requires context which isn't available in static methods
-    // So we'll need to use a different approach (see Option 2 below)
     throw FlutterError('Use getProducts(context) instead of products');
   }
 
@@ -71,20 +91,6 @@ class FilterOptions {
     'Monthly',
     'Yearly',
   ];
-
-  static List<String> getFarms(BuildContext context) {
-    final farmsState = context.read<FarmBloc>().state;
-
-    if (farmsState is FarmsLoaded) {
-      return farmsState
-          .farms // Note: changed from 'farmer' to 'farmers' (assuming this is a list)
-          .map((farm) => '${farm.id}: ${farm.name}')
-          .toList();
-    }
-
-    // Fallback to empty list if products aren't loaded yet
-    return ['error'];
-  }
 
   // static const List<String> farms = ['Farm A', 'Farm B', 'Farm C', 'Farm D'];
 }

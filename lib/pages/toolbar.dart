@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flareline/pages/farmers/farmer_profile.dart';
 import 'package:flareline/pages/users/da_personel_profile.dart';
 import 'package:flareline/pages/users/farmer_registration.dart';
+import 'package:flareline/pages/users/settings/settings_page.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flareline_uikit/service/sidebar_provider.dart';
@@ -123,7 +124,7 @@ class ToolBarWidget extends StatelessWidget {
           ),
           onTap: () async {
             await showMenu(
-              color: Colors.white,
+              color: Theme.of(context).cardTheme.color,
               context: context,
               position: RelativeRect.fromLTRB(
                   MediaQuery.of(context).size.width - 100, 80, 0, 0),
@@ -136,7 +137,7 @@ class ToolBarWidget extends StatelessWidget {
                 PopupMenuItem<String>(
                   value: 'settings',
                   child: const Text('Settings'),
-                  onTap: () {},
+                  onTap: () => _handleSettingsNavigation(context),
                 ),
                 PopupMenuItem<String>(
                   value: 'logout',
@@ -148,6 +149,23 @@ class ToolBarWidget extends StatelessWidget {
           },
         ),
       ]),
+    );
+  }
+
+  void _handleSettingsNavigation(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+
+    if (user == null) {
+      Navigator.of(context).pushNamed('/profile');
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SettingsPage(daUser: user.toMap()),
+      ),
     );
   }
 
@@ -204,13 +222,27 @@ class ToolBarWidget extends StatelessWidget {
     Navigator.of(context).pushNamed('/profile');
   }
 
+  void onSettingClick(BuildContext context) {
+    Navigator.of(context).popAndPushNamed('/settings');
+  }
+
   void onContactClick(BuildContext context) {
     Navigator.of(context).pushNamed('/contacts');
   }
 
   Future<void> onLogoutClick(BuildContext context) async {
+    // Sign out from Firebase
     await FirebaseAuth.instance.signOut();
-    Navigator.of(context).pushReplacementNamed('/signIn');
+
+    // Reset theme to light mode
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    themeProvider.themeMode = ThemeMode.light;
+
+    // Navigate to sign-in screen and clear all routes
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/signIn',
+      (Route<dynamic> route) => false,
+    );
   }
 }
 
@@ -269,20 +301,31 @@ class YearPickerWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Select Year'),
-          content: SizedBox(
-            width: 300,
-            height: 400,
-            child: YearPicker(
-              firstDate: DateTime(currentYear - 20),
-              lastDate: DateTime(currentYear + 10),
-              initialDate: DateTime(yearProvider.selectedYear),
-              selectedDate: DateTime(yearProvider.selectedYear),
-              onChanged: (DateTime dateTime) {
-                yearProvider.setYear(dateTime.year);
-                Navigator.pop(context);
-              },
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              onPrimary: Colors.white, // Text color on primary
+              onSurface: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black, //
+            ),
+          ),
+          child: AlertDialog(
+            title: const Text('Select Year'),
+            backgroundColor: Theme.of(context).cardTheme.color,
+            content: SizedBox(
+              width: 300,
+              height: 400,
+              child: YearPicker(
+                firstDate: DateTime(currentYear - 20),
+                lastDate: DateTime(currentYear + 10),
+                initialDate: DateTime(yearProvider.selectedYear),
+                selectedDate: DateTime(yearProvider.selectedYear),
+                onChanged: (DateTime dateTime) {
+                  yearProvider.setYear(dateTime.year);
+                  Navigator.pop(context);
+                },
+              ),
             ),
           ),
         );

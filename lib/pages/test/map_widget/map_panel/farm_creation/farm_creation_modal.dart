@@ -1,3 +1,4 @@
+import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
@@ -75,7 +76,7 @@ class FarmCreationModal {
       pageListBuilder: (modalContext) {
         return [
           WoltModalSheetPage(
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).cardTheme.color,
             hasSabGradient: false,
             topBar: Container(
               color: Colors.white,
@@ -119,7 +120,10 @@ class FarmCreationModal {
                             ),
                           ),
                           filled: true,
-                          fillColor: Colors.grey.shade50,
+                          fillColor:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? GlobalColors.darkerCardColor
+                                  : Colors.grey.shade50,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 14,
@@ -176,9 +180,9 @@ class FarmCreationModal {
                                   ),
                                   filled: true,
                                   fillColor: Colors.grey.shade50,
-                                  errorText: isFarmerValid
-                                      ? null
-                                      : 'Please select a farmer',
+                                  // errorText: isFarmerValid
+                                  //     ? null
+                                  //     : 'Please select a farmer',
                                   errorStyle:
                                       const TextStyle(color: Colors.red),
                                   suffixIcon: textEditingController
@@ -217,6 +221,10 @@ class FarmCreationModal {
                                 alignment: Alignment.topLeft,
                                 child: Material(
                                   elevation: 4.0,
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? GlobalColors.darkerCardColor
+                                      : Colors.grey.shade50,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -357,6 +365,7 @@ class FarmCreationModal {
               builder: (context, setState) {
                 return Dialog(
                   insetPadding: const EdgeInsets.all(20),
+                  backgroundColor: Theme.of(context).cardTheme.color,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -391,7 +400,11 @@ class FarmCreationModal {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
-                            fillColor: Colors.grey.shade50,
+                            // fillColor: Colors.grey.shade50,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? GlobalColors.darkerCardColor
+                                    : Colors.grey.shade50,
                             errorText: isNameValid ? null : 'Name is required',
                             errorStyle: const TextStyle(color: Colors.red),
                           ),
@@ -443,10 +456,10 @@ class FarmCreationModal {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     filled: true,
-                                    fillColor: Colors.grey.shade50,
-                                    errorText: isFarmerValid
-                                        ? null
-                                        : 'Please select a farmer',
+                                    fillColor: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? GlobalColors.darkerCardColor
+                                        : Colors.grey.shade50,
                                     errorStyle:
                                         const TextStyle(color: Colors.red),
                                     suffixIcon:
@@ -485,6 +498,10 @@ class FarmCreationModal {
                                   alignment: Alignment.topLeft,
                                   child: Material(
                                     elevation: 4.0,
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? GlobalColors.darkerCardColor
+                                        : Colors.grey.shade50,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),

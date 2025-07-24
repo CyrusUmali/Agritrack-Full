@@ -3,20 +3,32 @@ import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/dashboard/map_widget.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
+import 'package:flareline/pages/sectors/sector_service.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flareline_uikit/components/charts/circular_chart.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:flareline/pages/dashboard/climate_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 
 class AnalyticsWidget extends StatelessWidget {
-  const AnalyticsWidget({super.key});
+  final int selectedYear;
+  const AnalyticsWidget({super.key, required this.selectedYear});
 
   @override
   Widget build(BuildContext context) {
     context.read<FarmerBloc>().add(LoadFarmers());
+
+    final userProvider = Provider.of<UserProvider>(context);
+    final userRole = userProvider.user?.role;
+    final int? farmerId = userProvider.farmer?.id;
+
+    if (userRole == 'farmer' && farmerId != null) {
+      return _buildFarmerProductDistribution(context, farmerId);
+    }
 
     return BlocBuilder<FarmerBloc, FarmerState>(
       builder: (context, state) {
@@ -24,11 +36,90 @@ class AnalyticsWidget extends StatelessWidget {
           final sectorData = _processSectorData(state.farmers);
           return _analytics(sectorData);
         } else if (state is FarmersError) {
-          return Center(child: Text('Error: ${state.message}'));
+          return _buildErrorLayout(context, state.message,
+              () => context.read<FarmerBloc>().add(LoadFarmers()));
         } else {
           return _buildShimmerPlaceholder();
         }
       },
+    );
+  }
+
+  Widget _buildFarmerProductDistribution(BuildContext context, int farmerId) {
+    final sectorService = RepositoryProvider.of<SectorService>(context);
+
+    return FutureBuilder<Map<String, dynamic>>(
+      future: sectorService.getFarmerYieldDistribution(
+          farmerId: farmerId.toString(), year: selectedYear),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildShimmerPlaceholder();
+        } else if (snapshot.hasError) {
+          return _buildErrorLayout(context, snapshot.error.toString(),
+              () => _buildFarmerProductDistribution(context, farmerId));
+        } else if (snapshot.hasData) {
+          final data = snapshot.data!;
+          if (data['data'] != null && data['data']['products'] != null) {
+            final products =
+                List<Map<String, dynamic>>.from(data['data']['products']);
+            return _buildProductDistributionChart(products);
+          } else {
+            return _buildErrorLayout(context, 'No product data available',
+                () => _buildFarmerProductDistribution(context, farmerId));
+          }
+        } else {
+          return _buildErrorLayout(context, 'No data available',
+              () => _buildFarmerProductDistribution(context, farmerId));
+        }
+      },
+    );
+  }
+
+  Widget _buildErrorLayout(
+      BuildContext context, String error, VoidCallback onRetry) {
+    // Determine the error message based on the error type
+    String errorMessage;
+    if (error.contains('timeout') || error.contains('network')) {
+      errorMessage = 'Connection failed. Please check your internet.';
+    } else if (error.contains('server')) {
+      errorMessage = 'Server error. Please try again later.';
+    } else {
+      errorMessage = 'Something went wrong: $error';
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, color: Colors.red, size: 48),
+          const SizedBox(height: 16),
+          Text(errorMessage,
+              style: TextStyle(color: Colors.red), textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          IconButton(
+            icon: Icon(Icons.refresh),
+            color: Colors.grey,
+            iconSize: 36,
+            onPressed: onRetry,
+            tooltip: 'Retry',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductDistributionChart(List<Map<String, dynamic>> products) {
+    final chartData = products.map((product) {
+      return {
+        'x': product['productName'],
+        'y': product['percentageOfVolume'],
+      };
+    }).toList();
+
+    return ScreenTypeLayout.builder(
+      desktop: (context) => _analyticsWeb(context, chartData),
+      mobile: (context) => _analyticsMobile(context, chartData),
+      tablet: (context) => _analyticsMobile(context, chartData),
     );
   }
 
@@ -128,9 +219,9 @@ class AnalyticsWidget extends StatelessWidget {
       ..sort((a, b) => b.value.compareTo(a.value));
 
     // Take top 5 sectors and group the rest as "Others"
-    final topSectors = sortedSectors.take(5).toList();
+    final topSectors = sortedSectors.take(6).toList();
     final otherCount =
-        sortedSectors.skip(5).fold<int>(0, (sum, entry) => sum + entry.value);
+        sortedSectors.skip(6).fold<int>(0, (sum, entry) => sum + entry.value);
 
     // Prepare chart data with percentages
     final chartData = <Map<String, dynamic>>[];

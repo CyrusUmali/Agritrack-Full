@@ -1,10 +1,12 @@
 import 'package:flareline/core/models/product_model.dart';
 import 'package:flareline/pages/products/product/product_filter_widget.dart';
+import 'package:flareline/pages/widget/network_error.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:flareline/pages/products/product/product_bloc.dart';
-import 'package:flareline/pages/products/add_product_modal.dart';
 import 'package:flareline/pages/products/product_profile.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
@@ -70,7 +72,15 @@ class ProductsTable extends StatelessWidget {
                   if (state is ProductsLoading) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is ProductsError) {
-                    return Center(child: Text(state.message));
+                    // return Center(child: Text(state.message));
+
+                    return NetworkErrorWidget(
+                      error: state.message,
+                      onRetry: () {
+                        // Trigger your retry logic here
+                        context.read<ProductBloc>().add(LoadProducts());
+                      },
+                    );
                   } else if (state is ProductsLoaded) {
                     if (state.products.isEmpty) {
                       return _buildNoResultsWidget();
@@ -128,13 +138,21 @@ class ProductsTable extends StatelessWidget {
           const ProductFilterWidget(),
           const SizedBox(height: 16),
           SizedBox(
-            height: 380,
+            height: 700,
             child: BlocBuilder<ProductBloc, ProductState>(
               builder: (context, state) {
                 if (state is ProductsLoading) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is ProductsError) {
-                  return Center(child: Text(state.message));
+                  // return Center(child: Text(state.message));
+
+                  return NetworkErrorWidget(
+                    error: state.message,
+                    onRetry: () {
+                      // Trigger your retry logic here
+                      context.read<ProductBloc>().add(LoadProducts());
+                    },
+                  );
                 } else if (state is ProductsLoaded) {
                   if (state.products.isEmpty) {
                     return _buildNoResultsWidget();
@@ -203,7 +221,6 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
   @override
   Widget headerBuilder(
       BuildContext context, String headerName, ProductsViewModel viewModel) {
-    // Skip sort icons for Action column
     if (headerName == 'Action') {
       return Text(headerName);
     }
@@ -257,68 +274,70 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
     final product = viewModel.products.firstWhere(
       (p) => p.id.toString() == columnData.id,
     );
-
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () {
-            ModalDialog.show(
-              context: context,
-              title: 'Delete Product',
-              showTitle: true,
-              showTitleDivider: true,
-              modalType: ModalType.medium,
-              onCancelTap: () => Navigator.of(context).pop(),
-              onSaveTap: () {
-                context.read<ProductBloc>().add(DeleteProduct(product.id));
-                Navigator.of(context).pop();
-              },
-              child: Center(
-                child: Text(
-                  'Are you sure you want to delete ${product.name}?',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              footer: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20.0,
-                  vertical: 10.0,
-                ),
+        if (!isFarmer)
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () {
+              ModalDialog.show(
+                context: context,
+                title: 'Delete Product',
+                showTitle: true,
+                showTitleDivider: true,
+                modalType: ModalType.medium,
+                onCancelTap: () => Navigator.of(context).pop(),
+                onSaveTap: () {
+                  context.read<ProductBloc>().add(DeleteProduct(product.id));
+                  Navigator.of(context).pop();
+                },
                 child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: ButtonWidget(
-                          btnText: 'Cancel',
-                          textColor: FlarelineColors.darkBlackText,
-                          onTap: () => Navigator.of(context).pop(),
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      SizedBox(
-                        width: 120,
-                        child: ButtonWidget(
-                          btnText: 'Delete',
-                          onTap: () {
-                            context
-                                .read<ProductBloc>()
-                                .add(DeleteProduct(product.id));
-                            Navigator.of(context).pop();
-                          },
-                          type: ButtonType.primary.type,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'Are you sure you want to delete ${product.name}?',
+                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-            );
-          },
-        ),
+                footer: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 10.0,
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          child: ButtonWidget(
+                            btnText: 'Cancel',
+                            textColor: FlarelineColors.darkBlackText,
+                            onTap: () => Navigator.of(context).pop(),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        SizedBox(
+                          width: 120,
+                          child: ButtonWidget(
+                            btnText: 'Delete',
+                            onTap: () {
+                              context
+                                  .read<ProductBloc>()
+                                  .add(DeleteProduct(product.id));
+                              Navigator.of(context).pop();
+                            },
+                            type: ButtonType.primary.type,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {

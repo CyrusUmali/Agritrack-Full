@@ -1,21 +1,17 @@
 import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 
 import 'farm_info_card_dialogs.dart';
 
 class FarmInfoCardComponents {
   static Widget buildEditableFarmNameRow({
     required BuildContext context,
-    required String currentName,
+    required TextEditingController controller, // Receive controller
     required Function(String) onNameChanged,
     required ThemeData theme,
   }) {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-
-    final TextEditingController controller =
-        TextEditingController(text: currentName);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -32,7 +28,7 @@ class FarmInfoCardComponents {
                 Text('Farm Name', style: _buildLabelStyle(theme)),
                 const SizedBox(height: 2),
                 TextField(
-                  controller: controller,
+                  controller: controller, // Use the provided controller
                   style: textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurface,
                   ),
@@ -191,15 +187,6 @@ class FarmInfoCardComponents {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  static Widget _buildEmptyState(String message, ThemeData theme) {
-    return Text(
-      message,
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: theme.colorScheme.onSurface.withOpacity(0.6),
       ),
     );
   }

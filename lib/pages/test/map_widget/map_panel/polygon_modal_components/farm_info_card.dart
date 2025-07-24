@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 
-import 'farm_info_card_dialogs.dart';
 import 'farm_info_card_components.dart';
 
 class FarmInfoCard {
@@ -33,6 +32,7 @@ class FarmInfoCard {
     required Function(String) onFarmOwnerChanged,
     required Function(String) onFarmNameChanged,
     required Function(PolygonData) onFarmUpdated,
+    required TextEditingController farmNameController, // Add this parameter
   }) {
     final colorScheme = theme.colorScheme;
 
@@ -70,7 +70,7 @@ class FarmInfoCard {
             const SizedBox(height: 12),
             FarmInfoCardComponents.buildEditableFarmNameRow(
               context: context,
-              currentName: farmName,
+              controller: farmNameController, // Pass the controller
               onNameChanged: onFarmNameChanged,
               theme: theme,
             ),

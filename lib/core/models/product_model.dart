@@ -14,7 +14,8 @@ class Product extends Equatable {
     required this.name,
     required this.sector,
     required this.description,
-    this.imageUrl = 'https://example.com/default-product.jpg',
+    this.imageUrl =
+        'https://cdn2.iconfinder.com/data/icons/food-solid-icons-volume-2/128/054-512.png',
     this.createdAt,
     this.updatedAt,
   });

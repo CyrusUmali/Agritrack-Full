@@ -9,6 +9,8 @@ import 'package:flareline/pages/users/da_personel_profile.dart';
 import 'package:flareline/pages/users/farmer_option_modal.dart';
 import 'package:flareline/pages/users/farmer_registration.dart';
 import 'package:flareline/pages/users/user_bloc/user_bloc.dart';
+import 'package:flareline/pages/widget/combo_box.dart';
+import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
@@ -75,7 +77,7 @@ class _UsersState extends State<Users> {
       height: 450,
       child: Column(
         children: [
-          _buildSearchBar(),
+          _buildSearchBarDesktop(),
           const SizedBox(height: 16),
           Expanded(
             child: BlocBuilder<UserBloc, UserState>(
@@ -83,50 +85,58 @@ class _UsersState extends State<Users> {
                 if (state is UsersLoading) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is UsersError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Wrap the Text widget with SingleChildScrollView
-                        SizedBox(
-                          height: 100, // Set a fixed height or use constraints
-                          child: SingleChildScrollView(
-                            child: Text(
-                              state.message,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.red[700],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: GlobalColors.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                          ),
-                          onPressed: () {
-                            context.read<UserBloc>().add(LoadUsers());
-                          },
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.refresh,
-                                  size: 20, color: Colors.white),
-                              SizedBox(width: 8),
-                              Text("Reload"),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                  return NetworkErrorWidget(
+                    error: state.message,
+                    onRetry: () {
+                      // Trigger your retry logic here
+                      context.read<UserBloc>().add(LoadUsers());
+                    },
                   );
+
+                  // return Center(
+                  //   child: Column(
+                  //     mainAxisAlignment: MainAxisAlignment.center,
+                  //     children: [
+                  //       // Wrap the Text widget with SingleChildScrollView
+                  //       SizedBox(
+                  //         height: 100, // Set a fixed height or use constraints
+                  //         child: SingleChildScrollView(
+                  //           child: Text(
+                  //             state.message,
+                  //             style: TextStyle(
+                  //               fontSize: 16,
+                  //               color: Colors.red[700],
+                  //             ),
+                  //           ),
+                  //         ),
+                  //       ),
+                  //       const SizedBox(height: 16),
+                  //       ElevatedButton(
+                  //         style: ElevatedButton.styleFrom(
+                  //           backgroundColor: GlobalColors.primary,
+                  //           foregroundColor: Colors.white,
+                  //           shape: RoundedRectangleBorder(
+                  //             borderRadius: BorderRadius.circular(8),
+                  //           ),
+                  //           padding: const EdgeInsets.symmetric(
+                  //               horizontal: 24, vertical: 12),
+                  //         ),
+                  //         onPressed: () {
+                  //           context.read<UserBloc>().add(LoadUsers());
+                  //         },
+                  //         child: const Row(
+                  //           mainAxisSize: MainAxisSize.min,
+                  //           children: [
+                  //             Icon(Icons.refresh,
+                  //                 size: 20, color: Colors.white),
+                  //             SizedBox(width: 8),
+                  //             Text("Reload"),
+                  //           ],
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // );
                 } else if (state is UsersLoaded) {
                   if (state.users.isEmpty) {
                     return _buildNoResultsWidget();
@@ -156,7 +166,7 @@ class _UsersState extends State<Users> {
   Widget _channelMobile(BuildContext context) {
     return Column(
       children: [
-        _buildSearchBar(),
+        _buildSearchBarMobile(),
         const SizedBox(height: 16),
         SizedBox(
           height: 500,
@@ -165,42 +175,50 @@ class _UsersState extends State<Users> {
               if (state is UsersLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is UsersError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        state.message,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.red[700],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: GlobalColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
-                        ),
-                        onPressed: () {
-                          context.read<UserBloc>().add(LoadUsers());
-                        },
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.refresh, size: 20, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text("Reload"),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                // return Center(
+                //   child: Column(
+                //     mainAxisAlignment: MainAxisAlignment.center,
+                //     children: [
+                //       Text(
+                //         state.message,
+                //         style: TextStyle(
+                //           fontSize: 16,
+                //           color: Colors.red[700],
+                //         ),
+                //       ),
+                //       const SizedBox(height: 16),
+                //       ElevatedButton(
+                //         style: ElevatedButton.styleFrom(
+                //           backgroundColor: GlobalColors.primary,
+                //           foregroundColor: Colors.white,
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(8),
+                //           ),
+                //           padding: const EdgeInsets.symmetric(
+                //               horizontal: 24, vertical: 12),
+                //         ),
+                //         onPressed: () {
+                //           context.read<UserBloc>().add(LoadUsers());
+                //         },
+                //         child: const Row(
+                //           mainAxisSize: MainAxisSize.min,
+                //           children: [
+                //             Icon(Icons.refresh, size: 20, color: Colors.white),
+                //             SizedBox(width: 8),
+                //             Text("Reload"),
+                //           ],
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // );
+
+                return NetworkErrorWidget(
+                  error: state.message,
+                  onRetry: () {
+                    // Trigger your retry logic here
+                    context.read<UserBloc>().add(LoadUsers());
+                  },
                 );
               } else if (state is UsersLoaded) {
                 if (state.users.isEmpty) {
@@ -251,7 +269,205 @@ class _UsersState extends State<Users> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBarMobile() {
+    return SizedBox(
+      height: 48,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Wrap(
+          direction: Axis.horizontal,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8, // Vertical spacing between lines when wrapping
+          children: [
+            // Role ComboBox
+            buildComboBox(
+              context: context,
+              hint: 'User Role',
+              options: const ['All', 'Admin', 'DA', 'Farmer'],
+              selectedValue: selectedRole,
+              onSelected: (value) {
+                setState(() => selectedRole = value);
+                // context.read<UserBloc>().add(FilterUsers(
+                //       role: (value == 'All' || value.isEmpty) ? null : value,
+                //       status: selectedStatus,
+                //       query: _searchQuery,
+                //     ));
+              },
+              width: 150,
+            ),
+
+            // Status ComboBox
+            buildComboBox(
+              context: context,
+              hint: 'Status',
+              options: const ['All', 'Active', 'Pending', 'Rejected'],
+              selectedValue: selectedStatus,
+              onSelected: (value) {
+                setState(() => selectedStatus = value);
+                context.read<UserBloc>().add(FilterUsers(
+                      role: selectedRole,
+                      // status: (value == 'All' || value.isEmpty) ? null : value,
+                      // query: _searchQuery,
+                    ));
+              },
+              width: 150,
+            ),
+
+            // Search Field
+            Container(
+              width: 200,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color ??
+                    Colors.white, // Use card color from theme
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).cardTheme.surfaceTintColor ??
+                      Colors.grey[300]!, // Use border color from theme
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).cardTheme.shadowColor ??
+                        Colors.transparent,
+                    blurRadius: 13,
+                    offset: const Offset(0, 8),
+                    spreadRadius: -3,
+                  ),
+                ],
+              ),
+              child: TextField(
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color, // Use text color from theme
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search yields...',
+                  hintStyle: TextStyle(
+                    color: Theme.of(context)
+                        .hintColor, // Use hint color from theme
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: 20,
+                    color: Theme.of(context)
+                        .iconTheme
+                        .color, // Use icon color from theme
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onChanged: (value) {
+                  setState(() => _searchQuery = value);
+                  context.read<UserBloc>().add(SearchUsers(value));
+                },
+              ),
+            ),
+
+            // Add User Button
+            SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GlobalColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                onPressed: () {
+                  AccountCreationMethodModal.show(
+                    context: context,
+                    onMethodSelected: (role, method) async {
+                      if (role == 'admin' || role == 'officer') {
+                        if (method == 'email') {
+                          AddUserModal.show(
+                            context: context,
+                            role: role,
+                            onUserAdded: (userData) {
+                              print('User created: $userData');
+                              context.read<UserBloc>().add(AddUser(
+                                  name: userData.name,
+                                  email: userData.email,
+                                  password: userData.password,
+                                  role: userData.role));
+                            },
+                          );
+                        } else {
+                          final googleUser =
+                              await AuthService.getGoogleUserIsolated();
+                          if (googleUser != null) {
+                            print('role' + role);
+                            print(googleUser);
+                            context.read<UserBloc>().add(AddUser(
+                                  name: googleUser['name']!,
+                                  email: googleUser['email']!,
+                                  idToken: googleUser['idToken'],
+                                  role: role,
+                                ));
+                          }
+                        }
+                      } else if (role == 'farmer') {
+                        showFarmerOptionsModal(context, 'farmer', method,
+                            (String role, String method) {
+                          print('Selected role: $role, method: $method');
+                        }, () {
+                          print('Linking existing farmer');
+                        },
+                            farmers: (context.read<FarmerBloc>().state
+                                    is FarmersLoaded
+                                ? () {
+                                    final allFarmers = (context
+                                            .read<FarmerBloc>()
+                                            .state as FarmersLoaded)
+                                        .farmers;
+                                    return allFarmers
+                                        .where((farmer) =>
+                                            farmer.userId == null ||
+                                            farmer.userId == 0)
+                                        .toList();
+                                  }()
+                                : <Farmer>[]));
+                      }
+                    },
+                    onLinkExistingFarmer: () {
+                      AddFarmerModal.show(
+                        context: context,
+                        onFarmerAdded: (farmerData) {
+                          context.read<FarmerBloc>().add(AddFarmer(
+                                name: farmerData.name,
+                                email: farmerData.email,
+                                sector: farmerData.sector,
+                                phone: farmerData.phone,
+                                barangay: farmerData.barangay,
+                                imageUrl: farmerData.imageUrl,
+                              ));
+                        },
+                      );
+                    },
+                  );
+                },
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add,
+                        size: 20, color: FlarelineColors.background),
+                    SizedBox(width: 4),
+                    Text("Add User", style: TextStyle(fontSize: 14)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBarDesktop() {
     return SizedBox(
       height: 48,
       child: Row(
@@ -259,6 +475,7 @@ class _UsersState extends State<Users> {
         children: [
           // Role ComboBox
           buildComboBox(
+            context: context,
             hint: 'User Role',
             options: const ['All', 'Admin', 'DA', 'Farmer'],
             selectedValue: selectedRole,
@@ -276,6 +493,7 @@ class _UsersState extends State<Users> {
 
           // Status ComboBox
           buildComboBox(
+            context: context,
             hint: 'Status',
             options: const ['All', 'Active', 'Pending', 'Rejected'],
             selectedValue: selectedStatus,
@@ -291,19 +509,47 @@ class _UsersState extends State<Users> {
           ),
           const SizedBox(width: 8),
 
-          // Search Field
           Expanded(
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color ??
+                    Colors.white, // Use card color from theme
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(
+                  color: Theme.of(context).cardTheme.surfaceTintColor ??
+                      Colors.grey[300]!, // Use border color from theme
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).cardTheme.shadowColor ??
+                        Colors.transparent,
+                    blurRadius: 13,
+                    offset: const Offset(0, 8),
+                    spreadRadius: -3,
+                  ),
+                ],
               ),
               child: TextField(
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color, // Use text color from theme
+                ),
                 decoration: InputDecoration(
                   hintText: 'Search users...',
-                  prefixIcon: const Icon(Icons.search, size: 20),
+                  hintStyle: TextStyle(
+                    color: Theme.of(context)
+                        .hintColor, // Use hint color from theme
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: 20,
+                    color: Theme.of(context)
+                        .iconTheme
+                        .color, // Use icon color from theme
+                  ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -429,93 +675,6 @@ class _UsersState extends State<Users> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget buildComboBox({
-    required String hint,
-    required List<String> options,
-    required String selectedValue,
-    required ValueChanged<String> onSelected,
-    double? width,
-  }) {
-    return SizedBox(
-      height: 48,
-      width: width,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Tooltip(
-              message: hint,
-              child: Autocomplete<String>(
-                fieldViewBuilder: (context, textEditingController, focusNode,
-                    onFieldSubmitted) {
-                  if (selectedValue.isNotEmpty) {
-                    textEditingController.text = selectedValue;
-                  }
-                  return TextField(
-                    controller: textEditingController,
-                    focusNode: focusNode,
-                    decoration: InputDecoration(
-                      hintText: hint,
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                      suffixIconConstraints: const BoxConstraints(
-                        minHeight: 24,
-                        minWidth: 24,
-                      ),
-                      suffixIcon: const Icon(Icons.arrow_drop_down, size: 24),
-                    ),
-                    style: const TextStyle(fontSize: 14),
-                  );
-                },
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return options;
-                  }
-                  return options.where((option) => option
-                      .toLowerCase()
-                      .contains(textEditingValue.text.toLowerCase()));
-                },
-                onSelected: onSelected,
-                optionsViewBuilder: (context, onSelected, options) {
-                  return Align(
-                    alignment: Alignment.topLeft,
-                    child: Material(
-                      elevation: 4,
-                      child: SizedBox(
-                        width: width,
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: options.length,
-                          itemBuilder: (context, index) {
-                            final option = options.elementAt(index);
-                            return ListTile(
-                              title: Text(option),
-                              minVerticalPadding: 12,
-                              dense: true,
-                              onTap: () => onSelected(option),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

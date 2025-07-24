@@ -1,12 +1,13 @@
 import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flareline/core/models/product_model.dart';
+import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/polygon_content.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
-import 'polygon_modal_components/edit_controls.dart';
-import 'polygon_modal_components/farm_info_card.dart';
-import 'polygon_modal_components/yield_data_table.dart';
+import 'package:provider/provider.dart';
 import '../pin_style.dart';
 import '../polygon_manager.dart';
 
@@ -22,7 +23,7 @@ class PolygonModal {
     required Function(String) onUpdateFarmOwner,
     required Function(String) onUpdateBarangay,
     required VoidCallback onSave,
-    required Function(int) onDeletePolygon, // Add this parameter
+    required Function(int) onDeletePolygon,
     String selectedYear = '2024',
     required Function(String) onYearChanged,
     required List<Product> products,
@@ -32,6 +33,8 @@ class PolygonModal {
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
 
     final polygonCopy = polygon.copyWith();
+
+    print('modalpolygonid' + polygon.id.toString());
 
     // Local update callbacks
     void updateCopyCenter(LatLng center) => polygonCopy.center = center;
@@ -101,7 +104,7 @@ class PolygonModal {
     required Function(String) onUpdateFarmName,
     required Function(String) onUpdateFarmOwner,
     required Function(String) onUpdateBarangay,
-    required Function(int) onDeletePolygon, // Add this parameter
+    required Function(int) onDeletePolygon,
     required VoidCallback onSave,
     required String selectedYear,
     required Function(String) onYearChanged,
@@ -109,29 +112,36 @@ class PolygonModal {
     required List<Farmer> farmers,
     required List<Product> products,
   }) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final _isFarmer = userProvider.isFarmer;
+    final _farmerId = userProvider.farmer?.id?.toString();
+
+    // print('_isFarmer');
+    // print(_isFarmer);
+
     await WoltModalSheet.show(
       context: context,
       pageListBuilder: (modalContext) => [
         WoltModalSheetPage(
-          backgroundColor: Colors.white,
+          // backgroundColor: Theme.of(context).cardTheme.color,
           hasSabGradient: false,
           isTopBarLayerAlwaysVisible: true,
           trailingNavBarWidget: Container(
-            color: Colors.white,
+            color: Theme.of(context).cardTheme.color,
             padding: const EdgeInsets.all(16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.black),
+                  icon: const Icon(Icons.close),
                   onPressed: () => Navigator.of(modalContext).pop(),
                 ),
               ],
             ),
           ),
           child: Container(
-            color: Colors.white,
-            child: _ModalContent(
+            color: Theme.of(context).cardTheme.color,
+            child: ModalContent(
               polygon: polygon,
               products: products,
               farmers: farmers,
@@ -148,41 +158,44 @@ class PolygonModal {
               onDeletePolygon: onDeletePolygon,
             ),
           ),
-          stickyActionBar: Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, -2),
-                )
-              ],
-            ),
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FlarelineColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          stickyActionBar: (_isFarmer == true &&
+                  polygon.farmerId.toString() != _farmerId.toString())
+              ? null
+              : Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, -2),
+                      )
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlarelineColors.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                    onPressed: () {
+                      onSave();
+                      Navigator.of(modalContext).pop();
+                    },
+                    child: const Text(
+                      'Save Changes',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
-                minimumSize: const Size(double.infinity, 48),
-              ),
-              onPressed: () {
-                onSave();
-                Navigator.of(modalContext).pop();
-              },
-              child: const Text(
-                'Save Changes',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
         )
       ],
       modalTypeBuilder: (context) => const WoltBottomSheetType(),
@@ -201,7 +214,7 @@ class PolygonModal {
     required Function(String) onUpdateFarmOwner,
     required Function(String) onUpdateBarangay,
     required VoidCallback onSave,
-    required Function(int) onDeletePolygon, // Add this parameter
+    required Function(int) onDeletePolygon,
     required String selectedYear,
     required Function(String) onYearChanged,
     required ThemeData theme,
@@ -214,6 +227,9 @@ class PolygonModal {
         return AlertDialog(
           insetPadding: const EdgeInsets.all(20),
           contentPadding: EdgeInsets.zero,
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? GlobalColors.darkerCardColor
+              : Theme.of(context).cardTheme.color,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -221,7 +237,7 @@ class PolygonModal {
           content: SizedBox(
             width: MediaQuery.of(context).size.width * 0.8,
             height: MediaQuery.of(context).size.height * 0.8,
-            child: _ModalContent(
+            child: ModalContent(
               polygon: polygon,
               products: products,
               farmers: farmers,
@@ -245,307 +261,5 @@ class PolygonModal {
         );
       },
     );
-  }
-}
-
-class _ModalContent extends StatefulWidget {
-  final PolygonData polygon;
-  final Function(LatLng) onUpdateCenter;
-  final Function(PinStyle) onUpdatePinStyle;
-  final Function(Color) onUpdateColor;
-  final Function(List<String>) onUpdateProducts;
-  final Function(String) onUpdateFarmName;
-  final Function(String) onUpdateFarmOwner;
-  final Function(String) onUpdateBarangay;
-  final Function(int) onDeletePolygon; // Add this
-  final String selectedYear;
-  final ThemeData theme;
-  final bool isLargeScreen;
-  final VoidCallback onSave;
-  final List<Product> products;
-  final List<Farmer> farmers;
-
-  const _ModalContent({
-    required this.polygon,
-    required this.onUpdateCenter,
-    required this.onUpdatePinStyle,
-    required this.onUpdateColor,
-    required this.onUpdateProducts,
-    required this.onUpdateFarmName,
-    required this.onUpdateFarmOwner,
-    required this.onUpdateBarangay,
-    required this.onDeletePolygon, // Add this
-    required this.selectedYear,
-    required this.theme,
-    required this.products,
-    required this.farmers,
-    this.isLargeScreen = false,
-    required this.onSave,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  State<_ModalContent> createState() => _ModalContentState();
-}
-
-class _ModalContentState extends State<_ModalContent> {
-  late TextEditingController latController;
-  late TextEditingController lngController;
-  late Color selectedColor;
-  late PinStyle selectedPinStyle;
-  late List<String> selectedProducts;
-  late String farmName;
-  late String farmOwner;
-  late String barangay;
-
-  @override
-  void initState() {
-    super.initState();
-    final center = widget.polygon.center;
-    latController = TextEditingController(
-      text: center?.latitude.toStringAsFixed(6) ?? '0.0',
-    );
-    lngController = TextEditingController(
-      text: center?.longitude.toStringAsFixed(6) ?? '0.0',
-    );
-
-    selectedColor = widget.polygon.color;
-    selectedPinStyle = widget.polygon.pinStyle;
-    selectedProducts = widget.polygon.products?.toList() ?? [];
-    farmName = widget.polygon.name ?? '';
-    farmOwner = widget.polygon.owner ?? '';
-    barangay = widget.polygon.parentBarangay ?? '';
-  }
-
-  @override
-  void didUpdateWidget(covariant _ModalContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.polygon != widget.polygon) {
-      final center = widget.polygon.center;
-      latController.text = center?.latitude.toStringAsFixed(6) ?? '0.0';
-      lngController.text = center?.longitude.toStringAsFixed(6) ?? '0.0';
-      selectedColor = widget.polygon.color;
-      selectedPinStyle = widget.polygon.pinStyle;
-      selectedProducts = widget.polygon.products?.toList() ?? [];
-      farmName = widget.polygon.name ?? '';
-      farmOwner = widget.polygon.owner ?? '';
-      barangay = widget.polygon.parentBarangay ?? '';
-    }
-  }
-
-  @override
-  void dispose() {
-    latController.dispose();
-    lngController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.polygon.vertices.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (widget.isLargeScreen) {
-      return Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.black),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        FarmInfoCard.build(
-                          context: context,
-                          products: widget.products, // Add this
-                          farmers: widget.farmers, // Add this
-                          polygon: widget.polygon.copyWith(
-                            products: selectedProducts,
-                            name: farmName,
-                            owner: farmOwner,
-                            parentBarangay: barangay,
-                          ),
-                          theme: widget.theme,
-                          onBarangayChanged: (newBarangay) {
-                            setState(() => barangay = newBarangay);
-                            widget.onUpdateBarangay(newBarangay);
-                          },
-                          onFarmOwnerChanged: (newOwner) {
-                            setState(() => farmOwner = newOwner);
-                            widget.onUpdateFarmOwner(newOwner);
-                          },
-                          onFarmNameChanged: (newName) {
-                            setState(() => farmName = newName);
-                            widget.onUpdateFarmName(newName);
-                          },
-                          onFarmUpdated: (updatedPolygon) {
-                            setState(() {
-                              selectedProducts = updatedPolygon.products ?? [];
-                              farmName = updatedPolygon.name ?? '';
-                              farmOwner = updatedPolygon.owner ?? '';
-                              barangay = updatedPolygon.parentBarangay ?? '';
-                            });
-                            widget.onUpdateProducts(selectedProducts);
-                            widget.onUpdateFarmName(farmName);
-                            widget.onUpdateFarmOwner(farmOwner);
-                            widget.onUpdateBarangay(barangay);
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        EditControls.build(
-                          context: context,
-                          polygon: widget.polygon,
-                          selectedPinStyle: selectedPinStyle,
-                          selectedColor: selectedColor,
-                          onColorChanged: (color) {
-                            setState(() => selectedColor = color);
-                            widget.onUpdateColor(color);
-                          },
-                          onPinStyleChanged: (style) {
-                            setState(() => selectedPinStyle = style);
-                            widget.onUpdatePinStyle(style);
-                          },
-                          onDelete: () {
-                            // Add this new callback
-                            widget.onDeletePolygon(
-                                widget.polygon.id!); // Add ! to assert non-null
-                            debugPrint('id' + widget.polygon.id.toString());
-
-                            Navigator.of(context)
-                                .pop(); // Close the edit dialog if needed
-                          },
-                          theme: widget.theme,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const VerticalDivider(width: 1),
-                Expanded(
-                  flex: 3,
-                  child: SingleChildScrollView(
-                    // padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [YieldDataTable(polygon: widget.polygon)],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FlarelineColors.primary,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(200, 48),
-                maximumSize: const Size(400, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: widget.onSave,
-              child: const Text(
-                'Save Changes',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    } else {
-      return SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FarmInfoCard.build(
-              context: context,
-              products: widget.products, // Add this
-              farmers: widget.farmers, // Add this
-              polygon: widget.polygon.copyWith(
-                products: selectedProducts,
-                name: farmName,
-                owner: farmOwner,
-                parentBarangay: barangay,
-              ),
-              theme: widget.theme,
-              onBarangayChanged: (newBarangay) {
-                setState(() => barangay = newBarangay);
-                widget.onUpdateBarangay(newBarangay);
-              },
-              onFarmOwnerChanged: (newOwner) {
-                setState(() => farmOwner = newOwner);
-                widget.onUpdateFarmOwner(newOwner);
-              },
-              onFarmNameChanged: (newName) {
-                setState(() => farmName = newName);
-                widget.onUpdateFarmName(newName);
-              },
-              onFarmUpdated: (updatedPolygon) {
-                setState(() {
-                  selectedProducts = updatedPolygon.products ?? [];
-                  farmName = updatedPolygon.name ?? '';
-                  farmOwner = updatedPolygon.owner ?? '';
-                  barangay = updatedPolygon.parentBarangay ?? '';
-                });
-                widget.onUpdateProducts(selectedProducts);
-                widget.onUpdateFarmName(farmName);
-                widget.onUpdateFarmOwner(farmOwner);
-                widget.onUpdateBarangay(barangay);
-              },
-            ),
-            // const SizedBox(height: 16),
-            EditControls.build(
-              context: context,
-              polygon: widget.polygon,
-              selectedPinStyle: selectedPinStyle,
-              selectedColor: selectedColor,
-              onColorChanged: (color) {
-                setState(() => selectedColor = color);
-                widget.onUpdateColor(color);
-              },
-              onPinStyleChanged: (style) {
-                setState(() => selectedPinStyle = style);
-                widget.onUpdatePinStyle(style);
-              },
-              onDelete: () {
-                // Add this new callback
-                widget.onDeletePolygon(
-                    widget.polygon.id!); // Add ! to assert non-null
-                Navigator.of(context).pop(); // Close the edit dialog if needed
-              },
-              theme: widget.theme,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 16, bottom: 100),
-              child: YieldDataTable(polygon: widget.polygon),
-            ),
-          ],
-        ),
-      );
-    }
   }
 }

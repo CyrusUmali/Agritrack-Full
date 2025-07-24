@@ -100,6 +100,7 @@ class YieldRepository {
           'farmer_id': yieldRecord.farmerId,
           'product_id': yieldRecord.productId,
           'harvest_date': yieldRecord.harvestDate!.toIso8601String(),
+          'status': yieldRecord.status,
           'farm_id': yieldRecord.farmId,
           'volume': yieldRecord.volume,
           'notes': yieldRecord.notes,
@@ -108,11 +109,11 @@ class YieldRepository {
         },
       );
 
-      if (response.data == null || response.data['yieldRecord'] == null) {
-        throw Exception('Invalid yieldRecord data format');
+      if (response.data == null || response.data['yield'] == null) {
+        throw Exception('Invalid yield data format');
       }
 
-      return Yield.fromJson(response.data['yieldRecord']);
+      return Yield.fromJson(response.data['yield']);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw Exception('Yield record not found');
@@ -122,7 +123,7 @@ class YieldRepository {
       }
       throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
     } catch (e) {
-      throw Exception('Failed to update yieldRecord: $e');
+      throw Exception('Failed to update yield: $e');
     }
   }
 
@@ -132,7 +133,7 @@ class YieldRepository {
         throw Exception('User not authenticated');
       }
 
-      final response = await apiService.get('/farmers/$farmerId/yields');
+      final response = await apiService.get('/auth/yields/$farmerId');
 
       if (response.data == null || response.data['yields'] == null) {
         throw Exception('Invalid yields data format');

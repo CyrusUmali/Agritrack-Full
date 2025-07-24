@@ -61,6 +61,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
         ),
         const SizedBox(height: 4),
         buildComboBox(
+          context: context,
           hint: 'Select $label',
           options: options,
           selectedValue: value ?? 'Not Specified',

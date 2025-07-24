@@ -35,7 +35,7 @@ class AddYield extends YieldEvent {
   final double volume;
   final String? notes;
   final double? value;
-  final String? images;
+  final List<String?> images;
 
   const AddYield({
     required this.farmerId,
@@ -45,7 +45,7 @@ class AddYield extends YieldEvent {
     required this.volume,
     this.notes,
     this.value,
-    this.images,
+    this.images = const [],
   });
 
   @override

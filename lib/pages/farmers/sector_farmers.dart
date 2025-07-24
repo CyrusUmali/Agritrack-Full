@@ -1,6 +1,7 @@
 // ignore_for_file: must_be_immutable, avoid_print, use_super_parameters, non_constant_identifier_names
 
 import 'package:flareline/core/models/farmer_model.dart';
+import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:responsive_builder/responsive_builder.dart';
@@ -77,13 +78,12 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
     );
   }
 
-  // Update the _channelsWeb widget
   Widget _channelsWeb(BuildContext context) {
     return SizedBox(
       height: 450,
       child: Column(
         children: [
-          _buildSearchBar(),
+          _buildSearchBarDesktop(),
           const SizedBox(height: 16),
           Expanded(
             child: BlocBuilder<FarmerBloc, FarmerState>(
@@ -91,7 +91,13 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
                 if (state is FarmersLoading) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is FarmersError) {
-                  return Center(child: Text(state.message));
+                  return NetworkErrorWidget(
+                    error: state.message,
+                    onRetry: () {
+                      // Trigger your retry logic here
+                      context.read<FarmerBloc>().add(LoadFarmers());
+                    },
+                  );
                 } else if (state is FarmersLoaded) {
                   if (state.farmers.isEmpty) {
                     return _buildNoResultsWidget();
@@ -122,7 +128,7 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
   Widget _channelMobile(BuildContext context) {
     return Column(
       children: [
-        _buildSearchBar(),
+        _buildSearchBarMobile(),
         const SizedBox(height: 16),
         SizedBox(
           height: 500,
@@ -131,7 +137,15 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
               if (state is FarmersLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is FarmersError) {
-                return Center(child: Text(state.message));
+                // return Center(child: Text(state.message));
+
+                return NetworkErrorWidget(
+                  error: state.message,
+                  onRetry: () {
+                    // Trigger your retry logic here
+                    context.read<FarmerBloc>().add(LoadFarmers());
+                  },
+                );
               } else if (state is FarmersLoaded) {
                 if (state.farmers.isEmpty) {
                   return _buildNoResultsWidget();
@@ -182,7 +196,161 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBarMobile() {
+    return SizedBox(
+      height: 48,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Wrap(
+          direction: Axis.horizontal,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8, // Vertical spacing between lines when wrapping
+          children: [
+            // Sector ComboBox
+            buildComboBox(
+              context: context,
+              hint: 'Sector',
+              options: const [
+                'All',
+                'Rice',
+                'Livestock',
+                'Fishery',
+                'Corn',
+                'HVC',
+                'Organic'
+              ],
+              selectedValue: selectedSector,
+              onSelected: (value) {
+                setState(() => selectedSector = value);
+                context.read<FarmerBloc>().add(FilterFarmers(
+                      name: '',
+                      sector: (value == 'All' || value.isEmpty) ? null : value,
+                      barangay: selectedBarangay,
+                    ));
+              },
+              width: 150,
+            ),
+
+            // Barangay ComboBox
+            buildComboBox(
+              context: context,
+              hint: 'Barangay',
+              options: [
+                'All',
+                ...barangayNames.where((String option) {
+                  return option
+                      .toLowerCase()
+                      .contains(_barangayFilter.toLowerCase());
+                })
+              ],
+              selectedValue: selectedBarangay,
+              onSelected: (value) {
+                setState(() => selectedBarangay = value);
+                context.read<FarmerBloc>().add(FilterFarmers(
+                      name: '',
+                      barangay: value == 'All' ? null : value,
+                      sector: selectedSector,
+                    ));
+              },
+              width: 150,
+            ),
+
+            // Search Field
+            Container(
+              width: 200, // Set a minimum width for the search field
+              height: 48,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color ??
+                    Colors.white, // Use card color from theme
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).cardTheme.surfaceTintColor ??
+                      Colors.grey[300]!, // Use border color from theme
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).cardTheme.shadowColor ??
+                        Colors.transparent,
+                    blurRadius: 13,
+                    offset: const Offset(0, 8),
+                    spreadRadius: -3,
+                  ),
+                ],
+              ),
+              child: TextField(
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color, // Use text color from theme
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search farmers...',
+                  hintStyle: TextStyle(
+                    color: Theme.of(context)
+                        .hintColor, // Use hint color from theme
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: 20,
+                    color: Theme.of(context)
+                        .iconTheme
+                        .color, // Use icon color from theme
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onChanged: (value) {
+                  context.read<FarmerBloc>().add(SearchFarmers(value));
+                },
+              ),
+            ),
+
+            // Add Farmer Button
+            SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GlobalColors.primary, // mediumaquamarine
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                onPressed: () {
+                  AddFarmerModal.show(
+                    context: context,
+                    onFarmerAdded: (farmerData) {
+                      context.read<FarmerBloc>().add(AddFarmer(
+                            name: farmerData.name,
+                            email: farmerData.email,
+                            sector: farmerData.sector,
+                            phone: farmerData.phone,
+                            barangay: farmerData.barangay,
+                            imageUrl: farmerData.imageUrl,
+                          ));
+                    },
+                  );
+                },
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 20, color: Colors.white),
+                    SizedBox(width: 4),
+                    Text("Add Farmer", style: TextStyle(fontSize: 14)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBarDesktop() {
     return SizedBox(
       height: 48, // Fixed height to match first example
       child: Row(
@@ -190,6 +358,7 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
         children: [
           // Sector ComboBox
           buildComboBox(
+            context: context,
             hint: 'Sector',
             options: const [
               'All',
@@ -217,6 +386,7 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
 
           // Barangay ComboBox
           buildComboBox(
+            context: context,
             hint: 'Barangay',
             options: [
               'All',
@@ -247,14 +417,43 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color ??
+                    Colors.white, // Use card color from theme
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(
+                  color: Theme.of(context).cardTheme.surfaceTintColor ??
+                      Colors.grey[300]!, // Use border color from theme
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).cardTheme.shadowColor ??
+                        Colors.transparent,
+                    blurRadius: 13,
+                    offset: const Offset(0, 8),
+                    spreadRadius: -3,
+                  ),
+                ],
               ),
               child: TextField(
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color, // Use text color from theme
+                ),
                 decoration: InputDecoration(
                   hintText: 'Search farmers...',
-                  prefixIcon: const Icon(Icons.search, size: 20),
+                  hintStyle: TextStyle(
+                    color: Theme.of(context)
+                        .hintColor, // Use hint color from theme
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: 20,
+                    color: Theme.of(context)
+                        .iconTheme
+                        .color, // Use icon color from theme
+                  ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -272,7 +471,7 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
             // width: 24,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF66CDAA), // mediumaquamarine
+                backgroundColor: GlobalColors.primary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),

@@ -1,3 +1,4 @@
+import 'package:flareline/pages/recommendation/api_uri.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -30,7 +31,10 @@ class RecommendationModel extends ChangeNotifier {
     predictionResult = null;
     notifyListeners();
 
-    final uri = Uri.parse('http://localhost:8000/api/v1/predict');
+//  final uri = Uri.parse('http://localhost:8000/api/v1/predict');
+    // final uri = Uri.parse('https://aicrop.onrender.com/api/v1/predict');
+
+    final uri = Uri.parse(ApiConstants.predict);
     try {
       // Prepare selected models array
       List<String> selectedModels = [];

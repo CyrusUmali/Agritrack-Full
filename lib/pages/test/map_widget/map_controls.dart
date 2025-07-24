@@ -33,28 +33,42 @@ class MapControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cardColor = Theme.of(context).cardTheme.color ?? Colors.white;
+    final surfaceTintColor =
+        Theme.of(context).cardTheme.surfaceTintColor ?? Colors.transparent;
+    final shadowColor =
+        Theme.of(context).cardTheme.shadowColor ?? Colors.transparent;
+
     return Column(
       children: [
         _buildControlButton(
           tooltip: "Zoom In",
           icon: Icons.add,
           onPressed: onZoomIn,
-          index: 1, // Unique index
+          backgroundColor: cardColor,
+          index: 1,
+          surfaceTintColor: surfaceTintColor,
+          shadowColor: shadowColor,
         ),
         const SizedBox(height: 5),
         _buildControlButton(
           tooltip: "Zoom Out",
           icon: Icons.remove,
           onPressed: onZoomOut,
-          index: 2, // Unique index
+          backgroundColor: cardColor,
+          index: 2,
+          surfaceTintColor: surfaceTintColor,
+          shadowColor: shadowColor,
         ),
         const SizedBox(height: 5),
         _buildControlButton(
           tooltip: "Toggle Drawing Mode",
           icon: Icons.create,
           onPressed: onToggleDrawing,
-          backgroundColor: isDrawing ? Colors.red : Colors.white,
-          index: 3, // Unique index
+          backgroundColor: isDrawing ? Colors.red : cardColor,
+          index: 3,
+          surfaceTintColor: surfaceTintColor,
+          shadowColor: shadowColor,
         ),
         const SizedBox(height: 5),
         _buildControlButton(
@@ -71,25 +85,32 @@ class MapControls extends StatelessWidget {
                 );
               }).toList(),
             );
-
             onMapLayerChange(newValue);
           },
+          backgroundColor: cardColor,
           index: 4,
+          surfaceTintColor: surfaceTintColor,
+          shadowColor: shadowColor,
         ),
         const SizedBox(height: 5),
         _buildControlButton(
           tooltip: "Undo last point in selected polygon",
           icon: Icons.undo,
           onPressed: onUndo,
-          index: 5, // Unique index
+          backgroundColor: cardColor,
+          index: 5,
+          surfaceTintColor: surfaceTintColor,
+          shadowColor: shadowColor,
         ),
         const SizedBox(height: 5),
         _buildControlButton(
           tooltip: "Toggle Edit Mode",
           icon: Icons.edit,
           onPressed: onToggleEditing,
-          backgroundColor: isEditing ? Colors.orange : Colors.white,
-          index: 6, // Unique index
+          backgroundColor: isEditing ? Colors.orange : cardColor,
+          index: 6,
+          surfaceTintColor: surfaceTintColor,
+          shadowColor: shadowColor,
         ),
       ],
     );
@@ -100,38 +121,46 @@ class MapControls extends StatelessWidget {
     required IconData icon,
     required VoidCallback onPressed,
     Color? backgroundColor,
-    required int index, // Add this parameter
+    required int index,
+    Color? surfaceTintColor,
+    Color? shadowColor,
   }) {
     return Tooltip(
       message: tooltip,
       child: Container(
-        width: 30, // Custom button width
-        height: 30, // Custom button height
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          borderRadius:
+              BorderRadius.circular(8.0), // Match CommonCard's border radius
+          boxShadow: [
+            BoxShadow(
+              color: shadowColor ?? Colors.transparent,
+              blurRadius: 13,
+              offset: const Offset(0, 8),
+              spreadRadius: -3,
+            ),
+          ],
+        ),
         child: FloatingActionButton(
-          heroTag: 'map-control-$index', // Unique for each button
-          mini: true, // Optional: Keep this for a smaller button
+          heroTag: 'map-control-$index',
+          mini: true,
           onPressed: onPressed,
           backgroundColor: backgroundColor,
+          elevation: 0, // We're handling shadow with the container
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              width: 1,
+              color: surfaceTintColor ?? Colors.transparent,
+            ),
+            borderRadius:
+                BorderRadius.circular(8.0), // Match CommonCard's border radius
+          ),
           child: Icon(
             icon,
-            size: 15, // Custom icon size
+            size: 15,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStyledIconButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-    Color? backgroundColor,
-  }) {
-    return IconButton(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      style: IconButton.styleFrom(
-        backgroundColor: backgroundColor ?? Colors.white, // Default to white
-        padding: EdgeInsets.all(12), // Consistent padding
       ),
     );
   }

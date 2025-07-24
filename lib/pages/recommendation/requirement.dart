@@ -1,3 +1,4 @@
+import 'package:flareline/pages/recommendation/api_uri.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -10,7 +11,8 @@ class CropRequirementsWidget extends StatefulWidget {
 }
 
 class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
-  final String baseUrl = 'http://localhost:8000';
+  // final String baseUrl = 'http://localhost:8000';
+  // final String baseUrl = 'https://aicrop.onrender.com/';
   Map<String, dynamic>? cropRequirements;
   Map<String, dynamic>? filteredCropRequirements;
   bool isLoading = false;
@@ -64,7 +66,13 @@ class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
 
     try {
       // Build the URI with query parameters for GET request
-      final uri = Uri.parse('$baseUrl/api/v1/crop-requirements').replace(
+      // final uri = Uri.parse('$baseUrl/api/v1/crop-requirements').replace(
+      //   queryParameters: {
+      //     'model': selectedModel == 'All Models' ? '' : selectedModel,
+      //   },
+      // );
+
+      final uri = Uri.parse(ApiConstants.cropRequirements).replace(
         queryParameters: {
           'model': selectedModel == 'All Models' ? '' : selectedModel,
         },

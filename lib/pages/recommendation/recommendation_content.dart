@@ -1,3 +1,5 @@
+import 'package:flareline/pages/recommendation/chatbot/chatbot_content.dart';
+import 'package:flareline/pages/recommendation/chatbot/chatbot_page.dart';
 import 'package:flareline/pages/recommendation/requirement.dart';
 import 'package:flareline/pages/recommendation/requirement_page.dart';
 import 'package:flareline/pages/recommendation/suitability/suitability_page.dart';
@@ -16,7 +18,7 @@ class RecommendationContent extends StatefulWidget {
 
 class RecommendationContentState extends State<RecommendationContent> {
   final RecommendationModel model = RecommendationModel();
-
+  final GlobalKey _navigationMenuKey = GlobalKey();
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
@@ -76,6 +78,56 @@ class RecommendationContentState extends State<RecommendationContent> {
       );
     }
 
+    void _showNavigationMenu() async {
+      final RenderBox? renderBox =
+          _navigationMenuKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null) return;
+
+      final Offset buttonPosition = renderBox.localToGlobal(Offset.zero);
+      final Size buttonSize = renderBox.size;
+
+      final result = await showMenu(
+        context: context,
+        position: RelativeRect.fromLTRB(
+          buttonPosition.dx,
+          buttonPosition.dy + buttonSize.height,
+          buttonPosition.dx + 200,
+          buttonPosition.dy + buttonSize.height + 100,
+        ),
+        items: [
+          const PopupMenuItem(
+            value: 'back',
+            child: ListTile(
+              title: Text('Chatbot'),
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'suitability',
+            child: ListTile(
+              title: Text('Crop Suitability'),
+            ),
+          ),
+        ],
+      );
+
+      if (result == 'back') {
+        // Navigator.pop(context);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                const ChatbotPage(), // Change to your desired page
+          ),
+        );
+      } else if (result == 'suitability') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SuitabilityPage()),
+        );
+      }
+    }
+
     // For desktop view (when neither mobile nor tablet)
     if (!isMobile && !isTablet) {
       return Row(
@@ -96,8 +148,9 @@ class RecommendationContentState extends State<RecommendationContent> {
               ),
               const SizedBox(height: 4),
               Tooltip(
-                message: 'Suitability Test',
+                message: 'Navigation Options',
                 child: IconButton(
+                  key: _navigationMenuKey,
                   icon: Transform(
                     alignment: Alignment.center,
                     transform: Matrix4.identity()
@@ -109,11 +162,15 @@ class RecommendationContentState extends State<RecommendationContent> {
                     ),
                   ),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const SuitabilityPage()),
-                    );
+                    _showNavigationMenu();
+
+                    // if (!mounted)
+                    //   return; // Check if the widget is still in the tree
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //       builder: (context) => const SuitabilityPage()),
+                    // );
                   },
                   splashRadius: 16, // Smaller splash effect
                   padding: EdgeInsets.zero, // Remove extra padding
@@ -177,8 +234,9 @@ class RecommendationContentState extends State<RecommendationContent> {
               children: [
                 // Flipped Return Icon
                 Tooltip(
-                  message: 'Suitability Test',
+                  message: 'Navigation Options',
                   child: IconButton(
+                    key: _navigationMenuKey,
                     icon: Transform(
                       alignment: Alignment.center,
                       transform: Matrix4.identity()
@@ -190,11 +248,13 @@ class RecommendationContentState extends State<RecommendationContent> {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const SuitabilityPage()),
-                      );
+                      _showNavigationMenu();
+
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //       builder: (context) => const SuitabilityPage()),
+                      // );
                     },
                     splashRadius: 16, // Smaller splash effect
                     padding: EdgeInsets.zero, // Remove extra padding

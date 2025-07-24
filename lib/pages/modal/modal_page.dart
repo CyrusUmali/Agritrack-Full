@@ -1,9 +1,9 @@
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/layout.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flareline_uikit/components/card/title_card.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
-import 'package:flareline_uikit/utils/snackbar_util.dart';
 import 'package:flutter/material.dart';
 
 class ModalPage extends LayoutWidget {
@@ -61,10 +61,13 @@ class ModalPage extends LayoutWidget {
                 modalType: ModalType.small,
                 showTitleDivider: true,
                 onCancelTap: () {
-                  SnackBarUtil.showSnack(context, 'Canceled');
+                  ToastHelper.showErrorToast(
+                    'Canceled',
+                    context,
+                  );
                 },
                 onSaveTap: () {
-                  SnackBarUtil.showSuccess(context, 'Success');
+                  ToastHelper.showSuccessToast('Success', context);
                 },
                 child: const Text(
                     'FlareLine is a free and open-source admin dashboard template built on Flutter providing developers with everything they need to create a feature-rich and data-driven: back-end, dashboard, or admin panel solution for any sort of web/mac/windows/android/iOS project.'));

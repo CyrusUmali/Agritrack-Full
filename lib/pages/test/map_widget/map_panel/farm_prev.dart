@@ -17,13 +17,13 @@ class InfoCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Card(
-      margin: const EdgeInsets.all(8),
+      margin: const EdgeInsets.all(0),
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius:
+            BorderRadius.circular(12.0), // Adjust this value as needed
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Container(
           width: 300,
@@ -35,7 +35,7 @@ class InfoCard extends StatelessWidget {
               // Header Row
               Row(
                 children: [
-                  // Color Indicator with better visual treatment
+                  // Color Indicator
                   Container(
                     width: 16,
                     height: 16,
@@ -49,7 +49,7 @@ class InfoCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Title with expanded space
+                  // Title
                   Expanded(
                     child: Text(
                       polygon.name ?? 'Unnamed Area',
@@ -60,7 +60,6 @@ class InfoCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  // Chevron icon with better alignment
                   Icon(
                     Icons.chevron_right,
                     size: 20,
@@ -85,25 +84,22 @@ class InfoCard extends StatelessWidget {
 
               // Metadata Section
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                children: [
-                  _buildMetadataChip(
-                    icon: Icons.landscape,
-                    label: 'Area',
-                    value: polygon.area != null ? '${polygon.area} Ha' : 'N/A',
-                    theme: theme,
-                  ),
-                  if (polygon.parentBarangay != null)
-                    _buildMetadataChip(
-                      icon: Icons.location_city,
-                      label: 'Barangay',
-                      value: polygon.parentBarangay!,
-                      theme: theme,
-                    ),
-                ],
+              _buildMetadataChip(
+                icon: Icons.landscape,
+                label: 'Area',
+                value: polygon.area != null ? '${polygon.area} Ha' : 'N/A',
+                theme: theme,
               ),
+
+              if (polygon.parentBarangay != null) ...[
+                const SizedBox(height: 8),
+                _buildMetadataChip(
+                  icon: Icons.location_city,
+                  label: 'Barangay',
+                  value: polygon.parentBarangay!,
+                  theme: theme,
+                ),
+              ],
 
               // Action Hint
               const SizedBox(height: 8),
@@ -112,7 +108,7 @@ class InfoCard extends StatelessWidget {
                 child: Text(
                   'Tap to view details',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.primary,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -131,10 +127,6 @@ class InfoCard extends StatelessWidget {
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(8),
-      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

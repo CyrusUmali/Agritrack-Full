@@ -1,3 +1,4 @@
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
@@ -96,8 +97,9 @@ class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
           // Then reload data
           _viewModel.loadData(context);
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete sector: ${e.toString()}')),
+          ToastHelper.showErrorToast(
+            'Failed to delete sector: ${e.toString()}',
+            context,
           );
         }
       },

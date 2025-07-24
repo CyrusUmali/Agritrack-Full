@@ -1,4 +1,5 @@
 import 'package:flareline/core/models/user_model.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,9 +22,6 @@ class _UserInfoCardState extends State<UserInfoCard> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _contactController;
-  late TextEditingController _passwordController;
-  late TextEditingController _newPasswordController;
-  late TextEditingController _confirmPasswordController;
 
   @override
   void initState() {
@@ -31,18 +29,12 @@ class _UserInfoCardState extends State<UserInfoCard> {
     _nameController = TextEditingController(text: widget.user['name'] ?? '');
     _contactController =
         TextEditingController(text: widget.user['phone'] ?? '');
-    _passwordController = TextEditingController();
-    _newPasswordController = TextEditingController();
-    _confirmPasswordController = TextEditingController();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _contactController.dispose();
-    _passwordController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -53,9 +45,6 @@ class _UserInfoCardState extends State<UserInfoCard> {
         // Reset controllers when exiting edit mode
         _nameController.text = widget.user['name'] ?? '';
         _contactController.text = widget.user['phone'] ?? '';
-        _passwordController.clear();
-        _newPasswordController.clear();
-        _confirmPasswordController.clear();
       }
     });
   }
@@ -69,21 +58,11 @@ class _UserInfoCardState extends State<UserInfoCard> {
       updatedUser['name'] = _nameController.text;
       updatedUser['phone'] = _contactController.text;
 
-      bool passwordChanged = false;
-
-      // Only update password if new password was provided
-      if (_newPasswordController.text.isNotEmpty) {
-        updatedUser['newPassword'] = _newPasswordController.text;
-        updatedUser['password'] = _passwordController.text;
-        passwordChanged = true;
-      }
-
       print(updatedUser);
 
-      // Dispatch the UpdateUser event with passwordChanged flag
+      // Dispatch the UpdateUser event
       context.read<UserBloc>().add(UpdateUser(
             UserModel.fromJson(updatedUser),
-            passwordChanged: passwordChanged,
           ));
 
       _toggleEdit();
@@ -143,7 +122,6 @@ class _UserInfoCardState extends State<UserInfoCard> {
   Widget _buildEditableField({
     required String label,
     required TextEditingController controller,
-    bool obscureText = false,
     IconData? icon,
     String? Function(String?)? validator,
     TextInputType? keyboardType,
@@ -154,7 +132,6 @@ class _UserInfoCardState extends State<UserInfoCard> {
       icon: icon,
       value: TextFormField(
         controller: controller,
-        obscureText: obscureText,
         keyboardType: keyboardType,
         decoration: const InputDecoration(
           border: InputBorder.none,
@@ -196,30 +173,16 @@ class _UserInfoCardState extends State<UserInfoCard> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    // Check if user has password
-    final hasPassword = widget.user['hasPassword'] == true;
-
     return BlocListener<UserBloc, UserState>(
         listener: (context, state) {
           if (state is UsersError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+            ToastHelper.showErrorToast(
+              state.message,
+              context,
             );
           } else if (state is UserUpdated) {
-            if (state.passwordChanged) {
-              // Sign out if password was changed
-              Provider.of<UserProvider>(context, listen: false).signOut();
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/login',
-                (route) => false,
-              );
-            } else {
-              // Show success message if no password change
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile updated successfully')),
-              );
-            }
+            ToastHelper.showSuccessToast(
+                'Profile updated successfully', context);
           }
         },
         child: Card(
@@ -281,63 +244,6 @@ class _UserInfoCardState extends State<UserInfoCard> {
                       icon: Icons.phone_outlined,
                       keyboardType: TextInputType.phone,
                     ),
-
-                    // Only show password change section if user has password
-                    if (hasPassword) ...[
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Icon(Icons.lock_outline, color: colors.primary),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Change Password',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      _buildEditableField(
-                        label: 'Current Password',
-                        controller: _passwordController,
-                        icon: Icons.lock_outline,
-                        obscureText: true,
-                        validator: (value) {
-                          if (_newPasswordController.text.isNotEmpty &&
-                              (value == null || value.isEmpty)) {
-                            return 'Required to change password';
-                          }
-                          return null;
-                        },
-                      ),
-                      _buildEditableField(
-                        label: 'New Password',
-                        controller: _newPasswordController,
-                        icon: Icons.lock_reset_outlined,
-                        obscureText: true,
-                        validator: (value) {
-                          if (value != null &&
-                              value.isNotEmpty &&
-                              value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      _buildEditableField(
-                        label: 'Confirm New Password',
-                        controller: _confirmPasswordController,
-                        icon: Icons.lock_reset_outlined,
-                        obscureText: true,
-                        validator: (value) {
-                          if (value != _newPasswordController.text) {
-                            return 'Passwords do not match';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,

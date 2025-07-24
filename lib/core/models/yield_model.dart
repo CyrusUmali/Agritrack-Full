@@ -12,34 +12,37 @@ class Yield extends Equatable {
   final String? farmerName;
   final String? notes;
   final String? productName;
+  final String? farmName;
+  final String? productImage;
   final String? sector;
   final String? barangay;
   final int? sectorId;
   final double? value;
-  final String? images;
+  final List<String?> images;
   final String? status;
   final double? hectare;
 
-  const Yield({
-    required this.id,
-    required this.farmerId,
-    required this.productId,
-    required this.harvestDate,
-    this.createdAt,
-    this.updatedAt,
-    required this.farmId,
-    required this.volume,
-    this.notes,
-    this.value,
-    this.status,
-    this.barangay,
-    this.images,
-    this.sector,
-    this.sectorId,
-    this.farmerName,
-    this.hectare,
-    this.productName,
-  });
+  const Yield(
+      {required this.id,
+      required this.farmerId,
+      required this.productId,
+      required this.harvestDate,
+      this.createdAt,
+      this.updatedAt,
+      this.productImage,
+      required this.farmId,
+      required this.volume,
+      this.notes,
+      this.value,
+      this.status,
+      this.barangay,
+      this.images = const [],
+      this.sector,
+      this.sectorId,
+      this.farmerName,
+      this.hectare,
+      this.productName,
+      this.farmName});
 
   factory Yield.fromJson(Map<String, dynamic> json) {
     // Helper function to log and validate types
@@ -51,6 +54,16 @@ class Yield extends Equatable {
         return value.toString(); // Convert to string if expected to be string
       }
       return value;
+    }
+
+    // Handle images conversion
+    List<String?> parseImages(dynamic imagesData) {
+      if (imagesData == null) return [];
+      if (imagesData is String) return [imagesData];
+      if (imagesData is List) {
+        return imagesData.map((item) => item?.toString()).toList();
+      }
+      return [];
     }
 
     return Yield(
@@ -71,9 +84,12 @@ class Yield extends Equatable {
       sector: _parseField('sector', json['sector'], expectString: true),
       sectorId: json['sectorId'] as int? ?? 0,
       value: json['value'] != null ? (json['value'] as num).toDouble() : null,
-      images: _parseField('images', json['images'], expectString: true),
+      images: parseImages(json['images']),
       farmerName:
           _parseField('farmerName', json['farmerName'], expectString: true),
+      farmName: _parseField('farmName', json['farmName'], expectString: true),
+      productImage:
+          _parseField('productImage', json['productImage'], expectString: true),
       productName:
           _parseField('productName', json['productName'], expectString: true),
       status: _parseField('status', json['status'], expectString: true),
@@ -82,6 +98,53 @@ class Yield extends Equatable {
           : null,
     );
   }
+
+  Yield copyWith({
+    int? id,
+    int? farmerId,
+    int? productId,
+    DateTime? harvestDate,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    int? farmId,
+    double? volume,
+    String? notes,
+    String? farmerName,
+    String? productName,
+    String? productImage,
+    String? farmName,
+    String? sector,
+    String? barangay,
+    int? sectorId,
+    double? value,
+    List<String?>? images,
+    String? status,
+    double? hectare,
+  }) {
+    return Yield(
+      id: id ?? this.id,
+      farmerId: farmerId ?? this.farmerId,
+      productId: productId ?? this.productId,
+      harvestDate: harvestDate ?? this.harvestDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      farmId: farmId ?? this.farmId,
+      volume: volume ?? this.volume,
+      notes: notes ?? this.notes,
+      farmerName: farmerName ?? this.farmerName,
+      productImage: productImage ?? this.productImage,
+      productName: productName ?? this.productName,
+      farmName: farmName ?? this.farmName,
+      sector: sector ?? this.sector,
+      barangay: barangay ?? this.barangay,
+      sectorId: sectorId ?? this.sectorId,
+      value: value ?? this.value,
+      images: images ?? this.images,
+      status: status ?? this.status,
+      hectare: hectare ?? this.hectare,
+    );
+  }
+
   // Convert to JSON (useful for API requests)
   Map<String, dynamic> toJson() {
     return {
@@ -101,7 +164,9 @@ class Yield extends Equatable {
       'sector': sector,
       'sectorId': sectorId,
       'farmerName': farmerName,
+      'farmName': farmName,
       'productName': productName,
+      'productImage': productImage,
       'status': status
     };
   }
@@ -120,7 +185,10 @@ class Yield extends Equatable {
         volume: 500,
         notes: 'First harvest of the season',
         value: 2500,
-        images: 'https://example.com/rice-harvest.jpg',
+        images: [
+          'https://example.com/rice-harvest1.jpg',
+          'https://example.com/rice-harvest2.jpg'
+        ],
       ),
       Yield(
         id: 2,
@@ -133,7 +201,7 @@ class Yield extends Equatable {
         volume: 1200,
         notes: 'Weekly egg collection',
         value: 3600,
-        images: 'https://example.com/eggs-collection.jpg',
+        images: ['https://example.com/eggs-collection.jpg'],
       ),
       Yield(
         id: 3,
@@ -146,7 +214,11 @@ class Yield extends Equatable {
         volume: 300,
         notes: 'Pond harvest - good yield',
         value: 4500,
-        images: 'https://example.com/tilapia-harvest.jpg',
+        images: [
+          'https://example.com/tilapia-harvest1.jpg',
+          'https://example.com/tilapia-harvest2.jpg',
+          'https://example.com/tilapia-harvest3.jpg'
+        ],
       ),
     ];
   }
@@ -168,6 +240,8 @@ class Yield extends Equatable {
         sector,
         sectorId,
         productName,
+        productImage,
+        farmName,
         hectare,
         status,
         barangay

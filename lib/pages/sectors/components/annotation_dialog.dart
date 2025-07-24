@@ -1,3 +1,4 @@
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flutter/material.dart';
 
 class SimpleAnnotationDialog extends StatefulWidget {
@@ -230,14 +231,9 @@ class _SimpleAnnotationDialogState extends State<SimpleAnnotationDialog> {
                   FilledButton(
                     onPressed: () {
                       if (_textController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Please enter annotation text'),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                          ),
-                        );
+                        ToastHelper.showSuccessToast(
+                            'Please enter annotation text', context);
+
                         return;
                       }
                       Navigator.pop(context, {

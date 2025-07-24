@@ -1,3 +1,4 @@
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flareline/pages/layout.dart';
@@ -99,13 +100,10 @@ class _FarmerRegistrationDesktopState extends State<FarmerRegistrationDesktop> {
       // TODO: Implement actual submission logic
       await Future.delayed(const Duration(seconds: 2));
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration submitted successfully!')),
-      );
+      ToastHelper.showSuccessToast(
+          'Registration submitted successfully!', context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ToastHelper.showErrorToast('Error: $e', context);
     } finally {
       setState(() => _isSubmitting = false);
     }

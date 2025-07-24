@@ -4,10 +4,12 @@ import 'package:flareline/core/models/product_model.dart';
 import 'package:flareline/pages/test/map_widget/farm_list_panel/barangay_filter_panel.dart';
 import 'package:flareline/pages/test/map_widget/farm_service.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/farm_info_card.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 import 'farm_list_panel/farm_list.dart';
 import 'stored_polygons.dart';
@@ -101,9 +103,9 @@ class _MapWidgetState extends State<MapWidget>
         _loadingError = e.toString();
       });
       if (mounted) {
-        // Additional check for ScaffoldMessenger
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load farms: ${e.toString()}')),
+        ToastHelper.showErrorToast(
+          'Failed to load farms: ${e.toString()}',
+          context,
         );
       }
     } finally {
@@ -175,14 +177,14 @@ class _MapWidgetState extends State<MapWidget>
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Loading farm data...'),
-          ],
+      return SizedBox(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        child: Center(
+          child: LoadingAnimationWidget.inkDrop(
+            color: Colors.blue,
+            size: 50,
+          ),
         ),
       );
     }
@@ -286,7 +288,7 @@ class _MapWidgetState extends State<MapWidget>
               },
               onPolygonSelected: (int index) {
                 setState(() {
-                  polygonManager.selectPolygon(index);
+                  // polygonManager.selectPolygon(index);
                 });
               },
               onFiltersChanged: () {
@@ -372,7 +374,7 @@ class _MapWidgetState extends State<MapWidget>
             },
           ),
         ),
-        if (polygonManager.selectedPolygonIndex == null &&
+        if (polygonManager.selectedPolygonIndex != null &&
             polygonManager.isEditing)
           Positioned(
             bottom: 20,
@@ -381,7 +383,7 @@ class _MapWidgetState extends State<MapWidget>
               onPressed: () {
                 setState(() {
                   polygonManager.saveEditedPolygon();
-                  polygonManager.toggleEditing();
+                  // polygonManager.toggleEditing();
                   polygonManager.selectedPolygon = null;
                   polygonManager.selectedPolygonIndex = null;
                 });
@@ -432,7 +434,7 @@ class _MapWidgetState extends State<MapWidget>
       width: buttonSize,
       height: buttonSize,
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
+        color: Theme.of(context).cardTheme.color ?? Colors.white,
         shape: shape is CircleBorder ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: shape is RoundedRectangleBorder
             ? (shape.borderRadius as BorderRadius?)

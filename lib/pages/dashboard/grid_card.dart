@@ -2,14 +2,17 @@
 
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 
 class GridCard extends StatefulWidget {
-  const GridCard({super.key});
+  final int selectedYear; // Add selectedYear as a required parameter
 
+  const GridCard({super.key, required this.selectedYear}); // Update constructor
   @override
   State<GridCard> createState() => _GridCardState();
 }
@@ -18,11 +21,31 @@ class _GridCardState extends State<GridCard> {
   Map<String, dynamic>? _shiValues;
   bool _isLoading = true;
   String? _error;
+  bool _isFarmer = false;
+  String? _farmerId;
+
+  @override
+  void didUpdateWidget(covariant GridCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedYear != widget.selectedYear) {
+      _fetchShiValues(); // Refetch when year changes
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    _fetchUserRole();
     _fetchShiValues();
+  }
+
+  Future<void> _fetchUserRole() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    _isFarmer = userProvider.isFarmer;
+
+    _farmerId = userProvider.farmer?.id?.toString(); // Ensure string conversion
+
+    await _fetchShiValues();
   }
 
   Future<void> _fetchShiValues() async {
@@ -34,7 +57,11 @@ class _GridCardState extends State<GridCard> {
     });
 
     try {
-      final shiValues = await sectorService.fetchShiValues();
+      // Pass farmerId only if the user is a farmer
+      final shiValues = await sectorService.fetchShiValues(
+        farmerId: _isFarmer ? _farmerId : null,
+        year: widget.selectedYear, // Pass the selectedYear here
+      );
       setState(() {
         _shiValues = shiValues;
         _isLoading = false;
@@ -95,16 +122,31 @@ class _GridCardState extends State<GridCard> {
   }
 
   Widget _buildErrorLayout(BuildContext context, String error) {
+    // Determine the error message based on the error type
+    String errorMessage;
+    if (error.contains('timeout') || error.contains('network')) {
+      errorMessage = 'Connection failed. Please check your internet.';
+    } else if (error.contains('server')) {
+      errorMessage = 'Server error. Please try again later.';
+    } else {
+      errorMessage = 'Something went wrong: $error';
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('Error loading data: $error',
-              style: TextStyle(color: Colors.red)),
+          Icon(Icons.error_outline, color: Colors.red, size: 48),
           const SizedBox(height: 16),
-          ElevatedButton(
+          Text(errorMessage,
+              style: TextStyle(color: Colors.red), textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          IconButton(
+            icon: Icon(Icons.refresh),
+            color: Colors.grey,
+            iconSize: 36,
             onPressed: _fetchShiValues,
-            child: const Text('Retry'),
+            tooltip: 'Retry',
           ),
         ],
       ),
@@ -227,18 +269,31 @@ class _GridCardState extends State<GridCard> {
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: _itemCardWidget(
-            context,
-            Icons.person_2_outlined,
-            'Total Farmers',
-            'Active:',
-            '',
-            false,
-            'Inactive:',
-            '${shiValues['activeFarmers'] ?? '0'}',
-            '${shiValues['inactiveFarmers'] ?? '0'}',
-            DeviceScreenType.desktop,
-          ),
+          child: _isFarmer
+              ? _itemCardWidget(
+                  context,
+                  Icons.agriculture_outlined,
+                  'My Farms',
+                  'Total:',
+                  '',
+                  false,
+                  '',
+                  '${shiValues['numberOfFarms'] ?? '0'}',
+                  '',
+                  DeviceScreenType.desktop,
+                )
+              : _itemCardWidget(
+                  context,
+                  Icons.person_2_outlined,
+                  'Total Farmers',
+                  'Active:',
+                  '',
+                  false,
+                  'Inactive:',
+                  '${shiValues['activeFarmers'] ?? '0'}',
+                  '${shiValues['inactiveFarmers'] ?? '0'}',
+                  DeviceScreenType.desktop,
+                ),
         ),
       ],
     );
@@ -292,18 +347,31 @@ class _GridCardState extends State<GridCard> {
               '\$${(shiValues['totalValue'] ?? 0).toStringAsFixed(2)}',
               DeviceScreenType.mobile,
             ),
-            _itemCardWidget(
-              context,
-              Icons.security_rounded,
-              'Total Farmers',
-              'Active:',
-              '',
-              false,
-              'Inactive:',
-              '${shiValues['activeFarmers'] ?? '0'}',
-              '${shiValues['inactiveFarmers'] ?? '0'}',
-              DeviceScreenType.mobile,
-            ),
+            _isFarmer
+                ? _itemCardWidget(
+                    context,
+                    Icons.agriculture_outlined,
+                    'My Farms',
+                    'Total:',
+                    '',
+                    false,
+                    '',
+                    '${shiValues['numberOfFarms'] ?? '0'}',
+                    '',
+                    DeviceScreenType.mobile,
+                  )
+                : _itemCardWidget(
+                    context,
+                    Icons.security_rounded,
+                    'Total Farmers',
+                    'Active:',
+                    '',
+                    false,
+                    'Inactive:',
+                    '${shiValues['activeFarmers'] ?? '0'}',
+                    '${shiValues['inactiveFarmers'] ?? '0'}',
+                    DeviceScreenType.mobile,
+                  ),
           ],
         ),
       ],
@@ -401,16 +469,5 @@ class _GridCardState extends State<GridCard> {
         ),
       ),
     );
-  }
-}
-
-extension _InsertBetween on List<Widget> {
-  List<Widget> insertBetween(Widget widget) {
-    if (length <= 1) return this;
-
-    for (var i = length - 1; i > 0; i--) {
-      insert(i, widget);
-    }
-    return this;
   }
 }

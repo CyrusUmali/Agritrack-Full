@@ -1,7 +1,9 @@
+import 'package:flareline/pages/recommendation/chatbot/chatbot_page.dart';
 import 'package:flareline/pages/recommendation/recommendation_page.dart';
 import 'package:flareline/pages/recommendation/requirement_page.dart';
 import 'package:flareline/pages/recommendation/suitability/suitability_page.dart';
 import 'package:flareline/pages/recommendation/suitability/suitabilty_model.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'suitability_inputs.dart';
@@ -15,6 +17,7 @@ class SuitabilityContent extends StatefulWidget {
 }
 
 class SuitabilityContentState extends State<SuitabilityContent> {
+  final GlobalKey _navigationMenuKey = GlobalKey();
   final SuitabilityModel model = SuitabilityModel(); // Updated model type
   final List<String> availableCrops = [
     "grapes",
@@ -69,6 +72,56 @@ class SuitabilityContentState extends State<SuitabilityContent> {
     }
   }
 
+  void _showNavigationMenu() async {
+    final RenderBox? renderBox =
+        _navigationMenuKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final Offset buttonPosition = renderBox.localToGlobal(Offset.zero);
+    final Size buttonSize = renderBox.size;
+
+    final result = await showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        buttonPosition.dx,
+        buttonPosition.dy + buttonSize.height,
+        buttonPosition.dx + 200,
+        buttonPosition.dy + buttonSize.height + 100,
+      ),
+      items: [
+        const PopupMenuItem(
+          value: 'back',
+          child: ListTile(
+            title: Text('Chatbot'),
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'recommendation',
+          child: ListTile(
+            title: Text('Crop Recommendation'),
+          ),
+        ),
+      ],
+    );
+
+    if (result == 'back') {
+      // Navigator.pop(context);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              const ChatbotPage(), // Change to your desired page
+        ),
+      );
+    } else if (result == 'recommendation') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const RecommendationPage()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
@@ -117,11 +170,9 @@ class SuitabilityContentState extends State<SuitabilityContent> {
 
                         await model.getSuggestions(deficientParams);
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error: ${e.toString()}'),
-                            duration: Duration(seconds: 5),
-                          ),
+                        ToastHelper.showErrorToast(
+                          'Error: ${e.toString()}',
+                          context,
                         );
                       }
                     },
@@ -295,8 +346,9 @@ class SuitabilityContentState extends State<SuitabilityContent> {
                           await model.checkSuitability();
                           setState(() {});
                         } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
+                          ToastHelper.showErrorToast(
+                            'Error: $e',
+                            context,
                           );
                         }
                       },
@@ -354,8 +406,9 @@ class SuitabilityContentState extends State<SuitabilityContent> {
               ),
               const SizedBox(height: 4),
               Tooltip(
-                message: 'Crop Recomendation', // Customize tooltip text
+                message: 'Navigation Options', // Customize tooltip text
                 child: IconButton(
+                  key: _navigationMenuKey,
                   icon: Transform(
                     alignment: Alignment.center,
                     transform: Matrix4.identity()
@@ -367,13 +420,18 @@ class SuitabilityContentState extends State<SuitabilityContent> {
                     ),
                   ),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const RecommendationPage(), // Change to your desired page
-                      ),
-                    );
+                    // if (!mounted)
+                    //   return; // Check if the widget is still in the tree
+
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) =>
+                    //         const RecommendationPage(), // Change to your desired page
+                    //   ),
+                    // );
+
+                    _showNavigationMenu();
                   },
                   splashRadius: 16,
                   padding: EdgeInsets.zero,
@@ -436,8 +494,9 @@ class SuitabilityContentState extends State<SuitabilityContent> {
               children: [
                 // Info Icon
                 Tooltip(
-                  message: 'Crop Recommendation', // Customize tooltip text
+                  message: 'Navigation Options', // Customize tooltip text
                   child: IconButton(
+                    key: _navigationMenuKey,
                     icon: Transform(
                       alignment: Alignment.center,
                       transform: Matrix4.identity()
@@ -449,11 +508,12 @@ class SuitabilityContentState extends State<SuitabilityContent> {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const RecommendationPage()),
-                      );
+                      _showNavigationMenu();
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //       builder: (context) => const RecommendationPage()),
+                      // );
                     },
                     splashRadius: 16,
                     padding: EdgeInsets.zero,

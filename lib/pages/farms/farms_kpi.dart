@@ -49,26 +49,58 @@ class _FarmKpiState extends State<FarmKpi> {
   @override
   Widget build(BuildContext context) {
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Error loading data: $_error',
-                style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchFarmStatistics,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
+      return _buildErrorLayout(context, _error!, _fetchFarmStatistics);
     }
 
     return ScreenTypeLayout.builder(
       desktop: (context) => _desktopLayout(context),
       mobile: (context) => _mobileLayout(context),
       tablet: (context) => _mobileLayout(context),
+    );
+  }
+
+  Widget _buildErrorLayout(
+      BuildContext context, String error, VoidCallback onRetry) {
+    // Determine the error message based on the error type
+    String errorMessage;
+    if (error.contains('timeout') || error.contains('network')) {
+      errorMessage =
+          'Connection failed. Please check your internet connection.';
+    } else if (error.contains('server')) {
+      errorMessage = 'Server error. Please try again later.';
+    } else {
+      errorMessage =
+          'Failed to load farm statistics: ${error.replaceAll(RegExp(r'^Exception: '), '')}';
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              errorMessage,
+              style: const TextStyle(color: Colors.red, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            onPressed: onRetry,
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Theme.of(context).primaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          )
+        ],
+      ),
     );
   }
 

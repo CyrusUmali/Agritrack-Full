@@ -25,7 +25,7 @@
         "path": "/usersPage"
       },
       {
-        "icon": "assets/sidebar/user.svg",
+        "icon": "assets/sidebar/farmer.svg",
         "menuName": "Farmers",
         "path": "/farmers"
       },

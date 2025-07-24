@@ -7,7 +7,12 @@ import 'package:iconify_flutter_plus/icons/mdi.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
 
 class YieldKpi extends StatefulWidget {
-  const YieldKpi({super.key});
+  final int selectedYear; // Add selectedYear as a required parameter
+  final int? farmerId;
+  const YieldKpi(
+      {super.key,
+      required this.selectedYear,
+      this.farmerId}); // Update constructor
 
   @override
   State<YieldKpi> createState() => _YieldKpiState();
@@ -33,7 +38,12 @@ class _YieldKpiState extends State<YieldKpi> {
     });
 
     try {
-      final stats = await sectorService.fetchYieldStatistics();
+      // Pass both selectedYear and farmerId (if available) to fetchYieldStatistics
+      final stats = await sectorService.fetchYieldStatistics(
+        year: widget.selectedYear,
+        farmerId: widget.farmerId,
+      );
+
       setState(() {
         _yieldStats = stats;
         _isLoading = false;
@@ -49,26 +59,58 @@ class _YieldKpiState extends State<YieldKpi> {
   @override
   Widget build(BuildContext context) {
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Error loading data: $_error',
-                style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchYieldStatistics,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
+      return _buildErrorLayout(context, _error!, _fetchYieldStatistics);
     }
 
     return ScreenTypeLayout.builder(
       desktop: (context) => _desktopLayout(context),
       mobile: (context) => _mobileLayout(context),
       tablet: (context) => _mobileLayout(context),
+    );
+  }
+
+  Widget _buildErrorLayout(
+      BuildContext context, String error, VoidCallback onRetry) {
+    // Determine the error message based on the error type
+    String errorMessage;
+    if (error.contains('timeout') || error.contains('network')) {
+      errorMessage =
+          'Connection failed. Please check your internet connection.';
+    } else if (error.contains('server')) {
+      errorMessage = 'Server error. Please try again later.';
+    } else {
+      errorMessage =
+          'Failed to load user statistics: ${error.replaceAll(RegExp(r'^Exception: '), '')}';
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              errorMessage,
+              style: const TextStyle(color: Colors.red, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            onPressed: onRetry,
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Theme.of(context).primaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          )
+        ],
+      ),
     );
   }
 
@@ -274,14 +316,18 @@ class _YieldKpiState extends State<YieldKpi> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    value,
-                    overflow: TextOverflow.visible,
-                    maxLines: 2,
-                    style: TextStyle(
-                      fontSize: isDesktop ? 18 : 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
+                  // Modified this part to handle overflow better
+                  SizedBox(
+                    width: double.infinity, // Take full available width
+                    child: Text(
+                      value,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1, // Allow up to 2 lines before ellipsis
+                      style: TextStyle(
+                        fontSize: isDesktop ? 18 : 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
                     ),
                   ),
                 ],

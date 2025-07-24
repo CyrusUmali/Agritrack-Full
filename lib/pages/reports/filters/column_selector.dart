@@ -15,23 +15,31 @@ class ColumnSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     final columns = ColumnOptions.reportColumns[reportType] ?? [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Select Columns',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: columns.map((column) {
+            final isSelected = selectedColumns.contains(column);
+
             return FilterChip(
               label: Text(column),
-              selected: selectedColumns.contains(column),
+              selected: isSelected,
               onSelected: (selected) {
                 final newColumns = Set<String>.from(selectedColumns);
                 if (selected) {
@@ -41,14 +49,26 @@ class ColumnSelector extends StatelessWidget {
                 }
                 onColumnsChanged(newColumns);
               },
-              selectedColor: Colors.blue[200], // Light blue when selected
-              checkmarkColor: Colors.blue[800], // Dark blue checkmark
-              backgroundColor: Colors.grey[200], // Light grey when not selected
-              labelStyle: TextStyle(
-                color: selectedColumns.contains(column)
-                    ? Colors.blue[900] // Dark blue text when selected
-                    : Colors.black, // Black text when not selected
+              selectedColor: colorScheme.primary.withOpacity(0.2),
+              checkmarkColor: colorScheme.primary,
+              backgroundColor: theme.cardTheme.color ?? Colors.grey[200],
+              labelStyle: textTheme.bodyMedium?.copyWith(
+                color: isSelected
+                    ? colorScheme.primary
+                    : textTheme.bodyMedium?.color,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(
+                  color: isSelected
+                      ? colorScheme.primary
+                      : theme.dividerColor.withOpacity(0.5),
+                  width: 1,
+                ),
+              ),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             );
           }).toList(),
         ),

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline/services/api_service.dart';
 import 'package:flareline_uikit/core/mvvm/base_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -159,15 +160,21 @@ class SignUpProvider extends BaseViewModel {
 
       _isPendingVerification = true;
       notifyListeners();
+
+      // Show success toast
+      ToastHelper.showSuccessToast(
+          'Registration successful! Please check your email for verification.',
+          context);
     } on DioException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Registration failed: ${e.response?.data['message'] ?? e.message}')),
+      // Show error toast with server error message
+      ToastHelper.showErrorToast(
+        'Registration failed: ${e.response?.data['message'] ?? e.message}',
+        context,
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: ${e.toString()}')),
+      ToastHelper.showErrorToast(
+        'Registration failed: ${e.toString()}',
+        context,
       );
     } finally {
       setLoading(false);

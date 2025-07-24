@@ -28,7 +28,7 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
   double get logoFontSize => 30;
   Color get sideBarDarkColor => FlarelineColors.darkBackground;
   Color get sideBarLightColor => Colors.white;
-  Color? get backgroundColor => null;
+  // Color? get backgroundColor => null;
   double get sideBarWidth => 240;
   double get sideBarCollapsedWidth => 100;
   bool get isSidebarCollapsible => true;
@@ -90,10 +90,17 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
   Widget contentMobileWidget(BuildContext context) =>
       contentDesktopWidget(context);
 
+  Color? backgroundColor(BuildContext context) {
+    return isDarkTheme(context) ? FlarelineColors.darkerBackground : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      // bool isDark = isDarkTheme(context);
+      // backgroundColor: null,
+      backgroundColor: backgroundColor(context),
+
       appBar: AppBar(toolbarHeight: 0),
       body: ResponsiveBuilder(
         builder: (context, sizingInformation) {
@@ -126,9 +133,7 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
       logoWidget: logoWidget(context),
       footerWidget: footerWidget(context),
       logoFontSize: logoFontSize,
-      // isCollapsed: isCollapsed,
       isCollapsible: isSidebarCollapsible,
-      // pinnedNotifier: _sidebarPinnedNotifier,
     );
   }
 

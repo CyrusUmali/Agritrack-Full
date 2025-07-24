@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Add this import
 
 class AuthGuard {
   static const publicRoutes = [
@@ -20,6 +22,7 @@ class AuthGuard {
     '/toast',
     '/modal',
     '/basicChart',
+    '/forgotPwd'
   ];
 
   static bool isPublicRoute(String path) {
@@ -27,10 +30,12 @@ class AuthGuard {
   }
 
   static bool isAuthenticated(BuildContext context) {
-    return FirebaseAuth.instance.currentUser != null;
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    return firebaseUser != null && userProvider.user != null;
   }
 
-  // The original canAccess can be removed or kept as a combined check
   static bool canAccess(String path, BuildContext context) {
     return isPublicRoute(path) || isAuthenticated(context);
   }

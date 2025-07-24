@@ -82,7 +82,7 @@ Color getPinColor(PinStyle pinStyle) {
 }
 
 PinStyle parsePinStyle(String pinStyle) {
-  switch (pinStyle.toLowerCase()) {
+  switch (pinStyle) {
     // Case-insensitive matching
     case 'Rice':
       return PinStyle.Rice;

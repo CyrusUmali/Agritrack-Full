@@ -1,12 +1,14 @@
 import 'package:flareline/core/models/yield_model.dart';
-import 'package:flareline/pages/sectors/components/sector_annotation_handler.dart';
+import 'package:flareline/pages/sectors/components/chart_annotation_manager.dart';
+import 'package:flareline/pages/sectors/components/sector_products_selector.dart';
 import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:syncfusion_flutter_charts/charts.dart' as chart;
 import 'components/sector_line_chart_widget.dart';
 import './components/sector_data_model.dart';
-import 'dart:convert';
+import 'package:shimmer/shimmer.dart';
 
 class SectorLineChart extends StatefulWidget {
   const SectorLineChart({super.key});
@@ -20,84 +22,91 @@ class _SectorLineChartState extends State<SectorLineChart> {
   int selectedFromYear = 2020;
   int selectedToYear = 2025;
   List<Yield> yieldData = [];
+  bool isLoading = true;
+  final Map<String, List<String>> _sectorProductSelections = {};
+
+  // Chart and annotation state
   final GlobalKey _chartKey = GlobalKey();
-  late SectorAnnotationHandler annotationHandler;
+  late ChartAnnotationManager _annotationManager;
 
   @override
   void initState() {
     super.initState();
-    annotationHandler = SectorAnnotationHandler(
-      chartKey: _chartKey,
-      onEditAnnotation: _editAnnotation,
-      onDeleteAnnotation: _deleteAnnotation,
-    );
+    _annotationManager = ChartAnnotationManager(setState: setState);
+    _annotationManager.setContext(context); // Set the context first
 
     final yieldBloc = context.read<YieldBloc>();
     if (yieldBloc.state is YieldsLoaded) {
+      isLoading = false;
       yieldData = (yieldBloc.state as YieldsLoaded).yields;
       sectorData = buildSectorDataFromYields(yieldData);
-      // _printYieldData();
     }
 
-    yieldBloc.stream.listen((state) {
+    yieldBloc.stream.listen((state) async {
       if (state is YieldsLoaded) {
         setState(() {
+          isLoading = false;
           yieldData = state.yields;
           sectorData = buildSectorDataFromYields(yieldData);
-
-          // Print the raw structure
-          // print('=== RAW SECTOR DATA ===');
-          // sectorData.forEach((sector, products) {
-          //   print('$sector: [');
-          //   for (var product in products) {
-          //     print('  ${product.toString()},');
-          //   }
-          //   print(']');
-          // });
-
-          // Alternative JSON output (requires all elements to be encodable)
-          try {
-            final jsonData = {
-              for (var entry in sectorData.entries)
-                entry.key: entry.value.map((e) => e.toJson()).toList()
-            };
-            // print('\n=== JSON STRUCTURE ===');
-            // print(jsonEncode(jsonData));
-          } catch (e) {
-            print('\nFailed to encode as JSON: $e');
-          }
         });
-
-        // _printYieldData();
+        await _annotationManager.loadAnnotations();
+      } else if (state is YieldsLoading) {
+        setState(() => isLoading = true);
       }
     });
   }
 
-  void _printYieldData() {
-    if (yieldData.isEmpty) {
-      print('No yield data available');
-      return;
-    }
-
-    print('\n===== YIELD DATA (${yieldData.length} records) =====');
-
-    for (var i = 0; i < yieldData.length; i++) {
-      final yield = yieldData[i];
-      print('\nRecord #${i + 1}:');
-      print('  ID: ${yield.id}');
-      print('  Farmer: ${yield.farmerName} (ID: ${yield.farmerId})');
-      print('  Product: ${yield.productName} (ID: ${yield.productId})');
-      print('  Sector: ${yield.sector} (ID: ${yield.sectorId})');
-      print('  Barangay: ${yield.barangay}');
-      print('  Volume: ${yield.volume}');
-      print('  Area (ha): ${yield.hectare}');
-      print('  Status: ${yield.status}');
-      print('  Created At: ${yield.createdAt}');
-      print('  Farm ID: ${yield.farmId}');
-      print('----------------------------------');
-    }
-
-    print('===== END OF YIELD DATA =====\n');
+  Widget _buildShimmerContent() {
+    return CommonCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Container(
+                  width: 180,
+                  height: 24,
+                  color: Colors.white,
+                  margin: const EdgeInsets.only(bottom: 16),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 120,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            height: 380,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _selectYearRange(BuildContext context) async {
@@ -178,25 +187,27 @@ class _SectorLineChartState extends State<SectorLineChart> {
     }
   }
 
-  void _editAnnotation(int index) {
-    annotationHandler.editAnnotation(context, index).then((_) {
-      setState(() {});
-    });
-  }
-
-  void _deleteAnnotation(int index) {
-    setState(() {
-      annotationHandler.deleteAnnotation(index);
-    });
+  void _handleChartTap(TapDownDetails details) {
+    final filteredData = _getFilteredData();
+    _annotationManager.handleChartTap(details, _chartKey, selectedFromYear,
+        selectedToYear, filteredData, context);
+    // Added context as the last parameter
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Shimmer.fromColors(
+        baseColor: Colors.grey.shade200,
+        highlightColor: Colors.grey.shade100,
+        child: _buildShimmerContent(),
+      );
+    }
+
     final scrollBreakpoint = 600.0;
     final screenWidth = MediaQuery.of(context).size.width;
     final needsScrolling = screenWidth < scrollBreakpoint;
     final useVerticalHeader = screenWidth < 450;
-
     final filteredData = _getFilteredData();
 
     return CommonCard(
@@ -221,12 +232,17 @@ class _SectorLineChartState extends State<SectorLineChart> {
                   const SizedBox(height: 12),
                   Align(
                     alignment: Alignment.center,
-                    child: _buildSectorDropdown(),
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.center,
-                    child: _buildYearRangePickerButton(context),
+                    child: Column(
+                      children: [
+                        _buildSectorDropdown(),
+                        if (selectedSector != 'All') ...[
+                          const SizedBox(height: 12),
+                          _buildSelectProductsButton(),
+                        ],
+                        const SizedBox(height: 12),
+                        _buildYearRangePickerButton(context),
+                      ],
+                    ),
                   ),
                 ] else ...[
                   Row(
@@ -242,6 +258,10 @@ class _SectorLineChartState extends State<SectorLineChart> {
                       Row(
                         children: [
                           _buildSectorDropdown(),
+                          if (selectedSector != 'All') ...[
+                            const SizedBox(width: 12),
+                            _buildSelectProductsButton(),
+                          ],
                           const SizedBox(width: 12),
                           _buildYearRangePickerButton(context),
                         ],
@@ -253,13 +273,7 @@ class _SectorLineChartState extends State<SectorLineChart> {
             ),
           ),
           GestureDetector(
-            onTapDown: (details) => annotationHandler.handleChartTap(
-              details,
-              context,
-              selectedFromYear,
-              selectedToYear,
-              filteredData,
-            ),
+            onTapDown: _handleChartTap,
             child: SizedBox(
               height: 380,
               child: needsScrolling
@@ -273,7 +287,7 @@ class _SectorLineChartState extends State<SectorLineChart> {
                           title: '',
                           dropdownItems: [],
                           datas: filteredData,
-                          annotations: annotationHandler.customAnnotations,
+                          annotations: _annotationManager.customAnnotations,
                           unit: selectedSector == 'Livestock' ? 'heads' : 'mt',
                         ),
                       ),
@@ -283,12 +297,12 @@ class _SectorLineChartState extends State<SectorLineChart> {
                       title: '',
                       dropdownItems: [],
                       datas: filteredData,
-                      annotations: annotationHandler.customAnnotations,
+                      annotations: _annotationManager.customAnnotations,
                       unit: selectedSector == 'Livestock' ? 'heads' : 'mt',
                     ),
             ),
           ),
-          if (annotationHandler.customAnnotations.isNotEmpty)
+          if (_annotationManager.customAnnotations.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
@@ -350,7 +364,18 @@ class _SectorLineChartState extends State<SectorLineChart> {
           .where((sector) => sector.data.isNotEmpty)
           .toList();
     } else {
+      if (!_sectorProductSelections.containsKey(selectedSector)) {
+        final sectorProducts = sectorData[selectedSector] ?? [];
+        _sectorProductSelections[selectedSector] =
+            sectorProducts.take(8).map((product) => product.name).toList();
+      }
+
+      final currentSelections = _sectorProductSelections[selectedSector] ?? [];
+
       return (sectorData[selectedSector] ?? [])
+          .where((sector) =>
+              currentSelections.isEmpty ||
+              currentSelections.contains(sector.name))
           .map((sector) {
             final filteredSeriesData = sector.data.where((point) {
               final year = int.parse(point['x']);
@@ -367,6 +392,39 @@ class _SectorLineChartState extends State<SectorLineChart> {
           .where((sector) => sector.data.isNotEmpty)
           .toList();
     }
+  }
+
+  Widget _buildSelectProductsButton() {
+    return InkWell(
+      onTap: () {
+        SectorProductSelectionModal.show(
+          context: context,
+          sector: selectedSector,
+          maxProducts: 8,
+          initialSelections: _sectorProductSelections[selectedSector]?.toList(),
+          onProductsSelected: (products) {
+            setState(() {
+              _sectorProductSelections[selectedSector] = List.from(products);
+            });
+          },
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Select Products'),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_drop_down, size: 20),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildSectorDropdown() {

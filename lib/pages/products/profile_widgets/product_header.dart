@@ -1,16 +1,17 @@
-import 'package:flareline/pages/products/profile_widgets/info_chip.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flareline/core/models/product_model.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
-import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flareline/pages/products/product/product_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class ProductHeader extends StatefulWidget {
   final Product item;
@@ -68,6 +69,81 @@ class _ProductHeaderState extends State<ProductHeader>
     _descriptionController.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
+
+    return BlocListener<ProductBloc, ProductState>(
+      listener: (context, state) {
+        if (state is ProductsLoaded && state.message != null) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.flat,
+            title: Text(state.message!),
+            // description: const Text('Product updated successfully'),
+            alignment: Alignment.topRight,
+            autoCloseDuration: const Duration(seconds: 4),
+            showProgressBar: true,
+          );
+          setState(() {
+            _isEditing = false;
+            _isLoading = false;
+            _newImageUrl = null;
+          });
+          _animationController.reverse();
+        } else if (state is ProductsError) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.error,
+            style: ToastificationStyle.flat,
+            title: Text(state.message),
+            // description: const Text('Failed to update product'),
+            alignment: Alignment.topRight,
+            autoCloseDuration: const Duration(seconds: 4),
+            showProgressBar: true,
+          );
+          setState(() => _isLoading = false);
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(160),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: CommonCard(
+          child: Container(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(theme, colorScheme),
+                  const SizedBox(height: 24),
+                  _buildContent(theme, colorScheme),
+                  const SizedBox(height: 24),
+                  if (!isFarmer) _buildEditControls(colorScheme),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _toggleEditing() {
@@ -210,89 +286,6 @@ class _ProductHeaderState extends State<ProductHeader>
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return BlocListener<ProductBloc, ProductState>(
-      listener: (context, state) {
-        if (state is ProductsLoaded && state.message != null) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.success,
-            style: ToastificationStyle.flat,
-            title: Text(state.message!),
-            // description: const Text('Product updated successfully'),
-            alignment: Alignment.topRight,
-            autoCloseDuration: const Duration(seconds: 4),
-            showProgressBar: true,
-          );
-          setState(() {
-            _isEditing = false;
-            _isLoading = false;
-            _newImageUrl = null;
-          });
-          _animationController.reverse();
-        } else if (state is ProductsError) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.flat,
-            title: Text(state.message),
-            // description: const Text('Failed to update product'),
-            alignment: Alignment.topRight,
-            autoCloseDuration: const Duration(seconds: 4),
-            showProgressBar: true,
-          );
-          setState(() => _isLoading = false);
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: CommonCard(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.surface,
-                  colorScheme.surfaceVariant.withOpacity(0.3),
-                ],
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(theme, colorScheme),
-                  const SizedBox(height: 24),
-                  _buildContent(theme, colorScheme),
-                  const SizedBox(height: 24),
-                  _buildEditControls(colorScheme),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildHeader(ThemeData theme, ColorScheme colorScheme) {
     return Row(
       children: [
@@ -391,14 +384,14 @@ class _ProductHeaderState extends State<ProductHeader>
           height: 160,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                colorScheme.surfaceVariant,
-                colorScheme.surfaceVariant.withOpacity(0.7),
-              ],
-            ),
+            // gradient: LinearGradient(
+            //   begin: Alignment.topLeft,
+            //   end: Alignment.bottomRight,
+            //   colors: [
+            //     colorScheme.surfaceVariant,
+            //     colorScheme.surfaceVariant.withOpacity(0.7),
+            //   ],
+            // ),
             boxShadow: [
               BoxShadow(
                 color: colorScheme.shadow.withOpacity(0.15),
@@ -421,7 +414,8 @@ class _ProductHeaderState extends State<ProductHeader>
                   )
                 else
                   FadeInImage(
-                    placeholder: const AssetImage('assets/placeholder.png'),
+                    placeholder:
+                        MemoryImage(kTransparentImage), // Better placeholder
                     image: NetworkImage(_newImageUrl ??
                         widget.item.imageUrl ??
                         'https://static.toiimg.com/photo/67882583.cms'),
@@ -437,11 +431,6 @@ class _ProductHeaderState extends State<ProductHeader>
                             colorScheme.errorContainer.withOpacity(0.7),
                           ],
                         ),
-                      ),
-                      child: Icon(
-                        Icons.broken_image_outlined,
-                        color: colorScheme.onErrorContainer,
-                        size: 32,
                       ),
                     ),
                   ),
@@ -548,7 +537,9 @@ class _ProductHeaderState extends State<ProductHeader>
         controller: _nameController,
         decoration: InputDecoration(
           labelText: 'Product Name',
-          prefixIcon: Icon(Icons.label_outline, color: colorScheme.primary),
+          prefixIcon: Icon(
+            Icons.label_outline,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: colorScheme.outline),
@@ -616,8 +607,9 @@ class _ProductHeaderState extends State<ProductHeader>
         controller: _descriptionController,
         decoration: InputDecoration(
           labelText: 'Description',
-          prefixIcon:
-              Icon(Icons.description_outlined, color: colorScheme.primary),
+          prefixIcon: Icon(
+            Icons.description_outlined,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: colorScheme.outline),
@@ -698,7 +690,9 @@ class _ProductHeaderState extends State<ProductHeader>
         value: _selectedSector,
         decoration: InputDecoration(
           labelText: 'Sector',
-          prefixIcon: Icon(Icons.category_outlined, color: colorScheme.primary),
+          prefixIcon: Icon(
+            Icons.category_outlined,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: colorScheme.outline),
@@ -782,10 +776,13 @@ class _ProductHeaderState extends State<ProductHeader>
           if (_isEditing) ...[
             TextButton.icon(
               onPressed: _isLoading ? null : _toggleEditing,
-              icon: const Icon(Icons.close_outlined),
-              label: const Text('Cancel'),
+              icon:
+                  Icon(Icons.close_outlined, color: Colors.white), // White icon
+              label: const Text('Cancel',
+                  style: TextStyle(color: Colors.white)), // White text
               style: TextButton.styleFrom(
-                foregroundColor: colorScheme.onSurfaceVariant,
+                foregroundColor:
+                    Colors.white, // This will also affect both icon and text
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
@@ -805,17 +802,22 @@ class _ProductHeaderState extends State<ProductHeader>
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.onPrimary,
+                        Colors.white, // White progress indicator
                       ),
                     ),
                   )
-                : Icon(_isEditing ? Icons.save_outlined : Icons.edit_outlined),
-            label: Text(_isEditing
-                ? _isLoading
-                    ? 'Saving...'
-                    : 'Save Changes'
-                : 'Edit Product'),
+                : Icon(_isEditing ? Icons.save_outlined : Icons.edit_outlined,
+                    color: Colors.white), // White icon
+            label: Text(
+                _isEditing
+                    ? _isLoading
+                        ? 'Saving...'
+                        : 'Save Changes'
+                    : 'Edit Product',
+                style: TextStyle(color: Colors.white)), // White text
             style: FilledButton.styleFrom(
+              foregroundColor:
+                  Colors.white, // This will also affect both icon and text
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

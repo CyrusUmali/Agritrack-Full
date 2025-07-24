@@ -48,10 +48,22 @@ class FarmsList {
                           ? theme.colorScheme.primary.withOpacity(0.1)
                           : null,
                   onTap: () {
+                    final overlayContext =
+                        Navigator.of(context, rootNavigator: true).context;
+
                     polygonManager.selectPolygon(
                       originalIndex,
-                      context: context,
+                      context: overlayContext,
                     );
+
+                    // polygonManager.selectPolygon(
+                    //   originalIndex,
+                    //   context: context,
+                    // );
+
+                    // print('printhere');
+
+                    // print(context);
 
                     // Close the modal
                     Navigator.of(modalContext).pop();

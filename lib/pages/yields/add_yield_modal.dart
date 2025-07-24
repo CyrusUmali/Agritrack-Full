@@ -1,23 +1,29 @@
 import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flareline/core/models/farms_model.dart';
 import 'package:flareline/core/models/product_model.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
+import 'package:flareline/providers/user_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:provider/provider.dart';
 
 class AddYieldModal extends StatefulWidget {
   final Function(
     int cropTypeId,
     int farmerId,
-    int farmId, // Changed from int
+    int farmId,
     double yieldAmount,
     double? areaHa,
     DateTime date,
     String notes,
-    List<XFile> images,
+    List<String> imageUrls, // Changed from List<XFile> to List<String>
   ) onYieldAdded;
 
   const AddYieldModal({Key? key, required this.onYieldAdded}) : super(key: key);
@@ -35,9 +41,10 @@ class AddYieldModal extends StatefulWidget {
       double? areaHa,
       DateTime date,
       String notes,
-      List<XFile> images,
+      List<String> imageUrls,
     ) onYieldAdded,
   }) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     final screenWidth = MediaQuery.of(context).size.width;
     final contentKey = GlobalKey<_AddYieldModalContentState>();
     bool isLoading = false;
@@ -49,14 +56,16 @@ class AddYieldModal extends StatefulWidget {
       showTitleDivider: true,
       modalType: screenWidth < 600 ? ModalType.small : ModalType.medium,
       child: _AddYieldModalContent(
-          key: contentKey,
-          onLoadingStateChanged: (loading) {
-            isLoading = loading;
-          },
-          onYieldAdded: onYieldAdded,
-          products: products,
-          farms: farms,
-          farmers: farmers),
+        key: contentKey,
+        onLoadingStateChanged: (loading) {
+          isLoading = loading;
+        },
+        onYieldAdded: onYieldAdded,
+        products: products,
+        farms: farms,
+        farmers: farmers,
+        userProvider: userProvider,
+      ),
       footer: _AddYieldModalFooter(
         onSubmit: () {
           if (contentKey.currentState != null && !isLoading) {
@@ -90,11 +99,13 @@ class _AddYieldModalContent extends StatefulWidget {
     double? areaHa,
     DateTime date,
     String notes,
-    List<XFile> images,
+    List<String> imageUrls,
   ) onYieldAdded;
   final List<Product> products;
   final List<Farm> farms;
   final List<Farmer> farmers;
+  final UserProvider userProvider;
+
   const _AddYieldModalContent({
     Key? key,
     required this.onLoadingStateChanged,
@@ -102,6 +113,7 @@ class _AddYieldModalContent extends StatefulWidget {
     required this.products,
     required this.farmers,
     required this.farms,
+    required this.userProvider,
   }) : super(key: key);
 
   @override
@@ -122,11 +134,13 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
   List<XFile> selectedImages = [];
   bool _isSubmitting = false;
 
-  // Track which fields have been validated
   bool _cropTypeValidated = false;
   bool _farmerValidated = false;
   bool _farmAreaValidated = false;
   bool _yieldAmountValidated = false;
+
+  late Farmer? _currentFarmer;
+  late bool _isFarmer;
 
   final GlobalKey cropTypeFieldKey = GlobalKey();
   final GlobalKey farmerFieldKey = GlobalKey();
@@ -135,7 +149,63 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
   @override
   void initState() {
     super.initState();
-    widget.onLoadingStateChanged(false);
+    _isFarmer = widget.userProvider.isFarmer;
+    _currentFarmer = widget.userProvider.farmer;
+
+    if (_isFarmer && _currentFarmer != null) {
+      selectedFarmer = _currentFarmer;
+      final farmsForFarmer = widget.farms
+          .where((farm) => farm.owner == _currentFarmer!.name)
+          .toList();
+      if (farmsForFarmer.isNotEmpty) {
+        selectedFarm = farmsForFarmer.first;
+        farmAreaController.text = selectedFarm!.name;
+      }
+    }
+  }
+
+  Future<List<String>> _uploadImagesToCloudinary() async {
+    const cloudName = 'dk41ykxsq';
+    const uploadPreset = 'my_upload_preset';
+    final List<String> imageUrls = [];
+
+    for (final image in selectedImages) {
+      try {
+        final url = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
+        final request = http.MultipartRequest('POST', Uri.parse(url))
+          ..fields['upload_preset'] = uploadPreset;
+
+        if (kIsWeb) {
+          final fileBytes = await image.readAsBytes();
+          request.files.add(http.MultipartFile.fromBytes(
+            'file',
+            fileBytes,
+            filename: image.name,
+          ));
+        } else {
+          request.files.add(await http.MultipartFile.fromPath(
+            'file',
+            image.path,
+          ));
+        }
+
+        final response = await request.send();
+        final responseData = await response.stream.bytesToString();
+        final jsonResponse = json.decode(responseData);
+
+        if (response.statusCode == 200 && jsonResponse['secure_url'] != null) {
+          imageUrls.add(jsonResponse['secure_url']);
+        } else {
+          throw Exception(
+              'Upload failed: ${jsonResponse['error']?['message'] ?? 'Unknown error'}');
+        }
+      } catch (e) {
+        debugPrint('Error uploading image: $e');
+        rethrow;
+      }
+    }
+
+    return imageUrls;
   }
 
   Future<void> _pickImages() async {
@@ -189,10 +259,9 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
                       border: Border.all(color: Colors.grey),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Image.file(
-                      File(selectedImages[index].path),
-                      fit: BoxFit.cover,
-                    ),
+                    child: kIsWeb
+                        ? Image.network(selectedImages[index].path)
+                        : Image.file(File(selectedImages[index].path)),
                   ),
                   Positioned(
                     top: 0,
@@ -267,7 +336,6 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
   }
 
   void _submitYield() async {
-    // Mark all required fields as validated
     setState(() {
       _cropTypeValidated = true;
       _farmerValidated = true;
@@ -285,12 +353,19 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
     });
 
     try {
+      // First upload images to Cloudinary
+      List<String> imageUrls = [];
+      if (selectedImages.isNotEmpty) {
+        imageUrls = await _uploadImagesToCloudinary();
+      }
+
       final double yieldAmount =
           double.parse(yieldAmountController.text.trim());
       final double? areaHa = areaHaController.text.trim().isEmpty
           ? null
           : double.tryParse(areaHaController.text.trim());
 
+      // Call the callback with the image URLs instead of XFiles
       widget.onYieldAdded(
         selectedProduct!.id,
         selectedFarmer!.id,
@@ -299,7 +374,7 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
         areaHa,
         selectedDate,
         notesController.text,
-        selectedImages,
+        imageUrls,
       );
 
       await Future.delayed(const Duration(milliseconds: 500));
@@ -307,6 +382,12 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
         Navigator.of(context).pop();
       }
     } catch (error) {
+      if (mounted) {
+        ToastHelper.showErrorToast(
+          'Error: ${error.toString()}',
+          context,
+        );
+      }
       rethrow;
     } finally {
       if (mounted) {
@@ -413,79 +494,97 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
             ),
             SizedBox(height: isSmallScreen ? 8.0 : 16.0),
 
-            // Farmer Autocomplete
-            SizedBox(
-              height: fieldHeight,
-              child: Autocomplete<Farmer>(
-                key: farmerFieldKey,
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return widget.farmers;
-                  }
-                  return widget.farmers.where((farmer) => farmer.name
-                      .toLowerCase()
-                      .contains(textEditingValue.text.toLowerCase()));
-                },
-                onSelected: (Farmer farmer) {
-                  setState(() {
-                    selectedFarmer = farmer;
-                    selectedFarm = null;
-                    farmAreaController.text = '';
-                  });
-                },
-                displayStringForOption: (farmer) => farmer.name,
-                optionsViewBuilder: (context, onSelected, options) {
-                  return _buildOptionsView<Farmer>(
-                    context,
-                    onSelected,
-                    options,
-                    farmerFieldKey,
-                    (farmer) => farmer.name,
-                  );
-                },
-                fieldViewBuilder: (BuildContext context,
-                    TextEditingController textEditingController,
-                    FocusNode focusNode,
-                    VoidCallback onFieldSubmitted) {
-                  return TextFormField(
-                    controller: textEditingController,
-                    focusNode: focusNode,
-                    decoration: InputDecoration(
-                      labelText: 'Farmer *',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: const Icon(Icons.arrow_drop_down),
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 12),
-                      errorStyle: const TextStyle(fontSize: 12),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.red.shade400,
-                          width: 1.5,
-                        ),
+            _isFarmer
+                ? SizedBox(
+                    height: fieldHeight,
+                    child: TextFormField(
+                      initialValue: _currentFarmer?.name ?? '',
+                      decoration: const InputDecoration(
+                        labelText: 'Farmer',
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                       ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.red.shade400,
-                          width: 1.5,
-                        ),
-                      ),
+                      readOnly: true,
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please select a farmer';
-                      }
-                      if (!widget.farmers.any((f) => f.name == value.trim())) {
-                        return 'Please select a valid farmer';
-                      }
-                      return null;
-                    },
-                    autovalidateMode: _farmerValidated
-                        ? AutovalidateMode.onUserInteraction
-                        : AutovalidateMode.disabled,
-                  );
-                },
-              ),
-            ),
+                  )
+                :
+
+                // Farmer Autocomplete
+                SizedBox(
+                    height: fieldHeight,
+                    child: Autocomplete<Farmer>(
+                      key: farmerFieldKey,
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return widget.farmers;
+                        }
+                        return widget.farmers.where((farmer) => farmer.name
+                            .toLowerCase()
+                            .contains(textEditingValue.text.toLowerCase()));
+                      },
+                      onSelected: (Farmer farmer) {
+                        setState(() {
+                          selectedFarmer = farmer;
+                          selectedFarm = null;
+                          farmAreaController.text = '';
+                        });
+                      },
+                      displayStringForOption: (farmer) => farmer.name,
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return _buildOptionsView<Farmer>(
+                          context,
+                          onSelected,
+                          options,
+                          farmerFieldKey,
+                          (farmer) => farmer.name,
+                        );
+                      },
+                      fieldViewBuilder: (BuildContext context,
+                          TextEditingController textEditingController,
+                          FocusNode focusNode,
+                          VoidCallback onFieldSubmitted) {
+                        return TextFormField(
+                          controller: textEditingController,
+                          focusNode: focusNode,
+                          decoration: InputDecoration(
+                            labelText: 'Farmer *',
+                            border: const OutlineInputBorder(),
+                            suffixIcon: const Icon(Icons.arrow_drop_down),
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 12, horizontal: 12),
+                            errorStyle: const TextStyle(fontSize: 12),
+                            errorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Colors.red.shade400,
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Colors.red.shade400,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please select a farmer';
+                            }
+                            if (!widget.farmers
+                                .any((f) => f.name == value.trim())) {
+                              return 'Please select a valid farmer';
+                            }
+                            return null;
+                          },
+                          autovalidateMode: _farmerValidated
+                              ? AutovalidateMode.onUserInteraction
+                              : AutovalidateMode.disabled,
+                        );
+                      },
+                    ),
+                  ),
+
             SizedBox(height: isSmallScreen ? 8.0 : 16.0),
 
             // Farm Area Autocomplete

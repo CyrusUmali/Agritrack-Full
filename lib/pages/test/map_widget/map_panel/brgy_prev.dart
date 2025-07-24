@@ -87,7 +87,7 @@ class BarangayInfoCard extends StatelessWidget {
                 child: Text(
                   'Tap to view details',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.primary,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -107,9 +107,9 @@ class BarangayInfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
-        // borderRadius: BorderRadius.circular(8),
-      ),
+          // color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
+          // borderRadius: BorderRadius.circular(8),
+          ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

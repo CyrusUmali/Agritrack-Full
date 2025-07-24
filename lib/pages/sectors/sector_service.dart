@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flareline/services/api_service.dart';
 
 class SectorService {
@@ -7,11 +6,115 @@ class SectorService {
 
   SectorService(this._apiService);
 
-  Future<Map<String, dynamic>> fetchYieldStatistics({int? year}) async {
+  /// Fetches all annotations
+  ///
+  ///
+  ///
+  Future<List<Map<String, dynamic>>> fetchAnnotations() async {
+    try {
+      final response = await _apiService.get(
+          '/auth/annotations'); // Also fixed the URL path (removed '/auth')
+
+      if (response.statusCode == 200) {
+        return List<Map<String, dynamic>>.from(response.data['annotations']);
+      } else {
+        throw Exception('Failed to load annotations: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw Exception('Failed to fetch annotations: ${e.toString()}');
+    }
+  }
+
+  Future<Map<String, dynamic>> createAnnotation(
+      Map<String, dynamic> annotationData) async {
+    try {
+      final response = await _apiService.post(
+        '/auth/annotations',
+        data: annotationData,
+      );
+
+      if (response.statusCode == 201) {
+        // Fix: Return the entire response data, not response.data['data']
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to create annotation: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw Exception('Failed to create annotation: ${e.toString()}');
+    }
+  }
+
+  /// Updates an existing annotation
+  Future<Map<String, dynamic>> updateAnnotation(
+      int id, Map<String, dynamic> updatedData) async {
+    try {
+      final response = await _apiService.put(
+        '/auth/annotations/$id',
+        data: updatedData,
+      );
+
+      if (response.statusCode == 200) {
+        // return Map<String, dynamic>.from(response.data['data']);
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to update annotation: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw Exception('Failed to update annotation: ${e.toString()}');
+    }
+  }
+
+  /// Deletes an annotation
+  Future<void> deleteAnnotation(int id) async {
+    try {
+      // print('delete annot' + id);
+      final response = await _apiService.delete('/auth/annotations/$id');
+
+      if (response.statusCode != 204) {
+        throw Exception('Failed to delete annotation: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw Exception('Failed to delete annotation: ${e.toString()}');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchShiValues(
+      {int? year, String? farmerId}) async {
     try {
       final Map<String, dynamic> queryParams = {};
       if (year != null) {
         queryParams['year'] = year.toString();
+      }
+      if (farmerId != null) {
+        queryParams['farmerId'] = farmerId;
+      }
+
+      final response = await _apiService.get(
+        '/auth/shi-values',
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(response.data['data']);
+      } else {
+        throw Exception('Failed to load SHI values: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw Exception('Failed to fetch SHI values: ${e.toString()}');
+    } catch (e) {
+      throw Exception('Failed to fetch SHI values: ${e.toString()}');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchYieldStatistics(
+      {int? year, int? farmerId}) async {
+    try {
+      final Map<String, dynamic> queryParams = {};
+      if (year != null) {
+        queryParams['year'] = year.toString();
+      }
+      if (farmerId != null) {
+        queryParams['farmerId'] = farmerId;
       }
 
       final response = await _apiService.get(
@@ -29,6 +132,41 @@ class SectorService {
       throw Exception('Failed to fetch yield statistics: ${e.toString()}');
     } catch (e) {
       throw Exception('Failed to fetch yield statistics: ${e.toString()}');
+    }
+  }
+
+  Future<Map<String, dynamic>> getFarmerYieldDistribution({
+    required String farmerId,
+    int? year,
+  }) async {
+    try {
+      final Map<String, dynamic> queryParams = {
+        'farmerId': farmerId,
+      };
+
+      if (year != null) {
+        queryParams['year'] = year.toString();
+      }
+
+      final response = await _apiService.get(
+        '/auth/farmer-yield-distribution',
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        // Return the raw response data
+
+        print(response.data);
+        return response.data;
+      } else {
+        throw Exception(
+            'Failed to load farmer product distribution: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw Exception(
+          'Network error fetching product distribution: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to fetch product distribution: ${e.toString()}');
     }
   }
 
@@ -104,30 +242,6 @@ class SectorService {
       throw Exception('Failed to fetch farm statistics: ${e.toString()}');
     } catch (e) {
       throw Exception('Failed to fetch farm statistics: ${e.toString()}');
-    }
-  }
-
-  Future<Map<String, dynamic>> fetchShiValues({int? year}) async {
-    try {
-      final Map<String, dynamic> queryParams = {};
-      if (year != null) {
-        queryParams['year'] = year.toString();
-      }
-
-      final response = await _apiService.get(
-        '/auth/shi-values',
-        queryParameters: queryParams,
-      );
-
-      if (response.statusCode == 200) {
-        return Map<String, dynamic>.from(response.data['data']);
-      } else {
-        throw Exception('Failed to load SHI values: ${response.statusCode}');
-      }
-    } on DioException catch (e) {
-      throw Exception('Failed to fetch SHI values: ${e.toString()}');
-    } catch (e) {
-      throw Exception('Failed to fetch SHI values: ${e.toString()}');
     }
   }
 

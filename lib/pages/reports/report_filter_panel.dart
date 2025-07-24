@@ -2,10 +2,12 @@ import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flareline/pages/products/product/product_bloc.dart';
 import 'package:flareline/pages/reports/filter_configs/filter_combo-box.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'date_range_picker.dart';
 import 'filters/segmented_filter.dart';
 import 'filters/column_selector.dart';
@@ -62,6 +64,10 @@ class ReportFilterPanel extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final _isFarmer = userProvider.isFarmer;
+    final _farmerId = userProvider.farmer?.id;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth > 800;
@@ -90,7 +96,7 @@ class ReportFilterPanel extends StatelessWidget {
                   children: [
                     SegmentedFilter(
                       label: 'Report Type',
-                      options: FilterOptions.reportTypes,
+                      options: FilterOptions.getFilteredReportTypes(_isFarmer),
                       selected: reportType,
                       onChanged: onReportTypeChanged,
                     ),
@@ -139,18 +145,45 @@ class ReportFilterPanel extends StatelessWidget {
               const SizedBox(height: 16),
               Center(
                 child: SizedBox(
-                    width: isDesktop ? 201 : double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isLoading ? null : onGeneratePressed,
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Generate Report'),
-                    )),
-              ),
+                  width: isDesktop ? 201 : double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).cardTheme.color ?? Colors.white,
+                      foregroundColor:
+                          Theme.of(context).textTheme.bodyMedium?.color,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                          color: Colors.grey[300]!,
+                          width: 1.0,
+                        ),
+                      ),
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                    ),
+                    onPressed: isLoading ? null : onGeneratePressed,
+                    child: isLoading
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color:
+                                  Theme.of(context).textTheme.bodyMedium?.color,
+                            ),
+                          )
+                        : Text(
+                            'Generate Report',
+                            style: TextStyle(
+                              color:
+                                  Theme.of(context).textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                  ),
+                ),
+              )
             ],
           ),
         );
@@ -212,7 +245,7 @@ class _FiltersSection extends StatelessWidget {
                   dateRange: dateRange,
                   onDateRangeChanged: onDateRangeChanged,
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 32),
                 _buildDesktopFilters(context),
               ],
             )
@@ -273,6 +306,11 @@ class _FiltersSection extends StatelessWidget {
   }
 
   List<Widget> _buildDynamicFilters(BuildContext context, bool isDesktop) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final _isFarmer = userProvider.isFarmer;
+
+    final _farmerId = userProvider.farmer?.id;
+
     switch (reportType) {
       case 'farmers':
         return [
@@ -293,17 +331,18 @@ class _FiltersSection extends StatelessWidget {
         ];
       case 'farmer':
         return [
-          BlocBuilder<FarmerBloc, FarmerState>(
-            builder: (context, state) {
-              return buildComboBox(
-                hint: 'Farmer',
-                options: FilterOptions.getFarmers(context),
-                selectedValue: selectedFarmer,
-                onSelected: onFarmerChanged,
-                width: isDesktop ? 150 : double.infinity,
-              );
-            },
-          ),
+          if (!_isFarmer)
+            BlocBuilder<FarmerBloc, FarmerState>(
+              builder: (context, state) {
+                return buildComboBox(
+                  hint: 'Farmer',
+                  options: FilterOptions.getFarmers(context),
+                  selectedValue: selectedFarmer,
+                  onSelected: onFarmerChanged,
+                  width: isDesktop ? 150 : double.infinity,
+                );
+              },
+            ),
           BlocBuilder<ProductBloc, ProductState>(
             builder: (context, state) {
               return buildComboBox(
@@ -319,7 +358,7 @@ class _FiltersSection extends StatelessWidget {
             builder: (context, state) {
               return buildComboBox(
                 hint: 'Farm',
-                options: FilterOptions.getFarms(context),
+                options: FilterOptions.getFarms(context, _farmerId),
                 selectedValue: selectedFarm,
                 onSelected: onFarmChanged,
                 width: isDesktop ? 150 : double.infinity,
@@ -354,20 +393,22 @@ class _FiltersSection extends StatelessWidget {
             onSelected: onViewChanged,
             width: isDesktop ? 150 : double.infinity,
           ),
-          buildComboBox(
-            hint: 'Barangay',
-            options: FilterOptions.barangays,
-            selectedValue: selectedBarangay,
-            onSelected: onBarangayChanged,
-            width: isDesktop ? 150 : double.infinity,
-          ),
-          buildComboBox(
-            hint: 'Sector',
-            options: FilterOptions.sectors,
-            selectedValue: selectedSector,
-            onSelected: onSectorChanged,
-            width: isDesktop ? 150 : double.infinity,
-          ),
+          if (!_isFarmer)
+            buildComboBox(
+              hint: 'Barangay',
+              options: FilterOptions.barangays,
+              selectedValue: selectedBarangay,
+              onSelected: onBarangayChanged,
+              width: isDesktop ? 150 : double.infinity,
+            ),
+          if (!_isFarmer)
+            buildComboBox(
+              hint: 'Sector',
+              options: FilterOptions.sectors,
+              selectedValue: selectedSector,
+              onSelected: onSectorChanged,
+              width: isDesktop ? 150 : double.infinity,
+            ),
         ];
 
       case 'barangay':

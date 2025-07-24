@@ -194,7 +194,7 @@ class MapLayersHelper {
             width: 30.0,
             height: 30.0,
             child: GestureDetector(
-              onTap: () => polygonManager.selectPolygon(i, context: context),
+              // onTap: () => polygonManager.selectPolygon(i, context: context),
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,

@@ -66,6 +66,43 @@ class Farmer extends Equatable {
     this.ptnRelationship,
   });
 
+  factory Farmer.fromMap(Map<String, dynamic> map) {
+    return Farmer(
+      id: map['id'] ?? 0,
+      name: map['name'] ?? '',
+      firstname: map['firstname'],
+      middlename: map['middlename'],
+      surname: map['surname'],
+      extension: map['extension'],
+      sector: map['sector'] ?? '',
+      barangay: map['barangay'],
+      contact: map['contact'],
+      farmName: map['farmName'],
+      sex: map['sex'],
+      hectare: map['hectare']?.toDouble(),
+      email: map['email'],
+      phone: map['phone'],
+      address: map['address'],
+      imageUrl: map['imageUrl'],
+      createdAt:
+          map['createdAt'] != null ? DateTime.tryParse(map['createdAt']) : null,
+      updatedAt:
+          map['updatedAt'] != null ? DateTime.tryParse(map['updatedAt']) : null,
+      house_hold_head: map['house_hold_head'],
+      civilStatus: map['civil_status'],
+      spouseName: map['spouse_name'],
+      religion: map['religion'],
+      userId: map['userId'],
+      householdNum: map['household_num'],
+      maleMembersNum: map['male_members_num'],
+      femaleMembersNum: map['female_members_num'],
+      motherMaidenName: map['mother_maiden_name'],
+      personToNotify: map['person_to_notify'],
+      ptnContact: map['ptn_contact'],
+      ptnRelationship: map['ptn_relationship'],
+    );
+  }
+
   factory Farmer.fromJson(Map<String, dynamic> json) {
     return Farmer(
       id: (json['id'] as int?) ?? 0,
@@ -107,6 +144,41 @@ class Farmer extends Equatable {
 
   // Convert to JSON
   Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'firstname': firstname,
+      'surname': surname,
+      'middlename': middlename,
+      'extension': extension,
+      'sector': sector,
+      'userId': userId,
+      'barangay': barangay,
+      'contact': contact,
+      'farmName': farmName,
+      'sex': sex,
+      'hectare': hectare,
+      'email': email,
+      'phone': phone,
+      'address': address,
+      'imageUrl': imageUrl,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'house_hold_head': house_hold_head,
+      'civil_status': civilStatus,
+      'spouse_name': spouseName,
+      'religion': religion,
+      'household_num': householdNum,
+      'male_members_num': maleMembersNum,
+      'female_members_num': femaleMembersNum,
+      'mother_maiden_name': motherMaidenName,
+      'person_to_notify': personToNotify,
+      'ptn_contact': ptnContact,
+      'ptn_relationship': ptnRelationship,
+    };
+  }
+
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,

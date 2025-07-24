@@ -1,5 +1,6 @@
 // ignore_for_file: file_names
 
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
 import 'package:flutter/material.dart';
@@ -66,72 +67,36 @@ class TopChannelViewModel extends BaseTableProvider {
 
       tableDataEntity = TableDataEntity.fromJson(map);
     } catch (e) {
-      // Fallback to sorted hardcoded data if API fails
-      List<Map<String, dynamic>> predefinedItems = [
-        {
-          'sectorName': 'Rice',
-          'landArea': 150.0,
-          'displayLandArea': '150 hectares',
-          'yield': '75,000kg',
-          'farmers': '120'
-        },
-        {
-          'sectorName': 'Corn',
-          'landArea': 100.0,
-          'displayLandArea': '100 hectares',
-          'yield': '60,000kg',
-          'farmers': '90'
-        },
-        {
-          'sectorName': 'Organic',
-          'landArea': 20.0,
-          'displayLandArea': '20 hectares',
-          'yield': '10,000kg',
-          'farmers': '35'
-        },
-        {
-          'sectorName': 'Fishery',
-          'landArea': 80.0,
-          'displayLandArea': '80 hectares',
-          'yield': '45,000kg',
-          'farmers': '60'
-        },
-        {
-          'sectorName': 'Livestock',
-          'landArea': 50.0,
-          'displayLandArea': '50 hectares',
-          'yield': '3,000 heads',
-          'farmers': '100'
-        },
-        {
-          'sectorName': 'High Value Crop',
-          'landArea': 40.0,
-          'displayLandArea': '40 hectares',
-          'yield': '25,000kg',
-          'farmers': '50'
-        },
-      ];
-
-      // Sort hardcoded data in descending order
-      predefinedItems.sort((a, b) => b['landArea'].compareTo(a['landArea']));
-
-      Map<String, dynamic> map = {
-        "headers": ["Sector", "Land Area", "Yield", "Farmers"],
-        "rows": predefinedItems.map((item) {
-          return [
-            {"text": item['sectorName']},
-            {"text": item['displayLandArea']},
-            {"text": item['yield'], "dataType": "tag", "tagType": "success"},
-            {"text": item['farmers'], "dataType": "tag", "tagType": "secondary"}
-          ];
-        }).toList(),
+      // Create error display table data
+      final errorMap = {
+        "headers": ["Error"],
+        "rows": [
+          [
+            {
+              "text": "Failed to load data",
+              "widget": Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        color: Colors.red, size: 48),
+                    const SizedBox(height: 16),
+                    Text('Failed to load Top Sectors: ${e.toString()}',
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center),
+                  ],
+                ),
+              )
+            }
+          ]
+        ],
       };
 
-      tableDataEntity = TableDataEntity.fromJson(map);
+      tableDataEntity = TableDataEntity.fromJson(errorMap);
 
-      // Optionally show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load sector data: ${e.toString()}')),
+      ToastHelper.showErrorToast(
+        'Failed to load Top Sectors',
+        context,
       );
     }
   }

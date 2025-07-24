@@ -8,7 +8,9 @@ import 'package:provider/provider.dart';
 import 'barangay_data_provider.dart';
 
 class MapChartWidget extends StatefulWidget {
-  const MapChartWidget({super.key});
+  final int selectedYear;
+  const MapChartWidget(
+      {super.key, required this.selectedYear}); // Update constructor
 
   @override
   State<MapChartWidget> createState() => _MapChartWidgetState();
@@ -38,11 +40,20 @@ class _MapChartWidgetState extends State<MapChartWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return BlocBuilder<ProductBloc, ProductState>(
       builder: (productContext, productState) {
         List<String> products = [];
 
         if (productState is ProductsLoaded) {
+//  yields = yieldState.yields;
+
+          // print('products Data Loaded:');
+          // for (var products in productState.products) {
+          //   print(products.toJson());
+          // }
+
           products = productState.products.map((p) => p.name).toList();
         } else if (productState is ProductsError) {
           // Show error and retry button for products
@@ -79,23 +90,19 @@ class _MapChartWidgetState extends State<MapChartWidget> {
   }
 
   Widget _buildErrorState(String errorMessage, VoidCallback onRetry) {
+    final theme = Theme.of(context);
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            'Error: $errorMessage',
-            style: TextStyle(color: Colors.red),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 16),
+          Icon(Icons.error_outline, color: Colors.red, size: 48),
+          const SizedBox(height: 16),
+          Text('Error', style: TextStyle(color: Colors.red)),
+          const SizedBox(height: 16),
           ElevatedButton(
             onPressed: onRetry,
-            child: Text('Reload Data'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-            ),
+            child: const Text('Retry'),
           ),
         ],
       ),
@@ -104,6 +111,8 @@ class _MapChartWidgetState extends State<MapChartWidget> {
 
   Widget _maps(
       BuildContext context, List<String> products, List<Yield> yields) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -114,12 +123,15 @@ class _MapChartWidgetState extends State<MapChartWidget> {
             children: [
               Text(
                 'Barangay Map',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.normal,
-                    ),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.normal,
+                ),
               ),
               IconButton(
-                icon: Icon(Icons.refresh),
+                icon: Icon(
+                  Icons.refresh,
+                  color: theme.iconTheme.color,
+                ),
                 onPressed: _loadData,
                 tooltip: 'Reload Data',
               ),
@@ -129,7 +141,19 @@ class _MapChartWidgetState extends State<MapChartWidget> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.dividerColor,
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.shadowColor.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
@@ -137,13 +161,19 @@ class _MapChartWidgetState extends State<MapChartWidget> {
                   create: (context) => BarangayDataProvider(
                     initialProducts: products,
                     yields: yields,
+                    selectedYear: widget.selectedYear, // Pass the selected year
                   ),
+                  key: ValueKey(widget.selectedYear),
                   builder: (ctx, child) {
                     final provider = ctx.watch<BarangayDataProvider>();
 
                     if (provider.isLoading) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
+                      return Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.colorScheme.primary,
+                          ),
+                        ),
                       );
                     }
 
@@ -207,10 +237,12 @@ class _MapChartWidgetState extends State<MapChartWidget> {
 
   Widget _buildProductSelector(
       BarangayDataProvider provider, BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: Colors.grey.shade400,
@@ -221,7 +253,7 @@ class _MapChartWidgetState extends State<MapChartWidget> {
         children: [
           Text(
             'Product: ',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -231,14 +263,22 @@ class _MapChartWidgetState extends State<MapChartWidget> {
                 return TextField(
                   controller: textEditingController,
                   focusNode: focusNode,
+                  style: theme.textTheme.bodyMedium,
                   decoration: InputDecoration(
                     hintText: 'Search or select product',
+                    hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.hintColor,
+                    ),
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     suffixIcon: textEditingController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, size: 20),
+                            icon: Icon(
+                              Icons.clear,
+                              size: 20,
+                              color: theme.iconTheme.color,
+                            ),
                             onPressed: () {
                               textEditingController.clear();
                               provider.selectedProduct = '';
@@ -270,10 +310,11 @@ class _MapChartWidgetState extends State<MapChartWidget> {
                   alignment: Alignment.topLeft,
                   child: Material(
                     elevation: 4,
+                    color: theme.colorScheme.surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
                       side: BorderSide(
-                        color: Colors.grey.shade400,
+                        color: theme.dividerColor,
                         width: 1,
                       ),
                     ),
@@ -302,13 +343,16 @@ class _MapChartWidgetState extends State<MapChartWidget> {
                                   border: index < options.length - 1
                                       ? Border(
                                           bottom: BorderSide(
-                                            color: Colors.grey.shade300,
+                                            color: theme.dividerColor,
                                             width: 1,
                                           ),
                                         )
                                       : null,
                                 ),
-                                child: Text(option),
+                                child: Text(
+                                  option,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
                               ),
                             );
                           },
@@ -363,6 +407,8 @@ class _MapChartWidgetState extends State<MapChartWidget> {
 
   Widget _buildMap(
       BarangayDataProvider provider, MapZoomPanBehavior zoomPanBehavior) {
+    final theme = Theme.of(context);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: Stack(
@@ -411,7 +457,7 @@ class _MapChartWidgetState extends State<MapChartWidget> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: theme.shadowColor.withOpacity(0.3),
                           blurRadius: 8,
                           spreadRadius: 1,
                         ),
@@ -520,6 +566,7 @@ class _MapChartWidgetState extends State<MapChartWidget> {
   }
 
   Widget _buildLegend(BarangayDataProvider provider) {
+    final theme = Theme.of(context);
     final yields = provider.data
         .map((b) => b.yieldData[provider.selectedProduct] ?? 0)
         .toList();
@@ -531,11 +578,15 @@ class _MapChartWidgetState extends State<MapChartWidget> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: theme.colorScheme.surface.withOpacity(0.95),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.dividerColor,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: theme.shadowColor.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -546,9 +597,8 @@ class _MapChartWidgetState extends State<MapChartWidget> {
         children: [
           Text(
             '${provider.selectedProduct} Yield (tons)',
-            style: const TextStyle(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 12,
             ),
           ),
           const SizedBox(height: 8),
@@ -576,6 +626,8 @@ class _MapChartWidgetState extends State<MapChartWidget> {
   }
 
   Widget _buildLegendItem(Color color, String text) {
+    final theme = Theme.of(context);
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -587,7 +639,7 @@ class _MapChartWidgetState extends State<MapChartWidget> {
         const SizedBox(width: 4),
         Text(
           text,
-          style: const TextStyle(fontSize: 10),
+          style: theme.textTheme.bodySmall,
         ),
       ],
     );
@@ -595,16 +647,25 @@ class _MapChartWidgetState extends State<MapChartWidget> {
 
   Widget _buildBarangayList(
       BarangayDataProvider provider, BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       width: 200,
       constraints: const BoxConstraints(maxWidth: 250),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).cardTheme.color,
         border: Border.all(
-          color: Theme.of(context).dividerColor,
+          color: theme.dividerColor,
           width: 1,
         ),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,51 +674,69 @@ class _MapChartWidgetState extends State<MapChartWidget> {
             padding: const EdgeInsets.all(12.0),
             child: Text(
               'Barangay List',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          const Divider(height: 1),
+          Divider(
+            height: 1,
+            color: theme.dividerColor,
+          ),
           Expanded(
-            child: Scrollbar(
-              controller: PrimaryScrollController.of(context), // Add this line
-              thumbVisibility: true,
-              child: ListView.builder(
-                primary: true, // Add this line to use primary scroll controller
-                padding: EdgeInsets.zero,
-                itemCount: provider.data.length,
-                itemBuilder: (context, index) {
-                  final barangay = provider.data[index];
-                  return ListTile(
-                    dense: true,
-                    minLeadingWidth: 24,
-                    leading: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: barangay.color,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.black.withOpacity(0.2),
-                          width: 1,
+            child: Theme(
+              data: theme.copyWith(
+                scrollbarTheme: theme.scrollbarTheme.copyWith(
+                  thumbColor: MaterialStateProperty.all(
+                    theme.colorScheme.outline.withOpacity(0.5),
+                  ),
+                  trackColor: MaterialStateProperty.all(
+                    theme.colorScheme.outline.withOpacity(0.1),
+                  ),
+                ),
+              ),
+              child: Scrollbar(
+                controller: PrimaryScrollController.of(context),
+                thumbVisibility: true,
+                child: ListView.builder(
+                  primary: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: provider.data.length,
+                  itemBuilder: (context, index) {
+                    final barangay = provider.data[index];
+                    return ListTile(
+                      dense: true,
+                      minLeadingWidth: 24,
+                      leading: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: barangay.color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: theme.dividerColor,
+                            width: 1,
+                          ),
                         ),
                       ),
-                    ),
-                    title: Text(
-                      barangay.name,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: provider.selectedProduct.isNotEmpty
-                        ? Text(
-                            '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(2) ?? 'N/A'} tons',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          )
-                        : null,
-                    onTap: () {},
-                  );
-                },
+                      title: Text(
+                        barangay.name,
+                        style: theme.textTheme.bodyMedium,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: provider.selectedProduct.isNotEmpty
+                          ? Text(
+                              '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(2) ?? 'N/A'} tons',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withOpacity(0.7),
+                              ),
+                            )
+                          : null,
+                      onTap: () {},
+                    );
+                  },
+                ),
               ),
             ),
           ),

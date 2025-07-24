@@ -178,9 +178,24 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
         .toList();
     if (yields == null || yields.isEmpty) return SizedBox();
 
-    final years =
-        yields.map((y) => y['year']?.toString()).whereType<String>().toList();
+    // Get unique years and sort them
+    final years = yields
+        .map((y) => y['year']?.toString())
+        .whereType<String>()
+        .toSet() // Remove duplicates
+        .toList();
     years.sort();
+
+    // Ensure selected values exist in the years list
+    if (_selectedYear != null && !years.contains(_selectedYear)) {
+      _selectedYear = years.isNotEmpty ? years.last : null;
+    }
+    if (_startYear != null && !years.contains(_startYear)) {
+      _startYear = years.isNotEmpty ? years.first : null;
+    }
+    if (_endYear != null && !years.contains(_endYear)) {
+      _endYear = years.isNotEmpty ? years.last : null;
+    }
 
     if (_showMonthlyView) {
       return Row(
@@ -189,7 +204,7 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
           Text('Year: '),
           const SizedBox(width: 8),
           DropdownButton<String>(
-            value: _selectedYear,
+            value: years.contains(_selectedYear) ? _selectedYear : null,
             items: years.map((year) {
               return DropdownMenuItem<String>(
                 value: year,
@@ -207,13 +222,19 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
         ],
       );
     } else {
+      // For yearly view, ensure valid range selections
+      final validEndYears = years
+          .where(
+              (year) => _startYear == null || year.compareTo(_startYear!) >= 0)
+          .toList();
+
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text('From: '),
           const SizedBox(width: 8),
           DropdownButton<String>(
-            value: _startYear,
+            value: years.contains(_startYear) ? _startYear : null,
             items: years.map((year) {
               return DropdownMenuItem<String>(
                 value: year,
@@ -224,6 +245,7 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
               if (newValue != null) {
                 setState(() {
                   _startYear = newValue;
+                  // Ensure end year is not before start year
                   if (_endYear != null &&
                       _startYear!.compareTo(_endYear!) > 0) {
                     _endYear = _startYear;
@@ -236,10 +258,8 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
           Text('To: '),
           const SizedBox(width: 8),
           DropdownButton<String>(
-            value: _endYear,
-            items: years
-                .where((year) => year.compareTo(_startYear ?? '') >= 0)
-                .map((year) {
+            value: validEndYears.contains(_endYear) ? _endYear : null,
+            items: validEndYears.map((year) {
               return DropdownMenuItem<String>(
                 value: year,
                 child: Text(year),
@@ -346,7 +366,7 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
       height: 300,
       child: _buildBarChart(
         chartData,
-        title: 'Yearly Yield (${_startYear} - ${_endYear}) (tons)',
+        // title: 'Yearly Yield (${_startYear} - ${_endYear}) (tons)',
       ),
     );
   }
@@ -454,13 +474,21 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
         .toList();
     if (yields == null || yields.isEmpty) return;
 
-    yields.sort((a, b) => (a['year'] ?? '').compareTo(b['year'] ?? ''));
+    // Get unique years and sort them
+    final years = yields
+        .map((y) => y['year']?.toString())
+        .whereType<String>()
+        .toSet() // Remove duplicates
+        .toList();
+    years.sort();
 
-    setState(() {
-      _selectedYear = yields.last['year']?.toString();
-      _startYear = yields.first['year']?.toString();
-      _endYear = yields.last['year']?.toString();
-    });
+    if (years.isNotEmpty) {
+      setState(() {
+        _selectedYear = years.last;
+        _startYear = years.first;
+        _endYear = years.last;
+      });
+    }
   }
 
   Map<String, dynamic>? _getSelectedProduct() {

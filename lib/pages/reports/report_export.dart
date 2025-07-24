@@ -1,12 +1,13 @@
+import 'package:file_saver/file_saver.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:excel/excel.dart';
-import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 import 'package:printing/printing.dart';
+import 'dart:typed_data';
 
 class ReportExportOptions extends StatelessWidget {
   final String reportType;
@@ -44,12 +45,12 @@ class ReportExportOptions extends StatelessWidget {
               icon: const Icon(Icons.grid_on),
               label: const Text('Export Excel'),
             ),
-            // const SizedBox(width: 8),
-            // FilledButton.tonalIcon(
-            //   onPressed: () => _exportToWord(),
-            //   icon: const Icon(Icons.wordpress),
-            //   label: const Text('Print'),
-            // ),
+            const SizedBox(width: 8),
+            FilledButton.tonalIcon(
+              onPressed: () => _printReport(),
+              icon: const Icon(Icons.print),
+              label: const Text('Print'),
+            ),
           ],
         ),
       ),
@@ -58,7 +59,10 @@ class ReportExportOptions extends StatelessWidget {
 
   Future<void> _exportToPDF() async {
     if (reportData.isEmpty) {
-      _showSnackBar('No data to export');
+      ToastHelper.showErrorToast(
+        'No data to export',
+        context,
+      );
       return;
     }
 
@@ -159,34 +163,38 @@ class ReportExportOptions extends StatelessWidget {
       final bytes = await pdf.save();
       _closeLoadingDialog();
 
-      if (kIsWeb) {
-        // Web-specific download
-        final blob = html.Blob([bytes], 'application/pdf');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download',
-              '${reportType}_report_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf')
-          ..click();
-        html.Url.revokeObjectUrl(url);
-      } else {
-        // Mobile/desktop share
-        await Printing.sharePdf(
-          bytes: bytes,
-          filename: '${reportType}_report.pdf',
-        );
-      }
+      // Create filename
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final filename = '${reportType}_report_$timestamp.pdf';
 
-      _showSnackBar('PDF exported successfully');
+      // Save file using file_saver (works on both web and mobile)
+      await FileSaver.instance.saveFile(
+        name: filename,
+        bytes: bytes,
+        ext: 'pdf',
+        mimeType: MimeType.pdf,
+      );
+
+      ToastHelper.showSuccessToast(
+        'PDF exported successfully',
+        context,
+      );
     } catch (e) {
       _closeLoadingDialog();
-      _showSnackBar('Error exporting PDF: ${e.toString()}');
+
+      ToastHelper.showErrorToast(
+          'Error exporting PDF: ${e.toString()}', context);
+
       debugPrint('PDF Export Error: $e');
     }
   }
 
   Future<void> _exportToExcel() async {
     if (reportData.isEmpty) {
-      _showSnackBar('No data to export');
+      ToastHelper.showErrorToast(
+        'No data to export',
+        context,
+      );
       return;
     }
 
@@ -237,31 +245,154 @@ class ReportExportOptions extends StatelessWidget {
       final bytes = excel.save();
       _closeLoadingDialog();
 
+      if (bytes == null) {
+        throw Exception('Failed to generate Excel file');
+      }
+
       // Create filename
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final filename = '${reportType}_report_$timestamp.xlsx';
 
-      // Save for web or mobile
-      if (kIsWeb) {
-        final blob = html.Blob([
-          bytes
-        ], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        html.AnchorElement(href: url)
-          ..setAttribute('download', filename)
-          ..click();
-        html.Url.revokeObjectUrl(url);
-      } else {
-        final dir = await getTemporaryDirectory();
-        // final file = File('${dir.path}/$filename');
-        // await file.writeAsBytes(bytes!);
-      }
+      // Save file using file_saver (works on both web and mobile)
+      await FileSaver.instance.saveFile(
+        name: filename,
+        bytes: Uint8List.fromList(bytes),
+        ext: 'xlsx',
+        mimeType: MimeType.microsoftExcel,
+      );
 
-      _showSnackBar('Excel file exported successfully');
+      ToastHelper.showSuccessToast(
+        'Excel file exported successfully',
+        context,
+      );
     } catch (e) {
       _closeLoadingDialog();
-      _showSnackBar('Error exporting Excel: ${e.toString()}');
+
+      ToastHelper.showErrorToast(
+        'Error exporting Excel: ${e.toString()}',
+        context,
+      );
       debugPrint('Excel Export Error: $e');
+    }
+  }
+
+  Future<void> _printReport() async {
+    if (reportData.isEmpty) {
+      ToastHelper.showErrorToast('No data to print', context);
+
+      return;
+    }
+
+    try {
+      _showLoadingDialog('Preparing print...');
+
+      // Create PDF document for printing
+      final pdf = pw.Document(
+        title: '${reportType.capitalize()} Report',
+      );
+
+      // Add a page with the report content
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: pw.EdgeInsets.all(20),
+          build: (pw.Context context) {
+            // Prepare table data
+            final headers = selectedColumns.toList();
+            final data = reportData.map((row) {
+              return headers.map((column) {
+                final value = row[column];
+                if (value == null) return '';
+                if (value is List) return value.join(', ');
+                if (value is DateTime)
+                  return DateFormat('yyyy-MM-dd').format(value);
+                return value.toString();
+              }).toList();
+            }).toList();
+
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Report header
+                pw.Header(
+                  level: 0,
+                  child: pw.Text(
+                    '${reportType.capitalize()} Report',
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+                // Date range information
+                pw.Row(
+                  children: [
+                    pw.Text(
+                      'Date Range: ',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.Text(
+                      '${DateFormat('MMM d, yyyy').format(dateRange.start)} - '
+                      '${DateFormat('MMM d, yyyy').format(dateRange.end)}',
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 5),
+                pw.Text(
+                  'Generated on: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}',
+                  style: const pw.TextStyle(fontSize: 10),
+                ),
+                pw.SizedBox(height: 20),
+
+                // Table with report data
+                pw.Expanded(
+                  child: pw.TableHelper.fromTextArray(
+                    context: context,
+                    headers: headers,
+                    data: data,
+                    headerDecoration: pw.BoxDecoration(
+                      color: PdfColor.fromHex('#3f51b5'),
+                    ),
+                    headerStyle: pw.TextStyle(
+                      color: PdfColors.white,
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                    cellStyle: const pw.TextStyle(fontSize: 9),
+                    cellPadding: const pw.EdgeInsets.all(4),
+                    border: pw.TableBorder.all(
+                      color: PdfColors.grey300,
+                      width: 0.5,
+                    ),
+                    headerAlignment: pw.Alignment.centerLeft,
+                    cellAlignment: pw.Alignment.centerLeft,
+                    cellHeight: 20,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      _closeLoadingDialog();
+
+      // Print the PDF
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+      );
+
+      ToastHelper.showSuccessToast('Print dialog opened', context);
+    } catch (e) {
+      _closeLoadingDialog();
+
+      ToastHelper.showErrorToast(
+        'Error printing report: ${e.toString()}',
+        context,
+      );
+
+      debugPrint('Print Error: $e');
     }
   }
 
@@ -284,12 +415,6 @@ class ReportExportOptions extends StatelessWidget {
 
   void _closeLoadingDialog() {
     Navigator.of(context).pop();
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
   }
 }
 

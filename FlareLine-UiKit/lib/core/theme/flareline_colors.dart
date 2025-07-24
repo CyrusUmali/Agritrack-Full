@@ -7,6 +7,8 @@ class FlarelineColors {
 
   static const Color darkBackground = Color(0xFF1C2434);
 
+  static const Color darkerBackground = Color(0xFF0E121C);
+
   static const Color border = Color(0xFFE5E8EC);
 
   static const Color darkBorder = Color(0xFF8A99AF);
