@@ -1,5 +1,7 @@
+import 'package:flareline/services/language_service.dart';
+import 'package:flareline/providers/language_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flareline/flutter_gen/app_localizations.dart';
+import 'package:provider/provider.dart';
 
 class LanguageSelectionCard extends StatelessWidget {
   final bool isMobile;
@@ -10,6 +12,7 @@ class LanguageSelectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final languageProvider = Provider.of<LanguageProvider>(context);
 
     return Card(
       elevation: 2,
@@ -26,7 +29,7 @@ class LanguageSelectionCard extends StatelessWidget {
                 Icon(Icons.language_outlined, color: colors.primary),
                 const SizedBox(width: 12),
                 Text(
-                  'Language',
+                  languageProvider.translate('language'), // Simple translation
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -34,16 +37,19 @@ class LanguageSelectionCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            // Replace with your actual language selection widget
-            // This is just a placeholder dropdown
-            DropdownButtonFormField<String>(
-              items: const [
-                DropdownMenuItem(value: 'en', child: Text('English')),
-                DropdownMenuItem(value: 'es', child: Text('Spanish')),
-                DropdownMenuItem(value: 'fr', child: Text('French')),
-              ],
-              onChanged: (value) {
-                // Handle language change
+            DropdownButtonFormField<Locale>(
+              value: languageProvider.locale,
+              items: LanguageService.supportedLocales.map((locale) {
+                return DropdownMenuItem(
+                  value: locale,
+                  child: Text(
+                      locale.languageCode == 'en' ? 'English' : 'Filipino'),
+                );
+              }).toList(),
+              onChanged: (Locale? value) {
+                if (value != null) {
+                  languageProvider.setLocale(value);
+                }
               },
               decoration: InputDecoration(
                 border: OutlineInputBorder(
@@ -56,15 +62,22 @@ class LanguageSelectionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  // Save language preference
-                },
-                child: Text(AppLocalizations.of(context)!.save),
-              ),
-            ),
+
+            // SizedBox(
+            //   width: double.infinity,
+            //   child: FilledButton(
+            //     onPressed: () {
+            //       print('save tap ');
+            //       print(
+            //           'Current language: ${languageProvider.currentLanguageCode}');
+            //     },
+            //     child: Text(
+            //       languageProvider.translate('save'),
+            //       style: theme.textTheme.titleMedium?.copyWith(
+            //           fontWeight: FontWeight.bold, color: Colors.white),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

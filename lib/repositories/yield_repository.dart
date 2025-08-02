@@ -15,7 +15,7 @@ class YieldRepository {
         throw Exception('User not authenticated');
       }
 
-      final response = await apiService.get('/auth/yields/$yieldId');
+      final response = await apiService.get('/yields/yields/$yieldId');
 
       if (response.data == null || response.data['yieldRecord'] == null) {
         throw Exception('Invalid yieldRecord data format');
@@ -40,7 +40,7 @@ class YieldRepository {
         throw Exception('User not authenticated');
       }
 
-      final response = await apiService.get('/auth/yields/farm/$farmId');
+      final response = await apiService.get('/yields/yields/farm/$farmId');
 
       if (response.data == null || response.data['yields'] == null) {
         throw Exception('Invalid yield data format');
@@ -70,7 +70,7 @@ class YieldRepository {
         throw Exception('User not authenticated');
       }
 
-      final response = await apiService.get('/auth/yields');
+      final response = await apiService.get('/yields/yields');
 
       if (response.data == null || response.data['yields'] == null) {
         throw Exception('Invalid yields data format');
@@ -95,7 +95,7 @@ class YieldRepository {
       }
 
       final response = await apiService.put(
-        '/auth/yields/${yieldRecord.id}',
+        '/yields/yields/${yieldRecord.id}',
         data: {
           'farmer_id': yieldRecord.farmerId,
           'product_id': yieldRecord.productId,
@@ -133,7 +133,7 @@ class YieldRepository {
         throw Exception('User not authenticated');
       }
 
-      final response = await apiService.get('/auth/yields/$farmerId');
+      final response = await apiService.get('/yields/yields/$farmerId');
 
       if (response.data == null || response.data['yields'] == null) {
         throw Exception('Invalid yields data format');
@@ -158,7 +158,8 @@ class YieldRepository {
       }
 
       // final response = await apiService.get('/products/$productId/yields');
-      final response = await apiService.get('/auth/yields/product/$productId');
+      final response =
+          await apiService.get('/yields/yields/product/$productId');
 
       if (response.data == null || response.data['yields'] == null) {
         throw Exception('Invalid yields data format');
@@ -197,7 +198,7 @@ class YieldRepository {
       }
 
       final response = await apiService.post(
-        '/auth/yields',
+        '/yields/yields',
         data: {
           'farmer_id': yieldRecord.farmerId,
           'product_id': yieldRecord.productId,
@@ -207,6 +208,7 @@ class YieldRepository {
           'notes': yieldRecord.notes,
           'value': yieldRecord.value,
           'images': yieldRecord.images,
+          'status': yieldRecord.status
         },
       );
 
@@ -243,7 +245,7 @@ Failed to add yieldRecord:
         throw Exception('User not authenticated');
       }
 
-      await apiService.delete('/auth/yields/$yieldId');
+      await apiService.delete('/yields/yields/$yieldId');
     } on DioException catch (e) {
       throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
     } catch (e) {

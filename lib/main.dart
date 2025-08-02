@@ -1,4 +1,5 @@
 import 'package:flareline/core/theme/global_theme.dart';
+import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/dashboard/yield_service.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
@@ -6,7 +7,9 @@ import 'package:flareline/pages/products/product/product_bloc.dart';
 import 'package:flareline/pages/test/map_widget/farm_service.dart';
 import 'package:flareline/pages/users/user_bloc/user_bloc.dart';
 import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
+import 'package:flareline/providers/language_provider.dart';
 import 'package:flareline/providers/user_provider.dart';
+import 'package:flareline/repositories/assocs_repository.dart';
 import 'package:flareline/repositories/farm_repository.dart';
 import 'package:flareline/repositories/farmer_repository.dart';
 import 'package:flareline/repositories/product_repository.dart';
@@ -84,9 +87,11 @@ class MyApp extends StatelessWidget {
     final yieldRepository = YieldRepository(apiService: apiService);
     final farmRepository = FarmRepository(apiService: apiService);
     final userRepository = UserRepository(apiService: apiService);
+    final assocsRepository = AssociationRepository(apiService: apiService);
 
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => SidebarProvider()),
         ChangeNotifierProvider(create: (_) => YearPickerProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider(_)),
@@ -99,6 +104,13 @@ class MyApp extends StatelessWidget {
             productRepository: context.read<ProductRepository>(),
           )..add(LoadProducts()),
           lazy: false, // Load immediately
+        ),
+        Provider<AssociationRepository>(create: (_) => assocsRepository),
+        BlocProvider(
+          create: (context) => AssocsBloc(
+            associationRepository: context.read<AssociationRepository>(),
+          )..add(LoadAssocs()),
+          lazy: true, // Load immediately
         ),
         Provider<FarmerRepository>(create: (_) => farmerRepository),
         BlocProvider(

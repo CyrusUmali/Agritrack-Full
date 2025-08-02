@@ -1,6 +1,7 @@
 library flareline_uikit;
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/farmer_profile.dart';
 import 'package:flareline/pages/users/da_personel_profile.dart';
 import 'package:flareline/pages/users/farmer_registration.dart';
@@ -257,7 +258,9 @@ class YearPickerWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
         decoration: BoxDecoration(
-          color: FlarelineColors.background,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? GlobalColors.darkerCardColor
+              : FlarelineColors.background,
           borderRadius: BorderRadius.circular(45),
         ),
         child: Row(
@@ -265,18 +268,22 @@ class YearPickerWidget extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 15,
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).cardTheme.color,
               child: Icon(
                 Icons.calendar_today,
                 size: 16,
-                color: FlarelineColors.primary,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : null,
               ),
             ),
             const SizedBox(width: 8),
             Text(
               yearProvider.selectedYear.toString(),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: FlarelineColors.primary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : null,
                     fontWeight: FontWeight.w500,
                   ),
             ),
@@ -284,7 +291,9 @@ class YearPickerWidget extends StatelessWidget {
             Icon(
               Icons.arrow_drop_down,
               size: 18,
-              color: FlarelineColors.primary,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : null,
             ),
           ],
         ),
@@ -350,7 +359,9 @@ class ToggleWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 3),
         decoration: BoxDecoration(
-          color: FlarelineColors.background,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? GlobalColors.darkerCardColor
+              : FlarelineColors.background,
           borderRadius: BorderRadius.circular(45),
         ),
         child: Row(
@@ -375,9 +386,7 @@ class ToggleWidget extends StatelessWidget {
                 'assets/toolbar/moon.svg',
                 width: 18,
                 height: 18,
-                color: isDark
-                    ? FlarelineColors.primary
-                    : FlarelineColors.darkTextBody,
+                color: isDark ? null : FlarelineColors.darkTextBody,
               ),
             ),
           ],

@@ -1,8 +1,8 @@
+import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farmers/farmer_data.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flareline/pages/products/product/product_bloc.dart';
-import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +20,45 @@ class FilterOptions {
 
     // Fallback to empty list if farms aren't loaded yet
     return ['error'];
+  }
+
+  static List<String> getAssocs(BuildContext context) {
+    final assocsState = context.read<AssocsBloc>().state;
+    debugPrint('Current AssocsBloc state: ${assocsState.runtimeType}');
+
+    // Handle different states
+    if (assocsState is AssocsInitial) {
+      debugPrint('Showing initial state');
+      return ['Loading...'];
+    }
+
+    if (assocsState is AssocsLoading) {
+      debugPrint('Showing loading state');
+      return ['Loading...'];
+    }
+
+    if (assocsState is AssocsLoaded) {
+      debugPrint(
+          'Associations loaded, count: ${assocsState.associations.length}');
+      return assocsState.associations
+          .map((assoc) => '${assoc.id}: ${assoc.name}')
+          .toList();
+    }
+
+    if (assocsState is AssocLoaded) {
+      // Note: This is the single-association state
+      final assoc = assocsState.association;
+      debugPrint('Single association loaded - ID: ${assoc.id}');
+      return ['${assoc.id}: ${assoc.name}'];
+    }
+
+    if (assocsState is AssocsError) {
+      debugPrint('Error: ${assocsState.message}');
+      return ['Error: ${assocsState.message}'];
+    }
+
+    debugPrint('Unknown state: ${assocsState.runtimeType}');
+    return ['No data available'];
   }
 
   static const Map<String, String> reportTypes = {
@@ -84,6 +123,16 @@ class FilterOptions {
     '4:Livestock',
     '5:Fishery',
     '6:Organic'
+  ];
+
+  static const List<String> Count = [
+    '10',
+    '50',
+    '100',
+    '200',
+    '300',
+    '400',
+    '500',
   ];
 
   static const List<String> viewBy = [

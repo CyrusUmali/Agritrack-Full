@@ -5,6 +5,7 @@ class ColumnOptions {
       'Contact',
       'Barangay',
       'Sector',
+      'Association',
       'Farms',
       'Products',
       '(Mt | Heads)',
@@ -17,13 +18,14 @@ class ColumnOptions {
       'Farm Type',
       'Product',
     ],
-    'crops': [
-      'Crop',
-      'Barangay',
-      'No. of Ha',
-      '% of Total',
-      'Volume (MT)',
-      'Farm',
+    'products': [
+      'product',
+      'sector',
+      'harvest_date',
+      'volume',
+      'value',
+      'farm_name',
+      'barangay'
     ],
     'barangay': [
       'Barangay',
@@ -38,12 +40,14 @@ class ColumnOptions {
       'Total Production',
     ],
     'farmer': [
-      'Crop/Livestock',
-      'Sector',
-      'Area Ha',
-      '(Mt || Heads)',
-      'Date Recorded',
-      'Remarks',
+      'farmer_id',
+      'farmer_name',
+      'barangay',
+      'product',
+      'association',
+      'volume',
+      'total_value',
+      'harvest_date',
     ],
   };
 }

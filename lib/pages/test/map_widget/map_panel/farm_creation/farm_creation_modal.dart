@@ -270,7 +270,7 @@ class FarmCreationModal {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 100),
                     ],
                   );
                 },

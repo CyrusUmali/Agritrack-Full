@@ -196,7 +196,7 @@ class _SectorBarChartState extends State<SectorBarChart> {
         majorGridLines: MajorGridLines(width: 1),
         rangePadding: ChartRangePadding.additional,
       ),
-      series: <ColumnSeries<_ChartData, String>>[
+      series: <CartesianSeries<_ChartData, String>>[
         ColumnSeries<_ChartData, String>(
           dataSource: chartData,
           xValueMapper: (_ChartData data, _) => data.x,

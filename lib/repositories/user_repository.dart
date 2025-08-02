@@ -104,12 +104,12 @@ class UserRepository {
 
   int _getSectorId(String? sectorName) {
     const sectorMap = {
-      'Fishery': 2,
-      'Livestock': 5,
-      'Organic': 4,
-      'HVC': 1,
-      'Corn': 6,
-      'Rice': 3,
+      'Rice': 1,
+      'Corn': 2,
+      'HVC': 3,
+      'Livestock': 4,
+      'Fishery': 5,
+      'Organic': 6,
     };
 
     // Handle null case and invalid values

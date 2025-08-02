@@ -9,7 +9,7 @@ class ApiConstants {
 
   // Suitability endpoints
   static const String checkSuitability = '$baseUrl/check-suitability';
-  static const String getSuggestions = '$baseUrl/get-suggestions';
+  static const String getSuggestions = '$baseUrl/get-suggestions-stream';
 
   static const String chatbot = '$baseUrl/chat';
 

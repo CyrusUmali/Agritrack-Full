@@ -7,11 +7,12 @@ Widget buildComboBox({
   required String selectedValue,
   required ValueChanged<String> onSelected,
   double? width,
+  double? height,
   String? Function(String?)? validator,
   Color? color,
 }) {
   return SizedBox(
-    height: 48,
+    height: height ?? 48, // Use provided height or default to 48
     width: width,
     child: Container(
       decoration: BoxDecoration(
@@ -42,7 +43,10 @@ Widget buildComboBox({
                     hintText: hint,
                     border: InputBorder.none,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: (height ?? 48) / 2 -
+                          12, // Adjust padding based on height
+                    ),
                     suffixIconConstraints: const BoxConstraints(
                       minHeight: 24,
                       minWidth: 24,

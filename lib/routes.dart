@@ -44,6 +44,9 @@ import 'package:flareline/pages/test/new_page.dart'
 import 'package:flareline/pages/farms/farms_page.dart'
     deferred as farmsPage; // Import your new page
 
+import 'package:flareline/pages/assoc/assoc_page.dart'
+    deferred as assocsPage; // Import your new page
+
 import 'package:flareline/pages/users/users_page.dart' deferred as usersPage;
 import 'package:flareline/pages/farmers/farmers_page.dart'
     deferred as farmersPage;
@@ -188,6 +191,11 @@ final List<Map<String, Object>> MAIN_PAGES = [
   {
     'routerPath': '/modal',
     'widget': DeferredWidget(modal.loadLibrary, () => modal.ModalPage())
+  },
+  {
+    'routerPath': '/assocs',
+    'widget': DeferredWidget(
+        assocsPage.loadLibrary, () => assocsPage.AssocsPage()), // Add new page
   },
   {
     'routerPath': '/yields',

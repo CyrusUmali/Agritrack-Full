@@ -106,8 +106,6 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                 if (state is YieldsLoading) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is YieldsError) {
-                  // return Center(child: Text(state.message));
-
                   return NetworkErrorWidget(
                     error: state.message,
                     onRetry: () {
@@ -125,8 +123,13 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                       Expanded(
                         flex: 2,
                         child: DataTableWidget(
-                          key: ValueKey('yields_table_${state.yields.length}'),
-                          yields: state.yields,
+                          // key: ValueKey(
+                          //     'yields_table_${state.yields.length}_${state.sortColumn}_${state.sortAscending}'),
+
+                          key: ValueKey(
+                              'yields_table_${state.yields.length}_${context.read<YieldBloc>().sortColumn}_${context.read<YieldBloc>().sortAscending}'),
+
+                          state: state,
                         ),
                       ),
                     ],
@@ -156,8 +159,6 @@ class _YieldsWidgetState extends State<YieldsWidget> {
               if (state is YieldsLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is YieldsError) {
-                // return Center(child: Text(state.message));
-
                 return NetworkErrorWidget(
                   error: state.message,
                   onRetry: () {
@@ -171,8 +172,13 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                   return _buildNoResultsWidget();
                 }
                 return DataTableWidget(
-                  key: ValueKey('yields_table_${state.yields.length}'),
-                  yields: state.yields,
+                  // key: ValueKey(
+                  //     'yields_table_${state.yields.length}_${state.sortColumn}_${state.sortAscending}'),
+
+                  key: ValueKey(
+                      'yields_table_${state.yields.length}_${context.read<YieldBloc>().sortColumn}_${context.read<YieldBloc>().sortAscending}'),
+
+                  state: state,
                 );
               }
               return _buildNoResultsWidget();
@@ -764,16 +770,16 @@ class _YieldsWidgetState extends State<YieldsWidget> {
 }
 
 class DataTableWidget extends TableWidget<YieldsViewModel> {
-  final List<Yield> yields;
+  final YieldsLoaded state;
 
   DataTableWidget({
-    required this.yields,
+    required this.state,
     Key? key,
   }) : super(key: key);
 
   @override
   YieldsViewModel viewModelBuilder(BuildContext context) {
-    return YieldsViewModel(context, yields);
+    return YieldsViewModel(context, state);
   }
 
   @override
@@ -829,7 +835,7 @@ class DataTableWidget extends TableWidget<YieldsViewModel> {
     TableDataRowsTableDataRows columnData,
     YieldsViewModel viewModel,
   ) {
-    final yield = viewModel.yields.firstWhere(
+    final yield = viewModel.state.yields.firstWhere(
       (p) => p.id.toString() == columnData.id,
     );
 
@@ -893,8 +899,6 @@ class DataTableWidget extends TableWidget<YieldsViewModel> {
             );
           },
         ),
-
-        // Farmer Name
         if (!isFarmer)
           IconButton(
             icon: const Icon(Icons.check, color: Colors.green),
@@ -902,7 +906,6 @@ class DataTableWidget extends TableWidget<YieldsViewModel> {
               // context.read<YieldBloc>().add(ApproveYield(yield.id));
             },
           ),
-
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
@@ -962,19 +965,18 @@ class DataTableWidget extends TableWidget<YieldsViewModel> {
 }
 
 class YieldsViewModel extends BaseTableProvider {
-  final List<Yield> yields;
+  final YieldsLoaded state;
 
-// Add this helper method to your YieldsViewModel class
+  YieldsViewModel(super.context, this.state);
+
   String _getYieldWithUnit(double? volume, int? sectorId) {
     if (volume == null) return 'N/A';
 
-    // Assuming sectorId 1 is for crops measured in kg, and others might be heads, etc.
     switch (sectorId) {
-      case 1: // Crop sector (kg)
+      case 1:
         return '${volume.toStringAsFixed(volume % 1 == 0 ? 0 : 1)} kg';
-      case 2: // Livestock sector (heads)
+      case 2:
         return '${volume.toInt()} heads';
-      // Add more cases for other sectors as needed
       default:
         return volume.toString();
     }
@@ -998,14 +1000,13 @@ class YieldsViewModel extends BaseTableProvider {
     }
   }
 
-  YieldsViewModel(super.context, this.yields);
-
   @override
   Future loadData(BuildContext context) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final isFarmer = userProvider.isFarmer;
 
     final headers = [
+      "Record Id",
       if (!isFarmer) "Farmer Name",
       "Sector",
       if (!isFarmer) "Barangay",
@@ -1019,10 +1020,16 @@ class YieldsViewModel extends BaseTableProvider {
 
     List<List<TableDataRowsTableDataRows>> rows = [];
 
-    for (var yieldRecord in yields) {
+    for (var yieldRecord in state.yields) {
       List<TableDataRowsTableDataRows> row = [];
 
-      // Farmer Name
+      var recordIdCell = TableDataRowsTableDataRows()
+        ..text = yieldRecord.id.toString()
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = 'Record Id'
+        ..id = yieldRecord.id.toString();
+      row.add(recordIdCell);
+
       if (!isFarmer) {
         var farmerNameCell = TableDataRowsTableDataRows()
           ..text = yieldRecord.farmerName
@@ -1032,7 +1039,6 @@ class YieldsViewModel extends BaseTableProvider {
         row.add(farmerNameCell);
       }
 
-      // Sector
       var sectorCell = TableDataRowsTableDataRows()
         ..text = yieldRecord.sector
         ..dataType = CellDataType.TEXT.type
@@ -1049,7 +1055,6 @@ class YieldsViewModel extends BaseTableProvider {
         row.add(barangayCell);
       }
 
-      // Product
       var productCell = TableDataRowsTableDataRows()
         ..text = yieldRecord.productName
         ..dataType = CellDataType.TEXT.type
@@ -1057,32 +1062,27 @@ class YieldsViewModel extends BaseTableProvider {
         ..id = yieldRecord.id.toString();
       row.add(productCell);
 
-      // Area
       var areaCell = TableDataRowsTableDataRows()
-        // ..text = yieldRecord.hectare as String?
         ..text = '${yieldRecord.hectare} ha'
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Area'
         ..id = yieldRecord.id.toString();
       row.add(areaCell);
 
-      // Reported Yield
       var yieldCell = TableDataRowsTableDataRows()
         ..text = _getYieldWithUnit(yieldRecord.volume, yieldRecord.sectorId)
-            as String?
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Reported Yield'
         ..id = yieldRecord.id.toString();
       row.add(yieldCell);
 
-// Then in loadData:
       var dateCell = TableDataRowsTableDataRows()
         ..text = _formatDate(yieldRecord.createdAt)
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Date Reported'
         ..id = yieldRecord.id.toString();
       row.add(dateCell);
-      // Status
+
       var statusCell = TableDataRowsTableDataRows()
         ..text = yieldRecord.status
         ..dataType = CellDataType.TEXT.type
@@ -1090,7 +1090,6 @@ class YieldsViewModel extends BaseTableProvider {
         ..id = yieldRecord.id.toString();
       row.add(statusCell);
 
-      // Action
       var actionCell = TableDataRowsTableDataRows()
         ..text = ""
         ..dataType = CellDataType.ACTION.type

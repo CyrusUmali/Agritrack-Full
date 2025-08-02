@@ -107,7 +107,7 @@ class _FarmMapCardState extends State<FarmMapCard> {
       elevation: 1,
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        height: widget.isMobile ? 200 : 300,
+        height: widget.isMobile ? 200 : 200,
         child: FlutterMap(
           mapController: _mapController,
           options: MapOptions(

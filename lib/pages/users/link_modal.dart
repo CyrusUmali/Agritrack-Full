@@ -103,6 +103,7 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
   final TextEditingController farmerSearchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isSubmitting = false;
+  bool _obscurePassword = true; // Add this line for password visibility
   Farmer? selectedFarmer;
 
   // Track which fields have been validated
@@ -413,13 +414,26 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
             SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
 
             if (widget.googleEmail == null) ...[
-              // Password Field (only shown when not using Google email)
+              // Password Field with show/hide toggle
               TextFormField(
                 controller: passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password *',
                   border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: Colors.grey[600],
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                   contentPadding: EdgeInsets.symmetric(
                     vertical: screenWidth < 600 ? 10.0 : 16.0,
                     horizontal: 10.0,
@@ -459,88 +473,95 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
               SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
             ],
 
-            if (widget.farmers.isNotEmpty) ...[
-              // Farmer Autocomplete
-              SizedBox(
-                height: fieldHeight,
-                child: Autocomplete<Farmer>(
-                  key: farmerFieldKey,
-                  optionsBuilder: (TextEditingValue textEditingValue) {
-                    if (textEditingValue.text.isEmpty) {
-                      return widget.farmers;
-                    }
-                    return widget.farmers.where((farmer) => farmer.name
-                        .toLowerCase()
-                        .contains(textEditingValue.text.toLowerCase()));
-                  },
-                  onSelected: (Farmer farmer) {
-                    setState(() {
-                      selectedFarmer = farmer;
-                      farmerSearchController.text =
-                          farmer.name; // Set the controller text
-                    });
-                  },
-                  displayStringForOption: (farmer) => farmer.name,
-                  optionsViewBuilder: (context, onSelected, options) {
-                    return _buildOptionsView<Farmer>(
-                      context,
-                      onSelected,
-                      options,
-                      farmerFieldKey,
-                      (farmer) => farmer.name,
-                    );
-                  },
-                  fieldViewBuilder: (BuildContext context,
-                      TextEditingController textEditingController,
-                      FocusNode focusNode,
-                      VoidCallback onFieldSubmitted) {
-                    // Sync the internal controller with our farmerSearchController
-                    farmerSearchController.addListener(() {
-                      textEditingController.text = farmerSearchController.text;
-                    });
+            // Farmer Autocomplete
+            SizedBox(
+              height: fieldHeight,
+              child: Autocomplete<Farmer>(
+                key: farmerFieldKey,
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return widget.farmers;
+                  }
+                  return widget.farmers.where((farmer) => farmer.name
+                      .toLowerCase()
+                      .contains(textEditingValue.text.toLowerCase()));
+                },
+                onSelected: (Farmer farmer) {
+                  setState(() {
+                    selectedFarmer = farmer;
+                    farmerSearchController.text = farmer.name;
+                  });
+                  // Keep focus on the field after selection
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                  });
+                },
+                displayStringForOption: (farmer) => farmer.name,
+                optionsViewBuilder: (context, onSelected, options) {
+                  return _buildOptionsView<Farmer>(
+                    context,
+                    (farmer) {
+                      onSelected(farmer);
+                      // Prevent keyboard from closing by not changing focus
+                    },
+                    options,
+                    farmerFieldKey,
+                    (farmer) => farmer.name,
+                  );
+                },
+                fieldViewBuilder: (BuildContext context,
+                    TextEditingController textEditingController,
+                    FocusNode focusNode,
+                    VoidCallback onFieldSubmitted) {
+                  // Keep the text controllers in sync
+                  textEditingController.text = farmerSearchController.text;
 
-                    return TextFormField(
-                      controller: farmerSearchController,
-                      focusNode: focusNode,
-                      decoration: InputDecoration(
-                        labelText: 'Farmer *',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: const Icon(Icons.arrow_drop_down),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 12),
-                        errorStyle: const TextStyle(fontSize: 12),
-                        errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.red.shade400,
-                            width: 1.5,
-                          ),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.red.shade400,
-                            width: 1.5,
-                          ),
+                  return TextFormField(
+                    controller: textEditingController,
+                    focusNode: focusNode,
+                    decoration: InputDecoration(
+                      labelText: 'Farmer *',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: const Icon(Icons.arrow_drop_down),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 12),
+                      errorStyle: const TextStyle(fontSize: 12),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.red.shade400,
+                          width: 1.5,
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please select a farmer';
-                        }
-                        if (!widget.farmers
-                            .any((f) => f.name == value.trim())) {
-                          return 'Please select a valid farmer';
-                        }
-                        return null;
-                      },
-                      autovalidateMode: _farmerValidated
-                          ? AutovalidateMode.onUserInteraction
-                          : AutovalidateMode.disabled,
-                    );
-                  },
-                ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.red.shade400,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      farmerSearchController.text = value;
+                      if (_farmerValidated) {
+                        _formKey.currentState!.validate();
+                      }
+                    },
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please select a farmer';
+                      }
+                      if (!widget.farmers.any((f) => f.name == value.trim())) {
+                        return 'Please select a valid farmer';
+                      }
+                      return null;
+                    },
+                    autovalidateMode: _farmerValidated
+                        ? AutovalidateMode.onUserInteraction
+                        : AutovalidateMode.disabled,
+                  );
+                },
               ),
-              _buildFarmerDetails(),
-            ],
+            ),
+            _buildFarmerDetails(),
           ],
         ),
       ),

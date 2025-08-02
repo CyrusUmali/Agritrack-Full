@@ -46,10 +46,13 @@ class _MapChartWidgetState extends State<MapChartWidget> {
       builder: (productContext, productState) {
         List<String> products = [];
 
+        // print('productState');
+        // print(productState);
+
         if (productState is ProductsLoaded) {
 //  yields = yieldState.yields;
 
-          // print('products Data Loaded:');
+          print('products Data Loaded:');
           // for (var products in productState.products) {
           //   print(products.toJson());
           // }
@@ -58,8 +61,6 @@ class _MapChartWidgetState extends State<MapChartWidget> {
         } else if (productState is ProductsError) {
           // Show error and retry button for products
           return _buildErrorState(productState.message, _loadData);
-        } else {
-          products = ['Rice', 'Corn', 'Cow', 'Coconut', 'Banana'];
         }
 
         return BlocBuilder<YieldBloc, YieldState>(

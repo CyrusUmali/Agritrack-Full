@@ -65,15 +65,14 @@ class DeleteUser extends UserEvent {
 
 class FilterUsers extends UserEvent {
   final String? role;
+  final String? status;
+  final String? query;
   final int? sectorId;
 
-  const FilterUsers({
-    this.role,
-    this.sectorId,
-  });
+  const FilterUsers({this.role, this.sectorId, this.query, this.status});
 
   @override
-  List<Object?> get props => [role, sectorId];
+  List<Object?> get props => [role, status, query, sectorId];
 }
 
 class SearchUsers extends UserEvent {

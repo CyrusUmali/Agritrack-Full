@@ -22,7 +22,8 @@ class AuthGuard {
     '/toast',
     '/modal',
     '/basicChart',
-    '/forgotPwd'
+    '/forgotPwd',
+    // '/assocs'
   ];
 
   static bool isPublicRoute(String path) {

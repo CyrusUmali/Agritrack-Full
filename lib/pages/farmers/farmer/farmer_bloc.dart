@@ -24,10 +24,11 @@ class FarmerBloc extends Bloc<FarmerEvent, FarmerState> {
   List<Farmer> _farmers = [];
   String _searchQuery = '';
   String _sectorFilter = "All";
+  String _associationFilter = "All";
   String? _sortColumn;
   bool _sortAscending = true;
   String _barangayFilter = "All"; // Add this alongside other filter fields
-
+  String get associationFilter => _associationFilter;
   String get barangayFilter => _barangayFilter; // Add this getter
   List<Farmer> get allFarmers => _farmers;
   String get sectorFilter => _sectorFilter;
@@ -138,10 +139,16 @@ class FarmerBloc extends Bloc<FarmerEvent, FarmerState> {
     _sectorFilter =
         (event.sector == null || event.sector!.isEmpty) ? "All" : event.sector!;
 
-    // Handle barangay filter - treat null/empty same as "All"
+    // Handle barangay filter
     _barangayFilter = (event.barangay == null || event.barangay!.isEmpty)
         ? "All"
         : event.barangay!;
+
+    // Handle association filter
+    _associationFilter =
+        (event.association == null || event.association!.isEmpty)
+            ? "All"
+            : event.association!;
 
     emit(FarmersLoaded(_applyFilters()));
   }
@@ -160,7 +167,13 @@ class FarmerBloc extends Bloc<FarmerEvent, FarmerState> {
       _sortColumn = event.columnName;
       _sortAscending = true;
     }
-    emit(FarmersLoaded(_applyFilters()));
+
+    final filteredFarmers = _applyFilters();
+    for (var i = 0;
+        i < (filteredFarmers.length > 3 ? 3 : filteredFarmers.length);
+        i++) {}
+
+    emit(FarmersLoaded(filteredFarmers));
   }
 
   List<Farmer> _applyFilters() {
@@ -171,7 +184,6 @@ class FarmerBloc extends Bloc<FarmerEvent, FarmerState> {
           (farmer.sector != null && farmer.sector == _sectorFilter);
 
       if (!matchesSector) {
-        // print('[DEBUG] Farmer ${farmer.name} filtered out by sector');
         return false;
       }
 
@@ -182,13 +194,22 @@ class FarmerBloc extends Bloc<FarmerEvent, FarmerState> {
               farmer.barangay!.toLowerCase() == _barangayFilter.toLowerCase());
 
       if (!matchesBarangay) {
-        // print('[DEBUG] Farmer ${farmer.name} filtered out by barangay');
+        return false;
+      }
+
+      // Association filter
+      final matchesAssociation = _associationFilter == "All" ||
+          _associationFilter.isEmpty ||
+          (farmer.association != null &&
+              farmer.association!.toLowerCase() ==
+                  _associationFilter.toLowerCase());
+
+      if (!matchesAssociation) {
         return false;
       }
 
       // Search filter
       if (_searchQuery.isEmpty) {
-        // print('[DEBUG] Farmer ${farmer.name} included (no search query)');
         return true;
       }
 
@@ -196,28 +217,29 @@ class FarmerBloc extends Bloc<FarmerEvent, FarmerState> {
           (farmer.email?.toLowerCase().contains(_searchQuery) ?? false) ||
           (farmer.phone?.toLowerCase().contains(_searchQuery) ?? false) ||
           (farmer.barangay?.toLowerCase().contains(_searchQuery) ?? false) ||
-          (farmer.sector?.toLowerCase().contains(_searchQuery) ?? false);
+          (farmer.sector?.toLowerCase().contains(_searchQuery) ?? false) ||
+          (farmer.association?.toLowerCase().contains(_searchQuery) ?? false);
 
-      // print('[DEBUG] Farmer ${farmer.name} search match: $matchesSearch');
       return matchesSearch;
     }).toList();
 
-    // print('[DEBUG] Found ${filteredFarmers.length} farmers after filtering');
-
-    // Sorting logic remains the same
+    // Sorting logic
     if (_sortColumn != null) {
-      // print('[DEBUG] Applying sorting by $_sortColumn');
       filteredFarmers.sort((a, b) {
         int compareResult;
         switch (_sortColumn) {
-          case 'Name':
-            compareResult = a.name.compareTo(b.name);
+          case 'Farmer Name':
+            compareResult = (a.name ?? '').compareTo(b.name ?? '');
             break;
           case 'Sector':
             compareResult = (a.sector ?? '').compareTo(b.sector ?? '');
             break;
           case 'Barangay':
             compareResult = (a.barangay ?? '').compareTo(b.barangay ?? '');
+            break;
+          case 'Association':
+            compareResult =
+                (a.association ?? '').compareTo(b.association ?? '');
             break;
           default:
             compareResult = 0;

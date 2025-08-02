@@ -1,12 +1,7 @@
-import 'package:flareline/pages/reports/chart_data_provider.dart';
-import 'package:flareline/pages/reports/report_charts.dart';
 import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
-import 'package:flareline/core/theme/global_colors.dart';
-import 'package:flareline/flutter_gen/app_localizations.dart';
-import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:provider/provider.dart';
 import 'report_filter_panel.dart';
 import 'report_preview.dart';
@@ -37,22 +32,27 @@ class ReportContent extends StatefulWidget {
 class _ReportContentState extends State<ReportContent> {
   // Filter state
   DateTimeRange dateRange = DateTimeRange(
-    start: DateTime.now().subtract(const Duration(days: 30)),
-    end: DateTime.now(),
+    start: DateTime(1970), // Or any other "empty" marker date
+    end: DateTime(1970),
   );
+
   String selectedBarangay = '';
   String selectedFarmer = '';
   String selectedView = '';
+  String selectedCount = '';
   String selectedSector = '';
   String selectedProduct = '';
+  String selectedAssoc = '';
   String selectedFarm = '';
   String reportType = 'farmer';
   String outputFormat = 'table';
   Set<String> selectedColumns = {};
   bool isLoading = false;
   List<Map<String, dynamic>> reportData = [];
-  List<Map<String, dynamic>> filteredReportData = []; // For search results
-  String searchQuery = ''; // Search query state
+  List<Map<String, dynamic>> filteredReportData = [];
+  String searchQuery = '';
+  // Add a key for the ReportPreview to force rebuild
+  UniqueKey _previewKey = UniqueKey();
 
   Future<void> generateReport() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -61,7 +61,7 @@ class _ReportContentState extends State<ReportContent> {
     setState(() => isLoading = true);
 
     final data = await ReportGenerator.generateReport(
-      context: context, // Pass the context here
+      context: context,
       reportType: reportType,
       dateRange: dateRange,
       selectedBarangay: selectedBarangay,
@@ -69,44 +69,73 @@ class _ReportContentState extends State<ReportContent> {
       selectedView: selectedView,
       selectedSector: selectedSector,
       selectedProduct: selectedProduct,
+      selectedAssoc: selectedAssoc,
       selectedFarm: selectedFarm,
+      selectedCount: selectedCount,
     );
-
-    // Auto-select all columns if none are selected
-    if (selectedColumns.isEmpty && data.isNotEmpty) {
-      selectedColumns = data.first.keys.toSet();
-    }
 
     setState(() {
       reportData = data;
-      filteredReportData = data; // Initialize filtered data with all data
+      filteredReportData = data;
       isLoading = false;
-    });
-  }
-
-  // Search function
-  void searchReports(String query) {
-    setState(() {
-      searchQuery = query;
-      if (query.isEmpty) {
-        filteredReportData = reportData;
-      } else {
-        filteredReportData = reportData.where((report) {
-          // Search in all fields of the report
-          return report.values.any((value) {
-            return value.toString().toLowerCase().contains(query.toLowerCase());
-          });
-        }).toList();
+      // Reset the preview key to force rebuild
+      _previewKey = UniqueKey();
+      // Auto-select all columns if none are selected
+      if (selectedColumns.isEmpty && data.isNotEmpty) {
+        selectedColumns = data.first.keys.toSet();
       }
     });
   }
 
-  // This function will be called when columns change
-  void handleColumnsChanged(Set<String> newColumns) {
+  void searchReports(String query) {
     setState(() {
-      selectedColumns = newColumns;
-      // No need to manually rebuild - setState will trigger a rebuild
+      searchQuery = query;
+      filteredReportData = query.isEmpty
+          ? reportData
+          : reportData.where((report) {
+              return report.values.any((value) {
+                return value
+                    .toString()
+                    .toLowerCase()
+                    .contains(query.toLowerCase());
+              });
+            }).toList();
     });
+  }
+
+  void handleColumnsChanged(Set<String> newColumns) {
+    setState(() => selectedColumns = newColumns);
+  }
+
+  void _handleItemsRemoved(List<int> indicesToRemove) {
+    if (indicesToRemove.isEmpty) return;
+
+    setState(() {
+      // Create a new list to avoid mutating the current state directly
+      final newFilteredData =
+          List<Map<String, dynamic>>.from(filteredReportData);
+      final newReportData = List<Map<String, dynamic>>.from(reportData);
+
+      // Get the items to remove from filtered data
+      final itemsToRemove = indicesToRemove
+          .map((index) => newFilteredData[index])
+          .where((item) => item != null)
+          .toList();
+
+      // Remove from both lists
+      newFilteredData.removeWhere((item) => itemsToRemove.contains(item));
+      newReportData.removeWhere((item) => itemsToRemove.contains(item));
+
+      // Update state with new lists
+      filteredReportData = newFilteredData;
+      reportData = newReportData;
+
+      // Force a rebuild of the preview
+      _previewKey = UniqueKey();
+    });
+
+    ToastHelper.showSuccessToast(
+        'Removed ${indicesToRemove.length} items', context);
   }
 
   @override
@@ -124,6 +153,9 @@ class _ReportContentState extends State<ReportContent> {
           selectedBarangay: selectedBarangay,
           selectedView: selectedView,
           onViewChanged: (newValue) => setState(() => selectedView = newValue),
+          selectedCount: selectedCount,
+          onCountChanged: (newValue) =>
+              setState(() => selectedCount = newValue),
           selectedFarmer: selectedFarmer,
           onFarmerChanged: (newValue) =>
               setState(() => selectedFarmer = newValue),
@@ -135,6 +167,9 @@ class _ReportContentState extends State<ReportContent> {
           selectedProduct: selectedProduct,
           onProductChanged: (newValue) =>
               setState(() => selectedProduct = newValue),
+          selectedAssoc: selectedAssoc,
+          onAssocChanged: (newValue) =>
+              setState(() => selectedAssoc = newValue),
           selectedFarm: selectedFarm,
           onFarmChanged: (newValue) => setState(() => selectedFarm = newValue),
           reportType: reportType,
@@ -148,22 +183,27 @@ class _ReportContentState extends State<ReportContent> {
               );
               selectedBarangay = '';
               selectedFarmer = '';
+              selectedCount = '';
               selectedView = '';
               selectedSector = '';
               selectedProduct = '';
+
+              selectedAssoc = '';
+
               selectedFarm = '';
               // Reset columns and data
               selectedColumns = {};
               reportData = [];
               filteredReportData = [];
               searchQuery = '';
+              _previewKey = UniqueKey();
             });
           },
           outputFormat: outputFormat,
           onOutputFormatChanged: (newValue) =>
               setState(() => outputFormat = newValue),
           selectedColumns: selectedColumns,
-          onColumnsChanged: handleColumnsChanged, // Use the new handler
+          onColumnsChanged: handleColumnsChanged,
           onGeneratePressed: generateReport,
           isLoading: isLoading,
         ),
@@ -200,7 +240,7 @@ class _ReportContentState extends State<ReportContent> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onChanged: searchReports, // Connect search function
+                      onChanged: searchReports,
                     ),
                     if (searchQuery.isNotEmpty) ...[
                       const SizedBox(height: 8),
@@ -229,7 +269,8 @@ class _ReportContentState extends State<ReportContent> {
             height: availableHeight,
             child: SingleChildScrollView(
               child: ReportPreview(
-                reportData: filteredReportData, // Use filtered data
+                key: _previewKey, // Use the key to force rebuild
+                reportData: filteredReportData,
                 reportType: reportType,
                 outputFormat: outputFormat,
                 selectedColumns: selectedColumns,
@@ -237,16 +278,18 @@ class _ReportContentState extends State<ReportContent> {
                 dateRange: dateRange,
                 selectedBarangay: selectedBarangay,
                 selectedSector: selectedSector,
-                selectedProductType: '',
+                selectedAssoc: selectedAssoc,
+                selectedProductType: selectedProduct,
                 selectedFarmer: selectedFarmer,
+                //  selectedCount: selectedCount,
                 selectedView: selectedView,
-                // onDeleteSelected: (List<int> selectedIndices) {},
+                onDeleteSelected: _handleItemsRemoved,
               ),
             ),
           ),
           ReportExportOptions(
             reportType: reportType,
-            reportData: filteredReportData, // Use filtered data for export
+            reportData: filteredReportData,
             selectedColumns: selectedColumns,
             dateRange: dateRange,
             context: context,
@@ -254,9 +297,5 @@ class _ReportContentState extends State<ReportContent> {
         ],
       ],
     );
-  }
-
-  void _exportReport(String format) {
-    ToastHelper.showInfoToast('Exporting to $format...', context);
   }
 }

@@ -1,11 +1,11 @@
 import 'package:flareline/pages/recommendation/chatbot/chatbot_page.dart';
 import 'package:flareline/pages/recommendation/recommendation_page.dart';
 import 'package:flareline/pages/recommendation/requirement_page.dart';
-import 'package:flareline/pages/recommendation/suitability/suitability_page.dart';
 import 'package:flareline/pages/recommendation/suitability/suitabilty_model.dart';
 import 'package:flareline/pages/toast/toast_helper.dart';
+import 'package:flareline/providers/language_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flareline_uikit/components/card/common_card.dart';
+import 'package:provider/provider.dart'; // Add this import
 import 'suitability_inputs.dart';
 import 'suitability_results.dart';
 
@@ -18,7 +18,10 @@ class SuitabilityContent extends StatefulWidget {
 
 class SuitabilityContentState extends State<SuitabilityContent> {
   final GlobalKey _navigationMenuKey = GlobalKey();
-  final SuitabilityModel model = SuitabilityModel(); // Updated model type
+
+  // Remove the local languageProvider and model declarations
+  SuitabilityModel? model;
+
   final List<String> availableCrops = [
     "grapes",
     "mango",
@@ -53,22 +56,28 @@ class SuitabilityContentState extends State<SuitabilityContent> {
     );
   }
 
-  // In SuitabilityContentState
   @override
-  void initState() {
-    super.initState();
-    model.addListener(_onModelChanged); // Listen to model changes
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Initialize model with the provider from context
+    if (model == null) {
+      final languageProvider =
+          Provider.of<LanguageProvider>(context, listen: false);
+      model = SuitabilityModel(languageProvider: languageProvider);
+      model!.addListener(_onModelChanged);
+    }
   }
 
   @override
   void dispose() {
-    model.removeListener(_onModelChanged); // Clean up
+    model?.removeListener(_onModelChanged);
     super.dispose();
   }
 
   void _onModelChanged() {
     if (mounted) {
-      setState(() {}); // Trigger rebuild when model changes
+      setState(() {});
     }
   }
 
@@ -105,13 +114,10 @@ class SuitabilityContentState extends State<SuitabilityContent> {
     );
 
     if (result == 'back') {
-      // Navigator.pop(context);
-
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              const ChatbotPage(), // Change to your desired page
+          builder: (context) => const ChatbotPage(),
         ),
       );
     } else if (result == 'recommendation') {
@@ -124,66 +130,80 @@ class SuitabilityContentState extends State<SuitabilityContent> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 600;
-    final bool isTablet = MediaQuery.of(context).size.width < 900;
+    // Use Consumer to listen to language changes
+    return Consumer<LanguageProvider>(
+      builder: (context, languageProvider, child) {
+        print(
+            'Current language in SuitabilityContent: ${languageProvider.currentLanguageCode}');
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 24,
-        vertical: isMobile ? 8 : 24,
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints:
-              BoxConstraints(maxWidth: isMobile ? double.infinity : 800),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildResponsiveHeader(isMobile, isTablet),
-                const SizedBox(height: 24),
-                _buildCropSelectionDropdown(),
-                const SizedBox(height: 10),
-                _buildModelSelectionCard(),
-                const SizedBox(height: 24),
-                _buildInputParametersCard(isMobile),
-                if (model.isLoading) ...[
-                  const SizedBox(height: 24),
-                  const Center(child: CircularProgressIndicator()),
-                ],
-                if (model.suitabilityResult != null &&
-                    model.suitabilityResult!.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  SuitabilityResults(
-                    suitabilityResult: model.suitabilityResult!,
-                    onGetSuggestions: () async {
-                      try {
-                        // Convert to List<String> explicitly
-                        final deficientParams =
-                            (model.suitabilityResult!['parameters_analysis']
-                                    as Map)
+        if (model == null)
+          return const Center(child: CircularProgressIndicator());
+
+        final bool isMobile = MediaQuery.of(context).size.width < 600;
+        final bool isTablet = MediaQuery.of(context).size.width < 900;
+
+        return Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 16 : 24,
+            vertical: isMobile ? 8 : 24,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints:
+                  BoxConstraints(maxWidth: isMobile ? double.infinity : 800),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildResponsiveHeader(isMobile, isTablet),
+                    const SizedBox(height: 24),
+                    _buildCropSelectionDropdown(),
+                    const SizedBox(height: 10),
+                    _buildModelSelectionCard(),
+                    const SizedBox(height: 24),
+                    _buildInputParametersCard(isMobile),
+                    if (model!.isLoading) ...[
+                      const SizedBox(height: 24),
+                      const Center(child: CircularProgressIndicator()),
+                    ],
+                    if (model!.suitabilityResult != null &&
+                        model!.suitabilityResult!.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      SuitabilityResults(
+                        suitabilityResult: model!.suitabilityResult!,
+                        onGetSuggestions: () async {
+                          try {
+                            // Convert to List<String> explicitly
+                            final deficientParams = (model!.suitabilityResult![
+                                    'parameters_analysis'] as Map)
                                 .entries
                                 .where((e) => e.value['status'] != 'optimal')
                                 .map((e) => e.key.toString())
                                 .toList();
 
-                        await model.getSuggestions(deficientParams);
-                      } catch (e) {
-                        ToastHelper.showErrorToast(
-                          'Error: ${e.toString()}',
-                          context,
-                        );
-                      }
-                    },
-                    isLoadingSuggestions: model.isLoading,
-                  )
-                ]
-              ],
+                            await model!.getSuggestionsStream(
+                              deficientParams,
+                              languageCode: languageProvider
+                                  .currentLanguageCode, // This will now get the updated value
+                            );
+                          } catch (e) {
+                            ToastHelper.showErrorToast(
+                              'Error: ${e.toString()}',
+                              context,
+                            );
+                          }
+                        },
+                        isLoadingSuggestions: model!.isStreamingSuggestions,
+                      )
+                    ]
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -204,7 +224,7 @@ class SuitabilityContentState extends State<SuitabilityContent> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: model.selectedCrop,
+              value: model!.selectedCrop,
               hint: const Text('Choose a crop'),
               items: availableCrops.map((String crop) {
                 return DropdownMenuItem<String>(
@@ -214,8 +234,8 @@ class SuitabilityContentState extends State<SuitabilityContent> {
               }).toList(),
               onChanged: (String? newValue) {
                 setState(() {
-                  model.selectedCrop = newValue;
-                  model.suitabilityResult = null; // Clear previous results
+                  model!.selectedCrop = newValue;
+                  model!.suitabilityResult = null;
                 });
               },
               decoration: InputDecoration(
@@ -263,8 +283,8 @@ class SuitabilityContentState extends State<SuitabilityContent> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: model.selectedModel,
-              items: model.models.keys.map((String modelName) {
+              value: model!.selectedModel,
+              items: model!.models.keys.map((String modelName) {
                 return DropdownMenuItem<String>(
                   value: modelName,
                   child: Text(modelName),
@@ -272,10 +292,10 @@ class SuitabilityContentState extends State<SuitabilityContent> {
               }).toList(),
               onChanged: (String? newValue) {
                 setState(() {
-                  model.selectedModel = newValue!;
-                  model.modelAccuracy = newValue == 'All Models'
+                  model!.selectedModel = newValue!;
+                  model!.modelAccuracy = newValue == 'All Models'
                       ? 'Ensemble average will be calculated'
-                      : 'Accuracy: ${(model.models[newValue]!['accuracy']! * 100).toStringAsFixed(2)}%';
+                      : 'Accuracy: ${(model!.models[newValue]!['accuracy']! * 100).toStringAsFixed(2)}%';
                 });
               },
               decoration: InputDecoration(
@@ -300,16 +320,6 @@ class SuitabilityContentState extends State<SuitabilityContent> {
                 hintStyle: TextStyle(color: Colors.grey[600]),
               ),
             ),
-            // if (model.modelAccuracy != null) ...[
-            //   const SizedBox(height: 8),
-            //   Text(
-            //     model.modelAccuracy!,
-            //     style: TextStyle(
-            //       color: Colors.green[800],
-            //       fontSize: 14,
-            //     ),
-            //   ),
-            // ],
           ],
         ),
       ),
@@ -331,7 +341,7 @@ class SuitabilityContentState extends State<SuitabilityContent> {
             ),
             const SizedBox(height: 16),
             SuitabilityInputs(
-              model: model,
+              model: model!,
               isMobile: isMobile,
               onChanged: () => setState(() {}),
             ),
@@ -339,12 +349,15 @@ class SuitabilityContentState extends State<SuitabilityContent> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: model.selectedCrop == null
+                onPressed: model!.selectedCrop == null
                     ? null
                     : () async {
                         try {
-                          await model.checkSuitability();
-                          setState(() {});
+                          setState(() {
+                            model!.isLoading = true;
+                          });
+
+                          await model!.checkSuitability();
                         } catch (e) {
                           ToastHelper.showErrorToast(
                             'Error: $e',
@@ -354,7 +367,7 @@ class SuitabilityContentState extends State<SuitabilityContent> {
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
-                      model.selectedCrop == null ? Colors.grey : Colors.blue,
+                      model!.selectedCrop == null ? Colors.grey : Colors.blue,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -366,12 +379,12 @@ class SuitabilityContentState extends State<SuitabilityContent> {
                 ),
               ),
             ),
-            if (model.suitabilityResult != null) ...[
+            if (model!.suitabilityResult != null) ...[
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
                   setState(() {
-                    model.suitabilityResult = null;
+                    model!.suitabilityResult = null;
                   });
                 },
                 child: const Text('Check Another Configuration'),
@@ -384,15 +397,11 @@ class SuitabilityContentState extends State<SuitabilityContent> {
   }
 
   Widget _buildResponsiveHeader(bool isMobile, bool isTablet) {
-    // Navigation function - customize this to your desired page
-
-    // For desktop view (when neither mobile nor tablet)
     if (!isMobile && !isTablet) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Title Text on left
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -406,43 +415,27 @@ class SuitabilityContentState extends State<SuitabilityContent> {
               ),
               const SizedBox(height: 4),
               Tooltip(
-                message: 'Navigation Options', // Customize tooltip text
+                message: 'Navigation Options',
                 child: IconButton(
                   key: _navigationMenuKey,
                   icon: Transform(
                     alignment: Alignment.center,
-                    transform: Matrix4.identity()
-                      ..scale(-1.0, 1.0), // Flip horizontally (mirror effect)
+                    transform: Matrix4.identity()..scale(-1.0, 1.0),
                     child: const Icon(
                       Icons.keyboard_return,
                       size: 16,
                       color: Colors.grey,
                     ),
                   ),
-                  onPressed: () {
-                    // if (!mounted)
-                    //   return; // Check if the widget is still in the tree
-
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) =>
-                    //         const RecommendationPage(), // Change to your desired page
-                    //   ),
-                    // );
-
-                    _showNavigationMenu();
-                  },
+                  onPressed: _showNavigationMenu,
                   splashRadius: 16,
                   padding: EdgeInsets.zero,
                 ),
               ),
             ],
           ),
-
-          // Tooltip with InkWell for better hover effects
           Tooltip(
-            message: 'More information', // Customize tooltip text
+            message: 'More information',
             child: InkWell(
               onTap: _navigateToRequirements,
               borderRadius: BorderRadius.circular(50),
@@ -471,10 +464,8 @@ class SuitabilityContentState extends State<SuitabilityContent> {
       );
     }
 
-    // For mobile/tablet view (column layout)
     return Column(
       children: [
-        // Title Text
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -492,37 +483,26 @@ class SuitabilityContentState extends State<SuitabilityContent> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Info Icon
                 Tooltip(
-                  message: 'Navigation Options', // Customize tooltip text
+                  message: 'Navigation Options',
                   child: IconButton(
                     key: _navigationMenuKey,
                     icon: Transform(
                       alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..scale(-1.0, 1.0), // Flip horizontally (mirror effect)
+                      transform: Matrix4.identity()..scale(-1.0, 1.0),
                       child: const Icon(
                         Icons.keyboard_return,
                         size: 16,
                         color: Colors.grey,
                       ),
                     ),
-                    onPressed: () {
-                      _showNavigationMenu();
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //       builder: (context) => const RecommendationPage()),
-                      // );
-                    },
+                    onPressed: _showNavigationMenu,
                     splashRadius: 16,
                     padding: EdgeInsets.zero,
                   ),
                 ),
-
-                // Tooltip Circular Button
                 Tooltip(
-                  message: 'More information', // Customize tooltip text
+                  message: 'More information',
                   child: InkWell(
                     onTap: _navigateToRequirements,
                     borderRadius: BorderRadius.circular(50),

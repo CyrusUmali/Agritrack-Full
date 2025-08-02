@@ -5,9 +5,9 @@ import 'package:flareline/pages/test/map_widget/farm_list_panel/barangay_filter_
 import 'package:flareline/pages/test/map_widget/farm_service.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/farm_info_card.dart';
 import 'package:flareline/pages/toast/toast_helper.dart';
-
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
@@ -39,12 +39,11 @@ class MapWidget extends StatefulWidget {
 class _MapWidgetState extends State<MapWidget>
     with TickerProviderStateMixin, RouteAware {
   PolygonData? _selectedPolygonForModal;
-
   String selectedMap = "Google Satellite (No Labels)";
   bool _showFarmListPanel = false;
+  bool _showLegendPanel = false;
   double zoomLevel = 15.0;
   LatLng? previewPoint;
-
   bool _isLoading = true;
   String? _loadingError;
 
@@ -52,16 +51,13 @@ class _MapWidgetState extends State<MapWidget>
   late PolygonManager polygonManager;
   late BarangayManager barangayManager;
   final ValueNotifier<LatLng?> previewPointNotifier = ValueNotifier(null);
-
   late final RenderBox _renderBox;
   LatLng? _lastPoint;
 
   @override
   void initState() {
     super.initState();
-
     _loadFarmsFromApi();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _renderBox = context.findRenderObject() as RenderBox;
     });
@@ -72,8 +68,8 @@ class _MapWidgetState extends State<MapWidget>
         context: context,
         mapController: _animatedMapController,
         onPolygonSelected: hideFarmListPanel,
-        products: widget.products, // Add this
-        farmers: widget.farmers, // Add this
+        products: widget.products,
+        farmers: widget.farmers,
         farmService: widget.farmService,
         onFiltersChanged: () => setState(() {}));
 
@@ -209,21 +205,14 @@ class _MapWidgetState extends State<MapWidget>
       children: <Widget>[
         Listener(
           onPointerMove: (event) {
-            // Only process if in drawing mode
             if (!polygonManager.isDrawing) return;
-
             try {
-              // Get the render box if not already available
               final renderBox =
                   _renderBox ?? context.findRenderObject() as RenderBox?;
               if (renderBox == null) return;
-
-              // Convert global position to local coordinates
               final localPosition = renderBox.globalToLocal(event.position);
               final newPoint = _animatedMapController.mapController.camera
                   .pointToLatLng(Point(localPosition.dx, localPosition.dy));
-
-              // Update only if point changed significantly (optimization)
               if (_lastPoint == null ||
                   (newPoint.latitude - _lastPoint!.latitude).abs() > 0.0001 ||
                   (newPoint.longitude - _lastPoint!.longitude).abs() > 0.0001) {
@@ -236,17 +225,13 @@ class _MapWidgetState extends State<MapWidget>
           },
           child: MouseRegion(
             onHover: (event) {
-              // Add hover support for smoother preview
               if (!polygonManager.isDrawing) return;
-
               try {
                 final renderBox = context.findRenderObject() as RenderBox?;
                 if (renderBox == null) return;
-
                 final localPosition = renderBox.globalToLocal(event.position);
                 final newPoint = _animatedMapController.mapController.camera
                     .pointToLatLng(Point(localPosition.dx, localPosition.dy));
-
                 previewPointNotifier.value = newPoint;
               } catch (e) {
                 debugPrint('Error in hover: $e');
@@ -272,6 +257,8 @@ class _MapWidgetState extends State<MapWidget>
             ),
           ),
         ),
+
+        // Farm List Panel
         if (_showFarmListPanel)
           Positioned(
             left: 0,
@@ -287,43 +274,74 @@ class _MapWidgetState extends State<MapWidget>
                 });
               },
               onPolygonSelected: (int index) {
-                setState(() {
-                  // polygonManager.selectPolygon(index);
-                });
+                setState(() {});
               },
               onFiltersChanged: () {
                 setState(() {});
               },
             ),
           ),
+
+        // Legend Panel
+        if (_showLegendPanel)
+          Positioned(
+            left: _showFarmListPanel ? 270 : 50,
+            top: 20,
+            child: _buildLegendPanel(),
+          ),
+
+        // Panel and Legend Toggle Buttons in Column
         Positioned(
           top: 10,
           left: _showFarmListPanel ? 260 : 10,
-          child: _buildStyledIconButton(
-            icon: _showFarmListPanel
-                ? Icons.arrow_left_rounded
-                : Icons.arrow_right_rounded,
-            onPressed: () {
-              setState(() {
-                _showFarmListPanel = !_showFarmListPanel;
-
-                if (_showFarmListPanel) {
-                  polygonManager.selectedPolygonIndex = -1;
-                  polygonManager.selectedPolygon = null;
-                  polygonManager.selectedPolygonNotifier.value = null;
-
-                  polygonManager.removeInfoCardOverlay();
-                }
-              });
-            },
-            backgroundColor: Colors.white,
-            iconSize: 15,
-            buttonSize: 30.0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Panel Toggle Button
+              _buildStyledIconButton(
+                icon: _showFarmListPanel
+                    ? Icons.arrow_left_rounded
+                    : Icons.arrow_right_rounded,
+                onPressed: () {
+                  setState(() {
+                    _showFarmListPanel = !_showFarmListPanel;
+                    if (_showFarmListPanel) {
+                      polygonManager.selectedPolygonIndex = -1;
+                      polygonManager.selectedPolygon = null;
+                      polygonManager.selectedPolygonNotifier.value = null;
+                      polygonManager.removeInfoCardOverlay();
+                    }
+                  });
+                },
+                backgroundColor: Colors.white,
+                iconSize: 15,
+                buttonSize: 30.0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+              ),
+              SizedBox(height: 10), // Add some spacing between buttons
+              // Legend Toggle Button
+              _buildStyledIconButton(
+                icon: _showLegendPanel
+                    ? Icons.legend_toggle
+                    : Icons.legend_toggle_outlined,
+                onPressed: () {
+                  setState(() {
+                    _showLegendPanel = !_showLegendPanel;
+                  });
+                },
+                backgroundColor: Colors.white,
+                iconSize: 15,
+                buttonSize: 30.0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+              ),
+            ],
           ),
         ),
+        // Map Controls
         Positioned(
           top: 10,
           right: 10,
@@ -374,6 +392,7 @@ class _MapWidgetState extends State<MapWidget>
             },
           ),
         ),
+
         if (polygonManager.selectedPolygonIndex != null &&
             polygonManager.isEditing)
           Positioned(
@@ -383,7 +402,6 @@ class _MapWidgetState extends State<MapWidget>
               onPressed: () {
                 setState(() {
                   polygonManager.saveEditedPolygon();
-                  // polygonManager.toggleEditing();
                   polygonManager.selectedPolygon = null;
                   polygonManager.selectedPolygonIndex = null;
                 });
@@ -419,6 +437,97 @@ class _MapWidgetState extends State<MapWidget>
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildLegendPanel() {
+    return Container(
+      width: 180,
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Legends',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          SizedBox(height: 10),
+          _buildLegendItem(PinStyle.Rice),
+          _buildLegendItem(PinStyle.Corn),
+          _buildLegendItem(PinStyle.HVC),
+          _buildLegendItem(PinStyle.Livestock),
+          _buildLegendItem(PinStyle.Fishery),
+          _buildLegendItem(PinStyle.Organic),
+          // _buildLegendItem(PinStyle.Barangay),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent, // Using imported function
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                      child: Icon(
+                    Icons.account_balance, // Government building icon
+                    color: Colors.white,
+                    size: 24,
+                  )),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  "Barangay",
+                  style: TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(PinStyle pinStyle) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: getPinColor(pinStyle), // Using imported function
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: getPinIcon(pinStyle), // Using imported function
+            ),
+          ),
+          SizedBox(width: 8),
+          Text(
+            pinStyle.toString().split('.').last,
+            style: TextStyle(fontSize: 14),
+          ),
+        ],
+      ),
     );
   }
 

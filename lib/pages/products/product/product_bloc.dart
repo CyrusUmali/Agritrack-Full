@@ -106,20 +106,15 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     DeleteProduct event,
     Emitter<ProductState> emit,
   ) async {
-    print('_onDeleteProduct: Emitting ProductsLoading');
     emit(ProductsLoading());
     try {
-      print('_onDeleteProduct: Deleting product with id ${event.id}');
       await productRepository.deleteProduct(event.id);
 
-      print('_onDeleteProduct: Filtering products list locally');
       _products = _products.where((product) => product.id != event.id).toList();
 
-      print('_onDeleteProduct: Emitting ProductsLoaded with success message');
       emit(ProductsLoaded(_applyFilters(),
           message: 'Product deleted successfully!'));
     } catch (e) {
-      print('_onDeleteProduct: Error occurred - ${e.toString()}');
       emit(ProductsError('Failed to delete product: ${e.toString()}'));
     }
   }
@@ -145,7 +140,13 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
       _sortColumn = event.columnName;
       _sortAscending = true;
     }
-    emit(ProductsLoaded(_applyFilters()));
+
+    final filteredProducts = _applyFilters();
+    for (var i = 0;
+        i < (filteredProducts.length > 3 ? 3 : filteredProducts.length);
+        i++) {}
+
+    emit(ProductsLoaded(filteredProducts));
   }
 
   List<Product> _applyFilters() {
@@ -163,13 +164,16 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
         switch (_sortColumn) {
           case 'Product':
             compareResult = a.name.compareTo(b.name);
+
             break;
           case 'Sector':
             compareResult = a.sector.compareTo(b.sector);
+
             break;
           case 'Description':
             compareResult =
                 (a.description ?? '').compareTo(b.description ?? '');
+
             break;
           default:
             compareResult = 0;

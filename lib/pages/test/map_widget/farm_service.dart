@@ -11,7 +11,7 @@ class FarmService {
 
   Future<List<Map<String, dynamic>>> fetchFarms() async {
     try {
-      final response = await _apiService.get('/auth/farms');
+      final response = await _apiService.get('/auth/farms-view');
       if (response.statusCode == 200) {
         return List<Map<String, dynamic>>.from(response.data['farms']);
       }
@@ -50,6 +50,7 @@ class FarmService {
           'area': polygon.area,
           'barangay': polygon.barangay,
           'description': polygon.description,
+
           // Include other fields as needed
         },
       );

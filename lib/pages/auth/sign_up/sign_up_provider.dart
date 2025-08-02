@@ -40,6 +40,7 @@ class SignUpProvider extends BaseViewModel {
 
   // Contact Info
   late TextEditingController barangayController;
+  late TextEditingController associationController;
   late TextEditingController sectorController;
   late TextEditingController addressController;
   late TextEditingController phoneController;
@@ -68,6 +69,7 @@ class SignUpProvider extends BaseViewModel {
     religionController = TextEditingController();
 
     barangayController = TextEditingController();
+    associationController = TextEditingController();
     sectorController = TextEditingController();
     addressController = TextEditingController();
     phoneController = TextEditingController();
@@ -108,6 +110,7 @@ class SignUpProvider extends BaseViewModel {
         email: emailController.text,
         phone: phoneController.text,
         barangay: barangayController.text,
+        association: associationController.text,
         sector: sectorController.text,
         imageUrl: null,
         fname: firstNameController.text,
@@ -139,6 +142,7 @@ class SignUpProvider extends BaseViewModel {
         'firstname': farmer.fname,
         'lname': farmer.lname,
         'barangay': farmer.barangay,
+        'association': farmer.association,
         'phone': farmer.phone,
         'mname': farmer.mname,
         'extension': farmer.extension,
@@ -199,7 +203,7 @@ class SignUpProvider extends BaseViewModel {
     femaleMembersController.dispose();
     motherMaidenNameController.dispose();
     religionController.dispose();
-    barangayController.dispose();
+    associationController.dispose();
     sectorController.dispose();
     addressController.dispose();
     phoneController.dispose();
@@ -214,6 +218,7 @@ class FarmerData {
   final String name;
   final String email;
   final String password;
+  final String association;
   final String phone;
   final String barangay;
   final String sector;
@@ -246,6 +251,7 @@ class FarmerData {
   FarmerData({
     required this.name,
     required this.password,
+    required this.association,
     required this.email,
     required this.phone,
     required this.barangay,

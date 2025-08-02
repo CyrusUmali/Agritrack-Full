@@ -101,7 +101,7 @@ class _YieldProfileActionsState extends State<YieldProfileActions> {
                         ),
                       ),
                     ),
-                    if (!widget.isMobile) const SizedBox(width: 20),
+                    const SizedBox(width: 20),
                     Expanded(
                       child: SizedBox(
                         width: buttonWidth,

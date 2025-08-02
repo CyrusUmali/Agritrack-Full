@@ -263,7 +263,7 @@ class _GridCardState extends State<GridCard> {
             true,
             'Value:',
             '${shiValues['totalYield']?.toStringAsFixed(2) ?? '0'} tons',
-            '\$${(shiValues['totalValue'] ?? 0).toStringAsFixed(2)}',
+            '\₱${(shiValues['totalValue'] ?? 0).toStringAsFixed(2)}',
             DeviceScreenType.desktop,
           ),
         ),
@@ -344,7 +344,7 @@ class _GridCardState extends State<GridCard> {
               true,
               'Value:',
               '${shiValues['totalYield']?.toStringAsFixed(2) ?? '0'} tons',
-              '\$${(shiValues['totalValue'] ?? 0).toStringAsFixed(2)}',
+              '\₱${(shiValues['totalValue'] ?? 0).toStringAsFixed(2)}',
               DeviceScreenType.mobile,
             ),
             _isFarmer

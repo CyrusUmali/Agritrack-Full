@@ -15,8 +15,11 @@ abstract class BaseViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   void setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
+    if (_isLoading != loading) {
+      // Only update if state actually changes
+      _isLoading = loading;
+      notifyListeners();
+    }
   }
 
   bool _isDisposed = false;

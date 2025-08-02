@@ -332,6 +332,8 @@ class ChatbotContentState extends State<ChatbotWidget> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
+                // Add this to your _buildChatInterfaceCard method, in the Row with model selection:
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -350,7 +352,7 @@ class ChatbotContentState extends State<ChatbotWidget> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Model: ${model.currentModel}', // Changed _selectedModel to model.selectedModel
+                            'Model: ${model.currentModel}',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 12,
@@ -359,6 +361,43 @@ class ChatbotContentState extends State<ChatbotWidget> {
                         ],
                       ),
                     ),
+                    // // Add streaming toggle
+                    // Container(
+                    //   padding: const EdgeInsets.symmetric(
+                    //       horizontal: 8, vertical: 4),
+                    //   decoration: BoxDecoration(
+                    //     color: Colors.grey[50],
+                    //     borderRadius: BorderRadius.circular(8),
+                    //   ),
+                    //   child: Row(
+                    //     mainAxisSize: MainAxisSize.min,
+                    //     children: [
+                    //       Icon(
+                    //         model.useStreaming ? Icons.stream : Icons.chat,
+                    //         color: Colors.grey[600],
+                    //         size: 16,
+                    //       ),
+                    //       const SizedBox(width: 4),
+                    //       Text(
+                    //         model.useStreaming ? 'Streaming' : 'Regular',
+                    //         style: TextStyle(
+                    //           color: Colors.grey[600],
+                    //           fontSize: 10,
+                    //         ),
+                    //       ),
+                    //       const SizedBox(width: 4),
+                    //       Switch(
+                    //         value: model.useStreaming,
+                    //         onChanged: (value) {
+                    //           model.toggleStreamingMode(value);
+                    //         },
+                    //         materialTapTargetSize:
+                    //             MaterialTapTargetSize.shrinkWrap,
+                    //         // visualDensity: VisualDensity.compact,
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
                     if (!isMobile)
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -412,8 +451,8 @@ class ChatbotContentState extends State<ChatbotWidget> {
                         fontSize: isMobile ? 14 : 16,
                         height: 1.4,
                       ),
-                      sentMessageBodyTextStyle: const TextStyle(
-                        color: Colors.white,
+                      sentMessageBodyTextStyle: TextStyle(
+                        color: Colors.grey[800],
                         fontSize: 14,
                         height: 1.4,
                       ),

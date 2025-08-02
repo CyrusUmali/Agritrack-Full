@@ -22,27 +22,8 @@ class SuitabilityResults extends StatelessWidget {
         .where((e) => e.value['status'] != 'optimal')
         .toList();
 
-    // Extract suggestions - handle both String and List<String> cases
-    dynamic suggestions = suitabilityResult['suggestions'];
-    String suggestionsText = '';
-
-    // Log the raw suggestions data
-    debugPrint('Raw suggestions data: $suggestions');
-    debugPrint('Suggestions type: ${suggestions.runtimeType}');
-
-    if (suggestions != null) {
-      if (suggestions is List) {
-        debugPrint('Suggestions is a List with ${suggestions.length} items');
-        suggestionsText = suggestions.join('\n\n');
-      } else {
-        debugPrint('Suggestions is a single value');
-        suggestionsText = suggestions.toString();
-      }
-    } else {
-      debugPrint('No suggestions available');
-    }
-
-    debugPrint('Final suggestions text: $suggestionsText');
+    // Process suggestions - handle both String and List<String> cases
+    final suggestions = _processSuggestions(suitabilityResult['suggestions']);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -52,28 +33,21 @@ class SuitabilityResults extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ... (rest of your existing widget code remains the same)
-
+            // Main Result Card with Image
             CommonCard(
-              // Remove any default padding from CommonCard if possible
-              padding: EdgeInsets
-                  .zero, // Add this if CommonCard has a padding parameter
-              margin: EdgeInsets.zero, // Add this if needed
+              padding: EdgeInsets.zero,
+              margin: EdgeInsets.zero,
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final bool isMobile =
-                      constraints.maxWidth < 600; // Adjust breakpoint as needed
-
+                  final isMobile = constraints.maxWidth < 600;
                   return IntrinsicHeight(
                     child: Flex(
                       direction: isMobile ? Axis.vertical : Axis.horizontal,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Content Section (Top on mobile, Left on desktop)
+                        // Content Section
                         Expanded(
-                          flex: isMobile
-                              ? 0
-                              : 60, // Don't flex vertically on mobile
+                          flex: isMobile ? 0 : 60,
                           child: Padding(
                             padding:
                                 EdgeInsets.all(isMobile ? padding : padding),
@@ -123,17 +97,13 @@ class SuitabilityResults extends StatelessWidget {
                           ),
                         ),
 
-                        // Image Section (Bottom on mobile, Right on desktop)
+                        // Image Section
                         if (suitabilityResult['image_url'] != null) ...[
                           Expanded(
-                            flex: isMobile
-                                ? 0
-                                : 40, // Don't flex vertically on mobile
+                            flex: isMobile ? 0 : 40,
                             child: Container(
                               constraints: BoxConstraints(
-                                minHeight: isMobile
-                                    ? 150
-                                    : 0, // Set minimum height for mobile
+                                minHeight: isMobile ? 150 : 0,
                               ),
                               child: ClipRRect(
                                 borderRadius: isMobile
@@ -163,7 +133,7 @@ class SuitabilityResults extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // 🟦 Parameter Analysis
+            // Parameter Analysis Section
             CommonCard(
               child: Padding(
                 padding: EdgeInsets.all(padding),
@@ -179,65 +149,54 @@ class SuitabilityResults extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     if (isSmallScreen) ...[
-                      // Mobile/small screen view - single column
-                      ...parametersAnalysis.entries.map((entry) {
-                        final param = entry.key;
-                        final analysis = entry.value;
-                        return _buildParameterRow(
-                          context,
-                          parameter: param,
-                          current: analysis['current'],
-                          min: analysis['ideal_min'],
-                          max: analysis['ideal_max'],
-                          status: analysis['status'],
-                          isSmallScreen: isSmallScreen,
-                        );
-                      }),
+                      // Mobile view - single column
+                      ...parametersAnalysis.entries
+                          .map((entry) => _buildParameterRow(
+                                context,
+                                parameter: entry.key,
+                                current: entry.value['current'],
+                                min: entry.value['ideal_min'],
+                                max: entry.value['ideal_max'],
+                                status: entry.value['status'],
+                                isSmallScreen: isSmallScreen,
+                              )),
                     ] else ...[
                       // Desktop view - two columns
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // First column (half of the parameters)
                           Expanded(
                             child: Column(
-                              children: parametersAnalysis.entries
-                                  .take((parametersAnalysis.length / 2).ceil())
-                                  .map((entry) {
-                                final param = entry.key;
-                                final analysis = entry.value;
-                                return _buildParameterRow(
-                                  context,
-                                  parameter: param,
-                                  current: analysis['current'],
-                                  min: analysis['ideal_min'],
-                                  max: analysis['ideal_max'],
-                                  status: analysis['status'],
-                                  isSmallScreen: isSmallScreen,
-                                );
-                              }).toList(),
-                            ),
+                                children: parametersAnalysis.entries
+                                    .take(
+                                        (parametersAnalysis.length / 2).ceil())
+                                    .map((entry) => _buildParameterRow(
+                                          context,
+                                          parameter: entry.key,
+                                          current: entry.value['current'],
+                                          min: entry.value['ideal_min'],
+                                          max: entry.value['ideal_max'],
+                                          status: entry.value['status'],
+                                          isSmallScreen: isSmallScreen,
+                                        ))
+                                    .toList()),
                           ),
                           const SizedBox(width: 16),
-                          // Second column (remaining parameters)
                           Expanded(
                             child: Column(
-                              children: parametersAnalysis.entries
-                                  .skip((parametersAnalysis.length / 2).ceil())
-                                  .map((entry) {
-                                final param = entry.key;
-                                final analysis = entry.value;
-                                return _buildParameterRow(
-                                  context,
-                                  parameter: param,
-                                  current: analysis['current'],
-                                  min: analysis['ideal_min'],
-                                  max: analysis['ideal_max'],
-                                  status: analysis['status'],
-                                  isSmallScreen: isSmallScreen,
-                                );
-                              }).toList(),
-                            ),
+                                children: parametersAnalysis.entries
+                                    .skip(
+                                        (parametersAnalysis.length / 2).ceil())
+                                    .map((entry) => _buildParameterRow(
+                                          context,
+                                          parameter: entry.key,
+                                          current: entry.value['current'],
+                                          min: entry.value['ideal_min'],
+                                          max: entry.value['ideal_max'],
+                                          status: entry.value['status'],
+                                          isSmallScreen: isSmallScreen,
+                                        ))
+                                    .toList()),
                           ),
                         ],
                       ),
@@ -247,6 +206,7 @@ class SuitabilityResults extends StatelessWidget {
               ),
             ),
 
+            // Suggestions Section
             if (deficientParams.isNotEmpty) ...[
               const SizedBox(height: 16),
               CommonCard(
@@ -255,14 +215,14 @@ class SuitabilityResults extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header Row
+                      // Header
                       Row(
                         children: [
                           Icon(
-                              Icons
-                                  .auto_awesome_outlined, // M3-style lightbulb icon
-                              size: isSmallScreen ? 24 : 28,
-                              color: Theme.of(context).colorScheme.primary),
+                            Icons.auto_awesome_outlined,
+                            size: isSmallScreen ? 24 : 28,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                           const SizedBox(width: 12),
                           Flexible(
                             child: Text(
@@ -280,7 +240,7 @@ class SuitabilityResults extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
 
-                      // Content Area
+                      // Content
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -291,76 +251,11 @@ class SuitabilityResults extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.all(16),
-                        child: suggestionsText.isNotEmpty
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    suggestionsText,
-                                    style: TextStyle(
-                                      fontSize: isSmallScreen ? 14 : 16,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                children: [
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: FilledButton(
-                                      onPressed: onGetSuggestions,
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                        padding: EdgeInsets.symmetric(
-                                          vertical: isSmallScreen ? 14 : 16,
-                                          horizontal: 24,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                      child: isLoadingSuggestions
-                                          ? SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onPrimary,
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : Text(
-                                              'Get Improvement Suggestions',
-                                              style: TextStyle(
-                                                fontSize:
-                                                    isSmallScreen ? 15 : 16,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onPrimary,
-                                              ),
-                                            ),
-                                    ),
-                                  ),
-                                  if (!isSmallScreen) const SizedBox(height: 8),
-                                  if (!isSmallScreen)
-                                    Text(
-                                      'Get AI-powered suggestions to improve your results',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .outline,
-                                      ),
-                                    ),
-                                ],
-                              ),
+                        child: suggestions.isNotEmpty
+                            ? _buildSuggestionsContent(
+                                suggestions, context, isSmallScreen)
+                            : _buildGetSuggestionsButton(
+                                context, isSmallScreen),
                       ),
                     ],
                   ),
@@ -388,24 +283,165 @@ class SuitabilityResults extends StatelessWidget {
     );
   }
 
-  // ... (rest of your existing helper methods remain the same)
+  // Helper method to process suggestions
+  List<String> _processSuggestions(dynamic suggestions) {
+    if (suggestions == null) return [];
+    if (suggestions is List) return suggestions.whereType<String>().toList();
+    if (suggestions is String) return [suggestions];
+    return [suggestions.toString()];
+  }
 
+  // Build suggestions content
+  Widget _buildSuggestionsContent(
+      List<String> suggestions, BuildContext context, bool isSmallScreen) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: suggestions.map((section) {
+          // Split section into lines
+          final lines = section.split('\n');
+          // Find the header (line that starts with "- " and ends with ":")
+          final headerIndex = lines.indexWhere((line) =>
+              line.trim().startsWith('- ') && line.trim().endsWith(':'));
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                if (headerIndex != -1)
+                  Text(
+                    lines[headerIndex]
+                        .substring(2, lines[headerIndex].length - 1)
+                        .trim(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: isSmallScreen ? 16 : 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+
+                // Content
+                Padding(
+                  padding: EdgeInsets.only(top: headerIndex != -1 ? 8 : 0),
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 14 : 15,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                      children:
+                          _buildFormattedSectionContent(lines, headerIndex),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // Build formatted content for each suggestion section
+  List<TextSpan> _buildFormattedSectionContent(
+      List<String> lines, int headerIndex) {
+    List<TextSpan> spans = [];
+    bool skipHeader = headerIndex != -1;
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty) continue;
+
+      // Skip the header line if we've already processed it
+      if (skipHeader && i == headerIndex) continue;
+
+      // Sub-bullet points
+      if (line.startsWith('    - ')) {
+        spans.add(TextSpan(
+          text: '  • ${line.substring(6).trim()}\n',
+          style: const TextStyle(height: 1.5),
+        ));
+      }
+      // Additional indented content
+      else if (line.startsWith('    ')) {
+        spans.add(TextSpan(
+          text: '    ${line.substring(4).trim()}\n',
+          style: const TextStyle(height: 1.4, fontStyle: FontStyle.italic),
+        ));
+      }
+      // Regular content
+      else {
+        spans.add(TextSpan(
+          text: '$line\n',
+          style: const TextStyle(height: 1.5),
+        ));
+      }
+    }
+
+    return spans;
+  }
+
+  // Build the "Get Suggestions" button
+  Widget _buildGetSuggestionsButton(BuildContext context, bool isSmallScreen) {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: onGetSuggestions,
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              padding: EdgeInsets.symmetric(
+                vertical: isSmallScreen ? 14 : 16,
+                horizontal: 24,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: isLoadingSuggestions
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    'Get Improvement Suggestions',
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 15 : 16,
+                      color: Colors.white,
+                    ),
+                  ),
+          ),
+        ),
+        if (!isSmallScreen) const SizedBox(height: 8),
+        if (!isSmallScreen)
+          Text(
+            'Get AI-powered suggestions to improve your results',
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.outline,
+            ),
+          ),
+      ],
+    );
+  }
+
+  // Existing helper methods (unchanged)
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$label ',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              softWrap: true,
-            ),
-          ),
+          Text('$label ', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(value, softWrap: true)),
         ],
       ),
     );
@@ -439,10 +475,10 @@ class SuitabilityResults extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Expanded(
               child: Text(
                 _formatParameterName(parameter),
@@ -458,7 +494,7 @@ class SuitabilityResults extends StatelessWidget {
                 color: statusColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: statusColor.withOpacity(0.3)),
-              ),
+              ), // <- missing closing parenthesis was here
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -475,25 +511,25 @@ class SuitabilityResults extends StatelessWidget {
                 ],
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Current: ${current.toStringAsFixed(1)} (Ideal: ${min.toStringAsFixed(1)}-${max.toStringAsFixed(1)})',
-          style: TextStyle(
-            fontSize: isSmallScreen ? 14 : 16,
-            color: Colors.grey[700],
+          ]),
+          const SizedBox(height: 4),
+          Text(
+            'Current: ${current.toStringAsFixed(1)} (Ideal: ${min.toStringAsFixed(1)}-${max.toStringAsFixed(1)})',
+            style: TextStyle(
+              fontSize: isSmallScreen ? 14 : 16,
+              color: Colors.grey[700],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: _calculateProgressValue(current, min, max),
-          minHeight: 6,
-          backgroundColor: Colors.grey[200],
-          valueColor: AlwaysStoppedAnimation<Color>(
-              _getProgressBarColor(current, min, max)),
-        ),
-      ]),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: _calculateProgressValue(current, min, max),
+            minHeight: 6,
+            backgroundColor: Colors.grey[200],
+            valueColor: AlwaysStoppedAnimation<Color>(
+                _getProgressBarColor(current, min, max)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -518,10 +554,9 @@ class SuitabilityResults extends StatelessWidget {
   }
 
   Color _getProgressBarColor(double current, double min, double max) {
-    if (current < min * 0.8) return Colors.orange[300]!; // Young fruit
-    if (current > max * 1.2) return Colors.red[400]!; // Ripe tomato
-    if (current < min || current > max)
-      return Colors.deepOrange[300]!; // Developing fruit
-    return Colors.green[600]!; // Healthy foliage
+    if (current < min * 0.8) return Colors.orange[300]!;
+    if (current > max * 1.2) return Colors.red[400]!;
+    if (current < min || current > max) return Colors.deepOrange[300]!;
+    return Colors.green[600]!;
   }
 }

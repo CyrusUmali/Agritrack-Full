@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   desktop_drop
   file_saver
   file_selector_linux
+  flutter_localization
   objectbox_flutter_libs
   printing
   screen_retriever_linux

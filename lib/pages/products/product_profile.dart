@@ -87,10 +87,14 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
   }
 
   Map<String, dynamic> transformYields(List<Yield> yields) {
+    // First filter out yields that don't have Accepted status
+    final acceptedYields =
+        yields.where((yield) => yield.status == 'Accepted').toList();
+
     // Group yields by year
     final yieldsByYear = <String, List<Yield>>{};
 
-    for (final yield in yields) {
+    for (final yield in acceptedYields) {
       final year = yield.harvestDate?.year.toString() ?? 'Unknown';
       yieldsByYear.putIfAbsent(year, () => []).add(yield);
     }
@@ -182,7 +186,8 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                   // Transform the data when it's loaded
 
                   setState(() {
-                    _farms = state.farms;
+                    _farms =
+                        state.farms.where((farm) => farm.volume != 0).toList();
                   });
                 }
               },

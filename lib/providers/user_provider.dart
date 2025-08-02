@@ -30,7 +30,7 @@ class UserProvider extends ChangeNotifier {
 
     if (farmerData != null) {
       _farmer = Farmer.fromMap(farmerData);
-      // print(farmerData);
+      print(farmerData);
     }
 
     notifyListeners();

@@ -11,6 +11,7 @@ class Farm extends Equatable {
   final int? volume;
   final List<LatLng>? vertices;
   final String? sector;
+  final String? status;
   final int? sectorId;
   final double? hectare;
   final DateTime? createdAt;
@@ -28,6 +29,7 @@ class Farm extends Equatable {
     this.barangay,
     this.vertices,
     this.sector,
+    this.status,
     this.sectorId,
     this.hectare,
     this.createdAt,
@@ -69,6 +71,7 @@ class Farm extends Equatable {
       owner: json['farmerName'] as String?,
       description: json['description'] as String?,
       sector: json['sectorName'] as String?,
+      status: json['status'] as String? ?? '--',
       sectorId: json['sectorId'] as int? ?? 0,
       barangay: json['parentBarangay'] as String?,
       products: parseProducts(json['products']), // Parse products
@@ -95,6 +98,8 @@ class Farm extends Equatable {
       'products': products, // Add products to JSON
       'hectare': hectare,
       'sector': sector,
+      'status': status,
+      'status': status,
       'sectorId': sectorId,
       'vertices': vertices
           ?.map((point) => {
@@ -105,27 +110,6 @@ class Farm extends Equatable {
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
-  }
-
-  static List<Farm> get sampleFarms {
-    return [
-      Farm(
-        id: 1,
-        name: 'Golden Grains Rice Farm',
-        owner: 'Juan Dela Cruz',
-        description: 'Primary rice production farm in San Juan',
-        barangay: 'San Juan',
-        products: ['Rice', 'Corn'], // Add sample products
-        hectare: 5.2,
-        vertices: [
-          LatLng(14.6760, 121.0437),
-          LatLng(14.6765, 121.0442),
-          LatLng(14.6770, 121.0439),
-          LatLng(14.6768, 121.0433),
-        ],
-      ),
-      // ... (other sample farms)
-    ];
   }
 
   @override
@@ -140,6 +124,7 @@ class Farm extends Equatable {
         vertices,
         products, // Add products to props
         sector,
+        status,
         sectorId,
         hectare,
         createdAt,

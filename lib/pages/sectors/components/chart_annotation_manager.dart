@@ -154,7 +154,7 @@ class ChartAnnotationManager {
 
   Widget _buildAnnotationWidget(String text, int index, double value) {
     return Tooltip(
-      message: text.isNotEmpty ? text : 'Annotation',
+      message: text,
       preferBelow: false,
       verticalOffset: 20,
       decoration: BoxDecoration(
@@ -208,26 +208,11 @@ class ChartAnnotationManager {
       return;
     }
 
+    // Extract text from the Tooltip widget
     String currentText = '';
-
-    try {
-      final widget = annotation.widget;
-      if (widget is GestureDetector) {
-        final child = widget.child;
-        if (child is Container) {
-          final row = child.child;
-          if (row is Row) {
-            for (final rowChild in row.children) {
-              if (rowChild is Text) {
-                currentText = rowChild.data ?? '';
-                break;
-              }
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('Error extracting annotation text: $e');
+    if (annotation.widget is Tooltip) {
+      final tooltip = annotation.widget as Tooltip;
+      currentText = tooltip.message ?? '';
     }
 
     final result = await showDialog<Map<String, dynamic>>(

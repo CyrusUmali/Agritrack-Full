@@ -56,6 +56,7 @@ class FarmerRepository {
           'sectorId': _getSectorId(farmer.sector!),
           'imageUrl': farmer.imageUrl,
           'farm_name': farmer.farmName,
+          'association': farmer.association,
           'total_land_area': farmer.hectare?.toString(),
           // New fields
           'house_hold_head': farmer.house_hold_head,
@@ -69,6 +70,7 @@ class FarmerRepository {
           'person_to_notify': farmer.personToNotify,
           'ptn_contact': farmer.ptnContact,
           'ptn_relationship': farmer.ptnRelationship,
+          'accountStatus': farmer.accountStatus
         },
       );
 

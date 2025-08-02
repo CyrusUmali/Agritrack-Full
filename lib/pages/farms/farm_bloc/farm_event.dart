@@ -42,15 +42,12 @@ class FilterFarms extends FarmEvent {
 
   final String? name;
   final String? sector;
+  final String? status;
 
-  const FilterFarms({
-    this.barangay,
-    this.name,
-    this.sector,
-  });
+  const FilterFarms({this.barangay, this.name, this.sector, this.status});
 
   @override
-  List<Object?> get props => [name, sector, barangay];
+  List<Object?> get props => [name, sector, barangay, status];
 }
 
 class SearchFarms extends FarmEvent {

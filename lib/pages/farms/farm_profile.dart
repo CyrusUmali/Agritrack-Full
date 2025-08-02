@@ -121,6 +121,9 @@ class _FarmProfileDesktopState extends State<FarmProfileDesktop> {
       return Center(child: Text('Error loading yields: ${yieldState.message}'));
     }
 
+    // print('farmState');
+    // print(farmState);
+
     if (farmState is! FarmLoaded || yieldState is! YieldsLoaded) {
       return const Center(child: Text('Unexpected state'));
     }
@@ -138,7 +141,7 @@ class _FarmProfileDesktopState extends State<FarmProfileDesktop> {
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -155,14 +158,14 @@ class _FarmProfileDesktopState extends State<FarmProfileDesktop> {
                         farm: transformedFarm,
                         onSave: (updatedData) {
                           final updatedFarm = Farm(
-                            id: farmState.farm.id,
-                            name: updatedData['farmName'],
-                            sectorId: updatedData['sectorId'],
-                            barangay: updatedData['barangayName'],
-                            farmerId: updatedData['farmerId'],
-                            updatedAt: DateTime.now(),
-                            products: updatedData['products'],
-                          );
+                              id: farmState.farm.id,
+                              name: updatedData['farmName'],
+                              sectorId: updatedData['sectorId'],
+                              barangay: updatedData['barangayName'],
+                              farmerId: updatedData['farmerId'],
+                              updatedAt: DateTime.now(),
+                              products: updatedData['products'],
+                              status: updatedData['status']);
                           context.read<FarmBloc>().add(UpdateFarm(updatedFarm));
                         },
                       ),
@@ -221,34 +224,64 @@ class _FarmProfileDesktopState extends State<FarmProfileDesktop> {
 
   Widget _buildViewToggle(BuildContext context) {
     final theme = Theme.of(context);
-    return ToggleButtons(
-      isSelected: [
-        _selectedViewIndex == 0,
-        _selectedViewIndex == 1,
-      ],
-      onPressed: (int index) {
-        setState(() {
-          _selectedViewIndex = index;
-        });
-      },
-      borderRadius: BorderRadius.circular(8),
-      selectedColor: Colors.white,
-      fillColor: theme.colorScheme.primary,
-      color: theme.colorScheme.primary,
-      constraints: const BoxConstraints(
-        minHeight: 40.0,
-        minWidth: 100.0,
+    final colors = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surfaceVariant.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
       ),
-      children: const [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Text('Recent Records'),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildToggleButton(
+            context,
+            label: 'Recent Records',
+            isSelected: _selectedViewIndex == 0,
+            onTap: () => setState(() => _selectedViewIndex = 0),
+          ),
+          _buildToggleButton(
+            context,
+            label: 'Products & Distribution',
+            isSelected: _selectedViewIndex == 1,
+            onTap: () => setState(() => _selectedViewIndex = 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleButton(
+    BuildContext context, {
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? colors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : colors.onSurfaceVariant,
+              ),
+            ),
+          ),
         ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Text('Products & Distribution'),
-        ),
-      ],
+      ),
     );
   }
 
@@ -257,20 +290,33 @@ class _FarmProfileDesktopState extends State<FarmProfileDesktop> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    // Calculate total yield per product
+// First calculate all yields and total sum
+    final yields = products.map<double>((product) {
+      return (product['yields'] as List)
+          .fold<double>(0.0, (sum, yield) => sum + (yield['total'] ?? 0.0));
+    }).toList();
+
+    final totalSum = yields.fold<double>(0.0, (sum, yield) => sum + yield);
+
     final chartData = products.map<Map<String, dynamic>>((product) {
       final productName = product['name'] ?? 'Unknown Product';
-      final totalYield = (product['yields'] as List)
+      final productYield = (product['yields'] as List)
           .fold<double>(0.0, (sum, yield) => sum + (yield['total'] ?? 0.0));
+
+      // Calculate percentage with 1 decimal precision
+      final percentage = totalSum > 0
+          ? double.parse((productYield / totalSum * 100).toStringAsFixed(1))
+          : 0.0;
 
       return {
         'x': productName,
-        'y': totalYield,
+        'y': percentage, // Now using percentage instead of absolute value
       };
     }).toList();
 
     return CommonCard(
       padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -300,8 +346,10 @@ class _FarmProfileDesktopState extends State<FarmProfileDesktop> {
                 GlobalColors.dark,
               ],
               chartData: chartData,
-              position: LegendPosition.bottom, // Explicitly set position
+              position: LegendPosition.bottom,
               orientation: LegendItemOrientation.horizontal,
+              // You might want to add valueFormatter to show percentages in tooltips
+              // if your CircularChartWidget supports it
             ),
           ),
         ],
@@ -381,9 +429,10 @@ class _FarmProfileMobileState extends State<FarmProfileMobile> {
         (_isFarmer &&
             yieldState.yields.isNotEmpty &&
             yieldState.yields.first.farmerId == _farmerId);
+
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -406,37 +455,34 @@ class _FarmProfileMobileState extends State<FarmProfileMobile> {
             ),
             const SizedBox(height: 16),
 
-            // Only show toggle and content if conditions are met
-            if (shouldShowToggleAndContent) ...[
-              // View toggle buttons
-              _buildViewToggle(context),
-              const SizedBox(height: 16),
+// Only show toggle and content if conditions are met
+            if (shouldShowToggleAndContent)
+              Column(
+                children: [
+                  // View toggle buttons
+                  _buildViewToggle(context),
+                  const SizedBox(height: 16),
 
-              // Content based on selection
-              if (_selectedViewIndex == 0) ...[
-                RecentRecord(yields: yieldState.yields),
-              ] else if (hasProducts || hasYields) ...[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (hasProducts)
-                      Expanded(
-                        flex: 7,
-                        child: FarmProductsCard(farm: transformedFarm),
-                      ),
-                    if (hasProducts && hasYields) const SizedBox(width: 24),
-                    if (hasYields)
-                      Expanded(
-                        flex: 3,
-                        child: _buildProductDistributionCard(
-                          context,
-                          transformedFarm['products'],
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ],
+                  // Content based on selection
+                  if (_selectedViewIndex == 0)
+                    RecentRecord(yields: yieldState.yields),
+                  if (_selectedViewIndex != 0 && (hasProducts || hasYields))
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (hasProducts)
+                          FarmProductsCard(farm: transformedFarm),
+                        if (hasProducts && hasYields)
+                          const SizedBox(height: 16),
+                        if (hasYields)
+                          _buildProductDistributionCard(
+                            context,
+                            transformedFarm['products'],
+                          ),
+                      ],
+                    ),
+                ],
+              ),
           ],
         ),
       ),
@@ -445,37 +491,62 @@ class _FarmProfileMobileState extends State<FarmProfileMobile> {
 
   Widget _buildViewToggle(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ToggleButtons(
-          isSelected: [
-            _selectedViewIndex == 0,
-            _selectedViewIndex == 1,
-          ],
-          onPressed: (int index) {
-            setState(() {
-              _selectedViewIndex = index;
-            });
-          },
-          borderRadius: BorderRadius.circular(8),
-          selectedColor: theme.colorScheme.onPrimary,
-          fillColor: theme.colorScheme.primary,
-          color: theme.colorScheme.primary,
-          constraints: const BoxConstraints(
-            minHeight: 40.0,
-            minWidth: 100.0,
+    final colors = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surfaceVariant.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildToggleButton(
+            context,
+            label: 'Recent Records',
+            isSelected: _selectedViewIndex == 0,
+            onTap: () => setState(() => _selectedViewIndex = 0),
           ),
-          children: const [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text('Recent Records'),
+          _buildToggleButton(
+            context,
+            label: 'Products & Distribution',
+            isSelected: _selectedViewIndex == 1,
+            onTap: () => setState(() => _selectedViewIndex = 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleButton(
+    BuildContext context, {
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? colors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : colors.onSurfaceVariant,
+              ),
             ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text('Products & Distribution'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -486,14 +557,27 @@ class _FarmProfileMobileState extends State<FarmProfileMobile> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
+    // First calculate all yields and total sum
+    final yields = products.map<double>((product) {
+      return (product['yields'] as List)
+          .fold<double>(0.0, (sum, yield) => sum + (yield['total'] ?? 0.0));
+    }).toList();
+
+    final totalSum = yields.fold<double>(0.0, (sum, yield) => sum + yield);
+
     final chartData = products.map<Map<String, dynamic>>((product) {
       final productName = product['name'] ?? 'Unknown Product';
-      final totalYield = (product['yields'] as List)
+      final productYield = (product['yields'] as List)
           .fold<double>(0.0, (sum, yield) => sum + (yield['total'] ?? 0.0));
+
+      // Calculate percentage with 1 decimal precision
+      final percentage = totalSum > 0
+          ? double.parse((productYield / totalSum * 100).toStringAsFixed(1))
+          : 0.0;
 
       return {
         'x': productName,
-        'y': totalYield,
+        'y': percentage, // Now using percentage instead of absolute value
       };
     }).toList();
 
@@ -529,8 +613,10 @@ class _FarmProfileMobileState extends State<FarmProfileMobile> {
                 GlobalColors.dark,
               ],
               chartData: chartData,
-              position: LegendPosition.bottom, // Explicitly set position
+              position: LegendPosition.bottom,
               orientation: LegendItemOrientation.horizontal,
+              // You might want to add valueFormatter to show percentages in tooltips
+              // if your CircularChartWidget supports it
             ),
           ),
         ],
@@ -548,6 +634,7 @@ Map<String, dynamic> transformFarmData(
     'establishedYear': 'Unknown',
     'farmSize': 0.0,
     'sector': 'Unknown',
+    'status': 'Unknown',
     'barangay': 'Unknown',
     'municipality': 'Unknown',
     'province': 'Unknown',
@@ -568,6 +655,7 @@ Map<String, dynamic> transformFarmData(
       'establishedYear': farmState.farm.createdAt?.year.toString() ?? 'Unknown',
       'farmSize': farmState.farm.hectare ?? 0.0,
       'sector': farmState.farm.sector ?? 'Unknown',
+      'status': farmState.farm.status ?? 'Unknown',
       'barangay': farmState.farm.barangay ?? 'Unknown',
       'municipality': 'San Pablo',
       'province': 'Laguna',

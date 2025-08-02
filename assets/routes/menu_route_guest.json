@@ -18,6 +18,12 @@
         "menuName": "Farms",
         "path": "/farms"
       },
+
+      {
+        "icon": "assets/sidebar/assocs.svg",
+        "menuName": "Assocs",
+        "path": "/assocs"
+      },
       
       {
         "icon": "assets/sidebar/user.svg",

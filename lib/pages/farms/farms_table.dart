@@ -26,6 +26,7 @@ class FarmsTableWidget extends StatefulWidget {
 
 class _FarmsTableWidgetState extends State<FarmsTableWidget> {
   String selectedSector = '';
+  String selectedStatus = '';
   String selectedBarangay = '';
   late List<String> barangayNames;
   String _barangayFilter = '';
@@ -85,12 +86,9 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
                 if (state is FarmsLoading) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is FarmsError) {
-                  // return Center(child: Text(state.message));
-
                   return NetworkErrorWidget(
                     error: state.message,
                     onRetry: () {
-                      // Trigger your retry logic here
                       context.read<FarmBloc>().add(LoadFarms());
                     },
                   );
@@ -103,8 +101,13 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
                       Expanded(
                         flex: 2,
                         child: DataTableWidget(
-                          key: ValueKey('farms_table_${state.farms.length}'),
-                          farms: state.farms,
+                          // key: ValueKey(
+                          //     'farms_table_${state.farms.length}_${state.sortColumn}_${state.sortAscending}'),
+
+                          key: ValueKey(
+                              'farms_table_${state.farms.length}_${context.read<FarmBloc>().sortColumn}_${context.read<FarmBloc>().sortAscending}'),
+
+                          state: state,
                         ),
                       ),
                     ],
@@ -131,12 +134,9 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
               if (state is FarmsLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is FarmsError) {
-                // return Center(child: Text(state.message));
-
                 return NetworkErrorWidget(
                   error: state.message,
                   onRetry: () {
-                    // Trigger your retry logic here
                     context.read<FarmBloc>().add(LoadFarms());
                   },
                 );
@@ -145,8 +145,12 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
                   return _buildNoResultsWidget();
                 }
                 return DataTableWidget(
-                  key: ValueKey('farms_table_${state.farms.length}'),
-                  farms: state.farms,
+                  // key: ValueKey(
+                  //     'farms_table_${state.farms.length}_${state.sortColumn}_${state.sortAscending}'),
+                  key: ValueKey(
+                      'farms_table_${state.farms.length}_${context.read<FarmBloc>().sortColumn}_${context.read<FarmBloc>().sortAscending}'),
+
+                  state: state,
                 );
               }
               return _buildNoResultsWidget();
@@ -163,13 +167,13 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.disabled_by_default,
+            Icons.agriculture_outlined,
             size: 64,
             color: Colors.grey[400],
           ),
           const SizedBox(height: 16),
           Text(
-            'No Farms found',
+            'No records found',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -217,10 +221,10 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
               onSelected: (value) {
                 setState(() => selectedSector = value);
                 context.read<FarmBloc>().add(FilterFarms(
-                      name: '',
-                      sector: (value == 'All' || value.isEmpty) ? null : value,
-                      barangay: selectedBarangay,
-                    ));
+                    name: '',
+                    sector: (value == 'All' || value.isEmpty) ? null : value,
+                    barangay: selectedBarangay,
+                    status: selectedStatus));
               },
               width: 150,
             ),
@@ -241,13 +245,30 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
               onSelected: (value) {
                 setState(() => selectedBarangay = value);
                 context.read<FarmBloc>().add(FilterFarms(
-                      name: '',
-                      barangay: value == 'All' ? null : value,
-                      sector: selectedSector,
-                    ));
+                    name: '',
+                    barangay: value == 'All' ? null : value,
+                    sector: selectedSector,
+                    status: selectedStatus));
               },
               width: 150,
             ),
+
+            buildComboBox(
+              context: context,
+              hint: 'Status',
+              options: ['All', 'Active', 'Inactive'],
+              selectedValue: selectedStatus,
+              onSelected: (value) {
+                setState(() => selectedStatus = value);
+                context.read<FarmBloc>().add(FilterFarms(
+                    name: '',
+                    barangay: value == 'All' ? null : value,
+                    sector: selectedSector,
+                    status: selectedStatus));
+              },
+              width: 150,
+            ),
+
             Container(
               width: 200, // Set a minimum width for the search field
               height: 48,
@@ -326,10 +347,10 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
             onSelected: (value) {
               setState(() => selectedSector = value);
               context.read<FarmBloc>().add(FilterFarms(
-                    name: '',
-                    sector: (value == 'All' || value.isEmpty) ? null : value,
-                    barangay: selectedBarangay,
-                  ));
+                  name: '',
+                  sector: (value == 'All' || value.isEmpty) ? null : value,
+                  barangay: selectedBarangay,
+                  status: selectedStatus));
             },
             width: 150,
           ),
@@ -351,10 +372,27 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
             onSelected: (value) {
               setState(() => selectedBarangay = value);
               context.read<FarmBloc>().add(FilterFarms(
-                    name: '',
-                    barangay: value == 'All' ? null : value,
-                    sector: selectedSector,
-                  ));
+                  name: '',
+                  barangay: value == 'All' ? null : value,
+                  sector: selectedSector,
+                  status: selectedStatus));
+            },
+            width: 150,
+          ),
+          const SizedBox(width: 8),
+
+          buildComboBox(
+            context: context,
+            hint: 'Status',
+            options: ['All', 'Active', 'Inactive'],
+            selectedValue: selectedStatus,
+            onSelected: (value) {
+              setState(() => selectedStatus = value);
+              context.read<FarmBloc>().add(FilterFarms(
+                  name: '',
+                  barangay: value == 'All' ? null : value,
+                  sector: selectedSector,
+                  status: selectedStatus));
             },
             width: 150,
           ),
@@ -418,16 +456,16 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
 }
 
 class DataTableWidget extends TableWidget<FarmsViewModel> {
-  final List<Farm> farms;
+  final FarmsLoaded state;
 
   DataTableWidget({
-    required this.farms,
+    required this.state,
     Key? key,
   }) : super(key: key);
 
   @override
   FarmsViewModel viewModelBuilder(BuildContext context) {
-    return FarmsViewModel(context, farms);
+    return FarmsViewModel(context, state);
   }
 
   @override
@@ -483,11 +521,10 @@ class DataTableWidget extends TableWidget<FarmsViewModel> {
     TableDataRowsTableDataRows columnData,
     FarmsViewModel viewModel,
   ) {
-    final farm = viewModel.farms.firstWhere(
+    final farm = viewModel.state.farms.firstWhere(
       (f) => f.id.toString() == columnData.id,
     );
 
-    // Get the user provider
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final isAdmin = userProvider.user?.role == 'admin';
     final isFarmerOwner = userProvider.farmer?.id == farm.farmerId;
@@ -495,7 +532,6 @@ class DataTableWidget extends TableWidget<FarmsViewModel> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Only show delete button if admin or if the farmer owns this farm
         if (isAdmin || isFarmerOwner)
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.red),
@@ -614,12 +650,9 @@ class DataTableWidget extends TableWidget<FarmsViewModel> {
 }
 
 class FarmsViewModel extends BaseTableProvider {
-  final List<Farm> farms;
+  final FarmsLoaded state;
 
-  FarmsViewModel(
-    super.context,
-    this.farms,
-  );
+  FarmsViewModel(super.context, this.state);
 
   @override
   Future loadData(BuildContext context) async {
@@ -629,15 +662,15 @@ class FarmsViewModel extends BaseTableProvider {
       "Barangay",
       "Hectare",
       "Sector",
+      "Status",
       "Action"
     ];
 
     List<List<TableDataRowsTableDataRows>> rows = [];
 
-    for (final farm in farms) {
+    for (final farm in state.farms) {
       List<TableDataRowsTableDataRows> row = [];
 
-      // Farm name
       var nameCell = TableDataRowsTableDataRows()
         ..text = farm.name
         ..dataType = CellDataType.TEXT.type
@@ -645,7 +678,6 @@ class FarmsViewModel extends BaseTableProvider {
         ..id = farm.id.toString();
       row.add(nameCell);
 
-      // Owner
       var ownerCell = TableDataRowsTableDataRows()
         ..text = farm.owner
         ..dataType = CellDataType.TEXT.type
@@ -653,7 +685,6 @@ class FarmsViewModel extends BaseTableProvider {
         ..id = farm.id.toString();
       row.add(ownerCell);
 
-      // Barangay
       var barangayCell = TableDataRowsTableDataRows()
         ..text = farm.barangay
         ..dataType = CellDataType.TEXT.type
@@ -661,7 +692,6 @@ class FarmsViewModel extends BaseTableProvider {
         ..id = farm.id.toString();
       row.add(barangayCell);
 
-      // Hectare
       var hectareCell = TableDataRowsTableDataRows()
         ..text = '${farm.hectare} ha'
         ..dataType = CellDataType.TEXT.type
@@ -669,7 +699,6 @@ class FarmsViewModel extends BaseTableProvider {
         ..id = farm.id.toString();
       row.add(hectareCell);
 
-      // Barangay
       var sectorCell = TableDataRowsTableDataRows()
         ..text = farm.sector
         ..dataType = CellDataType.TEXT.type
@@ -677,7 +706,13 @@ class FarmsViewModel extends BaseTableProvider {
         ..id = farm.id.toString();
       row.add(sectorCell);
 
-      // Action
+      var statusCell = TableDataRowsTableDataRows()
+        ..text = farm.status
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = 'Status'
+        ..id = farm.id.toString();
+      row.add(statusCell);
+
       var actionCell = TableDataRowsTableDataRows()
         ..text = ""
         ..dataType = CellDataType.ACTION.type
@@ -695,7 +730,3 @@ class FarmsViewModel extends BaseTableProvider {
     tableDataEntity = tableData;
   }
 }
-
-
-
-// Rest of the code remains the same (DataTableWidget and FarmsViewModel)

@@ -1,16 +1,15 @@
 // ignore_for_file: must_be_immutable, avoid_print, use_super_parameters, non_constant_identifier_names
 
 import 'package:flareline/core/models/farmer_model.dart';
+import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/add_farmer_modal.dart';
-import 'package:flareline/pages/farmers/farmer_data.dart';
 import 'package:flareline/pages/farmers/farmer_profile.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
-import 'package:flareline/pages/modal/barangay_filter_modal.dart';
 import 'package:flareline/pages/widget/combo_box.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
@@ -30,6 +29,7 @@ class FarmersPerSectorWidget extends StatefulWidget {
 
 class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
   String selectedSector = '';
+  String selectedAssociation = '';
   String selectedBarangay = '';
   late List<String> barangayNames;
   String _barangayFilter = ''; // Add this as a class variable
@@ -38,6 +38,8 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
   void initState() {
     super.initState();
     barangayNames = barangays.map((b) => b['name'] as String).toList();
+
+    context.read<AssocsBloc>().add(LoadAssocs());
   }
 
   @override
@@ -51,7 +53,6 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
             style: ToastificationStyle.flat,
             title: Text(state.message!),
             alignment: Alignment.topRight,
-            showProgressBar: false,
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is FarmersError) {
@@ -61,7 +62,6 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
             style: ToastificationStyle.flat,
             title: Text(state.message),
             alignment: Alignment.topRight,
-            showProgressBar: false,
             autoCloseDuration: const Duration(seconds: 3),
           );
         }
@@ -93,10 +93,8 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
                 } else if (state is FarmersError) {
                   return NetworkErrorWidget(
                     error: state.message,
-                    onRetry: () {
-                      // Trigger your retry logic here
-                      context.read<FarmerBloc>().add(LoadFarmers());
-                    },
+                    onRetry: () =>
+                        context.read<FarmerBloc>().add(LoadFarmers()),
                   );
                 } else if (state is FarmersLoaded) {
                   if (state.farmers.isEmpty) {
@@ -107,9 +105,9 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
                       Expanded(
                         flex: 2,
                         child: DataTableWidget(
-                          key:
-                              ValueKey('farmers_table_${state.farmers.length}'),
-                          farmers: state.farmers,
+                          key: ValueKey(
+                              'farmers_table_${state.farmers.length}_${context.read<FarmerBloc>().sortColumn}_${context.read<FarmerBloc>().sortAscending}'),
+                          state: state,
                         ),
                       ),
                     ],
@@ -124,7 +122,6 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
     );
   }
 
-// Update the _channelMobile widget
   Widget _channelMobile(BuildContext context) {
     return Column(
       children: [
@@ -137,22 +134,18 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
               if (state is FarmersLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is FarmersError) {
-                // return Center(child: Text(state.message));
-
                 return NetworkErrorWidget(
                   error: state.message,
-                  onRetry: () {
-                    // Trigger your retry logic here
-                    context.read<FarmerBloc>().add(LoadFarmers());
-                  },
+                  onRetry: () => context.read<FarmerBloc>().add(LoadFarmers()),
                 );
               } else if (state is FarmersLoaded) {
                 if (state.farmers.isEmpty) {
                   return _buildNoResultsWidget();
                 }
                 return DataTableWidget(
-                  key: ValueKey('farmers_table_${state.farmers.length}'),
-                  farmers: state.farmers,
+                  key: ValueKey(
+                      'farmers_table_${state.farmers.length}_${context.read<FarmerBloc>().sortColumn}_${context.read<FarmerBloc>().sortAscending}'),
+                  state: state,
                 );
               }
               return _buildNoResultsWidget();
@@ -163,7 +156,6 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
     );
   }
 
-// Add this new helper widget
   Widget _buildNoResultsWidget() {
     return Center(
       child: Column(
@@ -205,9 +197,38 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
           direction: Axis.horizontal,
           crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 8,
-          runSpacing: 8, // Vertical spacing between lines when wrapping
+          runSpacing: 8,
           children: [
-            // Sector ComboBox
+            // Association ComboBox
+            BlocBuilder<AssocsBloc, AssocsState>(
+              builder: (context, state) {
+                List<String> associationOptions = ['All'];
+                if (state is AssocsLoaded) {
+                  associationOptions
+                      .addAll(state.associations.map((a) => a.name));
+                }
+
+                return buildComboBox(
+                  context: context,
+                  hint: 'Association',
+                  options: associationOptions,
+                  selectedValue: selectedAssociation,
+                  onSelected: (value) {
+                    setState(() => selectedAssociation = value);
+                    context.read<FarmerBloc>().add(FilterFarmers(
+                          name: '',
+                          association:
+                              (value == 'All' || value.isEmpty) ? null : value,
+                          sector: selectedSector,
+                          barangay: selectedBarangay,
+                        ));
+                  },
+                  width: 150,
+                );
+              },
+            ),
+
+            // Rest of your existing ComboBoxes...
             buildComboBox(
               context: context,
               hint: 'Sector',
@@ -227,6 +248,7 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
                       name: '',
                       sector: (value == 'All' || value.isEmpty) ? null : value,
                       barangay: selectedBarangay,
+                      association: selectedAssociation,
                     ));
               },
               width: 150,
@@ -352,11 +374,41 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
 
   Widget _buildSearchBarDesktop() {
     return SizedBox(
-      height: 48, // Fixed height to match first example
+      height: 48,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Sector ComboBox
+          // Association ComboBox
+          BlocBuilder<AssocsBloc, AssocsState>(
+            builder: (context, state) {
+              List<String> associationOptions = ['All'];
+              if (state is AssocsLoaded) {
+                associationOptions
+                    .addAll(state.associations.map((a) => a.name));
+              }
+
+              return buildComboBox(
+                context: context,
+                hint: 'Association',
+                options: associationOptions,
+                selectedValue: selectedAssociation,
+                onSelected: (value) {
+                  setState(() => selectedAssociation = value);
+                  context.read<FarmerBloc>().add(FilterFarmers(
+                        name: '',
+                        association:
+                            (value == 'All' || value.isEmpty) ? null : value,
+                        sector: selectedSector,
+                        barangay: selectedBarangay,
+                      ));
+                },
+                width: 150,
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+
+          // Rest of your existing ComboBoxes...
           buildComboBox(
             context: context,
             hint: 'Sector',
@@ -374,10 +426,9 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
               setState(() => selectedSector = value);
               context.read<FarmerBloc>().add(FilterFarmers(
                     name: '',
-                    sector: (value == 'All' || value.isEmpty)
-                        ? null
-                        : value, // Modified this line
+                    sector: (value == 'All' || value.isEmpty) ? null : value,
                     barangay: selectedBarangay,
+                    association: selectedAssociation,
                   ));
             },
             width: 150,
@@ -515,16 +566,16 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
 }
 
 class DataTableWidget extends TableWidget<FarmersViewModel> {
-  final List<Farmer> farmers;
+  final FarmersLoaded state;
 
   DataTableWidget({
-    required this.farmers,
+    required this.state,
     Key? key,
   }) : super(key: key);
 
   @override
   FarmersViewModel viewModelBuilder(BuildContext context) {
-    return FarmersViewModel(context, farmers);
+    return FarmersViewModel(context, state);
   }
 
   @override
@@ -551,22 +602,18 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
           const SizedBox(width: 4),
           BlocBuilder<FarmerBloc, FarmerState>(
             builder: (context, state) {
-              if (state is FarmersLoaded) {
-                final bloc = context.read<FarmerBloc>();
-                return Icon(
-                  bloc.sortColumn == headerName
-                      ? (bloc.sortAscending
-                          ? Icons.arrow_upward
-                          : Icons.arrow_downward)
-                      : Icons.unfold_more,
-                  size: 16,
-                  color: bloc.sortColumn == headerName
-                      ? Theme.of(context).primaryColor
-                      : Colors.grey,
-                );
-              }
-              return const Icon(Icons.unfold_more,
-                  size: 16, color: Colors.grey);
+              final bloc = context.read<FarmerBloc>();
+              return Icon(
+                bloc.sortColumn == headerName
+                    ? (bloc.sortAscending
+                        ? Icons.arrow_upward
+                        : Icons.arrow_downward)
+                    : Icons.unfold_more,
+                size: 16,
+                color: bloc.sortColumn == headerName
+                    ? Theme.of(context).primaryColor
+                    : Colors.grey,
+              );
             },
           ),
         ],
@@ -584,76 +631,12 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
       (p) => p.id.toString() == columnData.id,
     );
 
-    // final farmer = farmers.firstWhere(
-    //   (f) => f.id == columnData.id,
-    //   orElse: () => Farmer(
-    //     id: columnData.id is String ? columnData.id as String : '5',
-    //     name: 'Unknown',
-    //     sector: 'Unknown',
-    //     barangay: 'Unknown',
-    //     contact: 'Unknown',
-    //     imageUrl: '',
-    //     email: '',
-    //     phone: '',
-    //     address: '',
-    //   ),
-    // );
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () {
-            ModalDialog.show(
-              context: context,
-              title: 'Delete Farmer',
-              showTitle: true,
-              showTitleDivider: true,
-              modalType: ModalType.medium,
-              onCancelTap: () => Navigator.of(context).pop(),
-              onSaveTap: () {
-                context.read<FarmerBloc>().add(DeleteFarmer(farmer.id as int));
-                Navigator.of(context).pop();
-              },
-              child: Center(
-                child: Text('Are you sure you want to delete ${farmer.name}?'),
-              ),
-              footer: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 10.0),
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: ButtonWidget(
-                          btnText: 'Cancel',
-                          textColor: FlarelineColors.darkBlackText,
-                          onTap: () => Navigator.of(context).pop(),
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      SizedBox(
-                        width: 120,
-                        child: ButtonWidget(
-                          btnText: 'Delete',
-                          onTap: () {
-                            context
-                                .read<FarmerBloc>()
-                                .add(DeleteFarmer(farmer.id as int));
-                            Navigator.of(context).pop();
-                          },
-                          type: ButtonType.primary.type,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
+          onPressed: () => _showDeleteConfirmation(context, farmer),
         ),
         IconButton(
           icon: const Icon(Icons.arrow_forward),
@@ -668,6 +651,51 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
           },
         ),
       ],
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, Farmer farmer) {
+    ModalDialog.show(
+      context: context,
+      title: 'Delete Farmer',
+      showTitle: true,
+      showTitleDivider: true,
+      modalType: ModalType.medium,
+      child: Center(
+        child: Text('Are you sure you want to delete ${farmer.name}?'),
+      ),
+      footer: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 120,
+                child: ButtonWidget(
+                  btnText: 'Cancel',
+                  textColor: FlarelineColors.darkBlackText,
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+              ),
+              const SizedBox(width: 20),
+              SizedBox(
+                width: 120,
+                child: ButtonWidget(
+                  btnText: 'Delete',
+                  onTap: () {
+                    context
+                        .read<FarmerBloc>()
+                        .add(DeleteFarmer(farmer.id as int));
+                    Navigator.of(context).pop();
+                  },
+                  type: ButtonType.primary.type,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -715,20 +743,28 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
 }
 
 class FarmersViewModel extends BaseTableProvider {
-  final List<Farmer> farmers;
+  final FarmersLoaded state;
 
-  FarmersViewModel(super.context, this.farmers);
+  FarmersViewModel(super.context, this.state);
+
+  List<Farmer> get farmers => state.farmers;
 
   @override
   Future loadData(BuildContext context) async {
-    const headers = ["Farmer Name", "Sector", "Barangay", "Contact", "Action"];
+    const headers = [
+      "Farmer Name",
+      "Sector",
+      "Barangay",
+      "Association",
+      "Contact",
+      "Action"
+    ];
 
     List<List<TableDataRowsTableDataRows>> rows = [];
 
     for (var farmer in farmers) {
       List<TableDataRowsTableDataRows> row = [];
 
-      // Farmer Name with Image
       var farmerNameCell = TableDataRowsTableDataRows()
         ..text = farmer.name
         ..dataType = CellDataType.IMAGE_TEXT.type
@@ -737,16 +773,13 @@ class FarmersViewModel extends BaseTableProvider {
         ..id = farmer.id.toString();
       row.add(farmerNameCell);
 
-      // Sector
       var sectorCell = TableDataRowsTableDataRows()
-        ..text = farmer.sector ?? 'Not specified' // Handle null sector
+        ..text = farmer.sector ?? 'Not specified'
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Sector'
         ..id = farmer.id.toString();
-      ;
       row.add(sectorCell);
 
-      // Barangay
       var barangayCell = TableDataRowsTableDataRows()
         ..text = farmer.barangay
         ..dataType = CellDataType.TEXT.type
@@ -754,7 +787,13 @@ class FarmersViewModel extends BaseTableProvider {
         ..id = farmer.id.toString();
       row.add(barangayCell);
 
-      // Contact
+      var associationCell = TableDataRowsTableDataRows()
+        ..text = farmer.association
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = 'Association'
+        ..id = farmer.id.toString();
+      row.add(associationCell);
+
       var contactCell = TableDataRowsTableDataRows()
         ..text = farmer.contact
         ..dataType = CellDataType.TEXT.type
@@ -762,7 +801,6 @@ class FarmersViewModel extends BaseTableProvider {
         ..id = farmer.id.toString();
       row.add(contactCell);
 
-      // Action
       var actionCell = TableDataRowsTableDataRows()
         ..text = ""
         ..dataType = CellDataType.ACTION.type
@@ -773,10 +811,8 @@ class FarmersViewModel extends BaseTableProvider {
       rows.add(row);
     }
 
-    TableDataEntity tableData = TableDataEntity()
+    tableDataEntity = TableDataEntity()
       ..headers = headers
       ..rows = rows;
-
-    tableDataEntity = tableData;
   }
 }

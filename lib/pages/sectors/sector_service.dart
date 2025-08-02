@@ -6,6 +6,50 @@ class SectorService {
 
   SectorService(this._apiService);
 
+  Future<List<Map<String, dynamic>>> fetchAssociations({int? year}) async {
+    try {
+      final Map<String, dynamic> queryParams = {};
+      if (year != null) {
+        queryParams['year'] = year.toString();
+      }
+
+      final response = await _apiService.get(
+        '/auth/associations', // Changed endpoint to associations
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        // Assuming the response structure is similar to sectors but for associations
+        return List<Map<String, dynamic>>.from(response.data['associations']);
+      }
+
+      throw Exception('Failed to load associations: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Failed to fetch associations: ${e.toString()}');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchSectors({int? year}) async {
+    try {
+      final Map<String, dynamic> queryParams = {};
+      if (year != null) {
+        queryParams['year'] = year.toString();
+      }
+
+      final response =
+          await _apiService.get('/auth/sectors', queryParameters: queryParams);
+
+      if (response.statusCode == 200) {
+        // Extract just the sectors list from the response to maintain compatibility
+        return List<Map<String, dynamic>>.from(response.data['sectors']);
+      }
+
+      throw Exception('Failed to load sectors: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Failed to fetch sectors: ${e.toString()}');
+    }
+  }
+
   /// Fetches all annotations
   ///
   ///
@@ -118,7 +162,7 @@ class SectorService {
       }
 
       final response = await _apiService.get(
-        '/auth/yield-statistics',
+        '/yields/yield-statistics',
         queryParameters: queryParams,
       );
 
@@ -149,7 +193,7 @@ class SectorService {
       }
 
       final response = await _apiService.get(
-        '/auth/farmer-yield-distribution',
+        '/yields/farmer-yield-distribution',
         queryParameters: queryParams,
       );
 
@@ -242,27 +286,6 @@ class SectorService {
       throw Exception('Failed to fetch farm statistics: ${e.toString()}');
     } catch (e) {
       throw Exception('Failed to fetch farm statistics: ${e.toString()}');
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> fetchSectors({int? year}) async {
-    try {
-      final Map<String, dynamic> queryParams = {};
-      if (year != null) {
-        queryParams['year'] = year.toString();
-      }
-
-      final response =
-          await _apiService.get('/auth/sectors', queryParameters: queryParams);
-
-      if (response.statusCode == 200) {
-        // Extract just the sectors list from the response to maintain compatibility
-        return List<Map<String, dynamic>>.from(response.data['sectors']);
-      }
-
-      throw Exception('Failed to load sectors: ${response.statusCode}');
-    } catch (e) {
-      throw Exception('Failed to fetch sectors: ${e.toString()}');
     }
   }
 

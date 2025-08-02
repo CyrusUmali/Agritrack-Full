@@ -14,18 +14,23 @@ class ReportGenerator {
     required String selectedSector,
     required String selectedView,
     required String selectedProduct,
+    required String selectedAssoc,
     required String selectedFarm,
+    required String selectedCount,
     required selectedFarmer, // Added for farmer-specific reports
   }) async {
     await Future.delayed(
         const Duration(seconds: 2)); // Simulate API delay    print(reportType);
-    print(dateRange);
-    print(selectedBarangay);
-    print(selectedSector);
-    print(selectedProduct);
-    print("reportType:" + reportType);
-    print(selectedFarm);
-    print(selectedFarmer);
+    // print(dateRange);
+    // print(selectedBarangay);
+    // print(selectedSector);
+    // print(selectedProduct);
+
+    // print("Selected assoc" + selectedAssoc);
+
+    // print("reportType:" + reportType);
+    // print(selectedFarm);
+    // print(selectedFarmer);
 
     // Generate different data based on report type
     switch (reportType) {
@@ -35,6 +40,8 @@ class ReportGenerator {
           selectedBarangay:
               selectedBarangay.isNotEmpty ? selectedBarangay : null,
           selectedSector: selectedSector.isNotEmpty ? selectedSector : null,
+          selectedAssoc: selectedAssoc.isNotEmpty ? selectedAssoc : null,
+          selectedCount: selectedCount.isNotEmpty ? selectedCount : null,
         );
       case 'farmer':
         return await _generateFarmerYieldData(
@@ -45,6 +52,8 @@ class ReportGenerator {
           startDate: dateRange?.start.toString(),
           endDate: dateRange?.end.toString(),
           viewBy: selectedView.isNotEmpty ? selectedView : null,
+          selectedAssoc: selectedAssoc.isNotEmpty ? selectedAssoc : null,
+          selectedCount: selectedCount.isNotEmpty ? selectedCount : null,
         );
       case 'products':
         return await _generateProductsData(
@@ -54,6 +63,7 @@ class ReportGenerator {
           selectedSector: selectedSector,
           selectedView: selectedView,
           selectedProduct: selectedProduct,
+          selectedCount: selectedCount.isNotEmpty ? selectedCount : null,
         );
 
       case 'barangay':
@@ -64,6 +74,7 @@ class ReportGenerator {
           selectedSector: selectedSector,
           selectedView: selectedView,
           selectedProduct: selectedProduct,
+          selectedCount: selectedCount.isNotEmpty ? selectedCount : null,
         );
 
       case 'sectors':
@@ -72,6 +83,7 @@ class ReportGenerator {
           dateRange: dateRange,
           selectedSector: selectedSector,
           selectedView: selectedView,
+          selectedCount: selectedCount.isNotEmpty ? selectedCount : null,
         );
 
       // case 'sectors':
@@ -87,15 +99,16 @@ class ReportGenerator {
     DateTimeRange? dateRange,
     String? selectedSector,
     String? selectedView,
+    String? selectedCount,
   }) async {
     final reportService = RepositoryProvider.of<ReportService>(context);
 
     return await reportService.fetchSectorYields(
-      viewBy: selectedView,
-      sectorId: selectedSector,
-      startDate: dateRange?.start.toString(),
-      endDate: dateRange?.end.toString(),
-    );
+        viewBy: selectedView,
+        sectorId: selectedSector,
+        startDate: dateRange?.start.toString(),
+        endDate: dateRange?.end.toString(),
+        count: selectedCount);
   }
 
   static Future<List<Map<String, dynamic>>> _generateBarangayData({
@@ -105,16 +118,18 @@ class ReportGenerator {
     String? selectedSector,
     String? selectedView,
     String? selectedProduct,
+    String? selectedCount,
   }) async {
     final reportService = RepositoryProvider.of<ReportService>(context);
 
     return await reportService.fetchBarangayYields(
-      viewBy: selectedView,
-      productId: selectedProduct,
-      sectorId: selectedSector,
-      startDate: dateRange?.start.toString(),
-      endDate: dateRange?.end.toString(),
-    );
+        viewBy: selectedView,
+        productId: selectedProduct,
+        sectorId: selectedSector,
+        barangay: selectedBarangay,
+        startDate: dateRange?.start.toString(),
+        endDate: dateRange?.end.toString(),
+        count: selectedCount);
   }
 
   static Future<List<Map<String, dynamic>>> _generateProductsData({
@@ -124,16 +139,17 @@ class ReportGenerator {
     String? selectedSector,
     String? selectedView,
     String? selectedProduct,
+    String? selectedCount,
   }) async {
     final reportService = RepositoryProvider.of<ReportService>(context);
 
     return await reportService.fetchProductYields(
-      viewBy: selectedView,
-      productId: selectedProduct,
-      sectorId: selectedSector,
-      startDate: dateRange?.start.toString(),
-      endDate: dateRange?.end.toString(),
-    );
+        viewBy: selectedView,
+        productId: selectedProduct,
+        sectorId: selectedSector,
+        startDate: dateRange?.start.toString(),
+        endDate: dateRange?.end.toString(),
+        count: selectedCount);
   }
 
   static Future<List<Map<String, dynamic>>> _generateFarmerYieldData({
@@ -141,32 +157,38 @@ class ReportGenerator {
     String? farmerId,
     String? productId,
     String? farmId,
+    String? selectedAssoc,
     String? startDate,
     String? endDate,
     String? viewBy,
+    String? selectedCount,
   }) async {
     final reportService = RepositoryProvider.of<ReportService>(context);
     return await reportService.fetchYields(
-      farmerId: farmerId,
-      productId: productId,
-      farmId: farmId,
-      startDate: startDate,
-      endDate: endDate,
-      viewBy: viewBy,
-    );
+        farmerId: farmerId,
+        productId: productId,
+        farmId: farmId,
+        startDate: startDate,
+        endDate: endDate,
+        association: selectedAssoc,
+        viewBy: viewBy,
+        count: selectedCount);
   }
 
   static Future<List<Map<String, dynamic>>> _generateFarmersData({
     required BuildContext context,
+    String? selectedAssoc,
     String? selectedBarangay,
     String? selectedSector,
+    String? selectedCount,
   }) async {
     try {
       final reportService = RepositoryProvider.of<ReportService>(context);
       final farmers = await reportService.fetchFarmers(
-        barangay: selectedBarangay,
-        sector: selectedSector,
-      );
+          association: selectedAssoc,
+          barangay: selectedBarangay,
+          sector: selectedSector,
+          count: selectedCount);
 
       return farmers;
     } catch (e) {

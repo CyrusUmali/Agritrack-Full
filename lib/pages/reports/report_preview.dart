@@ -1,10 +1,9 @@
-import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
 import 'package:responsive_builder/responsive_builder.dart';
-
 import 'package:collection/collection.dart';
+import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 
 class ReportPreview extends StatefulWidget {
   final List<Map<String, dynamic>> reportData;
@@ -14,10 +13,13 @@ class ReportPreview extends StatefulWidget {
   final bool isLoading;
   final DateTimeRange dateRange;
   final String? selectedProductType;
+
+  final String? selectedAssoc;
   final String? selectedFarmer;
   final String? selectedView;
   final String selectedBarangay;
   final String selectedSector;
+  final Function(List<int>) onDeleteSelected;
 
   const ReportPreview({
     super.key,
@@ -25,6 +27,7 @@ class ReportPreview extends StatefulWidget {
     required this.reportType,
     required this.outputFormat,
     required this.selectedColumns,
+    required this.selectedAssoc,
     required this.isLoading,
     required this.dateRange,
     required this.selectedProductType,
@@ -32,6 +35,7 @@ class ReportPreview extends StatefulWidget {
     required this.selectedView,
     required this.selectedBarangay,
     required this.selectedSector,
+    required this.onDeleteSelected,
   });
 
   @override
@@ -74,10 +78,11 @@ class _ReportPreviewState extends State<ReportPreview> {
 
   Widget _buildReportContent(BuildContext context) {
     return SizedBox(
-      height: 600,
+      height: 800,
       child: ReportDataTable(
         reportData: widget.reportData,
         selectedColumns: widget.selectedColumns.toList(),
+        onDeleteSelected: widget.onDeleteSelected,
       ),
     );
   }
@@ -86,10 +91,12 @@ class _ReportPreviewState extends State<ReportPreview> {
 class ReportDataTable extends StatefulWidget {
   final List<Map<String, dynamic>> reportData;
   final List<String> selectedColumns;
+  final Function(List<int>) onDeleteSelected;
 
   const ReportDataTable({
     required this.reportData,
     required this.selectedColumns,
+    required this.onDeleteSelected,
     Key? key,
   }) : super(key: key);
 
@@ -116,6 +123,17 @@ class _ReportDataTableState extends State<ReportDataTable> {
     return sorted;
   }
 
+  void _onSort(String columnName) {
+    setState(() {
+      if (_sortColumn == columnName) {
+        _sortAscending = !_sortAscending;
+      } else {
+        _sortColumn = columnName;
+        _sortAscending = true;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScreenTypeLayout.builder(
@@ -135,13 +153,13 @@ class _ReportDataTableState extends State<ReportDataTable> {
             child: SizedBox(
               width: constraints.maxWidth > 1200 ? 1200 : constraints.maxWidth,
               child: _ReportTableWidget(
-                key: ValueKey(
-                    widget.selectedColumns.join(',')), // Force rebuild with key
+                key: ValueKey(widget.selectedColumns.join(',')),
                 reportData: _sortedData,
                 selectedColumns: widget.selectedColumns,
                 sortColumn: _sortColumn,
                 sortAscending: _sortAscending,
                 onSort: _onSort,
+                onDeleteSelected: widget.onDeleteSelected,
               ),
             ),
           ),
@@ -156,27 +174,16 @@ class _ReportDataTableState extends State<ReportDataTable> {
       child: SizedBox(
         width: 800,
         child: _ReportTableWidget(
-          key: ValueKey(
-              widget.selectedColumns.join(',')), // Force rebuild with key
+          key: ValueKey(widget.selectedColumns.join(',')),
           reportData: _sortedData,
           selectedColumns: widget.selectedColumns,
           sortColumn: _sortColumn,
           sortAscending: _sortAscending,
           onSort: _onSort,
+          onDeleteSelected: widget.onDeleteSelected,
         ),
       ),
     );
-  }
-
-  void _onSort(String columnName) {
-    setState(() {
-      if (_sortColumn == columnName) {
-        _sortAscending = !_sortAscending;
-      } else {
-        _sortColumn = columnName;
-        _sortAscending = true;
-      }
-    });
   }
 }
 
@@ -186,6 +193,7 @@ class _ReportTableWidget extends TableWidget<ReportTableViewModel> {
   final String? sortColumn;
   final bool sortAscending;
   final Function(String) onSort;
+  final Function(List<int>) onDeleteSelected;
 
   _ReportTableWidget({
     required this.reportData,
@@ -193,8 +201,46 @@ class _ReportTableWidget extends TableWidget<ReportTableViewModel> {
     required this.sortColumn,
     required this.sortAscending,
     required this.onSort,
+    required this.onDeleteSelected,
     Key? key,
   }) : super(key: key);
+
+  @override
+  bool get showCheckboxColumn => true;
+
+  @override
+  Widget toolsWidget(BuildContext context, ReportTableViewModel viewModel) {
+    return Row(
+      children: [
+        ElevatedButton.icon(
+          icon: const Icon(
+            Icons.delete,
+            size: 18,
+            color: Colors.white,
+          ),
+          label: const Text('Delete Selected'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.redAccent,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () {
+            final selectedRows = getSelectedRowData();
+            final selectedIndices = selectedRows
+                .map((row) => int.tryParse(row.first.id ?? ''))
+                .whereType<int>()
+                .toList();
+            if (selectedIndices.isNotEmpty) {
+              print(selectedIndices);
+              print('as');
+              onDeleteSelected(selectedIndices);
+            } else {
+              print('emptyy');
+            }
+          },
+        ),
+      ],
+    );
+  }
 
   @override
   ReportTableViewModel viewModelBuilder(BuildContext context) {
@@ -207,34 +253,6 @@ class _ReportTableWidget extends TableWidget<ReportTableViewModel> {
 
   @override
   bool get reloadOnUpdate => true;
-
-  @override
-  Widget build(BuildContext context) {
-    print('selectedColumns');
-    print(selectedColumns);
-    return super.build(context);
-  }
-
-  // Override this to ensure the widget rebuilds when properties change
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is _ReportTableWidget &&
-        other.reportData == reportData &&
-        const ListEquality().equals(other.selectedColumns, selectedColumns) &&
-        other.sortColumn == sortColumn &&
-        other.sortAscending == sortAscending;
-  }
-
-  @override
-  int get hashCode {
-    return Object.hash(
-      reportData,
-      const ListEquality().hash(selectedColumns),
-      sortColumn,
-      sortAscending,
-    );
-  }
 
   @override
   Widget headerBuilder(
@@ -276,6 +294,26 @@ class _ReportTableWidget extends TableWidget<ReportTableViewModel> {
     ReportTableViewModel viewModel,
   ) {
     return const SizedBox.shrink();
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _ReportTableWidget &&
+        const ListEquality().equals(other.reportData, reportData) &&
+        const ListEquality().equals(other.selectedColumns, selectedColumns) &&
+        other.sortColumn == sortColumn &&
+        other.sortAscending == sortAscending;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      const ListEquality().hash(reportData),
+      const ListEquality().hash(selectedColumns),
+      sortColumn,
+      sortAscending,
+    );
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flareline/pages/recommendation/api_uri.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -31,8 +32,8 @@ class RecommendationModel extends ChangeNotifier {
     predictionResult = null;
     notifyListeners();
 
-//  final uri = Uri.parse('http://localhost:8000/api/v1/predict');
-    // final uri = Uri.parse('https://aicrop.onrender.com/api/v1/predict');
+    // Add 10-second delay for testing
+    // await Future.delayed(const Duration(seconds: 10));
 
     final uri = Uri.parse(ApiConstants.predict);
     try {
@@ -67,6 +68,11 @@ class RecommendationModel extends ChangeNotifier {
         predictedCrop = data['recommendations'][0]['crop'];
         modelAccuracy = data['model_accuracy'].toString();
       } else {
+        ToastHelper.showErrorToast(
+          'Failed to load  load prediction',
+          'a' as BuildContext,
+        );
+
         throw Exception('Failed to load prediction: ${response.statusCode}');
       }
     } catch (e) {

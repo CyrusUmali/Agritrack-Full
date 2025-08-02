@@ -1,6 +1,7 @@
 library flareline_uikit;
 
 import 'package:flareline/pages/toolbar.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flareline_uikit/components/sidebar/side_bar.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flareline_uikit/service/sidebar_provider.dart';
@@ -15,8 +16,6 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
 
   const FlarelineLayoutWidget({super.key});
 
-  // Fixed: Made this a getter instead of final field to avoid const constructor issues
-
   String get appName => 'AgriTrack';
   bool get showTitle => true;
   bool get isAlignCenter => false;
@@ -28,7 +27,6 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
   double get logoFontSize => 30;
   Color get sideBarDarkColor => FlarelineColors.darkBackground;
   Color get sideBarLightColor => Colors.white;
-  // Color? get backgroundColor => null;
   double get sideBarWidth => 240;
   double get sideBarCollapsedWidth => 100;
   bool get isSidebarCollapsible => true;
@@ -96,11 +94,11 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // bool isDark = isDarkTheme(context);
-      // backgroundColor: null,
-      backgroundColor: backgroundColor(context),
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final farmer = userProvider.farmer;
 
+    return Scaffold(
+      backgroundColor: backgroundColor(context),
       appBar: AppBar(toolbarHeight: 0),
       body: ResponsiveBuilder(
         builder: (context, sizingInformation) {
@@ -138,6 +136,9 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
   }
 
   Widget rightContentWidget(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final farmer = userProvider.farmer;
+
     Widget contentWidget = Column(
       children: [
         if (showTitle && breakTabTitle(context).isNotEmpty)
@@ -171,9 +172,11 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
         if (showToolBar(context))
           ToolBarWidget(
                 showMore: showDrawer,
-                showChangeTheme: true, // Add this to show theme switch
+                showChangeTheme: true,
                 userInfoWidget: CircleAvatar(
-                  backgroundImage: AssetImage('assets/user/user-01.png'),
+                  backgroundImage: farmer?.imageUrl != null
+                      ? NetworkImage(farmer!.imageUrl!)
+                      : AssetImage('assets/user/user-01.png') as ImageProvider,
                   radius: 22,
                 ),
               ) ??

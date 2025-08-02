@@ -79,6 +79,7 @@ class FarmRepository {
           'barangay': farm.barangay,
           'farmId': farm.id,
           'sectorId': farm.sectorId,
+          'status': farm.status,
           'farmerId': farm.farmerId,
           'products': farm.products,
           'hectare': farm.hectare?.toString(),

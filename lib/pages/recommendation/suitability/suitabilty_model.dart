@@ -1,14 +1,20 @@
 import 'package:flareline/pages/recommendation/api_uri.dart';
-import 'package:flareline/pages/recommendation/api_uri.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flareline/providers/language_provider.dart'; // Import the language provider
 
 class SuitabilityModel extends ChangeNotifier {
+  final LanguageProvider languageProvider; // Add this field
+
+  SuitabilityModel({required this.languageProvider}); // Modify constructor
+
   // Model selection
   String selectedModel = 'Random Forest';
   String? selectedCrop; // Added for crop suitability check
+  bool _isStreamingSuggestions = false;
 
+  bool get isStreamingSuggestions => _isStreamingSuggestions;
   // Input parameters
   double nitrogen = 50.6;
   double phosphorous = 53.4;
@@ -91,18 +97,22 @@ class SuitabilityModel extends ChangeNotifier {
     }
   }
 
-  Future<void> getSuggestions(List<String> deficientParams) async {
-    isLoading = true;
+  Future<void> getSuggestionsStream(
+    List<String> deficientParams, {
+    required String languageCode,
+  }) async {
+    _isStreamingSuggestions = true;
+    suitabilityResult = {
+      ...?suitabilityResult,
+      'suggestions': [],
+    };
     notifyListeners();
 
     try {
-      final response = await http.post(
-        // Uri.parse('http://localhost:8000/api/v1/get-suggestions'),
-        // Uri.parse('https://aicrop.onrender.com/api/v1/get-suggestions'),
-        Uri.parse(ApiConstants.getSuggestions),
-
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+      final uri = Uri.parse('${ApiConstants.baseUrl}/get-suggestions-stream');
+      final request = http.Request('POST', uri)
+        ..headers['Content-Type'] = 'application/json'
+        ..body = jsonEncode({
           "parameters": {
             "N": nitrogen,
             "P": phosphorous,
@@ -113,36 +123,62 @@ class SuitabilityModel extends ChangeNotifier {
             "rainfall": rainfall,
             "crop": selectedCrop,
           },
-          "deficient_params": deficientParams
-        }),
-      );
+          "deficient_params": deficientParams,
+          "language": languageCode, // Add language parameter
+        });
+
+      final response = await http.Client().send(request);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final stream = response.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter());
 
-        // Handle both String and List suggestions
-        dynamic suggestions = data['suggestions'];
-        List<String> processedSuggestions = [];
-
-        if (suggestions is String) {
-          processedSuggestions = [suggestions];
-        } else if (suggestions is List) {
-          processedSuggestions = suggestions.map((e) => e.toString()).toList();
+        String currentSection = '';
+        await for (final chunk in stream) {
+          // Check if this chunk starts a new section
+          if (chunk.startsWith('- ') && chunk.endsWith(':')) {
+            // If we have a current section, add it before starting new one
+            if (currentSection.isNotEmpty) {
+              suitabilityResult = {
+                ...?suitabilityResult,
+                'suggestions': [
+                  ...(suitabilityResult?['suggestions'] as List),
+                  currentSection.trim()
+                ],
+              };
+              notifyListeners();
+            }
+            currentSection = chunk;
+          } else {
+            // Append to current section
+            currentSection += '\n$chunk';
+          }
         }
 
-        suitabilityResult = {
-          ...?suitabilityResult,
-          'suggestions': processedSuggestions,
-          'disclaimer': data['disclaimer'] ?? '',
-        };
+        // Add the last section if it exists
+        if (currentSection.isNotEmpty) {
+          suitabilityResult = {
+            ...?suitabilityResult,
+            'suggestions': [
+              ...(suitabilityResult?['suggestions'] as List),
+              currentSection.trim()
+            ],
+          };
+          notifyListeners();
+        }
       } else {
-        throw Exception('Failed to get suggestions: ${response.statusCode}');
+        throw Exception('Failed to stream suggestions: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error in getSuggestions: $e');
-      rethrow;
+      debugPrint('Stream error: $e');
+      suitabilityResult = {
+        ...?suitabilityResult,
+        'suggestions': ['Error: ${e.toString()}'],
+      };
+      notifyListeners();
     } finally {
-      isLoading = false;
+      _isStreamingSuggestions = false;
       notifyListeners();
     }
   }

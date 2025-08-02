@@ -48,12 +48,42 @@ class _SectorLineChartState extends State<SectorLineChart> {
           isLoading = false;
           yieldData = state.yields;
           sectorData = buildSectorDataFromYields(yieldData);
+
+          // print('a');
+          // _printYieldData();
         });
         await _annotationManager.loadAnnotations();
       } else if (state is YieldsLoading) {
         setState(() => isLoading = true);
       }
     });
+  }
+
+  void _printYieldData() {
+    if (yieldData.isEmpty) {
+      print('No yield data available');
+      return;
+    }
+
+    print('\n===== YIELD DATA (${yieldData.length} records) =====');
+
+    for (var i = 0; i < yieldData.length; i++) {
+      final yield = yieldData[i];
+      print('\nRecord #${i + 1}:');
+      print('  ID: ${yield.id}');
+      print('  Farmer: ${yield.farmerName} (ID: ${yield.farmerId})');
+      print('  Product: ${yield.productName} (ID: ${yield.productId})');
+      print('  Sector: ${yield.sector} (ID: ${yield.sectorId})');
+      print('  Barangay: ${yield.barangay}');
+      print('  Volume: ${yield.volume}');
+      print('  Area (ha): ${yield.hectare}');
+      print('  Status: ${yield.status}');
+      print('  Created At: ${yield.createdAt}');
+      print('  Farm ID: ${yield.farmId}');
+      print('----------------------------------');
+    }
+
+    print('===== END OF YIELD DATA =====\n');
   }
 
   Widget _buildShimmerContent() {
@@ -306,7 +336,7 @@ class _SectorLineChartState extends State<SectorLineChart> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
-                'Tap annotations to edit, long press to delete',
+                'Tap annotations to edit ',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.grey,
                       fontStyle: FontStyle.italic,

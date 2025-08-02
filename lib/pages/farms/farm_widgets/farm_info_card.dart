@@ -1,6 +1,5 @@
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
-import 'package:flareline/pages/modal/products_modal.dart';
 import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
 import 'package:flareline/pages/widget/combo_box.dart';
 import 'package:flutter/material.dart';
@@ -39,10 +38,15 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
 
   @override
   void initState() {
+    // print('widgetfarm');
+    // print(widget.farm);
     super.initState();
     _editedFarm = Map<String, dynamic>.from(widget.farm);
     _editedFarm['sector'] =
         _editedFarm['sector']?.toString() ?? 'Mixed Farming';
+    _editedFarm['status'] =
+        _editedFarm['status']?.toString() ?? 'Active'; // Add this line
+
     context.read<FarmerBloc>().add(LoadFarmers());
 
     _editedFarm['products'] = (_editedFarm['products'] as List?)
@@ -76,8 +80,9 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
     );
 
     int getSectorId(String? sector) {
+      // print("secotr$sector");
       if (sector == null) return 0;
-      switch (sector.toLowerCase()) {
+      switch (sector) {
         case 'Rice':
           return 1;
         case 'Corn':
@@ -86,7 +91,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
           return 3;
         case 'Livestock':
           return 4;
-        case 'ishery':
+        case 'Fishery':
           return 5;
         case 'Organic':
           return 6;
@@ -101,6 +106,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
       'sectorId': getSectorId(_editedFarm['sector']?.toString()),
       'products': _editedFarm['products'] ?? [],
       'barangayName': _editedFarm['barangay'] ?? '',
+      'status': _editedFarm['status'] ?? 'Active', // Add this line
     };
 
     print('Saved farm data: $saveData');
@@ -121,16 +127,39 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
     return product.toString();
   }
 
+  Widget _buildStatusField() {
+    const statusOptions = ['Active', 'Inactive'];
+
+    if (_isEditing) {
+      return buildComboBox(
+          context: context,
+          hint: 'Select Status',
+          options: statusOptions,
+          selectedValue: _editedFarm['status'] ?? 'tes',
+          onSelected: (value) => _handleFieldChange('status', value),
+          width: 180,
+          height: 30);
+    } else {
+      return Text(
+        _editedFarm['status'] ?? 'Active',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color:
+                  _editedFarm['status'] == 'Active' ? Colors.green : Colors.red,
+            ),
+      );
+    }
+  }
+
   Widget _buildOwnerField() {
     if (_isEditing) {
       return buildComboBox(
-        context: context,
-        hint: 'Select Farm Owner',
-        options: _farmers.map((farmer) => farmer['name'].toString()).toList(),
-        selectedValue: _editedFarm['farmOwner'] ?? '',
-        onSelected: (value) => _handleFieldChange('farmOwner', value),
-        width: 200,
-      );
+          context: context,
+          hint: 'Select Farm Owner',
+          options: _farmers.map((farmer) => farmer['name'].toString()).toList(),
+          selectedValue: _editedFarm['farmOwner'] ?? '',
+          onSelected: (value) => _handleFieldChange('farmOwner', value),
+          width: 180,
+          height: 30);
     } else {
       return TextFormField(
         initialValue:
@@ -151,13 +180,13 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
   Widget _buildSectorField() {
     if (_isEditing) {
       return buildComboBox(
-        context: context,
-        hint: 'Select Sector',
-        options: _sectors,
-        selectedValue: _editedFarm['sector']?.toString() ?? _sectors.first,
-        onSelected: (value) => _handleFieldChange('sector', value),
-        width: 180,
-      );
+          context: context,
+          hint: 'Select Sector',
+          options: _sectors,
+          selectedValue: _editedFarm['sector']?.toString() ?? _sectors.first,
+          onSelected: (value) => _handleFieldChange('sector', value),
+          width: 180,
+          height: 30);
     } else {
       return Text(
         _editedFarm['sector']?.toString() ?? 'Not specified',
@@ -169,13 +198,13 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
   Widget _buildLocationField() {
     if (_isEditing) {
       return buildComboBox(
-        context: context,
-        hint: 'Select Barangay',
-        options: barangayNames,
-        selectedValue: _editedFarm['barangay'] ?? '',
-        onSelected: (value) => _handleFieldChange('barangay', value),
-        width: 180,
-      );
+          context: context,
+          hint: 'Select Barangay',
+          options: barangayNames,
+          selectedValue: _editedFarm['barangay'] ?? '',
+          onSelected: (value) => _handleFieldChange('barangay', value),
+          width: 180,
+          height: 30);
     } else {
       return Text(
         '${_editedFarm['barangay'] ?? ''}',
@@ -233,7 +262,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                               style: Theme.of(context)
                                   .textTheme
                                   .headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                                  ?.copyWith(),
                               decoration: const InputDecoration(
                                 border: InputBorder.none,
                                 isDense: true,
@@ -247,6 +276,8 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                             ),
                             const SizedBox(height: 4),
                             _buildOwnerField(),
+                            const SizedBox(height: 4),
+                            _buildStatusField(),
                           ],
                         ),
                       ),
@@ -511,6 +542,8 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize
+                          .min, // Add this to prevent column expansion
                       children: [
                         Row(
                           children: [
@@ -519,9 +552,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const Spacer(),
                           ],
@@ -530,16 +561,18 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                         if (_editedFarm['products'].isEmpty)
                           Text(
                             'No products added yet',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
+                            // style:
+                            //     Theme.of(context).textTheme.bodySmall?.copyWith(
+                            //           color: Theme.of(context)
+                            //               .colorScheme
+                            //               .onSurfaceVariant,
+                            //         ),
                           )
                         else
-                          SizedBox(
-                            height: 40,
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxHeight: 120, // Set a reasonable max height
+                            ),
                             child: SingleChildScrollView(
                               child: Wrap(
                                 spacing: 8,
@@ -560,7 +593,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                           ),
                       ],
                     ),
-                  ),
+                  )
                 ],
               ),
             ),

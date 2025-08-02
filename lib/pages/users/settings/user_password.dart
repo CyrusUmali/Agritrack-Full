@@ -165,8 +165,7 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
                     Text(
                       'Change Password',
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                          fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ],
                 ),
@@ -211,7 +210,11 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: _saveChanges,
-                    child: const Text('Change Password'),
+                    child: Text(
+                      'Change Password',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
                   ),
                 ),
               ],

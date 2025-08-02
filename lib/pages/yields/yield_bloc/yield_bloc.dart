@@ -224,7 +224,13 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
       _sortColumn = event.columnName;
       _sortAscending = true;
     }
-    emit(YieldsLoaded(_applyFilters()));
+
+    final filteredYields = _applyFilters();
+    for (var i = 0;
+        i < (filteredYields.length > 3 ? 3 : filteredYields.length);
+        i++) {}
+
+    emit(YieldsLoaded(filteredYields));
   }
 
   List<Yield> _applyFilters() {
@@ -286,6 +292,8 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
               (yield.barangay?.toLowerCase().contains(_searchQuery) ?? false) ||
               (yield.status?.toLowerCase().contains(_searchQuery) ?? false) ||
               (yield.harvestDate?.toString().contains(_searchQuery) ?? false) ||
+              (yield.hectare?.toString().contains(_searchQuery) ?? false) ||
+              (yield.id?.toString().contains(_searchQuery) ?? false) ||
               (yield.volume?.toString().contains(_searchQuery) ?? false) ||
               (yield.value?.toString().contains(_searchQuery) ?? false);
 
@@ -297,7 +305,20 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
       filteredYields.sort((a, b) {
         int compareResult;
         switch (_sortColumn) {
-          case 'HarvestDate':
+          case 'Record Id':
+            compareResult = a.id.compareTo(b.id);
+            break;
+
+          case 'Farmer Name':
+            compareResult = (a.farmerName ?? '').compareTo(b.farmerName ?? '');
+            break;
+
+          case 'Product':
+            compareResult =
+                (a.productName ?? '').compareTo(b.productName ?? '');
+            break;
+
+          case 'Reported Yield':
             compareResult = a.harvestDate.compareTo(b.harvestDate);
             break;
           case 'Volume':

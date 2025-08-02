@@ -7,12 +7,12 @@ class ReportService {
 
   ReportService(this._apiService);
 
-  Future<List<Map<String, dynamic>>> fetchSectorYields({
-    String? viewBy,
-    String? sectorId,
-    String? startDate,
-    String? endDate,
-  }) async {
+  Future<List<Map<String, dynamic>>> fetchSectorYields(
+      {String? viewBy,
+      String? sectorId,
+      String? startDate,
+      String? endDate,
+      String? count}) async {
     try {
       final Map<String, dynamic> queryParams = {};
 
@@ -32,8 +32,12 @@ class ReportService {
         queryParams['endDate'] = endDate;
       }
 
+      if (count != null && count.isNotEmpty) {
+        queryParams['count'] = count;
+      }
+
       final response = await _apiService.get(
-        '/auth/sector-yields-report',
+        '/reports/sector-yields-report',
         queryParameters: queryParams,
       );
 
@@ -49,15 +53,19 @@ class ReportService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchBarangayYields({
-    String? viewBy,
-    String? productId,
-    String? sectorId,
-    String? startDate,
-    String? endDate,
-  }) async {
+  Future<List<Map<String, dynamic>>> fetchBarangayYields(
+      {String? viewBy,
+      String? productId,
+      String? sectorId,
+      String? startDate,
+      String? endDate,
+      String? barangay,
+      String? count}) async {
     try {
       final Map<String, dynamic> queryParams = {};
+      if (barangay != null && barangay.isNotEmpty) {
+        queryParams['barangayName'] = barangay;
+      }
 
       if (viewBy != null && viewBy.isNotEmpty) {
         queryParams['viewBy'] = viewBy;
@@ -79,8 +87,12 @@ class ReportService {
         queryParams['endDate'] = endDate;
       }
 
+      if (count != null && count.isNotEmpty) {
+        queryParams['count'] = count;
+      }
+
       final response = await _apiService.get(
-        '/auth/barangay-yields-report',
+        '/reports/barangay-yields-report',
         queryParameters: queryParams,
       );
 
@@ -97,13 +109,13 @@ class ReportService {
   }
 
 // Add this to your report_service.dart file
-  Future<List<Map<String, dynamic>>> fetchProductYields({
-    String? viewBy,
-    String? productId,
-    String? sectorId,
-    String? startDate,
-    String? endDate,
-  }) async {
+  Future<List<Map<String, dynamic>>> fetchProductYields(
+      {String? viewBy,
+      String? productId,
+      String? sectorId,
+      String? startDate,
+      String? endDate,
+      String? count}) async {
     try {
       final Map<String, dynamic> queryParams = {};
 
@@ -127,8 +139,12 @@ class ReportService {
         queryParams['endDate'] = endDate;
       }
 
+      if (count != null && count.isNotEmpty) {
+        queryParams['count'] = count;
+      }
+
       final response = await _apiService.get(
-        '/auth/product-yields-report',
+        '/reports/product-yields-report',
         queryParameters: queryParams,
       );
 
@@ -144,10 +160,11 @@ class ReportService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchFarmers({
-    String? barangay,
-    String? sector,
-  }) async {
+  Future<List<Map<String, dynamic>>> fetchFarmers(
+      {String? barangay,
+      String? sector,
+      String? association,
+      String? count}) async {
     try {
       final Map<String, dynamic> queryParams = {};
 
@@ -159,8 +176,16 @@ class ReportService {
         queryParams['sector'] = sector;
       }
 
+      if (association != null && association.isNotEmpty) {
+        queryParams['association'] = association;
+      }
+
+      if (count != null && count.isNotEmpty) {
+        queryParams['count'] = count;
+      }
+
       final response = await _apiService.get(
-        '/auth/farmers-report',
+        '/reports/farmers-report',
         queryParameters: queryParams,
       );
 
@@ -174,14 +199,15 @@ class ReportService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchYields({
-    String? farmerId,
-    String? productId,
-    String? farmId,
-    String? startDate,
-    String? endDate,
-    String? viewBy,
-  }) async {
+  Future<List<Map<String, dynamic>>> fetchYields(
+      {String? farmerId,
+      String? productId,
+      String? association,
+      String? farmId,
+      String? startDate,
+      String? endDate,
+      String? viewBy,
+      String? count}) async {
     try {
       final Map<String, dynamic> queryParams = {};
 
@@ -191,6 +217,10 @@ class ReportService {
 
       if (productId != null && productId.isNotEmpty) {
         queryParams['productId'] = productId;
+      }
+
+      if (association != null && association.isNotEmpty) {
+        queryParams['association'] = association;
       }
 
       if (farmId != null && farmId.isNotEmpty) {
@@ -209,8 +239,12 @@ class ReportService {
         queryParams['viewBy'] = viewBy;
       }
 
+      if (count != null && count.isNotEmpty) {
+        queryParams['count'] = count;
+      }
+
       final response = await _apiService.get(
-        '/auth/farmer-yields-report',
+        '/reports/farmer-yields-report',
         queryParameters: queryParams,
       );
 

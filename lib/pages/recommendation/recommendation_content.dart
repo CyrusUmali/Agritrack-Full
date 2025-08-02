@@ -414,7 +414,13 @@ class RecommendationContentState extends State<RecommendationContent> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () async {
+                setState(() {
+                  model.isLoading =
+                      true; // Manually set loading state before prediction
+                });
+
                 await model.predictCrop();
+
                 setState(() {});
               },
               style: ElevatedButton.styleFrom(

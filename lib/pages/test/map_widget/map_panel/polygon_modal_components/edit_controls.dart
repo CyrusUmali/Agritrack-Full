@@ -123,7 +123,7 @@ class EditControls {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
-                children: [
+                children: [ 
                   Container(
                     width: 12,
                     height: 12,

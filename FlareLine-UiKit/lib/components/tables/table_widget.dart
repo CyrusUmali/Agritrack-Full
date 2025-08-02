@@ -35,6 +35,28 @@ enum CellDataType {
 
 abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
   TableWidget({super.params, super.key});
+  final DataGridController dataGridController = DataGridController();
+
+  List<DataGridRow> getSelectedRows() {
+    return dataGridController.selectedRows;
+  }
+
+// If you want to get the underlying data (TableDataRowsTableDataRows) of the selected rows:
+  List<List<TableDataRowsTableDataRows>> getSelectedRowData() {
+    return dataGridController.selectedRows.map((dataGridRow) {
+      return dataGridRow
+          .getCells()
+          .map((cell) => cell.value as TableDataRowsTableDataRows)
+          .toList();
+    }).toList();
+  }
+
+// Add this to your TableWidget class
+  void onSelectionChanged() {
+    // This will be called whenever selection changes
+    final selectedRows = getSelectedRows();
+    // Do something with the selected rows
+  }
 
   // Remove the @override annotation
   Widget buildCell(BuildContext context, TableDataRowsTableDataRows cell) {
@@ -253,6 +275,7 @@ abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
     S viewModel,
   ) {
     return SfDataGrid(
+      controller: dataGridController,
       source: dataGridSource,
       rowHeight: rowHeight,
       highlightRowOnHover: highlightRowOnHover,
@@ -263,6 +286,10 @@ abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
       footerFrozenColumnsCount: isLastColumnFixed ? 1 : 0,
       isScrollbarAlwaysShown: true,
       columnWidthMode: columnWidthMode,
+      onSelectionChanged:
+          (List<DataGridRow> addedRows, List<DataGridRow> removedRows) {
+        onSelectionChanged();
+      },
       columns: headers
           .map((e) => gridColumnWidget(
                 e,

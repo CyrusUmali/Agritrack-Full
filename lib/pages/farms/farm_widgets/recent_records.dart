@@ -41,7 +41,7 @@ class _RecentRecordWidgetState extends State<RecentRecord> {
   @override
   void initState() {
     super.initState();
-    print(widget.yields[0].farmName);
+    // print(widget.yields[0].farmName);
 
     barangayNames = barangays.map((b) => b['name'] as String).toList();
   }

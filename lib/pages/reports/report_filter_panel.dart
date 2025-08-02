@@ -1,3 +1,4 @@
+import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flareline/pages/products/product/product_bloc.dart';
@@ -18,7 +19,11 @@ class ReportFilterPanel extends StatelessWidget {
   final ValueChanged<DateTimeRange> onDateRangeChanged;
   final String selectedBarangay;
   final String selectedFarmer;
+
+  final String selectedCount;
+  final ValueChanged<String> onCountChanged;
   final String selectedView;
+
   final ValueChanged<String> onViewChanged;
   final ValueChanged<String> onFarmerChanged;
   final ValueChanged<String> onBarangayChanged;
@@ -26,6 +31,10 @@ class ReportFilterPanel extends StatelessWidget {
   final ValueChanged<String> onSectorChanged;
   final String selectedProduct;
   final ValueChanged<String> onProductChanged;
+
+  final String selectedAssoc;
+  final ValueChanged<String> onAssocChanged;
+
   final String selectedFarm;
   final ValueChanged<String> onFarmChanged;
   final String reportType;
@@ -44,11 +53,15 @@ class ReportFilterPanel extends StatelessWidget {
     required this.selectedBarangay,
     required this.selectedFarmer,
     required this.selectedView,
+    required this.selectedCount,
+    required this.onCountChanged,
     required this.onViewChanged,
     required this.onBarangayChanged,
     required this.onFarmerChanged,
     required this.selectedSector,
     required this.onSectorChanged,
+    required this.selectedAssoc,
+    required this.onAssocChanged,
     required this.selectedProduct,
     required this.onProductChanged,
     required this.selectedFarm,
@@ -109,13 +122,17 @@ class ReportFilterPanel extends StatelessWidget {
                       selectedBarangay: selectedBarangay,
                       selectedFarmer: selectedFarmer,
                       selectedView: selectedView,
+                      onCountChanged: onCountChanged,
+                      selectedCount: selectedCount,
                       selectedSector: selectedSector,
                       selectedProduct: selectedProduct,
+                      onProductChanged: onProductChanged,
+                      selectedAssoc: selectedAssoc,
+                      onAssocChanged: onAssocChanged,
                       selectedFarm: selectedFarm,
                       onBarangayChanged: onBarangayChanged,
                       onFarmerChanged: onFarmerChanged,
                       onSectorChanged: onSectorChanged,
-                      onProductChanged: onProductChanged,
                       onFarmChanged: onFarmChanged,
                       onViewChanged: onViewChanged,
                       isDesktop: isDesktop,
@@ -199,13 +216,21 @@ class _FiltersSection extends StatelessWidget {
   final String selectedBarangay;
   final String selectedFarmer;
   final String selectedView;
+  final String selectedCount;
+  final ValueChanged<String> onCountChanged;
   final String selectedSector;
+
   final String selectedProduct;
+  final ValueChanged<String> onProductChanged;
+
+  final String selectedAssoc;
+  final ValueChanged<String> onAssocChanged;
+
   final String selectedFarm;
   final ValueChanged<String> onBarangayChanged;
   final ValueChanged<String> onFarmerChanged;
   final ValueChanged<String> onSectorChanged;
-  final ValueChanged<String> onProductChanged;
+
   final ValueChanged<String> onFarmChanged;
   final ValueChanged<String> onViewChanged;
   final bool isDesktop;
@@ -218,13 +243,17 @@ class _FiltersSection extends StatelessWidget {
     required this.selectedBarangay,
     required this.selectedFarmer,
     required this.selectedView,
+    required this.selectedCount,
+    required this.onCountChanged,
     required this.selectedSector,
     required this.selectedProduct,
+    required this.onProductChanged,
+    required this.selectedAssoc,
+    required this.onAssocChanged,
     required this.selectedFarm,
     required this.onBarangayChanged,
     required this.onFarmerChanged,
     required this.onSectorChanged,
-    required this.onProductChanged,
     required this.onFarmChanged,
     required this.onViewChanged,
     required this.isDesktop,
@@ -319,14 +348,32 @@ class _FiltersSection extends StatelessWidget {
             options: FilterOptions.barangays,
             selectedValue: selectedBarangay,
             onSelected: onBarangayChanged,
-            width: isDesktop ? 150 : double.infinity,
+            width: isDesktop ? 130 : double.infinity,
           ),
           buildComboBox(
             hint: 'Sector',
             options: FilterOptions.sectors,
             selectedValue: selectedSector,
             onSelected: onSectorChanged,
-            width: isDesktop ? 150 : double.infinity,
+            width: isDesktop ? 130 : double.infinity,
+          ),
+          BlocBuilder<AssocsBloc, AssocsState>(
+            builder: (context, state) {
+              return buildComboBox(
+                hint: 'Association',
+                options: FilterOptions.getAssocs(context),
+                selectedValue: selectedAssoc,
+                onSelected: onAssocChanged,
+                width: isDesktop ? 130 : double.infinity,
+              );
+            },
+          ),
+          buildComboBox(
+            hint: 'Count',
+            options: FilterOptions.Count,
+            selectedValue: selectedCount,
+            onSelected: onCountChanged,
+            width: isDesktop ? 130 : double.infinity,
           ),
         ];
       case 'farmer':
@@ -339,7 +386,7 @@ class _FiltersSection extends StatelessWidget {
                   options: FilterOptions.getFarmers(context),
                   selectedValue: selectedFarmer,
                   onSelected: onFarmerChanged,
-                  width: isDesktop ? 150 : double.infinity,
+                  width: isDesktop ? 130 : double.infinity,
                 );
               },
             ),
@@ -350,7 +397,7 @@ class _FiltersSection extends StatelessWidget {
                 options: FilterOptions.getProducts(context),
                 selectedValue: selectedProduct,
                 onSelected: onProductChanged,
-                width: isDesktop ? 150 : double.infinity,
+                width: isDesktop ? 130 : double.infinity,
               );
             },
           ),
@@ -361,16 +408,35 @@ class _FiltersSection extends StatelessWidget {
                 options: FilterOptions.getFarms(context, _farmerId),
                 selectedValue: selectedFarm,
                 onSelected: onFarmChanged,
-                width: isDesktop ? 150 : double.infinity,
+                width: isDesktop ? 130 : double.infinity,
               );
             },
           ),
+          if (!_isFarmer)
+            BlocBuilder<AssocsBloc, AssocsState>(
+              builder: (context, state) {
+                return buildComboBox(
+                  hint: 'Association',
+                  options: FilterOptions.getAssocs(context),
+                  selectedValue: selectedAssoc,
+                  onSelected: onAssocChanged,
+                  width: isDesktop ? 130 : double.infinity,
+                );
+              },
+            ),
           buildComboBox(
             hint: 'View By',
             options: FilterOptions.viewBy,
             selectedValue: selectedView,
             onSelected: onViewChanged,
-            width: isDesktop ? 150 : double.infinity,
+            width: isDesktop ? 130 : double.infinity,
+          ),
+          buildComboBox(
+            hint: 'Count',
+            options: FilterOptions.Count,
+            selectedValue: selectedCount,
+            onSelected: onCountChanged,
+            width: isDesktop ? 130 : double.infinity,
           ),
         ];
       case 'products':
@@ -382,7 +448,7 @@ class _FiltersSection extends StatelessWidget {
                 options: FilterOptions.getProducts(context),
                 selectedValue: selectedProduct,
                 onSelected: onProductChanged,
-                width: isDesktop ? 150 : double.infinity,
+                width: isDesktop ? 130 : double.infinity,
               );
             },
           ),
@@ -391,7 +457,7 @@ class _FiltersSection extends StatelessWidget {
             options: FilterOptions.viewBy,
             selectedValue: selectedView,
             onSelected: onViewChanged,
-            width: isDesktop ? 150 : double.infinity,
+            width: isDesktop ? 130 : double.infinity,
           ),
           if (!_isFarmer)
             buildComboBox(
@@ -399,7 +465,7 @@ class _FiltersSection extends StatelessWidget {
               options: FilterOptions.barangays,
               selectedValue: selectedBarangay,
               onSelected: onBarangayChanged,
-              width: isDesktop ? 150 : double.infinity,
+              width: isDesktop ? 130 : double.infinity,
             ),
           if (!_isFarmer)
             buildComboBox(
@@ -407,8 +473,15 @@ class _FiltersSection extends StatelessWidget {
               options: FilterOptions.sectors,
               selectedValue: selectedSector,
               onSelected: onSectorChanged,
-              width: isDesktop ? 150 : double.infinity,
+              width: isDesktop ? 130 : double.infinity,
             ),
+          buildComboBox(
+            hint: 'Count',
+            options: FilterOptions.Count,
+            selectedValue: selectedCount,
+            onSelected: onCountChanged,
+            width: isDesktop ? 130 : double.infinity,
+          ),
         ];
 
       case 'barangay':
@@ -418,7 +491,7 @@ class _FiltersSection extends StatelessWidget {
             options: FilterOptions.barangays,
             selectedValue: selectedBarangay,
             onSelected: onBarangayChanged,
-            width: isDesktop ? 150 : double.infinity,
+            width: isDesktop ? 130 : double.infinity,
           ),
           BlocBuilder<ProductBloc, ProductState>(
             builder: (context, state) {
@@ -427,7 +500,7 @@ class _FiltersSection extends StatelessWidget {
                 options: FilterOptions.getProducts(context),
                 selectedValue: selectedProduct,
                 onSelected: onProductChanged,
-                width: isDesktop ? 150 : double.infinity,
+                width: isDesktop ? 130 : double.infinity,
               );
             },
           ),
@@ -436,14 +509,21 @@ class _FiltersSection extends StatelessWidget {
             options: FilterOptions.viewBy,
             selectedValue: selectedView,
             onSelected: onViewChanged,
-            width: isDesktop ? 150 : double.infinity,
+            width: isDesktop ? 130 : double.infinity,
           ),
           buildComboBox(
             hint: 'Sector',
             options: FilterOptions.sectors,
             selectedValue: selectedSector,
             onSelected: onSectorChanged,
-            width: isDesktop ? 150 : double.infinity,
+            width: isDesktop ? 130 : double.infinity,
+          ),
+          buildComboBox(
+            hint: 'Count',
+            options: FilterOptions.Count,
+            selectedValue: selectedCount,
+            onSelected: onCountChanged,
+            width: isDesktop ? 130 : double.infinity,
           ),
         ];
 
@@ -454,14 +534,21 @@ class _FiltersSection extends StatelessWidget {
             options: FilterOptions.sectors,
             selectedValue: selectedSector,
             onSelected: onSectorChanged,
-            width: isDesktop ? 150 : double.infinity,
+            width: isDesktop ? 130 : double.infinity,
           ),
           buildComboBox(
             hint: 'View By',
             options: FilterOptions.viewBy,
             selectedValue: selectedView,
             onSelected: onViewChanged,
-            width: isDesktop ? 150 : double.infinity,
+            width: isDesktop ? 130 : double.infinity,
+          ),
+          buildComboBox(
+            hint: 'Count',
+            options: FilterOptions.Count,
+            selectedValue: selectedCount,
+            onSelected: onCountChanged,
+            width: isDesktop ? 130 : double.infinity,
           ),
         ];
       default:

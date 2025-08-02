@@ -31,10 +31,6 @@ class Dashboard extends LayoutWidget {
 
     return Column(
       children: [
-        // Show GridCard for all roles
-        // GridCard(selectedYear: yearProvider.selectedYear),
-
-// In EcommercePage:
         Consumer<YearPickerProvider>(
           builder: (context, yearProvider, child) {
             return GridCard(selectedYear: yearProvider.selectedYear);
@@ -45,8 +41,6 @@ class Dashboard extends LayoutWidget {
         const SizedBox(height: 16),
 
         // Show AnalyticsWidget only for admin and manager
-        // if (_hasRole(user, 'admin'))
-
         Consumer<YearPickerProvider>(
           builder: (context, yearProvider, child) {
             return AnalyticsWidget(selectedYear: yearProvider.selectedYear);
@@ -65,25 +59,52 @@ class Dashboard extends LayoutWidget {
         if (_hasRole(user, 'admin')) ChannelWidget(),
         if (_hasRole(user, 'admin')) const SizedBox(height: 30),
 
-        // Show MapChartWidget only for admin
-        // if (_hasRole(user, 'admin'))
+        // Only show MapChartWidget on desktop for admin
+        if (MediaQuery.of(context).size.width > 600 && _hasRole(user, 'admin'))
+          Consumer<YearPickerProvider>(
+            builder: (context, yearProvider, child) {
+              return SizedBox(
+                height: 700,
+                child: CommonCard(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints.expand(),
+                    child:
+                        MapChartWidget(selectedYear: yearProvider.selectedYear),
+                  ),
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
 
+  @override
+  Widget contentMobileWidget(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.user;
+
+    return Column(
+      children: [
         Consumer<YearPickerProvider>(
           builder: (context, yearProvider, child) {
-            return SizedBox(
-              height: 700,
-              child: CommonCard(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints.expand(),
-                  child:
-                      MapChartWidget(selectedYear: yearProvider.selectedYear),
-                ),
-              ),
-            );
-
-            // AnalyticsWidget(selectedYear: yearProvider.selectedYear);
+            return GridCard(selectedYear: yearProvider.selectedYear);
           },
         ),
+        const SizedBox(height: 16),
+        const SizedBox(height: 16),
+        Consumer<YearPickerProvider>(
+          builder: (context, yearProvider, child) {
+            return AnalyticsWidget(selectedYear: yearProvider.selectedYear);
+          },
+        ),
+        if (_hasRole(user, 'admin')) const SizedBox(height: 30),
+        const SizedBox(height: 20),
+        if (_hasRole(user, 'admin') || _hasRole(user, 'manager'))
+          const RevenueWidget(),
+        const SizedBox(height: 16),
+        if (_hasRole(user, 'admin')) ChannelWidget(),
+        if (_hasRole(user, 'admin')) const SizedBox(height: 30),
       ],
     );
   }

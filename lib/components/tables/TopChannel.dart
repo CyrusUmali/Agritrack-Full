@@ -94,10 +94,10 @@ class TopChannelViewModel extends BaseTableProvider {
 
       tableDataEntity = TableDataEntity.fromJson(errorMap);
 
-      ToastHelper.showErrorToast(
-        'Failed to load Top Sectors',
-        context,
-      );
+      // ToastHelper.showErrorToast(
+      //   'Failed to load Top Sectors',
+      //   context,
+      // );
     }
   }
 }

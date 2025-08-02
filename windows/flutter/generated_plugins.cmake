@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
   firebase_auth
   firebase_core
+  flutter_localization
   objectbox_flutter_libs
   printing
   screen_retriever_windows

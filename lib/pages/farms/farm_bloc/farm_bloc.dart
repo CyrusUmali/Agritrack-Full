@@ -25,10 +25,12 @@ class FarmBloc extends Bloc<FarmEvent, FarmState> {
   String _searchQuery = '';
   String _sectorFilter = "All";
   String _barangayFilter = "All";
+  String _statusFilter = "All";
   String? _sortColumn;
   bool _sortAscending = true;
 
   String get barangayFilter => _barangayFilter;
+  String get statusFilter => _statusFilter;
   String get sectorFilter => _sectorFilter;
   List<Farm> get allFarms => _farms;
   String get searchQuery => _searchQuery;
@@ -62,8 +64,8 @@ class FarmBloc extends Bloc<FarmEvent, FarmState> {
         _farms[index] = updatedFarm;
       }
 
-      emit(FarmUpdated(updatedFarm));
-      emit(FarmsLoaded(_applyFilters(), message: 'Farm updated successfully!'));
+      // emit(FarmUpdated(updatedFarm));
+      emit(FarmLoaded(updatedFarm));
     } catch (e) {
       emit(FarmsError('Failed to update farm: ${e.toString()}'));
     }
@@ -124,6 +126,10 @@ class FarmBloc extends Bloc<FarmEvent, FarmState> {
         ? "All"
         : event.barangay!;
 
+    // Handle status filter
+    _statusFilter =
+        (event.status == null || event.status!.isEmpty) ? "All" : event.status!;
+
     emit(FarmsLoaded(_applyFilters()));
   }
 
@@ -145,7 +151,13 @@ class FarmBloc extends Bloc<FarmEvent, FarmState> {
       _sortColumn = event.columnName;
       _sortAscending = true;
     }
-    emit(FarmsLoaded(_applyFilters()));
+
+    final filteredFarms = _applyFilters();
+    for (var i = 0;
+        i < (filteredFarms.length > 3 ? 3 : filteredFarms.length);
+        i++) {}
+
+    emit(FarmsLoaded(filteredFarms));
   }
 
   List<Farm> _applyFilters() {
@@ -169,6 +181,16 @@ class FarmBloc extends Bloc<FarmEvent, FarmState> {
         return false;
       }
 
+// Status filter
+      final matchesStatus = _statusFilter == "All" ||
+          _statusFilter.isEmpty ||
+          (farm.status != null &&
+              farm.status!.toLowerCase() == _statusFilter.toLowerCase());
+
+      if (!matchesStatus) {
+        return false;
+      }
+
       // Search filter
       if (_searchQuery.isEmpty) {
         return true;
@@ -178,7 +200,8 @@ class FarmBloc extends Bloc<FarmEvent, FarmState> {
           (farm.owner?.toLowerCase().contains(_searchQuery) ?? false) ||
           (farm.description?.toLowerCase().contains(_searchQuery) ?? false) ||
           (farm.barangay?.toLowerCase().contains(_searchQuery) ?? false) ||
-          (farm.sector?.toLowerCase().contains(_searchQuery) ?? false);
+          (farm.status?.toLowerCase().contains(_searchQuery) ?? false);
+      (farm.sector?.toLowerCase().contains(_searchQuery) ?? false);
 
       return matchesSearch;
     }).toList();
@@ -202,6 +225,20 @@ class FarmBloc extends Bloc<FarmEvent, FarmState> {
             break;
           case 'Hectare':
             compareResult = (a.hectare ?? 0).compareTo(b.hectare ?? 0);
+            break;
+          case 'Status':
+            // Handle null values by putting them at the end
+            if (a.status == null && b.status == null) {
+              compareResult = 0;
+            } else if (a.status == null) {
+              compareResult = 1; // nulls last
+            } else if (b.status == null) {
+              compareResult = -1; // nulls last
+            } else {
+              // Compare case-insensitively for consistency
+              compareResult =
+                  a.status!.toLowerCase().compareTo(b.status!.toLowerCase());
+            }
             break;
           default:
             compareResult = 0;

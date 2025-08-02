@@ -1,3 +1,4 @@
+import 'package:flareline/core/models/assocs_model.dart';
 import 'package:flareline/pages/widget/combo_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
@@ -12,6 +13,7 @@ class PersonalInfoCard extends StatefulWidget {
   final ValueChanged<MapEntry<String, String>> onFieldChanged;
   final GlobalKey<FormState>? formKey;
   final List<String> barangayNames;
+  final List<Association> assocs;
 
   const PersonalInfoCard({
     super.key,
@@ -21,6 +23,7 @@ class PersonalInfoCard extends StatefulWidget {
     required this.onFieldChanged,
     this.formKey,
     required this.barangayNames,
+    required this.assocs,
   });
 
   @override
@@ -30,11 +33,39 @@ class PersonalInfoCard extends StatefulWidget {
 class _PersonalInfoCardState extends State<PersonalInfoCard> {
   late GlobalKey<FormState> _effectiveFormKey;
   final List<String> _sectors = ['Rice', 'Livestock', 'Fishery', 'Corn', 'HVC'];
+  List<String> _assocOptions = [];
+  String? _initialAssocValue; // To store the initial display value
+  String? _selectedAssocValue; // To store the current selected value
 
   @override
   void initState() {
     super.initState();
     _effectiveFormKey = widget.formKey ?? GlobalKey<FormState>();
+
+    // Format options with "id: name"
+    _assocOptions =
+        widget.assocs.map((assoc) => '${assoc.id}: ${assoc.name}').toList();
+
+    // Set initial display value (name only if available)
+    if (widget.farmer['association'] != null) {
+      _initialAssocValue = widget.farmer['association'];
+      _selectedAssocValue =
+          '${widget.farmer['associationId']}: ${widget.farmer['association']}';
+    } else {
+      _initialAssocValue = 'N/A';
+      _selectedAssocValue = 'N/A';
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PersonalInfoCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.assocs != oldWidget.assocs) {
+      setState(() {
+        _assocOptions =
+            widget.assocs.map((assoc) => '${assoc.id}: ${assoc.name}').toList();
+      });
+    }
   }
 
   String getValue(String key) {
@@ -64,14 +95,13 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
           context: context,
           hint: 'Select $label',
           options: options,
-          selectedValue: value ?? 'Not Specified',
-
+          selectedValue: value,
           onSelected: (newValue) {
             if (newValue != null) {
               onChanged(newValue);
             }
           },
-          width: 200, // Takes full available width
+          width: 200,
         ),
       ],
     );
@@ -100,7 +130,6 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                           value: getValue('surname'),
                           onChanged: (value) {
                             widget.onFieldChanged(MapEntry('surname', value));
-                            // Trigger validation after change
                             _effectiveFormKey.currentState?.validate();
                           },
                           validator: (value) {
@@ -126,7 +155,6 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                           value: getValue('firstname'),
                           onChanged: (value) {
                             widget.onFieldChanged(MapEntry('firstname', value));
-                            // Trigger validation after change
                             _effectiveFormKey.currentState?.validate();
                           },
                           validator: (value) {
@@ -161,8 +189,6 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                           onChanged: (value) {
                             widget
                                 .onFieldChanged(MapEntry('middlename', value));
-                            // Trigger validation after change
-                            _effectiveFormKey.currentState?.validate();
                           },
                           validator: (value) {
                             if (value != null && value.length > 50) {
@@ -185,8 +211,6 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                           value: getValue('extension'),
                           onChanged: (value) {
                             widget.onFieldChanged(MapEntry('extension', value));
-                            // Trigger validation after change
-                            _effectiveFormKey.currentState?.validate();
                           },
                         )
                       : DetailField(
@@ -203,8 +227,6 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                           value: getValue('sex'),
                           onChanged: (value) {
                             widget.onFieldChanged(MapEntry('sex', value));
-                            // Trigger validation after change
-                            _effectiveFormKey.currentState?.validate();
                           },
                         )
                       : DetailField(
@@ -253,6 +275,57 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                 ),
               ],
             ),
+
+            // Add Association field
+            const SizedBox(height: 12),
+
+            Row(children: [
+              Expanded(
+                child: widget.isEditing
+                    ? _buildComboBoxField(
+                        label: 'Association',
+                        value: _selectedAssocValue ?? 'N/A',
+                        options: _assocOptions,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedAssocValue = value;
+                          });
+                          // Pass the entire formatted string to the parent
+                          widget.onFieldChanged(MapEntry('association', value));
+                          // Also update associationId if needed
+                          if (value != 'N/A') {
+                            final id = value.split(':').first.trim();
+                            widget
+                                .onFieldChanged(MapEntry('associationId', id));
+                          }
+                        },
+                      )
+                    : DetailField(
+                        label: 'Association',
+                        value: _initialAssocValue ?? 'N/A',
+                      ),
+              ),
+              Expanded(
+                child: widget.isEditing
+                    ? _buildComboBoxField(
+                        label: 'Account Status',
+                        value: getValue('accountStatus'),
+                        options: const [
+                          'Active',
+                          'Pending',
+                          'Inactive',
+                        ],
+                        onChanged: (value) {
+                          widget
+                              .onFieldChanged(MapEntry('accountStatus', value));
+                        },
+                      )
+                    : DetailField(
+                        label: 'Account Status',
+                        value: getValue('accountStatus'),
+                      ),
+              ),
+            ])
           ],
         ),
       ),

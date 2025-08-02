@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flareline/repositories/user_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -24,14 +23,14 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
   List<UserModel> _users = [];
   String _searchQuery = '';
-  String _roleFilter = "All";
+  String? _roleFilter;
+  String? _statusFilter;
   String? _sortColumn;
   bool _sortAscending = true;
-  String _sectorFilter = "All";
 
-  String get sectorFilter => _sectorFilter;
   List<UserModel> get allUsers => _users;
-  String get roleFilter => _roleFilter;
+  String? get roleFilter => _roleFilter;
+  String? get statusFilter => _statusFilter;
   String get searchQuery => _searchQuery;
   String? get sortColumn => _sortColumn;
   bool get sortAscending => _sortAscending;
@@ -44,10 +43,6 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
     try {
       final updatedUser = await userRepository.updateUser(event.user);
-
-      print('event.user');
-      print(event.user);
-
       final index = _users.indexWhere((u) => u.id == updatedUser.id);
       if (index != -1) {
         _users[index] = updatedUser;
@@ -95,18 +90,19 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     emit(UsersLoading());
     try {
       final newUser = UserModel(
-          id: 0, // Let server assign ID
-          email: event.email,
-          name: event.name,
-          role: event.role,
-          password: event.password,
-          sector: event.sector,
-          fname: event.fname,
-          lname: event.lname,
-          barangay: event.barangay,
-          photoUrl: event.photoUrl,
-          idToken: event.idToken,
-          farmerId: event.farmerId);
+        id: 0, // Let server assign ID
+        email: event.email,
+        name: event.name,
+        role: event.role,
+        password: event.password,
+        sector: event.sector,
+        fname: event.fname,
+        lname: event.lname,
+        barangay: event.barangay,
+        photoUrl: event.photoUrl,
+        idToken: event.idToken,
+        farmerId: event.farmerId,
+      );
 
       await userRepository.addUser(newUser);
       _users = await userRepository.fetchUsers();
@@ -132,55 +128,75 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   Future<void> _onFilterUsers(
-      FilterUsers event, Emitter<UserState> emit) async {
-    _roleFilter =
-        (event.role == null || event.role!.isEmpty) ? "All" : event.role!;
-    _sectorFilter =
-        (event.sectorId == null) ? "All" : event.sectorId.toString();
+    FilterUsers event,
+    Emitter<UserState> emit,
+  ) async {
+    // Update filters based on the event
+    _roleFilter = event.role;
+    _statusFilter = event.status;
+    _searchQuery = event.query?.trim().toLowerCase() ?? '';
 
     emit(UsersLoaded(_applyFilters()));
   }
 
   Future<void> _onSearchUsers(
-      SearchUsers event, Emitter<UserState> emit) async {
+    SearchUsers event,
+    Emitter<UserState> emit,
+  ) async {
     _searchQuery = event.query.trim().toLowerCase();
     emit(UsersLoaded(_applyFilters()));
   }
 
-  Future<void> _onSortUsers(SortUsers event, Emitter<UserState> emit) async {
+  Future<void> _onSortUsers(
+    SortUsers event,
+    Emitter<UserState> emit,
+  ) async {
     if (_sortColumn == event.columnName) {
       _sortAscending = !_sortAscending;
     } else {
       _sortColumn = event.columnName;
       _sortAscending = true;
     }
-    emit(UsersLoaded(_applyFilters()));
+
+    final filteredUsers = _applyFilters();
+    for (var i = 0;
+        i < (filteredUsers.length > 3 ? 3 : filteredUsers.length);
+        i++) {}
+
+    emit(UsersLoaded(filteredUsers));
   }
 
   List<UserModel> _applyFilters() {
     List<UserModel> filteredUsers = _users.where((user) {
-      // Role filter
-      final matchesRole = _roleFilter == "All" ||
-          _roleFilter.isEmpty ||
-          (user.role != null && user.role == _roleFilter);
+      // Role filter - skip if filter is null, 'All', or empty
+      if (_roleFilter != null &&
+          _roleFilter!.isNotEmpty &&
+          _roleFilter != 'All' &&
+          user.role?.toLowerCase() != _roleFilter!.toLowerCase()) {
+        return false;
+      }
 
-      if (!matchesRole) return false;
-
-      // Sector filter
-      // final matchesSector = _sectorFilter == "All" ||
-      //     _sectorFilter.isEmpty ||
-      //     user.sectorId.toString() == _sectorFilter;
-
-      // if (!matchesSector) return false;
+      // Status filter - skip if filter is null, 'All', or empty
+      if (_statusFilter != null &&
+          _statusFilter!.isNotEmpty &&
+          _statusFilter != 'All' &&
+          user.status?.toLowerCase() != _statusFilter!.toLowerCase()) {
+        return false;
+      }
 
       // Search filter
-      if (_searchQuery.isEmpty) return true;
+      if (_searchQuery.isNotEmpty) {
+        final matchesSearch = user.name.toLowerCase().contains(_searchQuery) ||
+            user.email.toLowerCase().contains(_searchQuery) ||
+            (user.role?.toLowerCase().contains(_searchQuery) ?? false) ||
+            (user.fname?.toLowerCase().contains(_searchQuery) ?? false) ||
+            (user.lname?.toLowerCase().contains(_searchQuery) ?? false) ||
+            (user.status?.toLowerCase().contains(_searchQuery) ?? false);
 
-      return user.name.toLowerCase().contains(_searchQuery) ||
-          user.email.toLowerCase().contains(_searchQuery) ||
-          (user.role?.toLowerCase().contains(_searchQuery) ?? false) ||
-          (user.fname?.toLowerCase().contains(_searchQuery) ?? false) ||
-          (user.lname?.toLowerCase().contains(_searchQuery) ?? false);
+        if (!matchesSearch) return false;
+      }
+
+      return true;
     }).toList();
 
     // Sorting
@@ -195,7 +211,10 @@ class UserBloc extends Bloc<UserEvent, UserState> {
             compareResult = a.email.compareTo(b.email);
             break;
           case 'Role':
-            compareResult = a.role.compareTo(b.role);
+            compareResult = (a.role ?? '').compareTo(b.role ?? '');
+            break;
+          case 'Status':
+            compareResult = (a.status ?? '').compareTo(b.status ?? '');
             break;
           default:
             compareResult = 0;

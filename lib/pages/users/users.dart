@@ -88,7 +88,6 @@ class _UsersState extends State<Users> {
                   return NetworkErrorWidget(
                     error: state.message,
                     onRetry: () {
-                      // Trigger your retry logic here
                       context.read<UserBloc>().add(LoadUsers());
                     },
                   );
@@ -146,7 +145,8 @@ class _UsersState extends State<Users> {
                       Expanded(
                         flex: 2,
                         child: DataTableWidget(
-                          key: ValueKey('users_table_${state.users.length}'),
+                          key: ValueKey(
+                              'users_table_${state.users.length}_${context.read<UserBloc>().sortColumn}_${context.read<UserBloc>().sortAscending}'),
                           users:
                               state.users.map((user) => user.toJson()).toList(),
                         ),
@@ -216,7 +216,6 @@ class _UsersState extends State<Users> {
                 return NetworkErrorWidget(
                   error: state.message,
                   onRetry: () {
-                    // Trigger your retry logic here
                     context.read<UserBloc>().add(LoadUsers());
                   },
                 );
@@ -225,7 +224,8 @@ class _UsersState extends State<Users> {
                   return _buildNoResultsWidget();
                 }
                 return DataTableWidget(
-                  key: ValueKey('users_table_${state.users.length}'),
+                  key: ValueKey(
+                      'users_table_${state.users.length}_${context.read<UserBloc>().sortColumn}_${context.read<UserBloc>().sortAscending}'),
                   users: state.users.map((user) => user.toJson()).toList(),
                 );
               }
@@ -243,13 +243,13 @@ class _UsersState extends State<Users> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.people_outline,
+            Icons.disabled_by_default,
             size: 64,
             color: Colors.grey[400],
           ),
           const SizedBox(height: 16),
           Text(
-            'No users found',
+            'No Users found',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -288,11 +288,11 @@ class _UsersState extends State<Users> {
               selectedValue: selectedRole,
               onSelected: (value) {
                 setState(() => selectedRole = value);
-                // context.read<UserBloc>().add(FilterUsers(
-                //       role: (value == 'All' || value.isEmpty) ? null : value,
-                //       status: selectedStatus,
-                //       query: _searchQuery,
-                //     ));
+                context.read<UserBloc>().add(FilterUsers(
+                      role: (value == 'All' || value.isEmpty) ? null : value,
+                      status: selectedStatus,
+                      query: _searchQuery,
+                    ));
               },
               width: 150,
             ),
@@ -301,14 +301,14 @@ class _UsersState extends State<Users> {
             buildComboBox(
               context: context,
               hint: 'Status',
-              options: const ['All', 'Active', 'Pending', 'Rejected'],
+              options: const ['All', 'Active', 'Pending', 'Inactive'],
               selectedValue: selectedStatus,
               onSelected: (value) {
                 setState(() => selectedStatus = value);
                 context.read<UserBloc>().add(FilterUsers(
                       role: selectedRole,
-                      // status: (value == 'All' || value.isEmpty) ? null : value,
-                      // query: _searchQuery,
+                      status: (value == 'All' || value.isEmpty) ? null : value,
+                      query: _searchQuery,
                     ));
               },
               width: 150,
@@ -481,11 +481,11 @@ class _UsersState extends State<Users> {
             selectedValue: selectedRole,
             onSelected: (value) {
               setState(() => selectedRole = value);
-              // context.read<UserBloc>().add(FilterUsers(
-              //       role: (value == 'All' || value.isEmpty) ? null : value,
-              //       status: selectedStatus,
-              //       query: _searchQuery,
-              //     ));
+              context.read<UserBloc>().add(FilterUsers(
+                    role: (value == 'All' || value.isEmpty) ? null : value,
+                    status: selectedStatus,
+                    query: _searchQuery,
+                  ));
             },
             width: 150,
           ),
@@ -495,14 +495,14 @@ class _UsersState extends State<Users> {
           buildComboBox(
             context: context,
             hint: 'Status',
-            options: const ['All', 'Active', 'Pending', 'Rejected'],
+            options: const ['All', 'Active', 'Pending', 'Inactive'],
             selectedValue: selectedStatus,
             onSelected: (value) {
               setState(() => selectedStatus = value);
               context.read<UserBloc>().add(FilterUsers(
                     role: selectedRole,
-                    // status: (value == 'All' || value.isEmpty) ? null : value,
-                    // query: _searchQuery,
+                    status: (value == 'All' || value.isEmpty) ? null : value,
+                    query: _searchQuery,
                   ));
             },
             width: 150,
@@ -835,7 +835,7 @@ class DataTableWidget extends TableWidget<UsersViewModel> {
                 context,
                 MaterialPageRoute(
                   builder: (context) =>
-                      FarmersProfile(farmerID: user['id'] as int),
+                      FarmersProfile(farmerID: user['farmerId'] as int),
                 ),
               );
             } else {

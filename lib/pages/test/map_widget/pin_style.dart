@@ -2,14 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
 import 'package:iconify_flutter_plus/icons/mdi.dart';
 
-enum PinStyle {
-  Rice,
-  Corn,
-  HVC,
-  Livestock,
-  Fishery,
-  Organic,
-}
+enum PinStyle { Rice, Corn, HVC, Livestock, Fishery, Organic }
 
 int pinStyleToNumber(PinStyle pinStyle) {
   switch (pinStyle) {
@@ -25,6 +18,8 @@ int pinStyleToNumber(PinStyle pinStyle) {
       return 5;
     case PinStyle.Organic:
       return 6;
+    // case PinStyle.Barangay:
+    //   return 7;
   }
 }
 
@@ -42,6 +37,8 @@ Color getPolygonColor(PinStyle pinStyle) {
       return Colors.blue.withOpacity(0.5);
     case PinStyle.Organic:
       return Colors.grey.withOpacity(0.5);
+    // case PinStyle.Barangay:
+    //   return Colors.redAccent.withOpacity(0.5);
   }
 }
 
@@ -61,6 +58,12 @@ Widget getPinIcon(PinStyle pinStyle) {
           color: Color.fromARGB(255, 255, 255, 255), size: 24);
     case PinStyle.Organic:
       return const Iconify(Mdi.leaf, color: Colors.white, size: 24);
+    // case PinStyle.Barangay:
+    //   return const Icon(
+    //     Icons.account_balance, // Government building icon
+    //     color: Colors.white,
+    //     size: 24,
+    //   );
   }
 }
 
@@ -78,6 +81,8 @@ Color getPinColor(PinStyle pinStyle) {
       return Colors.blue;
     case PinStyle.Organic:
       return Colors.grey;
+    // case PinStyle.Barangay:
+    //   return Colors.redAccent;
   }
 }
 
@@ -96,6 +101,8 @@ PinStyle parsePinStyle(String pinStyle) {
       return PinStyle.Fishery;
     case 'Organic':
       return PinStyle.Organic;
+    // case 'Barangay':
+    //   return PinStyle.Barangay;
     default:
       return PinStyle.Fishery;
   }

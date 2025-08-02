@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -56,6 +57,32 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
       _startYear = yields.first['year']?.toString();
       _endYear = yields.last['year']?.toString();
     }
+  }
+
+  // Generate random colors from a predefined palette
+  List<Color> _generatePaletteColors(int count) {
+    final colors = [
+      const Color(0xFFFE8111), // Orange
+      const Color(0xFF4CAF50), // Green
+      const Color(0xFF2196F3), // Blue
+      const Color(0xFFFF5722), // Deep Orange
+      const Color(0xFF9C27B0), // Purple
+      const Color(0xFFFFEB3B), // Yellow
+      const Color(0xFF00BCD4), // Cyan
+      const Color(0xFFE91E63), // Pink
+      const Color(0xFF795548), // Brown
+      const Color(0xFF607D8B), // Blue Grey
+      const Color(0xFFFF9800), // Amber
+      const Color(0xFF3F51B5), // Indigo
+      const Color(0xFF8BC34A), // Light Green
+      const Color(0xFFFF6EC7), // Hot Pink
+      const Color(0xFF40E0D0), // Turquoise
+    ];
+
+    final random = Random();
+    return List.generate(count, (index) {
+      return colors[random.nextInt(colors.length)];
+    });
   }
 
   @override
@@ -341,37 +368,49 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
   }
 
   Widget _buildYearlyChart(List<Map<String, dynamic>> yields) {
-    final filteredYields = yields.where((yieldData) {
-      final year = yieldData['year']?.toString() ?? '';
-      return (_startYear == null || year.compareTo(_startYear!) >= 0) &&
-          (_endYear == null || year.compareTo(_endYear!) <= 0);
-    }).toList();
-
-    filteredYields.sort((a, b) => (a['year'] ?? '').compareTo(b['year'] ?? ''));
-
-    final chartData = filteredYields.map((yieldData) {
+    // Group yields by year and sum them
+    final Map<String, double> yearlyTotals = {};
+    for (final yieldData in yields) {
       final year = yieldData['year']?.toString() ?? 'Unknown';
       final monthly = yieldData['monthly'] as List<dynamic>? ?? [];
       final totalYield = monthly.fold<double>(
           0, (sum, value) => sum + (value is num ? value.toDouble() : 0));
 
-      return _ChartData(
-        year,
-        totalYield,
-        0, // We don't have value data in this example
-      );
+      yearlyTotals.update(year, (value) => value + totalYield,
+          ifAbsent: () => totalYield);
+    }
+
+    // Filter by date range
+    final filteredYears = yearlyTotals.entries.where((entry) {
+      return (_startYear == null || entry.key.compareTo(_startYear!) >= 0) &&
+          (_endYear == null || entry.key.compareTo(_endYear!) <= 0);
     }).toList();
+
+    // Sort by year
+    filteredYears.sort((a, b) => a.key.compareTo(b.key));
+
+    // Prepare chart data
+    final chartData = filteredYears.map((entry) {
+      return _ChartData(entry.key, entry.value, 0);
+    }).toList();
+
+    // Generate one color per year
+    final yearColors = _generatePaletteColors(chartData.length);
 
     return SizedBox(
       height: 300,
       child: _buildBarChart(
         chartData,
-        // title: 'Yearly Yield (${_startYear} - ${_endYear}) (tons)',
+        yearColors: yearColors,
       ),
     );
   }
 
-  Widget _buildBarChart(List<_ChartData> chartData, {String title = ''}) {
+  Widget _buildBarChart(
+    List<_ChartData> chartData, {
+    String title = '',
+    List<Color>? yearColors,
+  }) {
     final needsScrolling = widget.isMobile && chartData.length > 5;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -395,7 +434,10 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
           dataSource: chartData,
           xValueMapper: (_ChartData data, _) => data.x,
           yValueMapper: (_ChartData data, _) => data.y,
-          color: const Color(0xFFFE8111), // Orange color
+          pointColorMapper: yearColors != null
+              ? (_ChartData data, int index) => yearColors[index]
+              : null,
+          color: yearColors == null ? Theme.of(context).primaryColor : null,
           name: 'Yield (tons)',
           width: 0.6,
           spacing: 0.2,

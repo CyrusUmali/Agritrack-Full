@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:flareline/core/models/assocs_model.dart';
 import 'package:flareline/core/models/farmer_model.dart';
+import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farmers/farmers_widget/personal_info_card.dart';
 import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
@@ -25,10 +27,20 @@ class FarmersProfile extends LayoutWidget {
   String breakTabTitle(BuildContext context) => 'Farmer Profile';
 
   Widget _buildContent(BuildContext context, bool isMobile) {
-    return BlocProvider(
-      create: (context) => FarmerBloc(
-        farmerRepository: context.read<FarmerBloc>().farmerRepository,
-      )..add(GetFarmerById(farmerID)),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => FarmerBloc(
+            farmerRepository: context.read<FarmerBloc>().farmerRepository,
+          )..add(GetFarmerById(farmerID)),
+        ),
+        BlocProvider(
+          create: (context) => AssocsBloc(
+            associationRepository:
+                context.read<AssocsBloc>().associationRepository,
+          )..add(LoadAssocs()),
+        ),
+      ],
       child: _FarmersProfileContent(isMobile: isMobile),
     );
   }
@@ -60,25 +72,39 @@ class _FarmersProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<FarmerBloc, FarmerState>(
-      listener: (context, state) {
-        if (state is FarmerUpdated) {
-          _showToast(context, message: 'Farmer updated successfully');
-        } else if (state is FarmersError) {
-          _showToast(context, message: state.message, isError: true);
-        }
-      },
-      builder: (context, state) {
-        if (state is FarmerLoaded) {
-          return isMobile
-              ? FarmersProfileView(
-                  farmer: state.farmer.toJson(), isMobile: true)
-              : FarmersProfileView(
-                  farmer: state.farmer.toJson(), isMobile: false);
-        } else if (state is FarmersError) {
-          return Center(child: Text(state.message));
-        }
-        return const Center(child: CircularProgressIndicator());
+    return BlocBuilder<AssocsBloc, AssocsState>(
+      builder: (context, assocsState) {
+        return BlocConsumer<FarmerBloc, FarmerState>(
+          listener: (context, state) {
+            if (state is FarmerUpdated) {
+              _showToast(context, message: 'Farmer updated successfully');
+            } else if (state is FarmersError) {
+              _showToast(context, message: state.message, isError: true);
+            }
+          },
+          builder: (context, state) {
+            if (state is FarmerLoaded) {
+              return isMobile
+                  ? FarmersProfileView(
+                      farmer: state.farmer.toJson(),
+                      isMobile: true,
+                      assocs: assocsState is AssocsLoaded
+                          ? assocsState.associations // Explicit cast
+                          : <Association>[], // Empty list with proper type
+                    )
+                  : FarmersProfileView(
+                      farmer: state.farmer.toJson(),
+                      isMobile: false,
+                      assocs: assocsState is AssocsLoaded
+                          ? assocsState.associations // Explicit cast
+                          : <Association>[], // Em
+                    );
+            } else if (state is FarmersError) {
+              return Center(child: Text(state.message));
+            }
+            return const Center(child: CircularProgressIndicator());
+          },
+        );
       },
     );
   }
@@ -205,11 +231,13 @@ abstract class _BaseFarmersProfileState<T extends StatefulWidget>
 class FarmersProfileView extends StatefulWidget {
   final Map<String, dynamic> farmer;
   final bool isMobile;
+  final List<Association> assocs;
 
   const FarmersProfileView({
     super.key,
     required this.farmer,
     required this.isMobile,
+    required this.assocs, // Add this line
   });
 
   @override
@@ -254,6 +282,7 @@ class _FarmersProfileViewState
                   isEditing: isEditing,
                   onFieldChanged: handleFieldChange,
                   barangayNames: barangayNames,
+                  assocs: widget.assocs,
                 ),
                 const SizedBox(height: 16),
                 HouseholdInfoCard(

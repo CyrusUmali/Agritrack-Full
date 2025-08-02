@@ -4,16 +4,26 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:uuid/uuid.dart';
+import 'dart:async';
 
 class ChatbotModel extends ChangeNotifier {
   final List<types.Message> _messages = [];
   final _user = const types.User(id: 'user', firstName: 'User');
   final _bot = const types.User(id: 'bot', firstName: 'AgriBot');
   bool _isTyping = false;
-  String _currentModel = 'Gemini'; // Default model
-  final uri = Uri.parse(ApiConstants.chatbot);
+  String _currentModel = 'Gemini';
+  bool _useStreaming = true; // Add streaming toggle
 
-  // Available AI models
+  // Streaming-related properties
+  StreamSubscription? _streamSubscription;
+  String _currentStreamingMessageId = '';
+  String _currentStreamingText = '';
+
+  // API endpoints
+  final uri = Uri.parse(ApiConstants.chatbot);
+  final streamUri = Uri.parse(
+      '${ApiConstants.baseUrl}/chat/stream'); // Update with your streaming endpoint
+
   static const List<String> availableModels = [
     'Gemini',
     'GPT-4',
@@ -27,9 +37,16 @@ class ChatbotModel extends ChangeNotifier {
   types.User get bot => _bot;
   String get currentModel => _currentModel;
   List<String> get models => availableModels;
+  bool get useStreaming => _useStreaming;
 
   ChatbotModel() {
     _addBotWelcomeMessage();
+  }
+
+  @override
+  void dispose() {
+    _streamSubscription?.cancel();
+    super.dispose();
   }
 
   void setModel(String model) {
@@ -37,7 +54,6 @@ class ChatbotModel extends ChangeNotifier {
       _currentModel = model;
       notifyListeners();
 
-      // Add a system message about the model change
       final modelMessage = types.TextMessage(
         author: _bot,
         createdAt: DateTime.now().millisecondsSinceEpoch,
@@ -76,32 +92,167 @@ class ChatbotModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> getBotResponse(String userMessage) async {
+  // Main method - decides between streaming and regular response
+  Future<void> getBotResponse(String userMessage,
+      {bool useStreaming = true}) async {
+    if (useStreaming) {
+      await _getBotResponseStreaming(userMessage);
+    } else {
+      await _getBotResponseRegular(userMessage);
+    }
+  }
+
+  // Streaming response method
+  Future<void> _getBotResponseStreaming(String userMessage) async {
     try {
-      // Prepare chat history for context
-      final chatHistory = _messages.reversed
-          .where((message) => message is types.TextMessage)
-          .map((message) {
-            final textMessage = message as types.TextMessage;
-            return {
-              'user':
-                  textMessage.author.id == _user.id ? textMessage.text : null,
-              'bot': textMessage.author.id == _bot.id ? textMessage.text : null,
-            };
-          })
-          .where((entry) => entry['user'] != null || entry['bot'] != null)
-          .toList();
+      // Cancel any existing stream
+      await _streamSubscription?.cancel();
+
+      // Prepare chat history
+      final chatHistory = _prepareChatHistory();
+
+      // Create initial empty bot message for streaming
+      _currentStreamingMessageId = const Uuid().v4();
+      _currentStreamingText = '';
+
+      final initialMessage = types.TextMessage(
+        author: _bot,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+        id: _currentStreamingMessageId,
+        text: '',
+      );
+
+      _messages.insert(0, initialMessage);
+      notifyListeners();
+
+      // Create streaming request
+      final request = http.Request('POST', streamUri);
+      request.headers.addAll({
+        'Content-Type': 'application/json',
+        'X-Model': _currentModel,
+        'Accept': 'text/event-stream',
+      });
+
+      request.body = jsonEncode({
+        'message': userMessage,
+        'chat_history': chatHistory,
+        'model': _currentModel,
+      });
+
+      // Send request and get stream
+      final streamedResponse = await request.send();
+
+      if (streamedResponse.statusCode == 200) {
+        // Process the stream
+        _streamSubscription = streamedResponse.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .listen(
+              _handleStreamData,
+              onError: _handleStreamError,
+              onDone: _handleStreamDone,
+            );
+      } else {
+        throw Exception(
+            'Stream request failed with status: ${streamedResponse.statusCode}');
+      }
+    } catch (e) {
+      print('Streaming error: $e');
+      // Fallback to regular response
+      await _getBotResponseRegular(userMessage);
+    }
+  }
+
+  // Handle incoming stream data
+  void _handleStreamData(String line) {
+    if (line.startsWith('data: ')) {
+      final jsonStr = line.substring(6); // Remove 'data: ' prefix
+
+      if (jsonStr.trim().isEmpty) return;
+
+      try {
+        final data = jsonDecode(jsonStr);
+        final chunk = data['chunk'] as String?;
+        final isComplete = data['is_complete'] as bool? ?? false;
+        // final disclaimer = data['disclaimer'] as String?;
+
+        if (chunk != null && chunk.isNotEmpty) {
+          _currentStreamingText += chunk;
+          _updateStreamingMessage(_currentStreamingText);
+        }
+
+        if (isComplete) {
+          // _finishStreaming(disclaimer);
+        }
+      } catch (e) {
+        print('Error parsing stream data: $e');
+      }
+    }
+  }
+
+  // Update the streaming message in real-time
+  void _updateStreamingMessage(String text) {
+    final messageIndex = _messages.indexWhere(
+      (msg) => msg.id == _currentStreamingMessageId,
+    );
+
+    if (messageIndex != -1) {
+      final updatedMessage = types.TextMessage(
+        author: _bot,
+        createdAt: _messages[messageIndex].createdAt,
+        id: _currentStreamingMessageId,
+        text: text,
+      );
+
+      _messages[messageIndex] = updatedMessage;
+      notifyListeners();
+    }
+  }
+
+  // Handle stream completion
+  void _finishStreaming(String? disclaimer) {
+    _isTyping = false;
+
+    // if (disclaimer != null && disclaimer.isNotEmpty) {
+    //   _currentStreamingText += '\n\n$disclaimer';
+    //   _updateStreamingMessage(_currentStreamingText);
+    // }
+
+    _currentStreamingMessageId = '';
+    _currentStreamingText = '';
+    notifyListeners();
+  }
+
+  // Handle stream errors
+  void _handleStreamError(error) {
+    print('Stream error: $error');
+    _isTyping = false;
+    _addErrorMessage('Failed to get streaming response. Please try again.');
+    notifyListeners();
+  }
+
+  // Handle stream completion
+  void _handleStreamDone() {
+    if (_isTyping) {
+      _finishStreaming(null);
+    }
+  }
+
+  // Regular (non-streaming) response method
+  Future<void> _getBotResponseRegular(String userMessage) async {
+    try {
+      final chatHistory = _prepareChatHistory();
 
       final response = await http.post(
         uri,
         headers: {
           'Content-Type': 'application/json',
-          'X-Model': _currentModel, // Send the selected model to the API
+          'X-Model': _currentModel,
         },
         body: jsonEncode({
           'message': userMessage,
           'chat_history': chatHistory,
-          'model': _currentModel, // Also include in body if needed
+          'model': _currentModel,
         }),
       );
 
@@ -110,18 +261,31 @@ class ChatbotModel extends ChangeNotifier {
         final botResponse = data['response'] as String;
         _addBotMessage(botResponse);
       } else {
-        // Fallback to local response if API fails
         final localResponse = generateLocalResponse(userMessage);
         _addBotMessage(localResponse);
       }
     } catch (e) {
-      // Fallback to local response on any error
       final localResponse = generateLocalResponse(userMessage);
       _addBotMessage(localResponse);
     } finally {
       _isTyping = false;
       notifyListeners();
     }
+  }
+
+  // Prepare chat history for API
+  List<Map<String, dynamic>> _prepareChatHistory() {
+    return _messages.reversed
+        .where((message) => message is types.TextMessage)
+        .map((message) {
+          final textMessage = message as types.TextMessage;
+          return {
+            'role': textMessage.author.id == _user.id ? 'user' : 'assistant',
+            'content': textMessage.text,
+          };
+        })
+        .take(20) // Limit history to last 20 messages
+        .toList();
   }
 
   void _addBotMessage(String text) {
@@ -150,7 +314,27 @@ class ChatbotModel extends ChangeNotifier {
 
   void handleSendPressed(types.PartialText message) {
     addUserMessage(message.text);
-    getBotResponse(message.text);
+    getBotResponse(message.text,
+        useStreaming: _useStreaming); // Use current streaming setting
+  }
+
+  // Method to toggle between streaming and regular responses
+  void toggleStreamingMode(bool enableStreaming) {
+    _useStreaming = enableStreaming;
+    notifyListeners();
+
+    // Add notification message
+    final modeMessage = types.TextMessage(
+      author: _bot,
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+      id: const Uuid().v4(),
+      text: enableStreaming
+          ? "Streaming mode enabled - responses will appear in real-time!"
+          : "Streaming mode disabled - responses will appear all at once.",
+    );
+
+    _messages.insert(0, modeMessage);
+    notifyListeners();
   }
 
   String generateLocalResponse(String userMessage) {

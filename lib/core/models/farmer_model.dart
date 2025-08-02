@@ -8,6 +8,7 @@ class Farmer extends Equatable {
   final String? surname;
   final String? extension;
   final String sector;
+  final String? association;
   final String? barangay;
   final String? contact;
   final String? farmName;
@@ -21,6 +22,7 @@ class Farmer extends Equatable {
   final DateTime? updatedAt;
   final String? house_hold_head;
   final String? civilStatus;
+  final String? accountStatus;
   final String? spouseName;
   final String? religion;
   final int? userId;
@@ -35,6 +37,7 @@ class Farmer extends Equatable {
   const Farmer({
     required this.id,
     required this.name,
+    this.association,
     this.firstname,
     this.middlename,
     this.surname,
@@ -55,6 +58,7 @@ class Farmer extends Equatable {
     this.updatedAt,
     this.house_hold_head,
     this.civilStatus,
+    this.accountStatus,
     this.spouseName,
     this.religion,
     this.householdNum,
@@ -72,6 +76,8 @@ class Farmer extends Equatable {
       name: map['name'] ?? '',
       firstname: map['firstname'],
       middlename: map['middlename'],
+      accountStatus: map['accountStatus'],
+      association: map['association'],
       surname: map['surname'],
       extension: map['extension'],
       sector: map['sector'] ?? '',
@@ -107,9 +113,11 @@ class Farmer extends Equatable {
     return Farmer(
       id: (json['id'] as int?) ?? 0,
       name: (json['name'] as String?) ?? 'Unknown',
+      accountStatus: (json['accountStatus'] as String?) ?? 'Pending',
       firstname: (json['firstname'] as String?) ?? '',
       surname: (json['surname'] as String?) ?? '',
       middlename: (json['middlename'] as String?) ?? '',
+      association: (json['association' as String?]) ?? '',
       extension: (json['extension'] as String?) ?? '',
       sector: (json['sector'] as String?) ?? 'Unknown Sector',
       barangay: (json['barangay'] as String?) ?? 'Unknown Barangay',
@@ -148,8 +156,10 @@ class Farmer extends Equatable {
       'id': id,
       'name': name,
       'firstname': firstname,
+      'accountStatus': accountStatus,
       'surname': surname,
       'middlename': middlename,
+      'association': association,
       'extension': extension,
       'sector': sector,
       'userId': userId,
@@ -185,6 +195,8 @@ class Farmer extends Equatable {
       'firstname': firstname,
       'surname': surname,
       'middlename': middlename,
+      'accountStatus': accountStatus,
+      'association': association,
       'extension': extension,
       'sector': sector,
       'userId': userId,
@@ -268,6 +280,7 @@ class Farmer extends Equatable {
         firstname,
         surname,
         middlename,
+        association,
         extension,
         sector,
         barangay,
@@ -282,6 +295,7 @@ class Farmer extends Equatable {
         updatedAt,
         house_hold_head,
         civilStatus,
+        accountStatus,
         spouseName,
         religion,
         householdNum,

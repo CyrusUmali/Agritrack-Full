@@ -22,8 +22,9 @@ class AddYieldModal extends StatefulWidget {
     double yieldAmount,
     double? areaHa,
     DateTime date,
+    String status,
     String notes,
-    List<String> imageUrls, // Changed from List<XFile> to List<String>
+    List<String> imageUrls,
   ) onYieldAdded;
 
   const AddYieldModal({Key? key, required this.onYieldAdded}) : super(key: key);

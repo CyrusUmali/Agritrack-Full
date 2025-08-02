@@ -30,15 +30,10 @@ class ProductsTable extends StatelessWidget {
   Widget _productsWeb(BuildContext context) {
     return BlocListener<ProductBloc, ProductState>(
       listenWhen: (previous, current) {
-        print(
-            'State change: ${previous.runtimeType} -> ${current.runtimeType}');
-        print('Equal: ${previous == current}');
         return current is ProductsLoaded || current is ProductsError;
       },
       listener: (context, state) {
-        print('Received state: ${state.runtimeType}');
         if (state is ProductsLoaded && state.message != null) {
-          print('Message received: ${state.message}');
           toastification.show(
             context: context,
             type: ToastificationType.success,
@@ -72,12 +67,9 @@ class ProductsTable extends StatelessWidget {
                   if (state is ProductsLoading) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is ProductsError) {
-                    // return Center(child: Text(state.message));
-
                     return NetworkErrorWidget(
                       error: state.message,
                       onRetry: () {
-                        // Trigger your retry logic here
                         context.read<ProductBloc>().add(LoadProducts());
                       },
                     );
@@ -90,9 +82,11 @@ class ProductsTable extends StatelessWidget {
                         Expanded(
                           flex: 2,
                           child: DataTableWidget(
+                            // Use a more comprehensive key that includes sort info
                             key: ValueKey(
-                                'products_table_${state.products.length}'),
-                            products: state.products,
+                                'products_table_${state.products.length}_${context.read<ProductBloc>().sortColumn}_${context.read<ProductBloc>().sortAscending}'),
+                            // Pass the current state instead of products
+                            state: state,
                           ),
                         ),
                       ],
@@ -144,12 +138,9 @@ class ProductsTable extends StatelessWidget {
                 if (state is ProductsLoading) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is ProductsError) {
-                  // return Center(child: Text(state.message));
-
                   return NetworkErrorWidget(
                     error: state.message,
                     onRetry: () {
-                      // Trigger your retry logic here
                       context.read<ProductBloc>().add(LoadProducts());
                     },
                   );
@@ -158,8 +149,9 @@ class ProductsTable extends StatelessWidget {
                     return _buildNoResultsWidget();
                   }
                   return DataTableWidget(
-                    key: ValueKey('products_table_${state.products.length}'),
-                    products: state.products,
+                    key: ValueKey(
+                        'products_table_${state.products.length}_${context.read<ProductBloc>().sortColumn}_${context.read<ProductBloc>().sortAscending}'),
+                    state: state,
                   );
                 }
                 return _buildNoResultsWidget();
@@ -171,7 +163,6 @@ class ProductsTable extends StatelessWidget {
     );
   }
 
-// Add this new helper widget
   Widget _buildNoResultsWidget() {
     return Center(
       child: Column(
@@ -206,16 +197,19 @@ class ProductsTable extends StatelessWidget {
 }
 
 class DataTableWidget extends TableWidget<ProductsViewModel> {
-  final List<Product> products;
+  final ProductsLoaded state;
 
   DataTableWidget({
-    required this.products,
+    required this.state,
     Key? key,
   }) : super(key: key);
 
+  // Add getter for products for backward compatibility
+  List<Product> get products => state.products;
+
   @override
   ProductsViewModel viewModelBuilder(BuildContext context) {
-    return ProductsViewModel(context, products);
+    return ProductsViewModel(context, state);
   }
 
   @override
@@ -227,6 +221,7 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
 
     return InkWell(
       onTap: () {
+        final currentState = context.read<ProductBloc>().state;
         context.read<ProductBloc>().add(SortProducts(headerName));
       },
       child: Row(
@@ -344,8 +339,7 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ProductProfile(
-                    product: product), // Lowercase 'p' in parameter
+                builder: (context) => ProductProfile(product: product),
               ),
             );
           },
@@ -398,20 +392,24 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
 }
 
 class ProductsViewModel extends BaseTableProvider {
-  final List<Product> products;
+  final ProductsLoaded state;
 
   ProductsViewModel(
     super.context,
-    this.products,
+    this.state,
   );
+
+  // Add getter for backward compatibility
+  List<Product> get products => state.products;
 
   @override
   Future loadData(BuildContext context) async {
+    // Use the products from the state instead of constructor
     const headers = ["Product", "Sector", "Description", "Action"];
 
     List<List<TableDataRowsTableDataRows>> rows = [];
 
-    for (final product in products) {
+    for (final product in state.products) {
       List<TableDataRowsTableDataRows> row = [];
 
       // Product name with image
