@@ -47,7 +47,7 @@ class _UserInfoCardState extends State<UserInfoCard> {
         _contactController.text = widget.user['phone'] ?? '';
       }
     });
-  }
+  } 
 
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
@@ -57,7 +57,7 @@ class _UserInfoCardState extends State<UserInfoCard> {
       // Update with new values
       updatedUser['name'] = _nameController.text;
       updatedUser['phone'] = _contactController.text;
-
+ 
       print(updatedUser);
 
       // Dispatch the UpdateUser event
@@ -65,7 +65,9 @@ class _UserInfoCardState extends State<UserInfoCard> {
             UserModel.fromJson(updatedUser),
           ));
 
-      _toggleEdit();
+      
+
+      // _toggleEdit();
     }
   }
 
@@ -181,8 +183,26 @@ class _UserInfoCardState extends State<UserInfoCard> {
               context,
             );
           } else if (state is UserUpdated) {
+
+
+        final currentUser = userProvider.user;
+        if (currentUser != null) {
+          final updatedUser = currentUser.copyWith(
+            name: _nameController.text,
+            phone: _contactController.text,
+          );
+          userProvider.setUser(updatedUser);
+        }
+
+
+
             ToastHelper.showSuccessToast(
                 'Profile updated successfully', context);
+
+    
+
+
+                
           }
         },
         child: Card(
@@ -202,14 +222,14 @@ class _UserInfoCardState extends State<UserInfoCard> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.person_outline, color: colors.primary),
+                          Icon(Icons.person_outline),
                           const SizedBox(width: 12),
                           Text(
                             'Personal Information',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
-                          ),
+                          ), 
                         ],
                       ),
                       if (isCurrentUser)
@@ -245,13 +265,19 @@ class _UserInfoCardState extends State<UserInfoCard> {
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: _saveChanges,
-                        child: const Text('Save Changes'),
-                      ),
-                    ),
+                   SizedBox(
+  width: double.infinity,
+  child: FilledButton(
+    onPressed: _saveChanges,
+    style: FilledButton.styleFrom(
+      textStyle: TextStyle(color: Colors.white),
+    ),
+    child: const Text(
+      'Save Changes',
+      style: TextStyle(color: Colors.white),
+    ),
+  ),
+),
                   ] else ...[
                     _buildReadOnlyField(
                       label: 'Full Name',

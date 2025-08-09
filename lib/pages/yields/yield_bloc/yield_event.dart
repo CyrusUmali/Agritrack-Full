@@ -102,14 +102,17 @@ class SearchYields extends YieldEvent {
   List<Object> get props => [query];
 }
 
-class GetYieldById extends YieldEvent {
-  final int id;
 
-  const GetYieldById(this.id);
+class GetYieldByBarangay  extends YieldEvent {
+  final String barangay;
+
+  const GetYieldByBarangay(this.barangay);
 
   @override
-  List<Object> get props => [id];
+  List<Object> get props => [barangay];
 }
+
+
 
 class GetYieldByFarmId extends YieldEvent {
   final int farmId;

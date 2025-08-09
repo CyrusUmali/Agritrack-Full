@@ -1,4 +1,5 @@
 import 'package:flareline/core/models/yield_model.dart';
+import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flareline/pages/products/product/product_bloc.dart';
@@ -6,6 +7,7 @@ import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
 import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
 import 'package:flareline/pages/yields/yield_profile.dart';
 import 'package:flareline/providers/user_provider.dart';
+import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -86,23 +88,23 @@ class _RecentRecordWidgetState extends State<RecentRecord> {
     );
   }
 
-  Widget _channelMobile(BuildContext context) {
-    return Column(
-      children: [
-        _buildSearchBarMobile(),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 380,
-          child: widget.yields.isEmpty
-              ? _buildNoResultsWidget()
-              : DataTableWidget(
-                  key: ValueKey('yields_table_${widget.yields.length}'),
-                  yields: widget.yields,
-                ),
-        ),
-      ],
-    );
-  }
+ Widget _channelMobile(BuildContext context) {
+  return Column(
+    children: [
+      _buildSearchBarMobile(),
+      const SizedBox(height: 16),
+      SizedBox(
+        height: 380,
+        child: widget.yields.isEmpty
+            ? _buildNoResultsWidget()
+            : MobileYieldListWidget(
+                key: ValueKey('yields_table_${widget.yields.length}'),
+                state: YieldsLoaded(widget.yields), // Wrap yields in YieldsLoaded
+              ),
+      ),
+    ],
+  );
+}
 
   Widget _buildNoResultsWidget() {
     return Center(
@@ -751,3 +753,339 @@ class YieldsViewModel extends BaseTableProvider {
     tableDataEntity = tableData;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MobileYieldListWidget extends StatefulWidget {
+  final YieldsLoaded state;
+  final int itemsPerPage;
+  
+  const MobileYieldListWidget({
+    required this.state,
+    this.itemsPerPage = 10, // Default items per page
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<MobileYieldListWidget> createState() => _MobileYieldListWidgetState();
+}
+
+class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
+  int currentPage = 0;
+  
+  int get totalPages => (widget.state.yields.length / widget.itemsPerPage).ceil();
+  
+  List<dynamic> get currentPageData {
+    final startIndex = currentPage * widget.itemsPerPage;
+    final endIndex = (startIndex + widget.itemsPerPage).clamp(0, widget.state.yields.length);
+    return widget.state.yields.sublist(startIndex, endIndex);
+  }
+
+  void _goToPage(int page) {
+    setState(() {
+      currentPage = page.clamp(0, totalPages - 1);
+    });
+  }
+
+  void _previousPage() {
+    if (currentPage > 0) {
+      _goToPage(currentPage - 1);
+    }
+  }
+
+  void _nextPage() {
+    if (currentPage < totalPages - 1) {
+      _goToPage(currentPage + 1);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
+
+    if (widget.state.yields.isEmpty) {
+      return CommonCard(
+        margin: EdgeInsets.all(0),
+        padding: EdgeInsets.all(16),
+        child: Center(
+          child: Text('No yields available'),
+        ),
+      );
+    }
+
+    return CommonCard(
+      margin: EdgeInsets.all(0),
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          // List content
+          Expanded(
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: currentPageData.length,
+              itemBuilder: (context, index) {
+                final yield = currentPageData[index];
+                final sectorIcon = _getSectorIcon(yield.sectorId);
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: _getSectorColor(yield.sectorId),
+                    child: yield.productImage != null 
+                      ? ClipOval(
+                          child: Image.network(
+                            yield.productImage!,
+                            fit: BoxFit.cover,
+                            width: 40,
+                            height: 40,
+                          ),
+                        )
+                      : Icon(sectorIcon, color: Colors.white),
+                  ),
+                  title: Text(
+                    isFarmer ? yield.productName ?? 'N/A' : '${yield.farmerName}  • ${yield.productName}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '${_getYieldWithUnit(yield.volume, yield.sectorId)} • ${_formatDate(yield.createdAt)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                    ),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(yield.status ?? 'N/A'),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => YieldProfile(yieldData: yield),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => YieldProfile(yieldData: yield),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          // Pagination controls
+          if (totalPages > 1)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.grey.shade300,
+                    width: 0.5,
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Previous button
+                  IconButton(
+                    onPressed: currentPage > 0 ? _previousPage : null,
+                    icon: Icon(
+                      Icons.chevron_left,
+                      color: currentPage > 0 ? GlobalColors.primary : Colors.grey,
+                    ),
+                  ),
+                  
+                  // Page indicators
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Show page numbers (limited to 5 visible pages)
+                        ...List.generate(
+                          totalPages.clamp(0, 5),
+                          (index) {
+                            int pageIndex;
+                            if (totalPages <= 5) {
+                              pageIndex = index;
+                            } else {
+                              // Smart pagination: show current page in center
+                              int start = (currentPage - 2).clamp(0, totalPages - 5);
+                              pageIndex = start + index;
+                            }
+                            
+                            return GestureDetector(
+                              onTap: () => _goToPage(pageIndex),
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: currentPage == pageIndex 
+                                    ? GlobalColors.primary
+                                    : Colors.transparent,
+                                  border: Border.all(
+                                    color: currentPage == pageIndex 
+                                      ? GlobalColors.primary
+                                      : Colors.grey.shade400,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${pageIndex + 1}',
+                                    style: TextStyle(
+                                      color: currentPage == pageIndex 
+                                        ? Colors.white 
+                                        : null, 
+                                      fontSize: 12,
+                                      fontWeight: currentPage == pageIndex 
+                                        ? FontWeight.w600 
+                                        : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        
+                        // Show ellipsis if there are more pages
+                        if (totalPages > 5)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              '...',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Next button
+                  IconButton(
+                    onPressed: currentPage < totalPages - 1 ? _nextPage : null,
+                    icon: Icon(
+                      Icons.chevron_right,
+                      color: currentPage < totalPages - 1 ? GlobalColors.primary: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
+          // Page info
+          if (totalPages > 1)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Page ${currentPage + 1} of $totalPages • ${widget.state.yields.length} total items',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getSectorIcon(int? sectorId) {
+    switch (sectorId) {
+      case 1: return Icons.grass; // Crops
+      case 2: return Icons.agriculture; // Livestock
+      case 3: return Icons.water_drop; // Fisheries
+      default: return Icons.category;
+    }
+  }
+
+  String _getYieldWithUnit(double? volume, int? sectorId) {
+    if (volume == null) return 'N/A';
+
+    switch (sectorId) {
+      case 1: 
+      case 2: 
+      case 3: 
+      case 5: 
+      case 6: 
+        return '${volume.toStringAsFixed(volume % 1 == 0 ? 0 : 1)} kg';
+      case 4:
+        return '${volume.toInt()} heads';
+      default:
+        return volume.toString();
+    }
+  }
+
+  String _formatDate(dynamic dateInput) {
+    if (dateInput == null) return 'N/A';
+    try {
+      DateTime dateTime = dateInput is String ? DateTime.parse(dateInput) : dateInput;
+      return DateFormat('MMM d').format(dateTime);
+    } catch (e) {
+      return 'N/A';
+    }
+  }
+
+  Color _getSectorColor(int? sectorId) {
+    switch (sectorId) {
+      case 1: return Colors.green;
+      case 2: return Colors.orange;
+      case 3: return  GlobalColors.primary;
+      default: return Colors.grey;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Accepted': return Colors.green;
+      case 'Pending': return Colors.orange;
+      case 'Rejected': return Colors.red;
+      default: return Colors.grey;
+    }
+  }
+}
+
+
+
+
+
+
+///////////
+

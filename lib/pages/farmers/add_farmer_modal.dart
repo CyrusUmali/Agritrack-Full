@@ -8,7 +8,7 @@ import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'dart:convert';
-
+ 
 import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
 
 class AddFarmerModal extends StatefulWidget {
@@ -449,15 +449,14 @@ class _AddFarmerModalContentState extends State<_AddFarmerModalContent> {
                   : AutovalidateMode.disabled,
             ),
             SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
-
-            // Barangay Autocomplete Field
+ 
             SizedBox(
               height: fieldHeight,
               child: Autocomplete<String>(
                 optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text == '') {
-                    return const Iterable<String>.empty();
-                  }
+                  if (textEditingValue.text.isEmpty) {
+        return barangayNames;
+      }
                   return barangayNames.where((String option) {
                     return option
                         .toLowerCase()
@@ -520,6 +519,8 @@ class _AddFarmerModalContentState extends State<_AddFarmerModalContent> {
                 },
               ),
             ),
+           
+           
             SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
 
             // Sector Dropdown

@@ -6,7 +6,7 @@ class ApiConstants {
 
   // Prediction endpoints
   static const String predict = '$baseUrl/predict';
-
+ 
   // Suitability endpoints
   static const String checkSuitability = '$baseUrl/check-suitability';
   static const String getSuggestions = '$baseUrl/get-suggestions-stream';

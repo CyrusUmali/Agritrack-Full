@@ -101,30 +101,33 @@ class FarmRepository {
     }
   }
 
-  Future<List<Farm>> fetchFarms() async {
-    try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
-
-      final response = await apiService.get('/auth/farms');
-
-      if (response.data == null || response.data['farms'] == null) {
-        throw Exception('Invalid farms data format');
-      }
-
-      final farmsData = response.data['farms'] as List;
-
-      return farmsData.map((json) => Farm.fromJson(json)).toList();
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
-    } catch (e) {
-      throw Exception('Failed to load farms: $e');
+Future<List<Farm>> fetchFarms({int? farmerId}) async {
+  try {
+    if (_firebaseAuth.currentUser == null) {
+      throw Exception('User not authenticated');
     }
-  }
 
+    final Map<String, dynamic> queryParams = {};
+    if (farmerId != null) {
+      queryParams['farmerId'] = farmerId.toString(); // Convert int to String for query params
+    }
+
+    final response = await apiService.get('/auth/farms', queryParameters: queryParams);
+
+    if (response.data == null || response.data['farms'] == null) {
+      throw Exception('Invalid farms data format');
+    }
+
+    final farmsData = response.data['farms'] as List;
+    return farmsData.map((json) => Farm.fromJson(json)).toList();
+  } on DioException catch (e) {
+    throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+  } on FirebaseAuthException catch (e) {
+    throw Exception('Authentication error: ${e.message}');
+  } catch (e) {
+    throw Exception('Failed to load farms: $e');
+  }
+}
   Future<void> deleteFarm(int farmId) async {
     try {
       if (_firebaseAuth.currentUser == null) {

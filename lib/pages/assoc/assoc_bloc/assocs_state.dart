@@ -30,6 +30,8 @@ class AssocLoaded extends AssocsState {
   List<Object> get props => [association];
 }
 
+
+
 class AssocsError extends AssocsState {
   final String message;
 
@@ -41,9 +43,10 @@ class AssocsError extends AssocsState {
 
 class AssocOperationSuccess extends AssocsState {
   // final Association association;
+    final Association updatedAssoc;
   final String message;
 
-  const AssocOperationSuccess(this.message);
+  const AssocOperationSuccess( this.updatedAssoc,this.message);
 
   @override
   List<Object> get props => [message];

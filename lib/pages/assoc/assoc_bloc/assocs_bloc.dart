@@ -106,7 +106,7 @@ class AssocsBloc extends Bloc<AssocsEvent, AssocsState> {
         _associations[index] = updatedAssoc;
       }
       // emit(AssocOperationSuccess());
-      emit(AssocsLoaded(_filteredAssociations));
+      emit(AssocOperationSuccess(updatedAssoc, 'Updated successfully!'));
     } catch (e) {
       emit(AssocsError('Failed to update association: ${e.toString()}'));
     }

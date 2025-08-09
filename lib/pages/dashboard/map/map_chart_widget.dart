@@ -9,8 +9,13 @@ import 'barangay_data_provider.dart';
 
 class MapChartWidget extends StatefulWidget {
   final int selectedYear;
-  const MapChartWidget(
-      {super.key, required this.selectedYear}); // Update constructor
+  final String? selectedProduct; // Declare the field
+  
+  const MapChartWidget({
+    super.key, 
+    required this.selectedYear, 
+    this.selectedProduct, // Add to constructor
+  });
 
   @override
   State<MapChartWidget> createState() => _MapChartWidgetState();
@@ -22,6 +27,7 @@ class _MapChartWidgetState extends State<MapChartWidget> {
   @override
   void initState() {
     super.initState();
+    print('selectedProduct: ${widget.selectedProduct}');
     _isMounted = true;
     // Load data when widget initializes
     _loadData();
@@ -49,15 +55,15 @@ class _MapChartWidgetState extends State<MapChartWidget> {
         // print('productState');
         // print(productState);
 
-        if (productState is ProductsLoaded) {
-//  yields = yieldState.yields;
+        if (widget.selectedProduct != null) {
+            products = [widget.selectedProduct!];
+          }  
 
-          print('products Data Loaded:');
-          // for (var products in productState.products) {
-          //   print(products.toJson());
-          // }
-
-          products = productState.products.map((p) => p.name).toList();
+      else  if (productState is ProductsLoaded) {
+          // If a product is selected from widget, use that instead of bloc products
+          
+            products = productState.products.map((p) => p.name).toList();
+          
         } else if (productState is ProductsError) {
           // Show error and retry button for products
           return _buildErrorState(productState.message, _loadData);
@@ -727,7 +733,7 @@ class _MapChartWidgetState extends State<MapChartWidget> {
                       ),
                       subtitle: provider.selectedProduct.isNotEmpty
                           ? Text(
-                              '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(2) ?? 'N/A'} tons',
+                              '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(2) ?? 'N/A'} kg',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurface
                                     .withOpacity(0.7),

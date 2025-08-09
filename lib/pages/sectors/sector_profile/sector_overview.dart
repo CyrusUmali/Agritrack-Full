@@ -28,7 +28,7 @@ class SectorOverviewPanel extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.assessment_outlined, color: colors.primary),
+                Icon(Icons.assessment_outlined,  ),
                 const SizedBox(width: 12),
                 Text(
                   '${sector['name']} Sector Overview',

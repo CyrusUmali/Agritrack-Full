@@ -222,14 +222,14 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Icon(Icons.pie_chart_outline, color: colors.primary),
+                Icon(Icons.pie_chart_outline,  ),
                 const SizedBox(width: 12),
                 Text(
                   'Yield Distribution',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colors.onSurface,
-                  ),
+                  ), 
                 ),
                 if (_isLoadingYield) ...[
                   const SizedBox(width: 12),

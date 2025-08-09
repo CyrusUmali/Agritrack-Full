@@ -2,6 +2,7 @@ import 'package:flareline/core/models/product_model.dart';
 import 'package:flareline/pages/products/product/product_filter_widget.dart';
 import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flareline/providers/user_provider.dart';
+import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
@@ -148,7 +149,7 @@ class ProductsTable extends StatelessWidget {
                   if (state.products.isEmpty) {
                     return _buildNoResultsWidget();
                   }
-                  return DataTableWidget(
+                  return MobileProductListWidget(
                     key: ValueKey(
                         'products_table_${state.products.length}_${context.read<ProductBloc>().sortColumn}_${context.read<ProductBloc>().sortAscending}'),
                     state: state,
@@ -452,5 +453,179 @@ class ProductsViewModel extends BaseTableProvider {
       ..rows = rows;
 
     tableDataEntity = tableData;
+  }
+}
+
+
+
+
+class MobileProductListWidget extends StatelessWidget {
+  final ProductsLoaded state;
+  
+  const MobileProductListWidget({
+    required this.state,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final userProvider = context.read<UserProvider>();
+    final isFarmer = userProvider.isFarmer;
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(0),
+      // physics: const ClampingScrollPhysics(),
+       physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: state.products.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final product = state.products[index];
+        final sectorIcon = _getSectorIcon(product.sector);
+        final sectorColor = _getSectorColor(product.sector);
+
+        return CommonCard(
+          // elevation: 1,
+          margin: EdgeInsets.zero,
+          // shape: RoundedRectangleBorder(
+          //   borderRadius: BorderRadius.circular(12),
+          // ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProductProfile(product: product),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // Leading icon/avatar
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: sectorColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: product.imageUrl != null 
+                        ? ClipOval(
+                            child: Image.network(
+                              product.imageUrl!,
+                              fit: BoxFit.cover,
+                              width: 40,
+                              height: 40,
+                              errorBuilder: (_, __, ___) => 
+                                Icon(sectorIcon, color: sectorColor),
+                            ),
+                          )
+                        : Icon(sectorIcon, color: sectorColor, size: 24),
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 16),
+                  
+                  // Product info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        
+                        const SizedBox(height: 4),
+                        
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            Chip(
+                              label: Text(
+                                product.sector,
+                                style: TextStyle(
+                                  color: sectorColor,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              backgroundColor: sectorColor.withOpacity(0.1),
+                              visualDensity: VisualDensity.compact,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ],
+                        ),
+                        
+                        if (product.description?.isNotEmpty ?? false) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            product.description!,
+                                 style: const TextStyle(
+              fontSize: 12,
+              // color: Colors.grey,
+            ),
+                            // style:  (
+                            //   color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            //   fontSize: 13 , fontWeight: FontWeight.w200,
+                            // ), 
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 8),
+                  
+                  // Trailing icon
+                  Icon(
+                    Icons.chevron_right,
+                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  IconData _getSectorIcon(String sector) {
+    switch (sector.toLowerCase()) {
+
+
+      case 'Rice': return Icons.grass;
+      case 'Corn': return Icons.agriculture;
+      case 'Livestock':  return Icons.agriculture;
+        case 'Fishery': return Icons.water;
+          case 'HVC':  return Icons.agriculture;
+            case 'Organic':  return Icons.agriculture;
+
+      
+      // case 'crops': return Icons.grass;
+      // case 'livestock': return Icons.agriculture;
+      // case 'fisheries': return Icons.water;
+      default: return Icons.category;
+    } 
+  }
+
+  Color _getSectorColor(String sector) {
+    switch (sector) { 
+      case 'Rice': return Colors.green;
+      case 'Corn': return Colors.yellow;
+      case 'Livestock': return Colors.deepOrange;  
+        case 'Fishery': return Colors.blue;  
+          case 'HVC': return Colors.purple;  
+            case 'Organic': return Colors.grey;  
+      default: return Colors.grey;
+    }
   }
 }

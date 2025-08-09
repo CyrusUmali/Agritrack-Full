@@ -139,7 +139,9 @@ class _SectorLineChartState extends State<SectorLineChart> {
     );
   }
 
-  Future<void> _selectYearRange(BuildContext context) async {
+
+
+Future<void> _selectYearRange(BuildContext context) async {
     final List<int>? picked = await showDialog<List<int>>(
       context: context,
       builder: (BuildContext context) {
@@ -148,61 +150,72 @@ class _SectorLineChartState extends State<SectorLineChart> {
 
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Select Year Range'),
-              content: SizedBox(
-                height: 400,
-                width: 300,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('From Year:'),
-                    SizedBox(
-                      height: 150,
-                      child: YearPicker(
-                        selectedDate: DateTime(tempFromYear),
-                        firstDate: DateTime(2018),
-                        lastDate: DateTime(2025),
-                        onChanged: (DateTime dateTime) {
-                          setState(() {
-                            tempFromYear = dateTime.year;
-                            if (tempFromYear > tempToYear) {
-                              tempToYear = tempFromYear;
-                            }
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text('To Year:'),
-                    SizedBox(
-                      height: 150,
-                      child: YearPicker(
-                        selectedDate: DateTime(tempToYear),
-                        firstDate: DateTime(tempFromYear),
-                        lastDate: DateTime(2025),
-                        onChanged: (DateTime dateTime) {
-                          setState(() {
-                            tempToYear = dateTime.year;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.light(
+                  onPrimary: Colors.white, // Selected year text color
+                  primary: Theme.of(context).colorScheme.primary, // Selected year background color
+                  // onSurface: Colors.white, // Unselected years text color
                 ),
+            
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+              child: AlertDialog(
+                title: const Text('Select Year Range'),
+                backgroundColor: Theme.of(context).cardTheme.color,
+                content: SizedBox(
+                  height: 400,
+                  width: 300,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('From Year:',  ),
+                      SizedBox(
+                        height: 150,
+                        child: YearPicker(
+                          selectedDate: DateTime(tempFromYear),
+                          firstDate: DateTime(2018),
+                          lastDate: DateTime(2025),
+                          onChanged: (DateTime dateTime) {
+                            setState(() {
+                              tempFromYear = dateTime.year;
+                              if (tempFromYear > tempToYear) {
+                                tempToYear = tempFromYear;
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text('To Year:',  ),
+                      SizedBox(
+                        height: 150,
+                        child: YearPicker(
+                          selectedDate: DateTime(tempToYear),
+                          firstDate: DateTime(tempFromYear),
+                          lastDate: DateTime(2025),
+                          onChanged: (DateTime dateTime) {
+                            setState(() {
+                              tempToYear = dateTime.year;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context, [tempFromYear, tempToYear]);
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context, [tempFromYear, tempToYear]);
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
             );
           },
         );
@@ -216,6 +229,10 @@ class _SectorLineChartState extends State<SectorLineChart> {
       });
     }
   }
+
+
+
+
 
   void _handleChartTap(TapDownDetails details) {
     final filteredData = _getFilteredData();
@@ -348,81 +365,97 @@ class _SectorLineChartState extends State<SectorLineChart> {
     );
   }
 
-  List<SectorData> _getFilteredData() {
-    if (selectedSector == 'All') {
-      final Map<String, List<Map<String, dynamic>>> sectorGroupedData = {};
-      final Map<String, Color> sectorColors = {};
 
-      sectorData.forEach((sectorKey, sectorItems) {
-        for (final item in sectorItems) {
-          for (final point in item.data) {
-            final year = point['x'];
-            final value = point['y'].toDouble();
+List<SectorData> _getFilteredData() {
+  if (selectedSector == 'All') {
+    final Map<String, List<Map<String, dynamic>>> sectorGroupedData = {};
+    final Map<String, Color> sectorColors = {};
 
-            final yearInt = int.parse(year);
-            if (yearInt >= selectedFromYear && yearInt <= selectedToYear) {
-              if (!sectorGroupedData.containsKey(sectorKey)) {
-                sectorGroupedData[sectorKey] = [];
-                sectorColors[sectorKey] = item.color;
-              }
+    sectorData.forEach((sectorKey, sectorItems) {
+      for (final item in sectorItems) {
+        for (final point in item.data) {
+          final year = point['x'];
+          final value = point['y'].toDouble();
 
-              final existingIndex = sectorGroupedData[sectorKey]!
-                  .indexWhere((e) => e['x'] == year);
+          final yearInt = int.parse(year);
+          if (yearInt >= selectedFromYear && yearInt <= selectedToYear) {
+            if (!sectorGroupedData.containsKey(sectorKey)) {
+              sectorGroupedData[sectorKey] = [];
+              sectorColors[sectorKey] = item.color;
+            }
 
-              if (existingIndex >= 0) {
-                sectorGroupedData[sectorKey]![existingIndex]['y'] += value;
-              } else {
-                sectorGroupedData[sectorKey]!.add({
-                  'x': year,
-                  'y': value,
-                });
-              }
+            final existingIndex = sectorGroupedData[sectorKey]!
+                .indexWhere((e) => e['x'] == year);
+
+            if (existingIndex >= 0) {
+              sectorGroupedData[sectorKey]![existingIndex]['y'] += value;
+            } else {
+              sectorGroupedData[sectorKey]!.add({
+                'x': year,
+                'y': value,
+              });
             }
           }
         }
-      });
-
-      return sectorGroupedData.entries
-          .map((entry) {
-            return SectorData(
-              name: entry.key,
-              color: sectorColors[entry.key] ?? Colors.grey,
-              data: entry.value,
-              annotations: null,
-            );
-          })
-          .where((sector) => sector.data.isNotEmpty)
-          .toList();
-    } else {
-      if (!_sectorProductSelections.containsKey(selectedSector)) {
-        final sectorProducts = sectorData[selectedSector] ?? [];
-        _sectorProductSelections[selectedSector] =
-            sectorProducts.take(8).map((product) => product.name).toList();
       }
+      
+      // Sort the years for each sector
+      if (sectorGroupedData.containsKey(sectorKey)) {
+        sectorGroupedData[sectorKey]!.sort((a, b) => 
+            int.parse(a['x']).compareTo(int.parse(b['x'])));
+      }
+    });
 
-      final currentSelections = _sectorProductSelections[selectedSector] ?? [];
-
-      return (sectorData[selectedSector] ?? [])
-          .where((sector) =>
-              currentSelections.isEmpty ||
-              currentSelections.contains(sector.name))
-          .map((sector) {
-            final filteredSeriesData = sector.data.where((point) {
-              final year = int.parse(point['x']);
-              return year >= selectedFromYear && year <= selectedToYear;
-            }).toList();
-
-            return SectorData(
-              name: sector.name,
-              color: sector.color,
-              data: filteredSeriesData,
-              annotations: sector.annotations,
-            );
-          })
-          .where((sector) => sector.data.isNotEmpty)
-          .toList();
+    return sectorGroupedData.entries
+        .map((entry) {
+          return SectorData(
+            name: entry.key,
+            color: sectorColors[entry.key] ?? Colors.grey,
+            data: entry.value,
+            annotations: null,
+          );
+        })
+        .where((sector) => sector.data.isNotEmpty)
+        .toList();
+  } else {
+    if (!_sectorProductSelections.containsKey(selectedSector)) {
+      final sectorProducts = sectorData[selectedSector] ?? [];
+      _sectorProductSelections[selectedSector] =
+          sectorProducts.take(8).map((product) => product.name).toList();
     }
+
+    final currentSelections = _sectorProductSelections[selectedSector] ?? [];
+
+    return (sectorData[selectedSector] ?? [])
+        .where((sector) =>
+            currentSelections.isEmpty ||
+            currentSelections.contains(sector.name))
+        .map((sector) {
+          final filteredSeriesData = sector.data
+              .where((point) {
+                final year = int.parse(point['x']);
+                return year >= selectedFromYear && year <= selectedToYear;
+              })
+              .toList()
+              ..sort((a, b) => int.parse(a['x']).compareTo(int.parse(b['x']))); // Sort here
+
+          return SectorData(
+            name: sector.name,
+            color: sector.color,
+            data: filteredSeriesData,
+            annotations: sector.annotations,
+          );
+        })
+        .where((sector) => sector.data.isNotEmpty)
+        .toList();
   }
+}
+
+
+
+
+
+
 
   Widget _buildSelectProductsButton() {
     return InkWell(
@@ -512,4 +545,7 @@ class _SectorLineChartState extends State<SectorLineChart> {
       ),
     );
   }
+
+
+
 }

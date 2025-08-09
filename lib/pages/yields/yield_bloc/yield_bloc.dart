@@ -16,9 +16,9 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
     on<DeleteYield>(_onDeleteYield);
     on<FilterYields>(_onFilterYields);
     on<SearchYields>(_onSearchYields);
-    on<SortYields>(_onSortYields);
-    on<GetYieldById>(_onGetYieldById);
+    on<SortYields>(_onSortYields); 
     on<GetYieldByFarmId>(_onGetYieldByFarmId);
+    on<GetYieldByBarangay>(_onGetYieldBybarangay);
     on<UpdateYield>(_onUpdateYield);
     on<LoadYieldsByFarmer>(_onLoadYieldsByFarmer);
     on<LoadYieldsByProduct>(_onLoadYieldsByProduct);
@@ -104,20 +104,7 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
     }
   }
 
-  Future<void> _onGetYieldById(
-    GetYieldById event,
-    Emitter<YieldState> emit,
-  ) async {
-    emit(YieldsLoading());
-
-    try {
-      final yieldRecord = await yieldRepository.getYieldById(event.id);
-      emit(YieldLoaded(yieldRecord as List<Yield>));
-    } catch (e) {
-      emit(YieldsError(e.toString()));
-    }
-  }
-
+ 
   Future<void> _onGetYieldByFarmId(
     GetYieldByFarmId event,
     Emitter<YieldState> emit,
@@ -127,7 +114,7 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
     try {
       _yields =
           (await yieldRepository.getYieldByFarmId(event.farmId)) as List<Yield>;
-
+ 
       // emit(YieldsLoaded(yieldRecord as List<Yield>));
       emit(YieldsLoaded(_applyFilters()));
     } catch (e) {
@@ -136,6 +123,34 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
       print('[_onGetYieldByFarmId] Emitted YieldsError state');
     }
   }
+
+
+
+
+
+  Future<void> _onGetYieldBybarangay(
+    GetYieldByBarangay event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+
+    try {
+      _yields =
+          (await yieldRepository.getYieldByBarangay(event.barangay)) as List<Yield>;
+ 
+      // emit(YieldsLoaded(yieldRecord as List<Yield>));
+      emit(YieldsLoaded(_applyFilters()));
+    } catch (e) {
+      print('[__onGetYieldBybarangay] Error occurred: $e');
+      emit(YieldsError(e.toString()));
+      print('[_onGetYieldBybarangay] Emitted YieldsError state');
+    }
+  }
+
+
+
+
+
 
   Future<void> _onLoadYieldsByFarmer(
     LoadYieldsByFarmer event,

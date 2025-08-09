@@ -336,7 +336,7 @@ class SectorService {
       }
 
       final response = await _apiService.get(
-        '/auth/yield-distribution',
+        '/yields/yield-distribution',
         queryParameters: queryParams,
       );
 

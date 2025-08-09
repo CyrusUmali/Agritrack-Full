@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class StatsCard extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -9,6 +10,11 @@ class StatsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    // Format the createdAt date
+    final joinDate = user['createdAt'] != null 
+        ? _formatDate(user['createdAt'])
+        : 'N/A';
 
     return Card(
       elevation: 2,
@@ -22,7 +28,7 @@ class StatsCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.insights_outlined, color: theme.colorScheme.primary),
+                Icon(Icons.insights_outlined ),
                 const SizedBox(width: 12),
                 Text(
                   'Activity Stats',
@@ -40,26 +46,34 @@ class StatsCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _StatItem(
-              icon: Icons.check_circle_outline,
-              label: 'Resolved Cases',
-              value: user['resolvedCases']?.toString() ?? '0',
-            ),
-            const SizedBox(height: 12),
-            _StatItem(
-              icon: Icons.pending_actions_outlined,
-              label: 'Pending Cases',
-              value: user['pendingCases']?.toString() ?? '0',
-            ),
-            const SizedBox(height: 12),
-            _StatItem(
               icon: Icons.calendar_today_outlined,
               label: 'Member Since',
-              value: user['joinDate']?.toString() ?? 'N/A',
+              value: joinDate,
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatDate(dynamic date) {
+    try {
+      // Handle different date formats - could be DateTime, String, or Timestamp
+      if (date is DateTime) {
+        return DateFormat('MMM d, y').format(date);
+      } else if (date is String) {
+        final parsedDate = DateTime.parse(date);
+        return DateFormat('MMM d, y').format(parsedDate);
+      } else if (date is int) {
+        // Handle timestamp (seconds or milliseconds)
+        final dateTime = DateTime.fromMillisecondsSinceEpoch(
+          date > 10000000000 ? date : date * 1000);
+        return DateFormat('MMM d, y').format(dateTime);
+      }
+      return 'N/A';
+    } catch (e) {
+      return 'N/A';
+    }
   }
 }
 

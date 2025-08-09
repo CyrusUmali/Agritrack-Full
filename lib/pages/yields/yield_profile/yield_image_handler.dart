@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_to_list_in_spreads
+
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;

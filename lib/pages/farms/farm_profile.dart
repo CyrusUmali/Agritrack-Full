@@ -133,6 +133,11 @@ class _FarmProfileDesktopState extends State<FarmProfileDesktop> {
         (transformedFarm['products'] as List).isNotEmpty;
     final hasYields = yieldState.yields.isNotEmpty;
 
+
+// print("wqeqwe");
+//     print(yieldState.yields.first.farmerId);
+//     print(_farmerId);
+
     // Check if we should show the toggle and content
     final shouldShowToggleAndContent = !_isFarmer ||
         (_isFarmer &&
@@ -625,6 +630,9 @@ class _FarmProfileMobileState extends State<FarmProfileMobile> {
   }
 }
 
+
+
+
 Map<String, dynamic> transformFarmData(
     FarmState farmState, YieldState yieldState) {
   // Default/fallback values
@@ -670,34 +678,58 @@ Map<String, dynamic> transformFarmData(
 
   // Transform yield data if loaded
   if (yieldState is YieldsLoaded) {
-    final productMap = <String, List<Map<String, dynamic>>>{};
+    final productMap = <String, Map<int, Map<int, double>>>{}; // product -> year -> month -> sum
 
     for (var yield in yieldState.yields) {
       final productName = yield.productName ?? 'Unknown Product';
-      if (!productMap.containsKey(productName)) {
-        productMap[productName] = [];
-      }
+      final harvestDate = yield.harvestDate ?? DateTime.now();
+      final year = harvestDate.year;
+      final month = harvestDate.month;
+      final volume = yield.volume?.toDouble() ?? 0.0;
 
-      final harvestMonth = yield.harvestDate?.month ?? DateTime.now().month;
-      final monthly = List.filled(12, 0.0);
-      if (harvestMonth >= 1 && harvestMonth <= 12) {
-        monthly[harvestMonth - 1] = yield.volume?.toDouble() ?? 0.0;
-      }
-
-      productMap[productName]!.add({
-        'year': yield.harvestDate?.year ?? DateTime.now().year,
-        'total': yield.volume?.toDouble() ?? 0.0,
-        'monthly': monthly,
-      });
+      // Initialize product if not exists
+      productMap.putIfAbsent(productName, () => {});
+      
+      // Initialize year if not exists
+      productMap[productName]!.putIfAbsent(year, () => {});
+      
+      // Sum volumes by month
+      productMap[productName]![year]!.update(
+        month,
+        (existing) => existing + volume,
+        ifAbsent: () => volume,
+      );
     }
 
-    transformedFarm['products'] = productMap.entries
-        .map((entry) => {
-              'name': entry.key,
-              'yields': entry.value,
-            })
-        .toList();
+    // Convert to final structure
+    transformedFarm['products'] = productMap.entries.map((productEntry) {
+      final yearlyData = productEntry.value.entries.map((yearEntry) {
+        // Create monthly array with summed values
+        final monthly = List.filled(12, 0.0);
+        yearEntry.value.forEach((month, volume) {
+          if (month >= 1 && month <= 12) {
+            monthly[month - 1] = volume;
+          }
+        });
+        
+        // Calculate year total
+        final yearTotal = yearEntry.value.values.fold(0.0, (sum, volume) => sum + volume);
+        
+        return {
+          'year': yearEntry.key,
+          'total': yearTotal,
+          'monthly': monthly,
+        };
+      }).toList();
+      
+      return {
+        'name': productEntry.key,
+        'yields': yearlyData,
+      };
+    }).toList();
   }
 
   return transformedFarm;
 }
+
+////////

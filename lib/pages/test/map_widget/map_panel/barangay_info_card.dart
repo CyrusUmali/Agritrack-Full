@@ -5,6 +5,7 @@ class BarangayInfoCard {
   static Widget build({
     required BuildContext context,
     required PolygonData barangay,
+    required List<PolygonData> farms,
     required ThemeData theme,
     bool elevated = true,
   }) {
@@ -13,11 +14,16 @@ class BarangayInfoCard {
     final isTablet = size.width >= 600 && size.width < 1024;
     final isDesktop = size.width >= 1024;
 
+    // Calculate statistics
+    final totalArea = farms.fold<double>(0, (sum, farm) => sum + (farm.area ?? 0));
+    final farmCount = farms.length;
+    final farmerCount = farms.map((f) => f.farmerId).toSet().length;
+
     return Card(
-      margin: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : (isTablet ? 12 : 8),
-        vertical: isMobile ? 8 : (isTablet ? 6 : 4),
-      ),
+      // margin: EdgeInsets.symmetric(
+      //   horizontal: isMobile ? 16 : (isTablet ? 12 : 8),
+      //   vertical: isMobile ? 8 : (isTablet ? 6 : 4),
+      // ),
       elevation: elevated ? (isMobile ? 3 : 2) : 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(isMobile ? 12 : 10),
@@ -32,90 +38,45 @@ class BarangayInfoCard {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header Row
-              _buildHeader(
-                  context, barangay, theme, isMobile, isTablet, isDesktop),
-
+         
               SizedBox(height: isMobile ? 12 : (isTablet ? 10 : 8)),
 
+          
               // Stats Grid - responsive layout
-              _buildStatsGrid(context, theme, isMobile, isTablet, isDesktop),
+              _buildStatsGrid(
+                context, 
+                theme, 
+                isMobile, 
+                isTablet, 
+                isDesktop,
+                totalArea: totalArea,
+                farmCount: farmCount,
+                farmerCount: farmerCount,
+              ),
 
-              // Description
-              if (barangay.description != null) ...[
-                SizedBox(height: isMobile ? 12 : (isTablet ? 10 : 8)),
-                _buildDescription(
-                    context, barangay, theme, isMobile, isTablet, isDesktop),
-              ],
+            
+      
             ],
           ),
         ),
       ),
     );
   }
-
-  static Widget _buildHeader(
-    BuildContext context,
-    PolygonData barangay,
-    ThemeData theme,
-    bool isMobile,
-    bool isTablet,
-    bool isDesktop,
-  ) {
-    return Row(
-      children: [
-        Icon(
-          Icons.location_on_outlined,
-          color: theme.colorScheme.primary,
-          size: isMobile ? 20 : (isTablet ? 18 : 16),
-        ),
-        SizedBox(width: isMobile ? 8 : (isTablet ? 6 : 4)),
-        Expanded(
-          child: Text(
-            barangay.name,
-            style: _getTitleTextStyle(theme, isMobile, isTablet, isDesktop),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-
-  static TextStyle? _getTitleTextStyle(
-    ThemeData theme,
-    bool isMobile,
-    bool isTablet,
-    bool isDesktop,
-  ) {
-    if (isMobile) {
-      return theme.textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: theme.colorScheme.onSurface,
-      );
-    } else if (isTablet) {
-      return theme.textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: theme.colorScheme.onSurface,
-      );
-    } else {
-      return theme.textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: theme.colorScheme.onSurface,
-        fontSize: 16,
-      );
-    }
-  }
-
+ 
   static Widget _buildStatsGrid(
     BuildContext context,
     ThemeData theme,
     bool isMobile,
     bool isTablet,
     bool isDesktop,
+    {
+      required double totalArea,
+      required int farmCount,
+      required int farmerCount,
+    }
   ) {
     final crossAxisCount = isMobile ? 2 : 3;
-    final childAspectRatio = isMobile ? 3.0 : (isTablet ? 2.8 : 2.5);
+    final childAspectRatio = isMobile ? 2.0 : (isTablet ? 2.8 : 6.5);
 
     return GridView.count(
       crossAxisCount: crossAxisCount,
@@ -127,8 +88,8 @@ class BarangayInfoCard {
       children: [
         _buildStatItem(
           icon: Icons.landscape,
-          label: 'Area',
-          value: ' hectares',
+          label: 'Total Area',
+          value: '${totalArea.toStringAsFixed(2)} ha',
           theme: theme,
           isMobile: isMobile,
           isTablet: isTablet,
@@ -137,7 +98,7 @@ class BarangayInfoCard {
         _buildStatItem(
           icon: Icons.home_work_outlined,
           label: 'Farms',
-          value: '0',
+          value: farmCount.toString(),
           theme: theme,
           isMobile: isMobile,
           isTablet: isTablet,
@@ -146,7 +107,7 @@ class BarangayInfoCard {
         _buildStatItem(
           icon: Icons.people_outline,
           label: 'Farmers',
-          value: '0',
+          value: farmerCount.toString(),
           theme: theme,
           isMobile: isMobile,
           isTablet: isTablet,
@@ -155,6 +116,8 @@ class BarangayInfoCard {
       ],
     );
   }
+
+ 
 
   static Widget _buildStatItem({
     required IconData icon,
@@ -201,24 +164,11 @@ class BarangayInfoCard {
     );
   }
 
-  static TextStyle? _getLabelTextStyle(
-    ThemeData theme,
-    bool isMobile,
-    bool isTablet,
-    bool isDesktop,
-  ) {
-    if (isMobile) {
-      return theme.textTheme.bodySmall?.copyWith(
-        color: theme.colorScheme.onSurface.withOpacity(0.6),
-      );
-    } else {
-      return theme.textTheme.labelSmall?.copyWith(
-        color: theme.colorScheme.onSurface.withOpacity(0.6),
-        fontSize: isTablet ? 12 : 11,
-      );
-    }
-  }
 
+
+
+
+  
   static TextStyle? _getValueTextStyle(
     ThemeData theme,
     bool isMobile,
@@ -237,31 +187,26 @@ class BarangayInfoCard {
     }
   }
 
-  static Widget _buildDescription(
-    BuildContext context,
-    PolygonData barangay,
+  static TextStyle? _getLabelTextStyle(
     ThemeData theme,
     bool isMobile,
     bool isTablet,
     bool isDesktop,
   ) {
-    return Text(
-      barangay.description!,
-      style: _getDescriptionTextStyle(theme, isMobile, isTablet, isDesktop),
-      maxLines: isMobile ? 3 : (isTablet ? 2 : 2),
-      overflow: TextOverflow.ellipsis,
-    );
+    if (isMobile) {
+      return theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurface.withOpacity(0.6),
+      );
+    } else {
+      return theme.textTheme.labelSmall?.copyWith(
+        color: theme.colorScheme.onSurface.withOpacity(0.6),
+        fontSize: isTablet ? 12 : 11,
+      );
+    }
   }
 
-  static TextStyle? _getDescriptionTextStyle(
-    ThemeData theme,
-    bool isMobile,
-    bool isTablet,
-    bool isDesktop,
-  ) {
-    return theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurface.withOpacity(0.7),
-      fontSize: isMobile ? 14 : (isTablet ? 13 : 12),
-    );
-  }
-}
+
+ 
+
+
+} 

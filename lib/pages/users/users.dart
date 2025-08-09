@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/add_farmer_modal_2.dart';
@@ -33,6 +35,16 @@ class _UsersState extends State<Users> {
   String selectedRole = '';
   String selectedStatus = '';
   String _searchQuery = '';
+
+
+
+
+
+   @override
+  void initState() {
+    super.initState(); 
+    context.read<FarmerBloc>().add(LoadFarmers()); 
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,52 +103,7 @@ class _UsersState extends State<Users> {
                       context.read<UserBloc>().add(LoadUsers());
                     },
                   );
-
-                  // return Center(
-                  //   child: Column(
-                  //     mainAxisAlignment: MainAxisAlignment.center,
-                  //     children: [
-                  //       // Wrap the Text widget with SingleChildScrollView
-                  //       SizedBox(
-                  //         height: 100, // Set a fixed height or use constraints
-                  //         child: SingleChildScrollView(
-                  //           child: Text(
-                  //             state.message,
-                  //             style: TextStyle(
-                  //               fontSize: 16,
-                  //               color: Colors.red[700],
-                  //             ),
-                  //           ),
-                  //         ),
-                  //       ),
-                  //       const SizedBox(height: 16),
-                  //       ElevatedButton(
-                  //         style: ElevatedButton.styleFrom(
-                  //           backgroundColor: GlobalColors.primary,
-                  //           foregroundColor: Colors.white,
-                  //           shape: RoundedRectangleBorder(
-                  //             borderRadius: BorderRadius.circular(8),
-                  //           ),
-                  //           padding: const EdgeInsets.symmetric(
-                  //               horizontal: 24, vertical: 12),
-                  //         ),
-                  //         onPressed: () {
-                  //           context.read<UserBloc>().add(LoadUsers());
-                  //         },
-                  //         child: const Row(
-                  //           mainAxisSize: MainAxisSize.min,
-                  //           children: [
-                  //             Icon(Icons.refresh,
-                  //                 size: 20, color: Colors.white),
-                  //             SizedBox(width: 8),
-                  //             Text("Reload"),
-                  //           ],
-                  //         ),
-                  //       ),
-                  //     ],
-                  //   ),
-                  // );
-                } else if (state is UsersLoaded) {
+          } else if (state is UsersLoaded) {
                   if (state.users.isEmpty) {
                     return _buildNoResultsWidget();
                   }
@@ -175,44 +142,7 @@ class _UsersState extends State<Users> {
               if (state is UsersLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is UsersError) {
-                // return Center(
-                //   child: Column(
-                //     mainAxisAlignment: MainAxisAlignment.center,
-                //     children: [
-                //       Text(
-                //         state.message,
-                //         style: TextStyle(
-                //           fontSize: 16,
-                //           color: Colors.red[700],
-                //         ),
-                //       ),
-                //       const SizedBox(height: 16),
-                //       ElevatedButton(
-                //         style: ElevatedButton.styleFrom(
-                //           backgroundColor: GlobalColors.primary,
-                //           foregroundColor: Colors.white,
-                //           shape: RoundedRectangleBorder(
-                //             borderRadius: BorderRadius.circular(8),
-                //           ),
-                //           padding: const EdgeInsets.symmetric(
-                //               horizontal: 24, vertical: 12),
-                //         ),
-                //         onPressed: () {
-                //           context.read<UserBloc>().add(LoadUsers());
-                //         },
-                //         child: const Row(
-                //           mainAxisSize: MainAxisSize.min,
-                //           children: [
-                //             Icon(Icons.refresh, size: 20, color: Colors.white),
-                //             SizedBox(width: 8),
-                //             Text("Reload"),
-                //           ],
-                //         ),
-                //       ),
-                //     ],
-                //   ),
-                // );
-
+            
                 return NetworkErrorWidget(
                   error: state.message,
                   onRetry: () {
@@ -284,7 +214,7 @@ class _UsersState extends State<Users> {
             buildComboBox(
               context: context,
               hint: 'User Role',
-              options: const ['All', 'Admin', 'DA', 'Farmer'],
+              options: const ['All', 'Admin', 'Officer', 'Farmer'],
               selectedValue: selectedRole,
               onSelected: (value) {
                 setState(() => selectedRole = value);
@@ -378,7 +308,22 @@ class _UsersState extends State<Users> {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
-                onPressed: () {
+                onPressed: () async {
+
+
+  // Show loading indicator while ensuring data is fresh
+  final Completer<void> completer = Completer();
+  
+  // Refresh the farmer list
+  context.read<FarmerBloc>().add(LoadFarmers());
+  
+  // Wait for the load to complete if not already loaded
+  if (context.read<FarmerBloc>().state is! FarmersLoaded) {
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
+
+
+
                   AccountCreationMethodModal.show(
                     context: context,
                     onMethodSelected: (role, method) async {
@@ -477,7 +422,7 @@ class _UsersState extends State<Users> {
           buildComboBox(
             context: context,
             hint: 'User Role',
-            options: const ['All', 'Admin', 'DA', 'Farmer'],
+            options: const ['All', 'Admin', 'Officer', 'Farmer'],
             selectedValue: selectedRole,
             onSelected: (value) {
               setState(() => selectedRole = value);
@@ -574,13 +519,22 @@ class _UsersState extends State<Users> {
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
-              onPressed: () {
-                // AddUserModal.show(
-                //   context: context,
-                //   onUserAdded: (name, email, password) {},
-                // );
+              onPressed: () async {
+            
+            
 
-                // To show the modal:
+  // Show loading indicator while ensuring data is fresh
+  final Completer<void> completer = Completer();
+  
+  // Refresh the farmer list
+  context.read<FarmerBloc>().add(LoadFarmers());
+  
+  // Wait for the load to complete if not already loaded
+  if (context.read<FarmerBloc>().state is! FarmersLoaded) {
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
+
+
 
                 AccountCreationMethodModal.show(
                   context: context,
@@ -645,6 +599,8 @@ class _UsersState extends State<Users> {
                                       return filteredFarmers;
                                     }()
                                   : <Farmer>[]));
+
+                                  
                     }
                   },
                   onLinkExistingFarmer: () {
@@ -663,6 +619,9 @@ class _UsersState extends State<Users> {
                     );
                   },
                 );
+           
+           
+           
               },
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -679,6 +638,11 @@ class _UsersState extends State<Users> {
     );
   }
 }
+ 
+
+ 
+
+
 
 class DataTableWidget extends TableWidget<UsersViewModel> {
   final List<Map<String, dynamic>> users;

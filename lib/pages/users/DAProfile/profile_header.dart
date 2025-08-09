@@ -57,33 +57,33 @@ class ProfileHeader extends StatelessWidget {
                   Text(
                     user['name'] ?? 'DA Officer',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                          // fontWeight: FontWeight.bold,
+                          color: Colors.white,   
+                        ), 
                   ),
-                  Text(
-                    user['position'] ?? 'Agricultural Officer',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.8),
-                        ),
-                  ),
+                  // Text(
+                  //   user['position'] ?? 'Agricultural Officer',
+                  //   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  //         color: Theme.of(context)
+                  //             .colorScheme
+                  //             .onSurface
+                  //             .withOpacity(0.8),
+                  //       ),
+                  // ),
                 ],
               ),
             ),
           ),
-          if (isCurrentUser)
-            Positioned(
-              top: 16,
-              right: 16,
-              child: FilledButton.tonalIcon(
-                onPressed: () {},
-                icon: const Icon(Icons.edit),
-                label: const Text('Edit Profile'),
-              ),
-            ),
+          // if (isCurrentUser)
+          //   Positioned(
+          //     top: 16,
+          //     right: 16,
+          //     child: FilledButton.tonalIcon(
+          //       onPressed: () {},
+          //       icon: const Icon(Icons.edit),
+          //       label: const Text('Edit Profile'),
+          //     ),
+          //   ),
         ],
       ),
     );

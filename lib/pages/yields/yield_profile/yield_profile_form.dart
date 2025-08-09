@@ -14,8 +14,14 @@ import 'yield_image_handler.dart';
 
 class YieldProfileForm extends StatefulWidget {
   final Yield yieldData;
+    final Function(Yield)? onYieldUpdated; // Add this
 
-  const YieldProfileForm({super.key, required this.yieldData});
+
+ const YieldProfileForm({
+    super.key, 
+    required this.yieldData,
+    this.onYieldUpdated, // Add this
+  });
 
   @override
   State<YieldProfileForm> createState() => _YieldProfileFormState();
@@ -34,7 +40,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
   bool _isAccepting = false;
   bool _isRejecting = false;
 
-  // Add these variables to track the current operation
+  // Add these variables to track the current  
   String? _currentOperation;
 
   @override
@@ -107,7 +113,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
     try {
       // Set the appropriate loading state and current operation
       setState(() {
-        if (status == 'Accepted') {
+        if (status == 'Accepted') { 
           _isAccepting = true;
           _currentOperation = 'accept';
         } else if (status == 'Rejected') {
@@ -143,7 +149,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
   }
 
   void _resetLoadingStates() {
-    setState(() {
+    setState(() { 
       _isSaving = false;
       _isAccepting = false;
       _isRejecting = false;
@@ -180,6 +186,23 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
           print('YieldUpdated received, resetting loading states');
           _resetLoadingStates();
           _showToast('Yield updated successfully', isError: false);
+
+ // Call the callback with the updated yield data
+          if (widget.onYieldUpdated != null) {
+            final updatedYield = widget.yieldData.copyWith(
+              images: [..._imageHandler.existingImages],
+              hectare: double.tryParse(_hectareController.text),
+              volume: double.tryParse(_volumeController.text),
+              value: double.tryParse(_valueController.text),
+              notes: _notesController.text,
+              harvestDate: _selectedHarvestDate,
+              status: state.yield.status, // Use the status from the updated yield
+            );
+            widget.onYieldUpdated!(updatedYield);
+          }
+
+
+
         } else if (state is YieldsLoaded) {
           if (state.message?.contains('deleted') == true) {
             print('Yield deleted successfully');
@@ -335,9 +358,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
                       maxLines: 3,
                     ),
                     SizedBox(height: spacing * 1.5),
-                    buildStatusIndicator(
-                        widget.yieldData.status ?? 'Pending', context),
-                    SizedBox(height: spacing),
+          
                     YieldProfileActions(
                       isMobile: isMobile,
                       onAccept: () {

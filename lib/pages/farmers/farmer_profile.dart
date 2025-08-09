@@ -19,9 +19,9 @@ import 'package:http/http.dart' as http;
 import './farmers_widget/emergency_contacts_card.dart';
 
 class FarmersProfile extends LayoutWidget {
-  final int farmerID;
+  final int? farmerID;
 
-  const FarmersProfile({super.key, required this.farmerID});
+  const FarmersProfile({super.key,  this.farmerID});
 
   @override
   String breakTabTitle(BuildContext context) => 'Farmer Profile';
@@ -32,7 +32,7 @@ class FarmersProfile extends LayoutWidget {
         BlocProvider(
           create: (context) => FarmerBloc(
             farmerRepository: context.read<FarmerBloc>().farmerRepository,
-          )..add(GetFarmerById(farmerID)),
+          )..add(GetFarmerById(farmerID!)),
         ),
         BlocProvider(
           create: (context) => AssocsBloc(
@@ -264,7 +264,7 @@ class _FarmersProfileViewState
         child: Form(
           key: _formKey,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(0.0),
             child: Column(
               children: [
                 _ProfileHeader(

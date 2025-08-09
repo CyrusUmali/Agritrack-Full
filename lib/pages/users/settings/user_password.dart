@@ -160,7 +160,7 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.lock_outline, color: colors.primary),
+                    Icon(Icons.lock_outline,),
                     const SizedBox(width: 12),
                     Text(
                       'Change Password',

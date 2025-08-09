@@ -8,7 +8,7 @@ class BarangayDataProvider extends ChangeNotifier {
   bool _isLoading = true;
   String _selectedProduct = '';
   List<String> _availableProducts = [];
-  List<Yield> _yields = [];
+  List<Yield> _yields = [];  bool _disposed = false;
 
   List<BarangayModel> get data => _data;
   bool get isLoading => _isLoading;
@@ -63,6 +63,19 @@ class BarangayDataProvider extends ChangeNotifier {
     }).toList();
   }
 
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  @override
+  void notifyListeners() {
+    if (!_disposed) {
+      super.notifyListeners();
+    }
+  }
+
   Future<void> init() async {
     try {
       // Filter yields by selected year before processing
@@ -84,8 +97,8 @@ class BarangayDataProvider extends ChangeNotifier {
 
       // If no products were passed in constructor, use fallback
       if (_availableProducts.isEmpty) {
-        _availableProducts = ['Rice'];
-        // print('Using fallback products');
+        // _availableProducts = ['Rice'];
+        print('No products provided, using fallback');
       }
 
       // Group yields by barangay and farm to calculate total area per farm

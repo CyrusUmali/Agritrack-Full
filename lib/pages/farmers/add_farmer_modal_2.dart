@@ -32,7 +32,7 @@ class AddFarmerModal extends StatefulWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final contentKey = GlobalKey<_AddFarmerModalContentState>();
     bool isLoading = false;
-
+ 
     await ModalDialog.show(
       context: context,
       title: 'Add New Farmer',
@@ -538,12 +538,13 @@ class _AddFarmerModalContentState extends State<_AddFarmerModalContent> {
             SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
 
             // Barangay Autocomplete Field
-            SizedBox(
+            SizedBox( 
               height: fieldHeight,
               child: Autocomplete<String>(
                 optionsBuilder: (TextEditingValue textEditingValue) {
                   if (textEditingValue.text == '') {
-                    return const Iterable<String>.empty();
+                    // return const Iterable<String>.empty(); 
+                       return barangayNames;
                   }
                   return barangayNames.where((String option) {
                     return option

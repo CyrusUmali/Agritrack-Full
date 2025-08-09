@@ -19,11 +19,7 @@
         "path": "/farms"
       },
       
-      {
-        "icon": "assets/sidebar/user.svg",
-        "menuName": "Users",
-        "path": "/usersPage"
-      },
+     
 
 
       

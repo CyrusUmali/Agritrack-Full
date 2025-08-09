@@ -1,10 +1,12 @@
 import 'package:flareline/core/models/assocs_model.dart';
+import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/assoc/assoc_profile/assoc_kpi.dart';
 import 'package:flareline/pages/assoc/assoc_profile/assoc_overview.dart';
 import 'package:flareline/pages/assoc/assoc_profile/sector_header.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 class AssocProfile extends LayoutWidget {
@@ -14,7 +16,7 @@ class AssocProfile extends LayoutWidget {
 
   @override
   String breakTabTitle(BuildContext context) {
-    return 'Association Profile';
+    return 'Association Profile'; 
   }
 
   @override
@@ -42,6 +44,9 @@ class _SectorProfileContent extends StatefulWidget {
 }
 
 class _SectorProfileContentState extends State<_SectorProfileContent> {
+
+  late Association _currentAssociation; // Local state for the association
+
   late SectorService _sectorService;
   Map<String, dynamic>? _updatedSector;
   List<Map<String, dynamic>>? _yieldDistribution;
@@ -53,42 +58,46 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
   @override
   void initState() {
     super.initState();
+     _currentAssociation = widget.association;
     _sectorService = Provider.of<SectorService>(context, listen: false);
   }
 
-  Widget _buildContent() {
-    // Use updated sector data if available, otherwise use initial data
-    final currentSector = _updatedSector ?? widget.association;
 
-    return SingleChildScrollView(
+
+    // Method to update the local association
+  void _updateAssociation(Association updatedAssociation) {
+    setState(() {
+      _currentAssociation = updatedAssociation;
+    });
+  }
+
+Widget _buildContent() {
+  return BlocListener<AssocsBloc, AssocsState>(
+    listener: (context, state) {
+      if (state is AssocOperationSuccess) {
+        // Update the local association when the operation succeeds
+        setState(() {
+          _currentAssociation = state.updatedAssoc;
+        });
+      }
+    },
+    child: SingleChildScrollView(
       child: Column(
         children: [
-          if (_isLoading)
-            const LinearProgressIndicator()
-          else if (_error != null)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Text('Error: $_error'),
-                  const SizedBox(height: 10),
-                  // ElevatedButton(
-                  //   onPressed: _loadSectorData,
-                  //   child: const Text('Retry'),
-                  // ),
-                ],
-              ),
-            ),
           AssociationHeader(
-              association: widget.association, isMobile: widget.isMobile),
+            association: _currentAssociation, 
+            isMobile: widget.isMobile
+          ),
           const SizedBox(height: 24),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AssocKpiCards(
-                    association: widget.association, isMobile: widget.isMobile),
+                  association: _currentAssociation, 
+                  isMobile: widget.isMobile
+                ),
                 const SizedBox(height: 24),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -97,23 +106,20 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
                     children: [
                       IntrinsicHeight(
                         child: Flex(
-                          direction:
-                              widget.isMobile ? Axis.vertical : Axis.horizontal,
+                          direction: widget.isMobile ? Axis.vertical : Axis.horizontal,
                           children: [
-                            // Overview Panel (70%)
                             Flexible(
                               flex: 7,
                               child: AssociationOverviewPanel(
-                                association: widget.association,
+                                association: _currentAssociation, // Use the local state
                                 isMobile: widget.isMobile,
+                                onUpdateSuccess: () {
+                                  // This will trigger when the bloc operation succeeds
+                                  // The BlocListener above will handle the update
+                                },
                               ),
                             ),
                             if (!widget.isMobile) const SizedBox(width: 16),
-                            // Chart (30%)
-                            // Flexible(
-                            //   flex: 3,
-                            //   child: _buildChartCard(context),
-                            // ),
                           ],
                         ),
                       ),
@@ -126,9 +132,9 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
           ),
         ],
       ),
-    );
-  }
-
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     return _buildContent();

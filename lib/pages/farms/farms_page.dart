@@ -1,4 +1,5 @@
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flareline/pages/layout.dart';
@@ -6,6 +7,7 @@ import 'package:flareline/pages/farms/farms_kpi.dart';
 import 'package:flareline/pages/farms/farms_table.dart';
 import 'package:flareline/repositories/farm_repository.dart';
 import 'package:flareline/services/api_service.dart';
+import 'package:provider/provider.dart'; // Add this import
 
 class FarmsPage extends LayoutWidget {
   const FarmsPage({super.key});
@@ -17,23 +19,50 @@ class FarmsPage extends LayoutWidget {
 
   @override
   Widget contentDesktopWidget(BuildContext context) {
-    return RepositoryProvider(
-      create: (context) => FarmRepository(apiService: ApiService()),
-      child: BlocProvider(
-        create: (context) => FarmBloc(
-          farmRepository: RepositoryProvider.of<FarmRepository>(context),
-        )..add(LoadFarms()),
-        child: Builder(
-          builder: (context) {
-            return Column(
+    return MultiProvider(
+      // Wrap with MultiProvider if you have other providers
+      providers: [
+        RepositoryProvider(
+          create: (context) => FarmRepository(apiService: ApiService()),
+        ),
+        // If UserProvider is already in the widget tree above, you don't need to add it here
+      ],
+      child: Builder(
+        builder: (context) {
+          // Get the UserProvider
+          final userProvider =
+              Provider.of<UserProvider>(context, listen: false);
+
+          return BlocProvider(
+            create: (context) {
+              final farmBloc = FarmBloc(
+                farmRepository: RepositoryProvider.of<FarmRepository>(context),
+              );
+
+              // Load farms with farmerId if user is a farmer
+              int? farmerId;
+              if (userProvider.isFarmer && userProvider.farmer != null) {
+                farmerId =
+                    userProvider.farmer!.id; // Make sure farmer.id is int
+              }
+
+              // Dispatch LoadFarms event with farmerId
+              farmBloc.add(LoadFarms(farmerId: farmerId));
+
+              return farmBloc;
+            },
+            child: Column( 
               children: [
-                const FarmKpi(),
+
+                if (!userProvider.isFarmer)
+const FarmKpi(),
+                
                 const SizedBox(height: 16),
                 const FarmsTableWidget(),
               ],
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }

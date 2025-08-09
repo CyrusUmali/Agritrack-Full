@@ -9,30 +9,36 @@ class YieldRepository {
 
   YieldRepository({required this.apiService});
 
-  Future<Yield> getYieldById(int yieldId) async {
-    try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+ 
 
-      final response = await apiService.get('/yields/yields/$yieldId');
 
-      if (response.data == null || response.data['yieldRecord'] == null) {
-        throw Exception('Invalid yieldRecord data format');
-      }
-
-      return Yield.fromJson(response.data['yieldRecord']);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Yield record not found');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
-    } catch (e) {
-      throw Exception('Failed to load yieldRecord: $e');
+Future<List<Yield>> getYieldByBarangay(String barangay) async {
+  try {
+    if (_firebaseAuth.currentUser == null) {
+      throw Exception('User not authenticated');
     }
+
+    final response = await apiService.get('/yields/barangay/$barangay');
+
+    if (response.data == null || response.data['yields'] == null) {
+      throw Exception('Invalid yield data format');
+    }
+
+    final yieldsData = response.data['yields'] as List;
+    return yieldsData.map((json) => Yield.fromJson(json)).toList();
+    
+  } on DioException catch (e) {
+    if (e.response?.statusCode == 404) {
+      throw Exception('No yields found for barangay $barangay');
+    }
+    throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+  } on FirebaseAuthException catch (e) {
+    throw Exception('Authentication error: ${e.message}');
+  } catch (e) {
+    throw Exception('Failed to load yields for barangay: $e');
   }
+}
+
 
   Future<List<Yield>> getYieldByFarmId(int farmId) async {
     try {
@@ -70,7 +76,7 @@ class YieldRepository {
         throw Exception('User not authenticated');
       }
 
-      final response = await apiService.get('/yields/yields');
+      final response = await apiService.get('/yields/farmer-yields');
 
       if (response.data == null || response.data['yields'] == null) {
         throw Exception('Invalid yields data format');
@@ -133,7 +139,7 @@ class YieldRepository {
         throw Exception('User not authenticated');
       }
 
-      final response = await apiService.get('/yields/yields/$farmerId');
+      final response = await apiService.get('/yields/farmer-yields/$farmerId');
 
       if (response.data == null || response.data['yields'] == null) {
         throw Exception('Invalid yields data format');

@@ -30,7 +30,7 @@ class UserProvider extends ChangeNotifier {
 
     if (farmerData != null) {
       _farmer = Farmer.fromMap(farmerData);
-      print(farmerData);
+      // print(farmerData);
     }
 
     notifyListeners();
@@ -61,7 +61,7 @@ class UserProvider extends ChangeNotifier {
       await _auth.signOut();
       await clearUser();
     } catch (e) {
-      print('Error signing out: $e');
+      // print('Error signing out: $e');
       rethrow;
     }
   }

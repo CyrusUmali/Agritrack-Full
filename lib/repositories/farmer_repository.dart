@@ -210,14 +210,19 @@ Failed to add farmer:
 
   // Reusing the same sector mapping as in ProductRepository
   int _getSectorId(String sectorName) {
+ 
+
+
     const sectorMap = {
-      'Fishery': 2,
-      'Livestock': 5,
-      'Organic': 4,
-      'HVC': 1,
-      'Corn': 6,
-      'Rice': 3,
+      'Fishery': 5,
+      'Livestock': 4,
+      'Organic': 6,
+      'HVC': 3,
+      'Corn': 2,
+      'Rice': 1,
     };
+
+
     return sectorMap[sectorName] ?? 4; // Default to HVC if not found
   }
 }

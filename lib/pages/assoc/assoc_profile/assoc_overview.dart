@@ -1,17 +1,21 @@
 import 'package:flareline/core/models/assocs_model.dart';
 import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 
 class AssociationOverviewPanel extends StatefulWidget {
   final Association association;
   final bool isMobile;
+  final VoidCallback? onUpdateSuccess;
 
   const AssociationOverviewPanel({
     super.key,
     required this.association,
     this.isMobile = false,
+    this.onUpdateSuccess,
   });
 
   @override
@@ -93,29 +97,36 @@ class _AssociationOverviewPanelState extends State<AssociationOverviewPanel> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
 
     return Card(
-      elevation: 24,
+      elevation: widget.isMobile ? 8 : 24,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(widget.isMobile ? 12 : 16),
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(widget.isMobile ? 8 : 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header Row
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Icon(Icons.assessment_outlined),
-                const SizedBox(width: 12),
-                _isEditing
-                    ? Expanded(
-                        child: TextFormField(
+                Icon(Icons.assessment_outlined,
+                    size: widget.isMobile ? 20 : 24),
+                SizedBox(width: widget.isMobile ? 8 : 12),
+                Expanded(
+                  child: _isEditing
+                      ? TextFormField(
                           controller: _nameController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: InputBorder.none,
                             hintText: 'Enter association name',
+                            isDense: widget.isMobile,
+                            contentPadding: EdgeInsets.zero,
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -126,32 +137,48 @@ class _AssociationOverviewPanelState extends State<AssociationOverviewPanel> {
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: colors.onSurface,
+                            fontSize: widget.isMobile ? 18 : null,
                           ),
+                        )
+                      : Text(
+                          '${widget.association.name} Overview',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
+                            fontSize: widget.isMobile ? 18 : null,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      )
-                    : Text(
-                        '${widget.association.name} Overview',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colors.onSurface,
-                        ),
-                      ),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(_isEditing ? Icons.close : Icons.edit),
-                  onPressed: _toggleEditMode,
-                  tooltip: _isEditing ? 'Cancel' : 'Edit',
                 ),
-                if (_isEditing) ...[
+                if (!isFarmer) ...[
                   IconButton(
-                    icon: const Icon(Icons.save),
-                    onPressed: _saveChanges,
-                    tooltip: 'Save',
+                    icon: Icon(
+                      _isEditing ? Icons.close : Icons.edit,
+                      size: widget.isMobile ? 20 : 24,
+                    ),
+                    onPressed: _toggleEditMode,
+                    tooltip: _isEditing ? 'Cancel' : 'Edit',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
+                  if (_isEditing) ...[
+                    SizedBox(width: widget.isMobile ? 4 : 8),
+                    IconButton(
+                      icon: Icon(
+                        Icons.save,
+                        size: widget.isMobile ? 20 : 24,
+                      ),
+                      onPressed: _saveChanges,
+                      tooltip: 'Save',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
                 ],
               ],
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: widget.isMobile ? 16 : 24),
             _isEditing
                 ? _buildEditForm(context)
                 : Column(
@@ -162,7 +189,7 @@ class _AssociationOverviewPanelState extends State<AssociationOverviewPanel> {
                         label: 'Name',
                         value: widget.association.name,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: widget.isMobile ? 12 : 16),
                       _buildInfoRow(
                         context,
                         icon: Icons.description_outlined,
@@ -191,30 +218,33 @@ class _AssociationOverviewPanelState extends State<AssociationOverviewPanel> {
           Row(
             children: [
               Icon(Icons.badge_outlined,
-                  size: 18, color: colors.onSurface.withOpacity(0.6)),
-              const SizedBox(width: 8),
+                  size: widget.isMobile ? 16 : 18,
+                  color: colors.onSurface.withOpacity(0.6)),
+              SizedBox(width: widget.isMobile ? 4 : 8),
               Text(
                 'NAME',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: colors.onSurface.withOpacity(0.6),
                   letterSpacing: 0.5,
+                  fontSize: widget.isMobile ? 12 : null,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: widget.isMobile ? 4 : 8),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(widget.isMobile ? 12 : 16),
             decoration: BoxDecoration(
               color: colors.surfaceVariant,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(widget.isMobile ? 8 : 12),
             ),
             child: TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Enter association name...',
+                isDense: widget.isMobile,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -224,36 +254,39 @@ class _AssociationOverviewPanelState extends State<AssociationOverviewPanel> {
               },
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: widget.isMobile ? 12 : 16),
           // Description Field
           Row(
             children: [
               Icon(Icons.description_outlined,
-                  size: 18, color: colors.onSurface.withOpacity(0.6)),
-              const SizedBox(width: 8),
+                  size: widget.isMobile ? 16 : 18,
+                  color: colors.onSurface.withOpacity(0.6)),
+              SizedBox(width: widget.isMobile ? 4 : 8),
               Text(
                 'DESCRIPTION',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: colors.onSurface.withOpacity(0.6),
                   letterSpacing: 0.5,
+                  fontSize: widget.isMobile ? 12 : null,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: widget.isMobile ? 4 : 8),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(widget.isMobile ? 12 : 16),
             decoration: BoxDecoration(
               color: colors.surfaceVariant,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(widget.isMobile ? 8 : 12),
             ),
             child: TextFormField(
               controller: _descriptionController,
-              maxLines: 5,
-              decoration: const InputDecoration(
+              maxLines: widget.isMobile ? 3 : 5,
+              decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Enter association description...',
+                isDense: widget.isMobile,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -284,26 +317,29 @@ class _AssociationOverviewPanelState extends State<AssociationOverviewPanel> {
         Row(
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 18, color: colors.onSurface.withOpacity(0.6)),
-              const SizedBox(width: 8),
+              Icon(icon,
+                  size: widget.isMobile ? 16 : 18,
+                  color: colors.onSurface.withOpacity(0.6)),
+              SizedBox(width: widget.isMobile ? 4 : 8),
             ],
             Text(
               label.toUpperCase(),
               style: theme.textTheme.labelSmall?.copyWith(
                 color: colors.onSurface.withOpacity(0.6),
                 letterSpacing: 0.5,
+                fontSize: widget.isMobile ? 12 : null,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: widget.isMobile ? 4 : 8),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(widget.isMobile ? 12 : 16),
           decoration: BoxDecoration(
             color:
                 isHighlighted ? colors.primaryContainer : colors.surfaceVariant,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(widget.isMobile ? 8 : 12),
             border: isHighlighted
                 ? Border.all(color: colors.primary.withOpacity(0.2))
                 : null,
@@ -315,6 +351,7 @@ class _AssociationOverviewPanelState extends State<AssociationOverviewPanel> {
                   ? colors.onPrimaryContainer
                   : colors.onSurfaceVariant,
               height: 1.4,
+              fontSize: widget.isMobile ? 14 : null,
             ),
           ),
         ),

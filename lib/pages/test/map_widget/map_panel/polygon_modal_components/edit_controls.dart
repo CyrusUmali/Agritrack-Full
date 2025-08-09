@@ -24,11 +24,11 @@ class EditControls {
     final _isFarmer = userProvider.isFarmer;
     final _farmerId = userProvider.farmer?.id?.toString();
 
-    print(_isFarmer);
-    print(_farmerId);
-    print(polygon.farmerId);
+    // print(_isFarmer);
+    // print(_farmerId);
+    // print(polygon.farmerId);
 
-    print(polygon.pinStyle);
+    // print(polygon.pinStyle);
 
     return Card(
       elevation: 2,

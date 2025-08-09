@@ -42,6 +42,9 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
     super.initState();
     _effectiveFormKey = widget.formKey ?? GlobalKey<FormState>();
 
+print('farmer:');
+    print(widget.farmer);
+
     // Format options with "id: name"
     _assocOptions =
         widget.assocs.map((assoc) => '${assoc.id}: ${assoc.name}').toList();
@@ -52,8 +55,8 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
       _selectedAssocValue =
           '${widget.farmer['associationId']}: ${widget.farmer['association']}';
     } else {
-      _initialAssocValue = 'N/A';
-      _selectedAssocValue = 'N/A';
+      _initialAssocValue = '---';
+      _selectedAssocValue = '---';
     }
   }
 
@@ -70,43 +73,52 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
 
   String getValue(String key) {
     final value = widget.farmer[key]?.toString();
-    return (value == null || value.isEmpty) ? 'N/A' : value;
+    return (value == null || value.isEmpty) ? '---' : value;
   }
 
-  Widget _buildComboBoxField({
-    required String label,
-    required String value,
-    required List<String> options,
-    required Function(String) onChanged,
-    bool isRequired = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$label${isRequired ? '*' : ''}',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 4),
-        buildComboBox(
-          context: context,
-          hint: 'Select $label',
-          options: options,
-          selectedValue: value,
-          onSelected: (newValue) {
-            if (newValue != null) {
-              onChanged(newValue);
-            }
-          },
-          width: 200,
-        ),
-      ],
-    );
-  }
 
+
+
+Widget _buildComboBoxField({
+  required String label,
+  required String value,
+  required List<String> options,
+  required Function(String) onChanged,
+  bool isRequired = false,
+  double? comboBoxHeight, // Optional height for the ComboBox
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        '$label${isRequired ? '*' : ''}',
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.grey[600],
+        ),
+      ),
+      const SizedBox(height: 4),
+      buildComboBox(
+        
+        context: context,
+        hint: 'Select $label',
+        options: options,
+        selectedValue: value,
+        onSelected: (newValue) {
+          if (newValue != null) {
+            onChanged(newValue);
+          }
+        },
+        width: 200,
+        height: comboBoxHeight, // Pass the optional height to the ComboBox
+      ),
+    ],
+  );
+}
+
+
+ 
+ 
   @override
   Widget build(BuildContext context) {
     return CommonCard(
@@ -177,6 +189,54 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
 
             const SizedBox(height: 12),
 
+
+
+
+
+       Row(
+              children: [
+                Expanded(
+                  child: DetailField(
+                          label: 'Email',
+                          value: getValue('email'),
+                        ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: widget.isEditing
+                      ? EditableField(
+                          label: 'Contact*',
+                          value: getValue('phone'),
+                          onChanged: (value) {
+                            widget.onFieldChanged(MapEntry('phone', value));
+                            _effectiveFormKey.currentState?.validate();
+                          },
+                     validator: (value) {
+                            if (value != null && value.length > 50) {
+                              return 'Maximum 50 characters allowed';
+                            }
+                            return null;
+                          },
+                        )
+                      : DetailField(
+                          label: 'Contact',
+                          value: getValue('phone'),
+                        ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+
+
+
+
+
+
+
+
+
             // Middle Name, Extension, Gender
             Row(
               children: [
@@ -239,13 +299,14 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
             const SizedBox(height: 12),
 
             Row(
-              children: [
+              children: [ 
                 Expanded(
                   child: widget.isEditing
-                      ? _buildComboBoxField(
+                      ? _buildComboBoxField(comboBoxHeight: 30,
                           label: 'Barangay',
                           value: getValue('barangay'),
                           options: widget.barangayNames,
+                          
                           onChanged: (value) {
                             widget.onFieldChanged(MapEntry('barangay', value));
                           },
@@ -262,7 +323,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                       ? _buildComboBoxField(
                           label: 'Sector',
                           value: getValue('sector'),
-                          options: _sectors,
+                          options: _sectors,comboBoxHeight: 30,
                           onChanged: (value) {
                             widget.onFieldChanged(MapEntry('sector', value));
                           },
@@ -284,7 +345,8 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                 child: widget.isEditing
                     ? _buildComboBoxField(
                         label: 'Association',
-                        value: _selectedAssocValue ?? 'N/A',
+                        comboBoxHeight: 30,
+                        value: _selectedAssocValue ?? '---',
                         options: _assocOptions,
                         onChanged: (value) {
                           setState(() {
@@ -293,7 +355,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                           // Pass the entire formatted string to the parent
                           widget.onFieldChanged(MapEntry('association', value));
                           // Also update associationId if needed
-                          if (value != 'N/A') {
+                          if (value != '---') {
                             final id = value.split(':').first.trim();
                             widget
                                 .onFieldChanged(MapEntry('associationId', id));
@@ -302,12 +364,13 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                       )
                     : DetailField(
                         label: 'Association',
-                        value: _initialAssocValue ?? 'N/A',
+                        value: _initialAssocValue ?? '---',
                       ),
               ),
               Expanded(
                 child: widget.isEditing
                     ? _buildComboBoxField(
+                      comboBoxHeight: 30,
                         label: 'Account Status',
                         value: getValue('accountStatus'),
                         options: const [

@@ -1,3 +1,4 @@
+import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/barangay_yield_data_table.dart';
 import 'package:flutter/material.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
@@ -32,7 +33,7 @@ class BarangayModal {
         theme: theme,
         polygonManager: polygonManager,
       );
-    }
+    } 
   }
 
   static Future<void> _showSmallScreenModal({
@@ -70,13 +71,13 @@ class BarangayModal {
           child: Container(
             color: Theme.of(context).cardTheme.color,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildContent(
-                context: modalContext,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: _BarangayContent(
                 barangay: barangay,
                 farms: farms,
                 theme: theme,
                 polygonManager: polygonManager,
+                modalContext: modalContext,
               ),
             ),
           ),
@@ -87,99 +88,247 @@ class BarangayModal {
     );
   }
 
-  static Future<void> _showLargeScreenModal({
-    required BuildContext context,
-    required PolygonData barangay,
-    required List<PolygonData> farms,
-    required ThemeData theme,
-    required PolygonManager polygonManager,
-  }) async {
-    final textTheme = theme.textTheme;
-
-    return showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          insetPadding: const EdgeInsets.all(20),
-          contentPadding: EdgeInsets.zero,
-          backgroundColor: Theme.of(context).cardTheme.color,
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          content: SizedBox(
-            width: MediaQuery.of(dialogContext).size.width * 0.6,
-            height: MediaQuery.of(dialogContext).size.height * 0.8,
-            child: Column(
-              children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Barangay Details: ${barangay.name}',
-                        style: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: _buildContent(
-                      context: dialogContext,
-                      barangay: barangay,
-                      farms: farms,
-                      theme: theme,
-                      polygonManager: polygonManager,
+static Future<void> _showLargeScreenModal({
+  required BuildContext context,
+  required PolygonData barangay,
+  required List<PolygonData> farms,
+  required ThemeData theme,
+  required PolygonManager polygonManager,
+}) async {
+  return showDialog(
+    context: context,
+    builder: (dialogContext) {
+      final dialogTheme = Theme.of(dialogContext); // Get theme from dialog context
+      
+      return AlertDialog(
+        insetPadding: const EdgeInsets.all(20),
+        contentPadding: EdgeInsets.zero,
+        backgroundColor: dialogTheme.cardTheme.color,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        content: SizedBox(
+          width: MediaQuery.of(dialogContext).size.width * 0.7,
+          height: MediaQuery.of(dialogContext).size.height * 0.8,
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Barangay Details: ${barangay.name}',
+                      style: dialogTheme.textTheme.titleLarge,
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: _BarangayContent(
+                    barangay: barangay,
+                    farms: farms,
+                    theme: dialogTheme, // Use dialog theme here
+                    polygonManager: polygonManager,
+                    modalContext: dialogContext,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
-  static Widget _buildContent({
-    required BuildContext context,
-    required PolygonData barangay,
-    required List<PolygonData> farms,
-    required ThemeData theme,
-    required PolygonManager polygonManager,
-  }) {
+}
+
+class _BarangayContent extends StatefulWidget {
+  final PolygonData barangay;
+  final List<PolygonData> farms;
+  final ThemeData theme;
+  final PolygonManager polygonManager;
+  final BuildContext modalContext;
+
+  const _BarangayContent({
+    required this.barangay,
+    required this.farms,
+    required this.theme,
+    required this.polygonManager,
+    required this.modalContext,
+  });
+
+  @override
+  State<_BarangayContent> createState() => _BarangayContentState();
+}
+
+class _BarangayContentState extends State<_BarangayContent> {
+  bool _showFarmsList = true; // true for farms list, false for yield data
+
+  @override
+  Widget build(BuildContext context) {
+
+ 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Barangay info card
         BarangayInfoCard.build(
-            barangay: barangay, theme: theme, context: context),
+          barangay: widget.barangay,
+          farms: widget.farms,
+          theme: widget.theme,
+          context: context,
+        ),
 
         const SizedBox(height: 16),
 
         // Barangay statistics
-        BarangayStats.build(barangay: barangay, farms: farms, theme: theme),
+        // BarangayStats.build(
+        //   barangay: widget.barangay,
+        //   farms: widget.farms,
+        //   theme: widget.theme,
+        // ),
 
         const SizedBox(height: 16),
 
-        // Farms list
-        FarmsList.build(
-          barangay: barangay,
-          farms: farms,
-          theme: theme,
-          polygonManager: polygonManager,
-          modalContext: context,
+        // Toggle buttons
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: widget.theme.colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _showFarmsList = true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _showFarmsList
+                          ? widget.theme.colorScheme.primary
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.agriculture,
+                          size: 20,
+                          color: _showFarmsList
+                              ? Colors.white
+                              : widget.theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Farms List',
+                          style: widget.theme.textTheme.titleSmall?.copyWith(
+                            color: _showFarmsList
+                                ? Colors.white
+                                : widget.theme.colorScheme.onSurfaceVariant,
+                            fontWeight: _showFarmsList
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _showFarmsList = false),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: !_showFarmsList
+                          ? widget.theme.colorScheme.primary
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.bar_chart,
+                          size: 20,
+                          color: !_showFarmsList
+                              ? Colors.white
+                              : widget.theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Yield Data',
+                          style: widget.theme.textTheme.titleSmall?.copyWith(
+                            color: !_showFarmsList
+                                ? Colors.white
+                                : widget.theme.colorScheme.onSurfaceVariant,
+                            fontWeight: !_showFarmsList
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Content based on toggle
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: animation.drive(
+                  Tween(begin: const Offset(0.0, 0.1), end: Offset.zero),
+                ),
+                child: child,
+              ),
+            );
+          },
+          child: _showFarmsList
+              ? FarmsList.build(
+                  key: const ValueKey('farms_list'),
+                  barangay: widget.barangay,
+                  farms: widget.farms,
+                  theme: widget.theme,
+                  polygonManager: widget.polygonManager,
+                  modalContext: widget.modalContext,
+                )
+              : 
+              
+              BarangayYieldDataTable(
+                  key: const ValueKey('yield_data'),
+                  barangay: widget.barangay.name,
+                )
+                
+                ,
         ),
       ],
     );

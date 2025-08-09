@@ -126,8 +126,8 @@ class _UserKpiState extends State<UserKpi> {
               : _buildKpiCard(
                   context,
                   const Iconify(Mdi.account_check, color: Colors.green),
-                  '${_userStats?['activeToday'] ?? '0'}',
-                  'Active Today',
+                  '${_userStats?['inactiveUsers'] ?? '0'}',
+                  'Inactive',
                   DeviceScreenType.desktop,
                   Colors.green[50]!,
                 ),
@@ -186,8 +186,8 @@ class _UserKpiState extends State<UserKpi> {
             : _buildKpiCard(
                 context,
                 const Iconify(Mdi.account_check, color: Colors.green),
-                '${_userStats?['activeToday'] ?? '0'}',
-                'Active Today',
+                '${_userStats?['inactiveUsers'] ?? '0'}',
+                'Inactive',
                 DeviceScreenType.mobile,
                 Colors.green[50]!,
               ),

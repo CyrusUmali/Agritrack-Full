@@ -1,12 +1,14 @@
 import 'package:flareline/core/models/farmer_model.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'farm_info_card_dialogs.dart';
 
-class FarmInfoCardComponents {
+class FarmInfoCardComponents { 
   static Widget buildEditableFarmNameRow({
     required BuildContext context,
-    required TextEditingController controller, // Receive controller
+    required TextEditingController controller,
     required Function(String) onNameChanged,
     required ThemeData theme,
   }) {
@@ -17,7 +19,7 @@ class FarmInfoCardComponents {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: [ 
           Icon(Icons.agriculture_outlined,
               size: 20, color: colorScheme.onSurface.withOpacity(0.6)),
           const SizedBox(width: 12),
@@ -28,7 +30,7 @@ class FarmInfoCardComponents {
                 Text('Farm Name', style: _buildLabelStyle(theme)),
                 const SizedBox(height: 2),
                 TextField(
-                  controller: controller, // Use the provided controller
+                  controller: controller,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurface,
                   ),
@@ -57,6 +59,7 @@ class FarmInfoCardComponents {
   }) {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final isFarmer = context.read<UserProvider>().isFarmer;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -73,15 +76,17 @@ class FarmInfoCardComponents {
                 Text('Farm Owner', style: _buildLabelStyle(theme)),
                 const SizedBox(height: 2),
                 InkWell(
-                  onTap: () {
-                    FarmInfoCardDialogs.showFarmOwnerSelectionDialog(
-                      context: context,
-                      currentOwner: currentOwner,
-                      ownerOptions: ownerOptions,
-                      onOwnerChanged: onOwnerChanged,
-                      theme: theme,
-                    );
-                  },
+                  onTap: isFarmer 
+                      ? null // Disable tap if user is farmer
+                      : () {
+                          FarmInfoCardDialogs.showFarmOwnerSelectionDialog(
+                            context: context,
+                            currentOwner: currentOwner,
+                            ownerOptions: ownerOptions,
+                            onOwnerChanged: onOwnerChanged,
+                            theme: theme,
+                          );
+                        },
                   child: Row(
                     children: [
                       Text(
@@ -90,9 +95,11 @@ class FarmInfoCardComponents {
                           color: colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.arrow_drop_down,
-                          size: 20, color: colorScheme.onSurface),
+                      if (!isFarmer) ...[
+                        const SizedBox(width: 4),
+                        Icon(Icons.arrow_drop_down,
+                            size: 20, color: colorScheme.onSurface),
+                      ],
                     ],
                   ),
                 ),
@@ -126,9 +133,7 @@ class FarmInfoCardComponents {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Barangay',
-                    style:
-                        TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                Text('Barangay', style: _buildLabelStyle(theme)),
                 const SizedBox(height: 2),
                 InkWell(
                   onTap: () {

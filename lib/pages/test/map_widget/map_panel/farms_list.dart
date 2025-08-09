@@ -1,5 +1,6 @@
+import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flutter/material.dart';
-import '../polygon_manager.dart';
+import '../polygon_manager.dart'; 
 
 class FarmsList {
   static Widget build({
@@ -7,10 +8,10 @@ class FarmsList {
     required List<PolygonData> farms,
     required ThemeData theme,
     required PolygonManager polygonManager,
-    required BuildContext modalContext, // Add this parameter
+    required BuildContext modalContext, required ValueKey<String> key,
   }) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -33,39 +34,32 @@ class FarmsList {
               itemCount: farms.length,
               itemBuilder: (context, index) {
                 final farm = farms[index];
-                // Find the original index in the polygonManager's polygons list
                 final originalIndex = polygonManager.polygons.indexOf(farm);
 
                 return ListTile(
-                  leading: Icon(
-                    Icons.agriculture,
-                    color: theme.colorScheme.primary,
+                  leading: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: getPinColor(farm.pinStyle),
+                      shape: BoxShape.circle,
+                    ),
+                    child: getPinIcon(farm.pinStyle),
                   ),
                   title: Text(farm.name),
-                  subtitle: Text(farm.pinStyle.toString().split('.').last),
-                  tileColor:
-                      polygonManager.selectedPolygonIndex == originalIndex
-                          ? theme.colorScheme.primary.withOpacity(0.1)
-                          : null,
+                  subtitle: Text(
+  farm.owner ?? 'Unknown Owner',
+  style: TextStyle(fontSize: 12), // Adjust the font size as needed
+),
+                  tileColor: polygonManager.selectedPolygonIndex == originalIndex
+                      ? theme.colorScheme.primary.withOpacity(0.1)
+                      : null,
                   onTap: () {
                     final overlayContext =
                         Navigator.of(context, rootNavigator: true).context;
-
                     polygonManager.selectPolygon(
                       originalIndex,
                       context: overlayContext,
                     );
-
-                    // polygonManager.selectPolygon(
-                    //   originalIndex,
-                    //   context: context,
-                    // );
-
-                    // print('printhere');
-
-                    // print(context);
-
-                    // Close the modal
                     Navigator.of(modalContext).pop();
                   },
                 );

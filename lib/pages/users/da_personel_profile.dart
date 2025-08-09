@@ -13,7 +13,7 @@ class DAOfficerProfile extends LayoutWidget {
 
   @override
   String breakTabTitle(BuildContext context) {
-    return 'DA Officer Profile';
+    return 'Profile';
   }
 
   @override
@@ -34,6 +34,9 @@ class DAProfileDesktop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    print("a");
+    print(daUser);
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),

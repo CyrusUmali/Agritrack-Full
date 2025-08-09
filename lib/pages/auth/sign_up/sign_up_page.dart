@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/auth/sign_up/sign_up_provider.dart';
 import 'package:flareline/pages/auth/sign_up/sign_up_forms.dart';
@@ -11,149 +12,168 @@ import 'package:flareline_uikit/components/forms/outborder_text_form_field.dart'
 import 'package:responsive_builder/responsive_builder.dart';
 
 class SignUpWidget extends BaseWidget<SignUpProvider> {
+ 
+
+ 
+ 
   @override
   Widget bodyWidget(
       BuildContext context, SignUpProvider viewModel, Widget? child) {
+    debugPrint('[SIGNUP] Widget - bodyWidget rebuild. isPendingVerification: ${viewModel.isPendingVerification}');
+    
     if (viewModel.isPendingVerification) {
       return _buildVerificationPendingScreen(context, viewModel);
     }
 
-    return Scaffold(
-      // Add this to prevent keyboard from dismissing
-      resizeToAvoidBottomInset: true,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          // Determine if we're on mobile based on width (common breakpoint is 600)
-          final isMobile = constraints.maxWidth < 600;
+    return Builder(
+      builder: (context) {
+        debugPrint('[SIGNUP] Main scaffold builder rebuild');
+        return Scaffold(
+          resizeToAvoidBottomInset: true,
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
+              debugPrint('[SIGNUP] LayoutBuilder rebuild. isMobile: $isMobile');
 
-          return Stack(
-            children: [
-              // Background - image for desktop, white for mobile
-              if (!isMobile) ...[
-                Container(
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/loginBG2.jpg'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                Container(
-                  color: Colors.black.withOpacity(0.2),
-                ),
-              ] else ...[
-                Container(
-                  color: Colors.white, // White background for mobile
-                ),
-              ],
-
-              // Main content - Fixed gesture handling to prevent keyboard dismissal
-              Center(
-                child: SingleChildScrollView(
-                  // Add key to prevent rebuilds
-                  key: ValueKey('signup_scroll_${viewModel.currentStep}'),
-                  physics: ClampingScrollPhysics(),
-                  child: Container(
-                    constraints: BoxConstraints(
-                      maxWidth: isMobile ? double.infinity : 800.0,
-                      minHeight: MediaQuery.of(context).size.height,
-                    ),
-                    padding: isMobile
-                        ? EdgeInsets.zero
-                        : EdgeInsets.symmetric(horizontal: 0, vertical: 50),
-                    child: Center(
-                      child: CommonCard(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 30,
-                          horizontal: isMobile
-                              ? 16.0
-                              : 40.0, // Reduced padding for mobile
-                        ),
-                        borderRadius: isMobile ? 0 : 12.0,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Align(
-                              alignment: Alignment.topLeft,
-                              child: TextButton(
-                                onPressed: () {
-                                  Navigator.of(context)
-                                      .pushReplacementNamed('/signIn');
-                                },
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.arrow_back,
-                                      color: Theme.of(context).primaryColor,
-                                      size: 14.0,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Login',
-                                      style: TextStyle(
-                                        fontSize: 14.0,
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: 100,
-                              child: Image.asset('assets/DA_image.jpg'),
-                            ),
-                            const SizedBox(height: 30),
-                            Text(
-                              "AgriTrack - Farmer Registration",
-                              style: TextStyle(
-                                fontSize: isMobile ? 22 : 26,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              "Complete the form to register as a farmer",
-                              style: TextStyle(
-                                fontSize: isMobile ? 14 : 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            _buildStepper(viewModel, isMobile),
-                            // Form content from separate file
-                            SignUpForms.buildFormContent(
-                                context, viewModel, isMobile),
-                          ],
+              return Stack(
+                children: [
+                  if (!isMobile) ...[
+                    Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage('assets/loginBG2.jpg'),
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ),
+                    Container(
+                      color: Colors.black.withOpacity(0.2),
+                    ),
+                  ] else ...[
+                    Container(
+                      color: Colors.white,
+                    ),
+                  ],
 
-              // Loading indicator overlay
-              if (viewModel.isLoading)
-                Container(
-                  color: Colors.black.withOpacity(0.3),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).primaryColor),
+                  Center(
+                    child: SingleChildScrollView(
+                      key: ValueKey('signup_scroll_${viewModel.currentStep}'),
+                      physics: ClampingScrollPhysics(),
+                      child: Builder(
+                        builder: (context) {
+                          debugPrint('[SIGNUP] Content container builder rebuild');
+                          return Container(
+                            constraints: BoxConstraints(
+                              maxWidth: isMobile ? double.infinity : 800.0,
+                              minHeight: MediaQuery.of(context).size.height,
+                            ),
+                            padding: isMobile
+                                ? EdgeInsets.zero
+                                : EdgeInsets.symmetric(horizontal: 0, vertical: 50),
+                            child: Center(
+                              child: CommonCard(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 30,
+                                  horizontal: isMobile ? 16.0 : 40.0,
+                                ),
+                                borderRadius: isMobile ? 0 : 12.0,
+                                child: Builder(
+                                  builder: (context) {
+                                    debugPrint('[SIGNUP] Card content builder rebuild');
+                                    return Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Align(
+                                          alignment: Alignment.topLeft,
+                                          child: TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context)
+                                                  .pushReplacementNamed('/signIn');
+                                            },
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.arrow_back,
+                                                  color: Theme.of(context).primaryColor,
+                                                  size: 14.0,
+                                                ),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  'Login',
+                                                  style: TextStyle(
+                                                    fontSize: 14.0,
+                                                    color: Theme.of(context).primaryColor,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        SizedBox(
+                                          width: 100,
+                                          child: Image.asset('assets/DA_image.jpg'),
+                                        ),
+                                        const SizedBox(height: 30),
+                                        Text(
+                                          "AgriTrack - Farmer Registration",
+                                          style: TextStyle(
+                                            fontSize: isMobile ? 22 : 26,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          "Complete the form to register as a farmer",
+                                          style: TextStyle(
+                                            fontSize: isMobile ? 14 : 16,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        _buildStepper(viewModel, isMobile),
+                                        SignUpForms.buildFormContent(
+                                            context, viewModel, isMobile),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-            ],
-          );
-        },
-      ),
+
+                  if (viewModel.isLoading)
+                    Builder(
+                      builder: (context) {
+                        debugPrint('[SIGNUP] Loading overlay builder rebuild');
+                        return Container(
+                          color: Colors.black.withOpacity(0.3),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).primaryColor),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
   Widget _buildStepper(SignUpProvider viewModel, bool isMobile) {
+    debugPrint('[SIGNUP] Stepper rebuild - currentStep: ${viewModel.currentStep}, isMobile: $isMobile');
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20.0),
       child: Container(
@@ -203,6 +223,7 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
   }
 
   StepState _getStepState(SignUpProvider viewModel, int stepIndex) {
+    debugPrint('[SIGNUP] Step state check - step: $stepIndex, currentStep: ${viewModel.currentStep}');
     if (viewModel.currentStep > stepIndex) {
       return StepState.complete;
     } else if (viewModel.currentStep == stepIndex) {
@@ -214,6 +235,7 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
 
   Widget _buildVerificationPendingScreen(
       BuildContext context, SignUpProvider viewModel) {
+    debugPrint('[SIGNUP] Verification screen rebuild');
     return Scaffold(
       body: Stack(
         children: [
@@ -233,6 +255,7 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
               child: ResponsiveBuilder(
                 builder: (context, sizingInfo) {
                   final isMobile = sizingInfo.isMobile;
+                  debugPrint('[SIGNUP] Verification screen ResponsiveBuilder rebuild - isMobile: $isMobile');
                   final maxWidth = isMobile ? double.infinity : 500.0;
 
                   return Container(
@@ -355,6 +378,7 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
 
   @override
   SignUpProvider viewModelBuilder(BuildContext context) {
+    debugPrint('[SIGNUP] Creating new viewModel instance');
     return SignUpProvider(context);
   }
 }

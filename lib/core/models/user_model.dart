@@ -16,6 +16,7 @@ class UserModel {
   final int? farmerId;
   final String? authProvider; // 'email' or 'google'
   final bool? hasPassword; // true for email/password users
+  final DateTime? createdAt; // New field
 
   UserModel({
     required this.id,
@@ -33,8 +34,9 @@ class UserModel {
     this.status,
     this.idToken,
     this.farmerId,
-    this.authProvider, // New required field
-    this.hasPassword, // New required field
+    this.authProvider,
+    this.hasPassword,
+    this.createdAt, // New field
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -53,9 +55,11 @@ class UserModel {
       barangay: (json['barangay'] as String?) ?? '',
       phone: (json['phone'] as String?) ?? '',
       farmerId: (json['farmerId'] as int?) ?? 0,
-      authProvider:
-          (json['authProvider'] as String?) ?? 'email', // Default to email
-      hasPassword: (json['hasPassword'] as bool?) ?? true, // Default to true
+      authProvider: (json['authProvider'] as String?) ?? 'email',
+      hasPassword: (json['hasPassword'] as bool?) ?? true,
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt'] as String) 
+          : null, // Parse DateTime
     );
   }
 
@@ -76,11 +80,12 @@ class UserModel {
       'barangay': barangay,
       'phone': phone,
       'farmerId': farmerId,
-      'authProvider': authProvider, // Include new field
-      'hasPassword': hasPassword, // Include new field
+      'authProvider': authProvider,
+      'hasPassword': hasPassword,
+      'createdAt': createdAt?.toIso8601String(), // Convert to ISO string
     };
   }
-
+ 
   @override
   List<Object?> get props => [
         id,
@@ -97,8 +102,9 @@ class UserModel {
         barangay,
         phone,
         farmerId,
-        authProvider, // Include new field
-        hasPassword, // Include new field
+        authProvider,
+        hasPassword,
+        createdAt, // Include new field
       ];
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
@@ -113,14 +119,67 @@ class UserModel {
       newPassword: map['newPassword'] ?? '',
       lname: map['lname'] ?? '',
       sector: map['sector'] ?? '',
-      phone: map['phone'] ?? '',
+      phone: map['contact'] ?? '',
       farmerId: map['farmerId'] ?? 0,
       status: map['status'] ?? '',
       barangay: map['barangay'] ?? '',
-      authProvider: map['authProvider'] ?? 'email', // Default to email
-      hasPassword: map['hasPassword'] ?? true, // Default to true
+      authProvider: map['authProvider'] ?? 'email',
+      hasPassword: map['hasPassword'] ?? true,
+      createdAt: map['createdAt'] != null 
+          ? DateTime.parse(map['createdAt'] as String) 
+          : null, // Parse DateTime
     );
   }
+
+
+
+
+// Add the copyWith method
+  UserModel copyWith({
+    int? id,
+    String? email,
+    String? name,
+    String? password,
+    String? newPassword,
+    String? photoUrl,
+    String? phone,
+    String? role,
+    String? fname,
+    String? lname,
+    String? sector,
+    String? barangay,
+    String? status,
+    String? idToken,
+    int? farmerId,
+    String? authProvider,
+    bool? hasPassword,
+    DateTime? createdAt,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      name: name ?? this.name,
+      password: password ?? this.password,
+      newPassword: newPassword ?? this.newPassword,
+      photoUrl: photoUrl ?? this.photoUrl,
+      phone: phone ?? this.phone,
+      role: role ?? this.role,
+      fname: fname ?? this.fname,
+      lname: lname ?? this.lname,
+      sector: sector ?? this.sector,
+      barangay: barangay ?? this.barangay,
+      status: status ?? this.status,
+      idToken: idToken ?? this.idToken,
+      farmerId: farmerId ?? this.farmerId,
+      authProvider: authProvider ?? this.authProvider,
+      hasPassword: hasPassword ?? this.hasPassword,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+
+
+
 
   Map<String, dynamic> toMap() {
     return {
@@ -138,8 +197,9 @@ class UserModel {
       'barangay': barangay,
       'phone': phone,
       'farmerId': farmerId,
-      'authProvider': authProvider, // Include new field
-      'hasPassword': hasPassword, // Include new field
+      'authProvider': authProvider,
+      'hasPassword': hasPassword,
+      'createdAt': createdAt?.toIso8601String(), // Convert to ISO string
     };
   }
 }

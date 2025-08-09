@@ -85,19 +85,22 @@ class FarmBloc extends Bloc<FarmEvent, FarmState> {
     }
   }
 
-  Future<void> _onLoadFarms(
+
+Future<void> _onLoadFarms(
     LoadFarms event,
     Emitter<FarmState> emit,
   ) async {
     emit(FarmsLoading());
 
     try {
-      _farms = await farmRepository.fetchFarms();
-      emit(FarmsLoaded(_applyFilters()));
+      final farms = await farmRepository.fetchFarms(farmerId: event.farmerId);
+      emit(FarmsLoaded(farms));
     } catch (e) {
       emit(FarmsError(e.toString()));
     }
   }
+
+
 
   Future<void> _onDeleteFarm(
     DeleteFarm event,

@@ -172,7 +172,9 @@ class ToolBarWidget extends StatelessWidget {
 
   void _handleProfileNavigation(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final user = userProvider.user;
+    final user = userProvider.user; 
+    final farmerId = userProvider.farmer?.id;
+     
 
     print('user:');
     print(user);
@@ -198,8 +200,8 @@ class ToolBarWidget extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => FarmersProfile(farmerID: user.id),
-          ),
+            builder: (context) => FarmersProfile(farmerID: farmerId),
+          ), 
         );
       }
     } else if (role.contains('officer') || role.contains('admin')) {
@@ -234,7 +236,7 @@ class ToolBarWidget extends StatelessWidget {
   Future<void> onLogoutClick(BuildContext context) async {
     // Sign out from Firebase
     await FirebaseAuth.instance.signOut();
-
+ 
     // Reset theme to light mode
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     themeProvider.themeMode = ThemeMode.light;
@@ -244,6 +246,12 @@ class ToolBarWidget extends StatelessWidget {
       '/signIn',
       (Route<dynamic> route) => false,
     );
+ 
+    
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.clearUser();
+
+
   }
 }
 
@@ -310,7 +318,7 @@ class YearPickerWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Theme(
+        return Theme( 
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
               onPrimary: Colors.white, // Text color on primary

@@ -193,7 +193,7 @@ class _SectorKpiState extends State<SectorKpi> {
               : _buildSectorCard(
                   context,
                   const Iconify(Mdi.chart_line, color: Colors.orange),
-                  '${totals['totalYieldVolume']?.toStringAsFixed(0) ?? '0'} T',
+                  '${totals['totalYieldVolume']?.toStringAsFixed(0) ?? '0'} Kg',
                   'Total Production',
                   DeviceScreenType.desktop,
                   Colors.orange[50]!,
@@ -250,7 +250,7 @@ class _SectorKpiState extends State<SectorKpi> {
             : _buildSectorCard(
                 context,
                 const Iconify(Mdi.chart_line, color: Colors.orange),
-                '${totals['totalYieldVolume']?.toStringAsFixed(0) ?? '0'} T',
+                '${totals['totalYieldVolume']?.toStringAsFixed(0) ?? '0'} Kg',
                 'Total Production',
                 DeviceScreenType.mobile,
                 Colors.orange[50]!,

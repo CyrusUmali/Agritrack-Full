@@ -7,7 +7,11 @@ abstract class FarmEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class LoadFarms extends FarmEvent {}
+class LoadFarms extends FarmEvent {
+  final int? farmerId;
+  
+  const LoadFarms({this.farmerId});
+}
 
 class AddFarm extends FarmEvent {
   final String name;

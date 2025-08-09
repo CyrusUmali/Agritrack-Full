@@ -1,10 +1,12 @@
 import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
-import 'package:flareline/core/models/farmer_model.dart';
+import 'package:flareline/core/models/farmer_model.dart'; 
+import 'package:provider/provider.dart';
 
 class FarmCreationModal {
   static Future<bool> show({
@@ -48,28 +50,40 @@ class FarmCreationModal {
     required Function(PinStyle) onPinStyleChanged,
     required List<Farmer> farmers,
     required Function(int?, String?) onFarmerChanged,
-    required ThemeData theme,
+    required ThemeData theme, 
   }) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     final nameController = TextEditingController(text: polygon.name);
     PinStyle selectedPinStyle = polygon.pinStyle;
-    int? selectedFarmerId =
-        polygon.owner != null ? int.tryParse(polygon.owner!) : null;
+    
+    int? selectedFarmerId;
     String? selectedFarmerName;
-    bool isFarmerValid = selectedFarmerId != null;
+    bool isFarmerValid = false;
     bool isNameValid = polygon.name.isNotEmpty;
-
-    // Find initial farmer name if ID exists
-    if (selectedFarmerId != null) {
-      final farmer = farmers.firstWhere(
-        (f) => f.id == selectedFarmerId,
-        orElse: () => Farmer(id: -1, name: 'Unknown', sector: ''),
-      );
-      selectedFarmerName = farmer.name;
+    
+    // Auto-select farmer if user is a farmer
+    if (userProvider.isFarmer && userProvider.farmer != null) {
+      selectedFarmerId = userProvider.farmer!.id;
+      selectedFarmerName = userProvider.farmer!.name;
+      isFarmerValid = true;
+      onFarmerChanged(selectedFarmerId, selectedFarmerName);
+    } else {
+      // Use existing polygon owner if available
+      selectedFarmerId = polygon.owner != null ? int.tryParse(polygon.owner!) : null;
+      isFarmerValid = selectedFarmerId != null;
+      
+      // Find initial farmer name if ID exists
+      if (selectedFarmerId != null) { 
+        final farmer = farmers.firstWhere(
+          (f) => f.id == selectedFarmerId,
+          orElse: () => Farmer(id: -1, name: 'Unknown', sector: ''),
+        );
+        selectedFarmerName = farmer.name;
+      }
     }
 
     final farmerOptions = farmers.map((farmer) => farmer.name).toList();
-    final farmerTextController =
-        TextEditingController(text: selectedFarmerName);
+    final farmerTextController = TextEditingController(text: selectedFarmerName);
 
     return await WoltModalSheet.show(
       context: context,
@@ -139,137 +153,161 @@ class FarmCreationModal {
                         },
                       ),
                       const SizedBox(height: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Autocomplete<String>(
-                            optionsBuilder:
-                                (TextEditingValue textEditingValue) {
-                              if (textEditingValue.text == '') {
-                                return const Iterable<String>.empty();
-                              }
-                              return farmerOptions.where((String option) {
-                                return option.toLowerCase().contains(
-                                    textEditingValue.text.toLowerCase());
-                              });
-                            },
-                            onSelected: (String selection) {
-                              final selectedFarmer = farmers.firstWhere(
-                                  (farmer) => farmer.name == selection);
-                              setState(() {
-                                selectedFarmerId = selectedFarmer.id;
-                                selectedFarmerName = selectedFarmer.name;
-                                isFarmerValid = true;
-                              });
-                              onFarmerChanged(
-                                  selectedFarmerId, selectedFarmerName);
-                              farmerTextController.text = selectedFarmerName!;
-                            },
-                            fieldViewBuilder: (BuildContext context,
-                                TextEditingController textEditingController,
-                                FocusNode focusNode,
-                                VoidCallback onFieldSubmitted) {
-                              return TextField(
-                                controller: textEditingController,
-                                focusNode: focusNode,
-                                decoration: InputDecoration(
-                                  labelText: 'Farmer',
-                                  hintText: 'Search for a farmer...',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  // errorText: isFarmerValid
-                                  //     ? null
-                                  //     : 'Please select a farmer',
-                                  errorStyle:
-                                      const TextStyle(color: Colors.red),
-                                  suffixIcon: textEditingController
-                                          .text.isNotEmpty
-                                      ? IconButton(
-                                          icon:
-                                              const Icon(Icons.clear, size: 20),
-                                          onPressed: () {
-                                            textEditingController.clear();
-                                            setState(() {
-                                              selectedFarmerId = null;
-                                              selectedFarmerName = null;
-                                              isFarmerValid = false;
-                                            });
-                                            onFarmerChanged(null, null);
-                                          },
-                                        )
-                                      : null,
-                                ),
-                                onChanged: (value) {
-                                  if (value.isEmpty) {
-                                    setState(() {
-                                      selectedFarmerId = null;
-                                      selectedFarmerName = null;
-                                      isFarmerValid = false;
-                                    });
-                                    onFarmerChanged(null, null);
-                                  }
-                                },
-                              );
-                            },
-                            optionsViewBuilder: (BuildContext context,
-                                AutocompleteOnSelected<String> onSelected,
-                                Iterable<String> options) {
-                              return Align(
-                                alignment: Alignment.topLeft,
-                                child: Material(
-                                  elevation: 4.0,
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? GlobalColors.darkerCardColor
-                                      : Colors.grey.shade50,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      maxHeight: 200,
-                                      maxWidth:
-                                          MediaQuery.of(context).size.width -
-                                              32,
+                      // Only show farmer selection if user is not a farmer
+                      if (!userProvider.isFarmer)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Autocomplete<String>(
+                              optionsBuilder:
+                                  (TextEditingValue textEditingValue) {
+                                if (textEditingValue.text == '') {
+                                  return const Iterable<String>.empty();
+                                }
+                                return farmerOptions.where((String option) {
+                                  return option.toLowerCase().contains(
+                                      textEditingValue.text.toLowerCase());
+                                });
+                              },
+                              onSelected: (String selection) {
+                                final selectedFarmer = farmers.firstWhere(
+                                    (farmer) => farmer.name == selection);
+                                setState(() {
+                                  selectedFarmerId = selectedFarmer.id;
+                                  selectedFarmerName = selectedFarmer.name;
+                                  isFarmerValid = true;
+                                });
+                                onFarmerChanged(
+                                    selectedFarmerId, selectedFarmerName);
+                                farmerTextController.text = selectedFarmerName!;
+                              },
+                              fieldViewBuilder: (BuildContext context,
+                                  TextEditingController textEditingController,
+                                  FocusNode focusNode,
+                                  VoidCallback onFieldSubmitted) {
+                                return TextField(
+                                  controller: textEditingController,
+                                  focusNode: focusNode,
+                                  decoration: InputDecoration(
+                                    labelText: 'Farmer',
+                                    hintText: 'Search for a farmer...',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: ListView.builder(
-                                      padding: EdgeInsets.zero,
-                                      shrinkWrap: true,
-                                      itemCount: options.length,
-                                      itemBuilder:
-                                          (BuildContext context, int index) {
-                                        final String option =
-                                            options.elementAt(index);
-                                        return ListTile(
-                                          title: Text(option),
-                                          onTap: () {
-                                            onSelected(option);
-                                          },
-                                        );
-                                      },
+                                    filled: true,
+                                    fillColor: Colors.grey.shade50,
+                                    errorStyle:
+                                        const TextStyle(color: Colors.red),
+                                    suffixIcon: textEditingController
+                                            .text.isNotEmpty
+                                        ? IconButton(
+                                            icon:
+                                                const Icon(Icons.clear, size: 20),
+                                            onPressed: () {
+                                              textEditingController.clear();
+                                              setState(() {
+                                                selectedFarmerId = null;
+                                                selectedFarmerName = null;
+                                                isFarmerValid = false;
+                                              });
+                                              onFarmerChanged(null, null);
+                                            },
+                                          )
+                                        : null,
+                                  ),
+                                  onChanged: (value) {
+                                    if (value.isEmpty) {
+                                      setState(() {
+                                        selectedFarmerId = null;
+                                        selectedFarmerName = null;
+                                        isFarmerValid = false;
+                                      });
+                                      onFarmerChanged(null, null);
+                                    }
+                                  },
+                                );
+                              },
+                              optionsViewBuilder: (BuildContext context,
+                                  AutocompleteOnSelected<String> onSelected,
+                                  Iterable<String> options) {
+                                return Align(
+                                  alignment: Alignment.topLeft,
+                                  child: Material(
+                                    elevation: 4.0,
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? GlobalColors.darkerCardColor
+                                        : Colors.grey.shade50,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxHeight: 200,
+                                        maxWidth:
+                                            MediaQuery.of(context).size.width -
+                                                32,
+                                      ),
+                                      child: ListView.builder(
+                                        padding: EdgeInsets.zero,
+                                        shrinkWrap: true,
+                                        itemCount: options.length,
+                                        itemBuilder:
+                                            (BuildContext context, int index) {
+                                          final String option =
+                                              options.elementAt(index);
+                                          return ListTile(
+                                            title: Text(option),
+                                            onTap: () {
+                                              onSelected(option);
+                                            },
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
-                                ),
-                              );
-                            },
-                          ),
-                          if (!isFarmerValid)
-                            Padding(
-                              padding:
-                                  const EdgeInsets.only(top: 4.0, left: 12.0),
-                              child: Text(
-                                'Please select a farmer',
-                                style: TextStyle(
-                                  color: Colors.red.shade700,
-                                  fontSize: 12,
+                                );
+                              },
+                            ),
+                            if (!isFarmerValid)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 4.0, left: 12.0),
+                                child: Text(
+                                  'Please select a farmer',
+                                  style: TextStyle(
+                                    color: Colors.red.shade700,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
+                          ],
+                        )
+                      else
+                        // Show selected farmer info for farmer users
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            border: Border.all(color: Colors.green.shade200),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle, 
+                                   color: Colors.green.shade600, 
+                                   size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Farmer: ${userProvider.farmer!.name}',
+                                style: TextStyle(
+                                  color: Colors.green.shade800,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       const SizedBox(height: 100),
                     ],
                   );
@@ -337,26 +375,38 @@ class FarmCreationModal {
     required Function(int?, String?) onFarmerChanged,
     required ThemeData theme,
   }) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     final nameController = TextEditingController(text: polygon.name);
     PinStyle selectedPinStyle = polygon.pinStyle;
-    int? selectedFarmerId =
-        polygon.owner != null ? int.tryParse(polygon.owner!) : null;
+    
+    int? selectedFarmerId;
     String? selectedFarmerName;
-    bool isFarmerValid = selectedFarmerId != null;
+    bool isFarmerValid = false;
     bool isNameValid = polygon.name.isNotEmpty;
-
-    // Find initial farmer name if ID exists
-    if (selectedFarmerId != null) {
-      final farmer = farmers.firstWhere(
-        (f) => f.id == selectedFarmerId,
-        orElse: () => Farmer(id: -1, name: 'Unknown', sector: ''),
-      );
-      selectedFarmerName = farmer.name;
+    
+    // Auto-select farmer if user is a farmer
+    if (userProvider.isFarmer && userProvider.farmer != null) {
+      selectedFarmerId = userProvider.farmer!.id;
+      selectedFarmerName = userProvider.farmer!.name;
+      isFarmerValid = true;
+      onFarmerChanged(selectedFarmerId, selectedFarmerName);
+    } else {
+      // Use existing polygon owner if available
+      selectedFarmerId = polygon.owner != null ? int.tryParse(polygon.owner!) : null;
+      isFarmerValid = selectedFarmerId != null;
+      
+      // Find initial farmer name if ID exists
+      if (selectedFarmerId != null) {
+        final farmer = farmers.firstWhere(
+          (f) => f.id == selectedFarmerId,
+          orElse: () => Farmer(id: -1, name: 'Unknown', sector: ''),
+        );
+        selectedFarmerName = farmer.name;
+      }
     }
 
     final farmerOptions = farmers.map((farmer) => farmer.name).toList();
-    final farmerTextController =
-        TextEditingController(text: selectedFarmerName);
+    final farmerTextController = TextEditingController(text: selectedFarmerName);
 
     return await showDialog<bool>(
           context: context,
@@ -400,7 +450,6 @@ class FarmCreationModal {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
-                            // fillColor: Colors.grey.shade50,
                             fillColor:
                                 Theme.of(context).brightness == Brightness.dark
                                     ? GlobalColors.darkerCardColor
@@ -416,138 +465,165 @@ class FarmCreationModal {
                           },
                         ),
                         const SizedBox(height: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Autocomplete<String>(
-                              optionsBuilder:
-                                  (TextEditingValue textEditingValue) {
-                                if (textEditingValue.text == '') {
-                                  return const Iterable<String>.empty();
-                                }
-                                return farmerOptions.where((String option) {
-                                  return option.toLowerCase().contains(
-                                      textEditingValue.text.toLowerCase());
-                                });
-                              },
-                              onSelected: (String selection) {
-                                final selectedFarmer = farmers.firstWhere(
-                                    (farmer) => farmer.name == selection);
-                                setState(() {
-                                  selectedFarmerId = selectedFarmer.id;
-                                  selectedFarmerName = selectedFarmer.name;
-                                  isFarmerValid = true;
-                                });
-                                onFarmerChanged(
-                                    selectedFarmerId, selectedFarmerName);
-                                farmerTextController.text = selectedFarmerName!;
-                              },
-                              fieldViewBuilder: (BuildContext context,
-                                  TextEditingController textEditingController,
-                                  FocusNode focusNode,
-                                  VoidCallback onFieldSubmitted) {
-                                return TextField(
-                                  controller: textEditingController,
-                                  focusNode: focusNode,
-                                  decoration: InputDecoration(
-                                    labelText: 'Farmer',
-                                    hintText: 'Search for a farmer...',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    filled: true,
-                                    fillColor: Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? GlobalColors.darkerCardColor
-                                        : Colors.grey.shade50,
-                                    errorStyle:
-                                        const TextStyle(color: Colors.red),
-                                    suffixIcon:
-                                        textEditingController.text.isNotEmpty
-                                            ? IconButton(
-                                                icon: const Icon(Icons.clear,
-                                                    size: 20),
-                                                onPressed: () {
-                                                  textEditingController.clear();
-                                                  setState(() {
-                                                    selectedFarmerId = null;
-                                                    selectedFarmerName = null;
-                                                    isFarmerValid = false;
-                                                  });
-                                                  onFarmerChanged(null, null);
-                                                },
-                                              )
-                                            : null,
-                                  ),
-                                  onChanged: (value) {
-                                    if (value.isEmpty) {
-                                      setState(() {
-                                        selectedFarmerId = null;
-                                        selectedFarmerName = null;
-                                        isFarmerValid = false;
-                                      });
-                                      onFarmerChanged(null, null);
-                                    }
-                                  },
-                                );
-                              },
-                              optionsViewBuilder: (BuildContext context,
-                                  AutocompleteOnSelected<String> onSelected,
-                                  Iterable<String> options) {
-                                return Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Material(
-                                    elevation: 4.0,
-                                    color: Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? GlobalColors.darkerCardColor
-                                        : Colors.grey.shade50,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxHeight: 200,
-                                        maxWidth:
-                                            MediaQuery.of(context).size.width *
-                                                    0.5 -
-                                                48,
+                        // Only show farmer selection if user is not a farmer
+                        if (!userProvider.isFarmer)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Autocomplete<String>(
+                                optionsBuilder:
+                                    (TextEditingValue textEditingValue) {
+                                  if (textEditingValue.text == '') {
+                                    return farmerOptions;
+                                  }
+                                  return farmerOptions.where((String option) {
+                                    return option.toLowerCase().contains(
+                                        textEditingValue.text.toLowerCase());
+                                  });
+                                },
+                                onSelected: (String selection) {
+                                  final selectedFarmer = farmers.firstWhere(
+                                      (farmer) => farmer.name == selection);
+                                  setState(() {
+                                    selectedFarmerId = selectedFarmer.id;
+                                    selectedFarmerName = selectedFarmer.name;
+                                    isFarmerValid = true;
+                                  });
+                                  onFarmerChanged(
+                                      selectedFarmerId, selectedFarmerName);
+                                  farmerTextController.text = selectedFarmerName!;
+                                },
+                                fieldViewBuilder: (BuildContext context,
+                                    TextEditingController textEditingController,
+                                    FocusNode focusNode,
+                                    VoidCallback onFieldSubmitted) {
+                                  return TextField(
+                                    controller: textEditingController,
+                                    focusNode: focusNode,
+                                    decoration: InputDecoration(
+                                      labelText: 'Farmer',
+                                      hintText: 'Search for a farmer...',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: ListView.builder(
-                                        padding: EdgeInsets.zero,
-                                        shrinkWrap: true,
-                                        itemCount: options.length,
-                                        itemBuilder:
-                                            (BuildContext context, int index) {
-                                          final String option =
-                                              options.elementAt(index);
-                                          return ListTile(
-                                            title: Text(option),
-                                            onTap: () {
-                                              onSelected(option);
-                                            },
-                                          );
-                                        },
+                                      filled: true,
+                                      fillColor: Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? GlobalColors.darkerCardColor
+                                          : Colors.grey.shade50,
+                                      errorStyle:
+                                          const TextStyle(color: Colors.red),
+                                      suffixIcon:
+                                          textEditingController.text.isNotEmpty
+                                              ? IconButton(
+                                                  icon: const Icon(Icons.clear,
+                                                      size: 20),
+                                                  onPressed: () {
+                                                    textEditingController.clear();
+                                                    setState(() {
+                                                      selectedFarmerId = null;
+                                                      selectedFarmerName = null;
+                                                      isFarmerValid = false;
+                                                    });
+                                                    onFarmerChanged(null, null);
+                                                  },
+                                                )
+                                              : null,
+                                    ),
+                                    onChanged: (value) {
+                                      if (value.isEmpty) {
+                                        setState(() {
+                                          selectedFarmerId = null;
+                                          selectedFarmerName = null;
+                                          isFarmerValid = false;
+                                        });
+                                        onFarmerChanged(null, null);
+                                      }
+                                    },
+                                  );
+                                },
+                                optionsViewBuilder: (BuildContext context,
+                                    AutocompleteOnSelected<String> onSelected,
+                                    Iterable<String> options) {
+                                  return Align(
+                                    alignment: Alignment.topLeft,
+                                    child: Material(
+                                      elevation: 4.0,
+                                      color: Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? GlobalColors.darkerCardColor
+                                          : Colors.grey.shade50,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxHeight: 200,
+                                          maxWidth:
+                                              MediaQuery.of(context).size.width *
+                                                      0.5 -
+                                                  48,
+                                        ),
+                                        child: ListView.builder(
+                                          padding: EdgeInsets.zero,
+                                          shrinkWrap: true,
+                                          itemCount: options.length,
+                                          itemBuilder:
+                                              (BuildContext context, int index) {
+                                            final String option =
+                                                options.elementAt(index);
+                                            return ListTile(
+                                              title: Text(option),
+                                              onTap: () {
+                                                onSelected(option);
+                                              },
+                                            );
+                                          },
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
-                            if (!isFarmerValid)
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 4.0, left: 12.0),
-                                child: Text(
-                                  'Please select a farmer',
-                                  style: TextStyle(
-                                    color: Colors.red.shade700,
-                                    fontSize: 12,
+                                  );
+                                },
+                              ),
+                              if (!isFarmerValid)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.only(top: 4.0, left: 12.0),
+                                  child: Text(
+                                    'Please select a farmer',
+                                    style: TextStyle(
+                                      color: Colors.red.shade700,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
+                            ],
+                          )
+                        else
+                          // Show selected farmer info for farmer users
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              border: Border.all(color: Colors.green.shade200),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.check_circle, 
+                                     color: Colors.green.shade600, 
+                                     size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Farmer: ${userProvider.farmer!.name}',
+                                  style: TextStyle(
+                                    color: Colors.green.shade800,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         const SizedBox(height: 32),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,

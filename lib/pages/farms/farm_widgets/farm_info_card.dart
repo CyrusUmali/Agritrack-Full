@@ -2,8 +2,12 @@ import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
 import 'package:flareline/pages/widget/combo_box.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart'; // Add this import
+// Import your UserProvider here
+// import 'package:flareline/path/to/user_provider.dart';
 
 class FarmInfoCard extends StatefulWidget {
   final Map<String, dynamic> farm;
@@ -38,14 +42,12 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
 
   @override
   void initState() {
-    // print('widgetfarm');
-    // print(widget.farm);
     super.initState();
     _editedFarm = Map<String, dynamic>.from(widget.farm);
     _editedFarm['sector'] =
         _editedFarm['sector']?.toString() ?? 'Mixed Farming';
     _editedFarm['status'] =
-        _editedFarm['status']?.toString() ?? 'Active'; // Add this line
+        _editedFarm['status']?.toString() ?? 'Active';
 
     context.read<FarmerBloc>().add(LoadFarmers());
 
@@ -80,7 +82,6 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
     );
 
     int getSectorId(String? sector) {
-      // print("secotr$sector");
       if (sector == null) return 0;
       switch (sector) {
         case 'Rice':
@@ -106,7 +107,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
       'sectorId': getSectorId(_editedFarm['sector']?.toString()),
       'products': _editedFarm['products'] ?? [],
       'barangayName': _editedFarm['barangay'] ?? '',
-      'status': _editedFarm['status'] ?? 'Active', // Add this line
+      'status': _editedFarm['status'] ?? 'Active',
     };
 
     print('Saved farm data: $saveData');
@@ -135,7 +136,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
           context: context,
           hint: 'Select Status',
           options: statusOptions,
-          selectedValue: _editedFarm['status'] ?? 'tes',
+          selectedValue: _editedFarm['status'] ?? 'Active',
           onSelected: (value) => _handleFieldChange('status', value),
           width: 180,
           height: 30);
@@ -151,7 +152,13 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
   }
 
   Widget _buildOwnerField() {
-    if (_isEditing) {
+    // Use context.read to get the UserProvider
+    final userProvider = context.read<UserProvider>();
+    final isFarmerUser = userProvider.isFarmer;
+    
+    // If user is a farmer and we're in edit mode, show locked field
+    if (_isEditing && !isFarmerUser) {
+      // Normal edit mode for non-farmer users (admin, etc.)
       return buildComboBox(
           context: context,
           hint: 'Select Farm Owner',
@@ -160,7 +167,35 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
           onSelected: (value) => _handleFieldChange('farmOwner', value),
           width: 180,
           height: 30);
+    } else if (_isEditing && isFarmerUser) {
+      // Locked field for farmer users - show as read-only with lock icon
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.lock,
+              size: 16,
+              color: Colors.grey[600],
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _editedFarm['farmOwner'] ?? 'Unknown Owner',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+            ),
+          ],
+        ),
+      );
     } else {
+      // Read-only mode (not editing)
       return TextFormField(
         initialValue:
             'Owned by: ${_editedFarm['farmOwner'] ?? 'Unknown Owner'}',
@@ -285,16 +320,14 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                   ),
                   const Divider(height: 32),
                   Container(
-                    width: double.infinity, // Takes full available width
+                    width: double.infinity,
                     child: Wrap(
-                      alignment: WrapAlignment
-                          .center, // This centers the children in the main axis
-                      crossAxisAlignment: WrapCrossAlignment
-                          .center, // This centers the children in the cross axis
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 10,
                       runSpacing: 10,
                       children: [
-                        // Primary Sector (already has the correct pattern)
+                        // Primary Sector
                         ConstrainedBox(
                           constraints: const BoxConstraints(minWidth: 200),
                           child: Container(
@@ -370,7 +403,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                           ),
                         ),
 
-                        // Location - updated to match pattern
+                        // Location
                         ConstrainedBox(
                           constraints: const BoxConstraints(minWidth: 200),
                           child: Container(
@@ -446,7 +479,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                           ),
                         ),
 
-                        // Farm Size - updated to match pattern (only shown if exists)
+                        // Farm Size
                         if (_editedFarm['farmSize'] != null)
                           ConstrainedBox(
                             constraints: const BoxConstraints(minWidth: 200),
@@ -542,8 +575,7 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize
-                          .min, // Add this to prevent column expansion
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Row(
                           children: [
@@ -559,20 +591,10 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
                         ),
                         const SizedBox(height: 8),
                         if (_editedFarm['products'].isEmpty)
-                          Text(
-                            'No products added yet',
-                            // style:
-                            //     Theme.of(context).textTheme.bodySmall?.copyWith(
-                            //           color: Theme.of(context)
-                            //               .colorScheme
-                            //               .onSurfaceVariant,
-                            //         ),
-                          )
+                          Text('No products added yet')
                         else
                           ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              maxHeight: 120, // Set a reasonable max height
-                            ),
+                            constraints: const BoxConstraints(maxHeight: 120),
                             child: SingleChildScrollView(
                               child: Wrap(
                                 spacing: 8,

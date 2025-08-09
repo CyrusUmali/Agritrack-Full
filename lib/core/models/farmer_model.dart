@@ -113,7 +113,7 @@ class Farmer extends Equatable {
     return Farmer(
       id: (json['id'] as int?) ?? 0,
       name: (json['name'] as String?) ?? 'Unknown',
-      accountStatus: (json['accountStatus'] as String?) ?? 'Pending',
+      accountStatus: (json['accountStatus'] as String?) ?? 'Unregistered',
       firstname: (json['firstname'] as String?) ?? '',
       surname: (json['surname'] as String?) ?? '',
       middlename: (json['middlename'] as String?) ?? '',

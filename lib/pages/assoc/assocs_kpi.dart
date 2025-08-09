@@ -210,7 +210,7 @@ class _AssocKpiState extends State<AssocKpi> {
               : _buildAssocCard(
                   context,
                   const Iconify(Mdi.check_circle, color: Colors.green),
-                  '${kpis['totalActive']}',
+                  '${kpis['totalAssociations']}',
                   'Active Associations',
                   DeviceScreenType.desktop,
                   Colors.green[50]!,

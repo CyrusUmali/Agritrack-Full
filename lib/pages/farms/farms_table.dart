@@ -522,13 +522,13 @@ class DataTableWidget extends TableWidget<FarmsViewModel> {
     FarmsViewModel viewModel,
   ) {
     final farm = viewModel.state.farms.firstWhere(
-      (f) => f.id.toString() == columnData.id,
-    );
+      (f) => f.id.toString() == columnData. id,
+    ); 
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final isAdmin = userProvider.user?.role == 'admin';
     final isFarmerOwner = userProvider.farmer?.id == farm.farmerId;
-
+ 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

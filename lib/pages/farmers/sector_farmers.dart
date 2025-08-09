@@ -80,7 +80,7 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
 
   Widget _channelsWeb(BuildContext context) {
     return SizedBox(
-      height: 450,
+      height:500,
       child: Column(
         children: [
           _buildSearchBarDesktop(),
@@ -128,7 +128,7 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
         _buildSearchBarMobile(),
         const SizedBox(height: 16),
         SizedBox(
-          height: 500,
+          height: 600,
           child: BlocBuilder<FarmerBloc, FarmerState>(
             builder: (context, state) {
               if (state is FarmersLoading) {
@@ -735,7 +735,7 @@ class DataTableWidget extends TableWidget<FarmersViewModel> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 800,
+        width: 1000,
         child: super.build(context),
       ),
     );

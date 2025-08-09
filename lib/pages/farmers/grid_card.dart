@@ -137,8 +137,8 @@ class _FarmerKpiState extends State<FarmerKpi> {
               : _buildKpiCard(
                   context,
                   Icons.person_off_outlined,
-                  '${_farmerStats?['inactiveFarmers'] ?? '0'}',
-                  'Inactive Farmers',
+                  '${_farmerStats?['unregisteredFarmers'] ?? '0'}',
+                  'Unregistered Farmers',
                   DeviceScreenType.desktop,
                   Colors.orange[50]!,
                 ),
@@ -194,8 +194,8 @@ class _FarmerKpiState extends State<FarmerKpi> {
             : _buildKpiCard(
                 context,
                 Icons.person_off_outlined,
-                '${_farmerStats?['inactiveFarmers'] ?? '0'}',
-                'Inactive Farmers',
+                '${_farmerStats?['unregisteredFarmers'] ?? '0'}',
+                'Unregistered Farmers',
                 DeviceScreenType.mobile,
                 Colors.orange[50]!,
               ),

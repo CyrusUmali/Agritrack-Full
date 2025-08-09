@@ -20,7 +20,7 @@ class BarangayModel {
   final Map<String, double> yieldData;
   final List<String> topProducts;
   Color color;
-}
+} 
 
 class GeoJsonParser {
   static Future<List<String>> getBarangayNamesFromAsset(

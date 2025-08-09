@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'dart:math';
 
 class YieldHistory extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -21,6 +22,7 @@ class YieldHistoryState extends State<YieldHistory> {
   String? _startYear;
   String? _endYear;
   bool _showMonthlyView = false;
+  final Random _random = Random();
 
   @override
   void initState() {
@@ -39,6 +41,16 @@ class YieldHistoryState extends State<YieldHistory> {
       _startYear = yields.first['year']?.toString();
       _endYear = yields.last['year']?.toString();
     }
+  }
+
+  // Generate random color
+  Color _generateRandomColor() {
+    return Color.fromRGBO(
+      _random.nextInt(256),
+      _random.nextInt(256),
+      _random.nextInt(256),
+      1.0,
+    );
   }
 
   @override
@@ -345,6 +357,7 @@ class YieldHistoryState extends State<YieldHistory> {
         months[index],
         (monthlyData[index] as num?)?.toDouble() ?? 0,
         0, // We don't have value data in this example
+        _generateRandomColor(), // Generate random color for each bar
       );
     });
 
@@ -376,6 +389,7 @@ class YieldHistoryState extends State<YieldHistory> {
         year,
         totalYield,
         0, // We don't have value data in this example
+        _generateRandomColor(), // Generate random color for each bar
       );
     }).toList();
 
@@ -412,7 +426,7 @@ class YieldHistoryState extends State<YieldHistory> {
           dataSource: chartData,
           xValueMapper: (_ChartData data, _) => data.x,
           yValueMapper: (_ChartData data, _) => data.y,
-          color: const Color(0xFFFE8111), // Orange color
+          pointColorMapper: (_ChartData data, _) => data.color, // Use individual colors
           name: 'Yield (tons)',
           width: 0.6,
           spacing: 0.2,
@@ -444,9 +458,10 @@ class YieldHistoryState extends State<YieldHistory> {
 }
 
 class _ChartData {
-  _ChartData(this.x, this.y, this.y2);
+  _ChartData(this.x, this.y, this.y2, this.color);
 
   final String x; // Month or Year
   final double y; // Yield value
   final double y2; // Not used in this implementation
+  final Color color; // Individual color for each bar
 }

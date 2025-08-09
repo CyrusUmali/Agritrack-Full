@@ -26,7 +26,7 @@ class LanguageSelectionCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.language_outlined, color: colors.primary),
+                Icon(Icons.language_outlined ),
                 const SizedBox(width: 12),
                 Text(
                   languageProvider.translate('language'), // Simple translation

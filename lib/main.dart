@@ -47,6 +47,12 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+
+    // Initialize API service and wake up the server (added here)
+  final apiService = ApiService();
+  await apiService.wakeUpServer(); // Add this method to ApiService (see below)
+
+
   if (GetPlatform.isDesktop && !GetPlatform.isWeb) {
     await windowManager.ensureInitialized();
     WindowOptions windowOptions = const WindowOptions(

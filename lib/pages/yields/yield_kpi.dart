@@ -123,7 +123,7 @@ class _YieldKpiState extends State<YieldKpi> {
               : _buildKpiCard(
                   context,
                   const Iconify(Mdi.weight, color: Colors.deepPurple),
-                  '${_yieldStats?['totalYield'] ?? '0'} t',
+                  '${_yieldStats?['totalYield'] ?? '0'}kg',
                   'Total Yield',
                   DeviceScreenType.desktop,
                   Colors.deepPurple[50]!,
@@ -149,7 +149,7 @@ class _YieldKpiState extends State<YieldKpi> {
               : _buildKpiCard(
                   context,
                   const Iconify(Mdi.rice, color: Colors.orange),
-                  '${_yieldStats?['topCrop']?['volume'] ?? '0'} t ${_yieldStats?['topCrop']?['product'] ?? '-'}',
+                  '${_yieldStats?['topCrop']?['volume'] ?? '0'} kg ${_yieldStats?['topCrop']?['product'] ?? '-'}',
                   'Top Crop',
                   DeviceScreenType.desktop,
                   Colors.orange[50]!,
@@ -162,7 +162,7 @@ class _YieldKpiState extends State<YieldKpi> {
               : _buildKpiCard(
                   context,
                   const Iconify(Mdi.calendar_check, color: Colors.blue),
-                  '${_yieldStats?['thisMonthYield'] ?? '0'} t',
+                  '${_yieldStats?['thisMonthYield'] ?? '0'}kg',
                   'This Month',
                   DeviceScreenType.desktop,
                   Colors.blue[50]!,
@@ -186,7 +186,7 @@ class _YieldKpiState extends State<YieldKpi> {
             : _buildKpiCard(
                 context,
                 const Iconify(Mdi.weight, color: Colors.deepPurple),
-                '${_yieldStats?['totalYield'] ?? '0'} t',
+                '${_yieldStats?['totalYield'] ?? '0'}kg',
                 'Total Yield',
                 DeviceScreenType.mobile,
                 Colors.deepPurple[50]!,
@@ -206,7 +206,7 @@ class _YieldKpiState extends State<YieldKpi> {
             : _buildKpiCard(
                 context,
                 const Iconify(Mdi.rice, color: Colors.orange),
-                '${_yieldStats?['topCrop']?['volume'] ?? '0'} t ${_yieldStats?['topCrop']?['product'] ?? '-'}',
+                '${_yieldStats?['topCrop']?['volume'] ?? '0'} kg ${_yieldStats?['topCrop']?['product'] ?? '-'}',
                 'Top Crop',
                 DeviceScreenType.desktop,
                 Colors.orange[50]!,
@@ -216,7 +216,7 @@ class _YieldKpiState extends State<YieldKpi> {
             : _buildKpiCard(
                 context,
                 const Iconify(Mdi.calendar_check, color: Colors.blue),
-                '${_yieldStats?['thisMonthYield'] ?? '0'} t',
+                '${_yieldStats?['thisMonthYield'] ?? '0'}kg',
                 'This Month',
                 DeviceScreenType.mobile,
                 Colors.blue[50]!,

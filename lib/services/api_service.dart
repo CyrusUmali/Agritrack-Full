@@ -11,17 +11,36 @@ class ApiService {
     _dio.options.connectTimeout = const Duration(seconds: 10);
     _dio.options.receiveTimeout = const Duration(seconds: 10);
 
-    // Add interceptors for auth if needed
-    _dio.interceptors.add(InterceptorsWrapper(
+ _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        // Add auth token if user is logged in
+       
         final token = await FirebaseAuth.instance.currentUser?.getIdToken();
-        if (token != null) {
+        if (token != null) { 
           options.headers['Authorization'] = 'Bearer $token';
         }
         return handler.next(options);
       },
     ));
+  }
+
+
+
+   // Ping the server to wake it up (retry if needed)
+  Future<void> wakeUpServer() async {
+    const maxRetries = 3;
+    const retryDelay = Duration(seconds: 2);
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await _dio.get('/wakeup').timeout(const Duration(seconds: 5));
+        return; // Success, server is awake
+      } catch (e) {
+        if (attempt < maxRetries) {
+          await Future.delayed(retryDelay);
+        }
+      }
+    }
+    print("Warning: Server wake-up failed after $maxRetries attempts");
   }
 
   Future<Response> get(String path,

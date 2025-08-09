@@ -79,7 +79,7 @@ class _FarmMapCardState extends State<FarmMapCard> {
       return Card(
         elevation: 1,
         child: SizedBox(
-          height: widget.isMobile ? 200 : 300,
+          height: widget.isMobile ? 200 : 150,
           child: const Center(child: Text('No location data available')),
         ),
       );

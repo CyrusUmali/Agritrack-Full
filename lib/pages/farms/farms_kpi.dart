@@ -9,7 +9,7 @@ import 'package:flareline/pages/sectors/sector_service.dart';
 class FarmKpi extends StatefulWidget {
   const FarmKpi({super.key});
 
-  @override
+  @override 
   State<FarmKpi> createState() => _FarmKpiState();
 }
 
@@ -139,8 +139,8 @@ class _FarmKpiState extends State<FarmKpi> {
               : _buildKpiCard(
                   context,
                   const Iconify(Mdi.barley, color: Colors.green),
-                  '${_farmStats?['averageYield'] ?? '0 t/ha'}',
-                  'Avg. Yield',
+                  '${_farmStats?['averageYield'] ?? '0 kg/ha'}',
+                  'Avg. Yieldss',
                   DeviceScreenType.desktop,
                   Colors.green[50]!,
                 ),
@@ -196,7 +196,7 @@ class _FarmKpiState extends State<FarmKpi> {
             : _buildKpiCard(
                 context,
                 const Iconify(Mdi.barley, color: Colors.green),
-                '${_farmStats?['averageYield'] ?? '0 t/ha'}',
+                '${_farmStats?['averageYield'] ?? '0 kg/ha'}',
                 'Avg. Yield',
                 DeviceScreenType.mobile,
                 Colors.green[50]!,

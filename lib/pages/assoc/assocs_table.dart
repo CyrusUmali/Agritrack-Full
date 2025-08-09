@@ -3,8 +3,10 @@ import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/assoc/assoc_filter_widget.dart';
 import 'package:flareline/pages/assoc/assoc_profile.dart';
 import 'package:flareline/pages/widget/network_error.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
@@ -15,7 +17,7 @@ import 'package:toastification/toastification.dart';
 
 class AssocsWidget extends StatelessWidget {
   const AssocsWidget({super.key});
-
+ 
   @override
   Widget build(BuildContext context) {
     return ScreenTypeLayout.builder(
@@ -231,11 +233,18 @@ class DataTableWidget extends TableWidget<AssocsViewModel> {
   ) {
     final association = viewModel.associations.firstWhere(
       (a) => a.id.toString() == columnData.id,
-    );
+    );   
+
+
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isAdmin = userProvider.user?.role == 'admin'; 
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+
+
+          if (isAdmin )
         IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),
           onPressed: () {
