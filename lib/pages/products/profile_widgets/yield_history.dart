@@ -67,7 +67,7 @@ class YieldHistoryState extends State<YieldHistory> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Yield History',
+              'Yield Trends',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -365,7 +365,7 @@ class YieldHistoryState extends State<YieldHistory> {
       height: 300,
       child: _buildBarChart(
         chartData,
-        title: 'Monthly Yield for $_selectedYear (tons)',
+        title: 'Monthly Yield for $_selectedYear (kg)',
       ),
     );
   }

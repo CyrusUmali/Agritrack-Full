@@ -705,7 +705,7 @@ class YieldsViewModel extends BaseTableProvider {
       // Area
       var areaCell = TableDataRowsTableDataRows()
         // ..text = yieldRecord.hectare as String?
-        ..text = '${yieldRecord.hectare} ha'
+        ..text = '${yieldRecord.areaHarvested} ha'
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Area'
         ..id = yieldRecord.id.toString();

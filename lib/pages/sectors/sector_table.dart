@@ -1,8 +1,10 @@
 import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline_uikit/components/modal/modal_dialog.dart';
+import 'package:flareline_uikit/service/year_picker_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:flareline/pages/sectors/sector_profile.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
@@ -11,7 +13,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
 
 class SectorTableWidget extends StatefulWidget {
-  const SectorTableWidget({super.key});
+
+    final int selectedYear; 
+  const SectorTableWidget({super.key, required this.selectedYear});
 
   @override
   State<SectorTableWidget> createState() => _SectorTableWidgetState();
@@ -19,6 +23,17 @@ class SectorTableWidget extends StatefulWidget {
 
 class _SectorTableWidgetState extends State<SectorTableWidget> {
   Map<String, dynamic>? selectedSector;
+
+
+@override
+void didUpdateWidget(covariant SectorTableWidget oldWidget) {
+  super.didUpdateWidget(oldWidget);
+  if (oldWidget.selectedYear != widget.selectedYear) {
+    // Trigger any necessary rebuilds or data reloads
+    setState(() {});
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +59,7 @@ class _SectorTableWidgetState extends State<SectorTableWidget> {
                 Expanded(
                   flex: 2,
                   child: SectorDataTableWidget(
+                    selectedYear: widget.selectedYear, // Pass it here
                     onSectorSelected: (sector) {
                       setState(() {
                         selectedSector = sector;
@@ -65,6 +81,7 @@ class _SectorTableWidgetState extends State<SectorTableWidget> {
         SizedBox(
           height: 380,
           child: SectorDataTableWidget(
+             selectedYear: widget.selectedYear, // Pass it here
             onSectorSelected: (sector) {
               setState(() {
                 selectedSector = sector;
@@ -79,9 +96,14 @@ class _SectorTableWidgetState extends State<SectorTableWidget> {
 
 class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
   final Function(Map<String, dynamic>)? onSectorSelected;
+    final int selectedYear; // Add this field
   late SectorsViewModel _viewModel; // Add this line to store the view model
 
-  SectorDataTableWidget({this.onSectorSelected, Key? key}) : super(key: key);
+ SectorDataTableWidget({
+    this.onSectorSelected, 
+    required this.selectedYear, // Make it required
+    Key? key
+  }) : super(key: key);
 
   @override
   SectorsViewModel viewModelBuilder(BuildContext context) {
@@ -103,8 +125,17 @@ class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
           );
         }
       },
+      selectedYear, // Pass the selectedYear argument here
     );
   }
+
+
+
+
+
+
+
+
 
   @override
   Widget actionWidgetsBuilder(BuildContext context,
@@ -189,12 +220,28 @@ class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
 class SectorsViewModel extends BaseTableProvider {
   final Function(Map<String, dynamic>)? onSectorSelected;
   final Function(int)? onSectorDeleted;
+  final int selectedYear;
   List<Map<String, dynamic>> sectors = [];
 
   @override
   String get TAG => 'SectorsViewModel';
+ SectorsViewModel(
+    super.context, 
+    this.onSectorSelected, 
+    this.onSectorDeleted,
+    this.selectedYear, 
+  );
 
-  SectorsViewModel(super.context, this.onSectorSelected, this.onSectorDeleted);
+
+
+
+ 
+
+
+
+
+
+
 
   @override
   Future loadData(BuildContext context) async {
@@ -204,12 +251,19 @@ class SectorsViewModel extends BaseTableProvider {
       "Farmers",
       "Farms",
       "Yield Volume",
-      ""
+      "Area Harvested",
+      "Production",
+      "Action",
+
     ];
 
     try {
       final sectorService = RepositoryProvider.of<SectorService>(context);
-      final apiData = await sectorService.fetchSectors();
+
+ 
+
+      // final apiData = await sectorService.fetchSectors();
+           final apiData = await sectorService.fetchSectors(year: selectedYear);
       sectors = apiData;
 
       List<List<TableDataRowsTableDataRows>> rows = [];
@@ -253,6 +307,21 @@ class SectorsViewModel extends BaseTableProvider {
           ..columnName = 'Yield Volume'
           ..id = sector['id'].toString();
         row.add(yieldVolumeCell);
+
+        var areaHarvestedCell = TableDataRowsTableDataRows()
+          ..text = (sector['stats']?['totalAreaHarvested']?.toString() ?? '0') +
+              ' hectare'
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = 'Area Harvested'
+          ..id = sector['id'].toString();
+        row.add(areaHarvestedCell);
+
+        var productionCell = TableDataRowsTableDataRows()
+          ..text = (sector['stats']?['metricTons']?.toString() ?? '0') + ' mt'
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = 'Production'
+          ..id = sector['id'].toString();
+        row.add(productionCell);
 
         var actionCell = TableDataRowsTableDataRows()
           ..text = ""

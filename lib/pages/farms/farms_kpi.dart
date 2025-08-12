@@ -140,7 +140,7 @@ class _FarmKpiState extends State<FarmKpi> {
                   context,
                   const Iconify(Mdi.barley, color: Colors.green),
                   '${_farmStats?['averageYield'] ?? '0 kg/ha'}',
-                  'Avg. Yieldss',
+                  'Avg. Yields',
                   DeviceScreenType.desktop,
                   Colors.green[50]!,
                 ),

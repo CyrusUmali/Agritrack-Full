@@ -52,7 +52,7 @@ class AddYieldModal extends StatefulWidget {
 
     await ModalDialog.show(
       context: context,
-      title: 'Add Yield Record',
+      title: 'Add Record',
       showTitle: true,
       showTitleDivider: true,
       modalType: screenWidth < 600 ? ModalType.large : ModalType.medium,
