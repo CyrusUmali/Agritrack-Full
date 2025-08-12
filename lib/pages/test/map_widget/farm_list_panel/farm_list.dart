@@ -24,9 +24,13 @@ class FarmListPanel extends StatefulWidget {
   _FarmListPanelState createState() => _FarmListPanelState();
 }
 
-class _FarmListPanelState extends State<FarmListPanel> {
+class _FarmListPanelState extends State<FarmListPanel> with AutomaticKeepAliveClientMixin {
   String searchQuery = '';
   bool showBarangayFilter = false;
+
+    @override
+  bool get wantKeepAlive => true; // This preserves the state
+
 
   // Cache variables
   List<PolygonData>? _cachedFilteredPolygons;
@@ -123,7 +127,7 @@ class _FarmListPanelState extends State<FarmListPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Row( 
             children: [
               Expanded(
                 child: TextField(

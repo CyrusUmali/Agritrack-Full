@@ -69,7 +69,7 @@ class _ReportPreviewState extends State<ReportPreview> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(0),
           child: _buildReportContent(context),
         ),
       ],
@@ -88,7 +88,7 @@ class _ReportPreviewState extends State<ReportPreview> {
   }
 }
 
-class ReportDataTable extends StatefulWidget {
+class ReportDataTable extends StatefulWidget { 
   final List<Map<String, dynamic>> reportData;
   final List<String> selectedColumns;
   final Function(List<int>) onDeleteSelected;
@@ -146,9 +146,15 @@ class _ReportDataTableState extends State<ReportDataTable> {
   Widget _buildDesktopTable() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return SingleChildScrollView(
+        return 
+        
+        SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
+          child: 
+          
+          
+          
+          ConstrainedBox(
             constraints: BoxConstraints(minWidth: constraints.maxWidth),
             child: SizedBox(
               width: constraints.maxWidth > 1200 ? 1200 : constraints.maxWidth,
@@ -163,6 +169,8 @@ class _ReportDataTableState extends State<ReportDataTable> {
               ),
             ),
           ),
+        
+        
         );
       },
     );
@@ -339,7 +347,7 @@ class ReportTableViewModel extends BaseTableProvider {
 
       for (var column in selectedColumns) {
         var cell = TableDataRowsTableDataRows()
-          ..text = rowData[column]?.toString() ?? 'N/A'
+          ..text = rowData[column]?.toString() ?? '-'
           ..dataType = CellDataType.TEXT.type
           ..columnName = column
           ..id = i.toString();

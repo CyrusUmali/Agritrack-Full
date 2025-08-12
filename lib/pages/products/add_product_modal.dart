@@ -27,7 +27,7 @@ class AddProductModal extends StatefulWidget {
       title: 'Add New Product',
       showTitle: true,
       showTitleDivider: true,
-      modalType: screenWidth < 600 ? ModalType.small : ModalType.medium,
+      modalType: screenWidth < 600 ? ModalType.large : ModalType.medium,
       child: BlocProvider.value(
         value: productBloc,
         child: _AddProductModalContent(

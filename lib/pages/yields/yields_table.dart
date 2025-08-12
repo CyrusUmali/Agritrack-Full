@@ -1,6 +1,5 @@
 // ignore_for_file: must_be_immutable, avoid_print, use_super_parameters, non_constant_identifier_names
-
-import 'package:flareline/core/models/yield_model.dart';
+ 
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
@@ -12,8 +11,7 @@ import 'package:flareline/pages/yields/yield_profile.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:flutter_bloc/flutter_bloc.dart'; 
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
@@ -462,6 +460,9 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                                   String notes,
                                   List<String> images,
                                 ) {
+
+                                  print('areaHa');
+                                  print(areaHa);
                                   context.read<YieldBloc>().add(
                                         AddYield(
                                           farmerId: farmerId,
@@ -469,6 +470,7 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                                           harvestDate: date,
                                           farmId: farmId,
                                           volume: yieldAmount,
+                                          areaHarvested: areaHa,
                                           notes: notes,
                                           images: images,
                                         ),
@@ -732,11 +734,18 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                                 DateTime date,
                                 String notes,
                                 List<String> images,
-                              ) {
+                              ) 
+                              {
+
+
+                                  print('areaHa');
+                                  print(areaHa);
+
                                 context.read<YieldBloc>().add(
                                       AddYield(
                                         farmerId: farmerId,
                                         productId: cropTypeId,
+                                        areaHarvested: areaHa,
                                         harvestDate: date,
                                         farmId: farmId,
                                         volume: yieldAmount,
@@ -1085,7 +1094,7 @@ class YieldsViewModel extends BaseTableProvider {
 
 
       var areaCell = TableDataRowsTableDataRows()
-        ..text = '${yieldRecord.hectare} ha'
+        ..text = '${yieldRecord.areaHarvested} ha'
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Area'
         ..id = yieldRecord.id.toString();

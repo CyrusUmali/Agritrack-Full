@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flareline/repositories/yield_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -191,12 +192,16 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
         farmerId: event.farmerId,
         productId: event.productId,
         harvestDate: event.harvestDate,
+        areaHarvested:event.areaHarvested,
         farmId: event.farmId,
         volume: event.volume,
         notes: event.notes,
         value: event.value,
         images: event.images,
       );
+      print('areaHarvested---');
+  print('areaHarvested: ${event.areaHarvested}');
+      print('Adding new yield: ${newYield.toJson()}');
 
       await yieldRepository.addYield(newYield);
       _yields = await yieldRepository.fetchYields(); // Refresh list

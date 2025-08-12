@@ -134,7 +134,7 @@ Widget buildNotesField(String value, bool isMobile, {bool enabled = true}) {
 Widget buildStatusIndicator(String status, BuildContext context) {
   Color statusColor;
   switch (status.toLowerCase()) {
-    case 'approved':
+    case 'accepted':
       statusColor = Colors.green;
       break;
     case 'rejected':

@@ -184,15 +184,12 @@ class BarChartPainter extends CustomPainter {
     if (isMonthly) {
       // Sort months chronologically
       final monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      sortedEntries.sort((a, b) {
-        final aIndex = monthOrder.indexOf(a.key);
-        final bIndex = monthOrder.indexOf(b.key);
-        if (aIndex == -1 && bIndex == -1) return a.key.compareTo(b.key);
-        if (aIndex == -1) return 1;
-        if (bIndex == -1) return -1;
-        return aIndex.compareTo(bIndex);
-      });
+                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  sortedEntries.sort((a, b) {
+    final aIndex = monthOrder.indexOf(a.key.substring(0, 3));
+    final bIndex = monthOrder.indexOf(b.key.substring(0, 3));
+    return aIndex.compareTo(bIndex);
+  });
     } else {
       // Sort years numerically
       sortedEntries.sort((a, b) => a.key.compareTo(b.key));

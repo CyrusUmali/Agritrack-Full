@@ -18,7 +18,7 @@ Widget buildComboBox({
       borderRadius: BorderRadius.circular(8),
     ),
     child: SizedBox(
-      height: 30,
+      height: 35,
       width: width,
       child: Autocomplete<String>(
         fieldViewBuilder:
@@ -47,7 +47,7 @@ Widget buildComboBox({
                         )
                       : const Icon(Icons.arrow_drop_down, size: 24),
                 ),
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 10),
               );
             },
           );

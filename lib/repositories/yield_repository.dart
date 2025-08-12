@@ -107,6 +107,7 @@ Future<List<Yield>> getYieldByBarangay(String barangay) async {
           'product_id': yieldRecord.productId,
           'harvest_date': yieldRecord.harvestDate!.toIso8601String(),
           'status': yieldRecord.status,
+          'area_harvested': yieldRecord.areaHarvested,
           'farm_id': yieldRecord.farmId,
           'volume': yieldRecord.volume,
           'notes': yieldRecord.notes,
@@ -184,6 +185,8 @@ Future<List<Yield>> getYieldByBarangay(String barangay) async {
   }
 
   Future<Yield> addYield(Yield yieldRecord) async {
+ 
+  
     try {
       if (_firebaseAuth.currentUser == null) {
         throw Exception('User not authenticated. Please sign in first.');
@@ -209,6 +212,7 @@ Future<List<Yield>> getYieldByBarangay(String barangay) async {
           'farmer_id': yieldRecord.farmerId,
           'product_id': yieldRecord.productId,
           'harvest_date': yieldRecord.harvestDate!.toIso8601String(),
+          'area_harvested': yieldRecord.areaHarvested,
           'farm_id': yieldRecord.farmId,
           'volume': yieldRecord.volume,
           'notes': yieldRecord.notes,

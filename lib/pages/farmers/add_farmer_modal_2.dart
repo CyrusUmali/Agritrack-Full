@@ -38,7 +38,7 @@ class AddFarmerModal extends StatefulWidget {
       title: 'Add New Farmer',
       showTitle: true,
       showTitleDivider: true,
-      modalType: screenWidth < 600 ? ModalType.small : ModalType.medium,
+      modalType: screenWidth < 600 ? ModalType.large : ModalType.medium,
       child: _AddFarmerModalContent(
         key: contentKey,
         onLoadingStateChanged: (loading) {

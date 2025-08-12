@@ -98,6 +98,8 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
     final farmer = userProvider.farmer;
 
     return Scaffold(
+        resizeToAvoidBottomInset: false,
+
       backgroundColor: backgroundColor(context),
       appBar: AppBar(toolbarHeight: 0),
       body: ResponsiveBuilder(

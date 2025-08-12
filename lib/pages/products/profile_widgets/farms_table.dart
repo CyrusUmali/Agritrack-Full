@@ -57,12 +57,12 @@ class FarmsTable extends StatelessWidget {
                             child: Text('Area (hectares)'),
                           ),
                         ),
-                        DataColumn(
-                          label: SizedBox(
-                            width: columnWidth,
-                            child: Text('Volume'),
-                          ),
-                        ),
+                        // DataColumn(
+                        //   label: SizedBox(
+                        //     width: columnWidth,
+                        //     child: Text('Volume'),
+                        //   ),
+                        // ),
                         DataColumn(
                           label: SizedBox(
                             width: columnWidth,
@@ -107,15 +107,15 @@ class FarmsTable extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            DataCell(
-                              SizedBox(
-                                width: columnWidth,
-                                child: Text(
-                                  farm.volume?.toString() ?? 'N/A',
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
+                            // DataCell(
+                            //   SizedBox(
+                            //     width: columnWidth,
+                            //     child: Text(
+                            //       farm.volume?.toString() ?? 'N/A',
+                            //       overflow: TextOverflow.ellipsis,
+                            //     ),
+                            //   ),
+                            // ),
                             DataCell(
                               Container(
                                 padding: EdgeInsets.symmetric(

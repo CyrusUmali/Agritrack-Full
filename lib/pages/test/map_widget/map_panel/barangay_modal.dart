@@ -77,7 +77,7 @@ class BarangayModal {
                 farms: farms,
                 theme: theme,
                 polygonManager: polygonManager,
-                modalContext: modalContext,
+                modalContext: modalContext, 
               ),
             ),
           ),
@@ -109,7 +109,7 @@ static Future<void> _showLargeScreenModal({
           borderRadius: BorderRadius.circular(16),
         ),
         content: SizedBox(
-          width: MediaQuery.of(dialogContext).size.width * 0.7,
+          width: MediaQuery.of(dialogContext).size.width * 0.8,
           height: MediaQuery.of(dialogContext).size.height * 0.8,
           child: Column(
             children: [

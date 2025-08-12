@@ -83,7 +83,7 @@ class ReportFilterPanel extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth > 800;
+        final isDesktop = constraints.maxWidth > 1000;
         final isTablet = constraints.maxWidth > 600;
 
         return CommonCard(
@@ -260,55 +260,67 @@ class _FiltersSection extends StatelessWidget {
     required this.isTablet,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    if (reportType == 'products' ||
+@override
+Widget build(BuildContext context) {
+  if (reportType == 'products' ||
+      reportType == 'sectors' ||
+      reportType == 'farmer' ||
+      reportType == 'barangay') {
+    return isDesktop
+        ? Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDesktopFilters(context),
+            ],
+          )
+        : Column(
+            children: [
+              Center(  // Added Center widget here
+                child: DateRangePickerWidget(
+                  width: 300,
+                  dateRange: dateRange,
+                  onDateRangeChanged: onDateRangeChanged,
+                ),
+              ),
+              const SizedBox(height: 16),
+              isTablet
+                  ? _buildTabletFilters(context)
+                  : _buildMobileFilters(context),
+            ],
+          );
+  } else {
+    return isDesktop
+        ? Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [_buildDesktopFilters(context)],
+          )
+        : isTablet
+            ? _buildTabletFilters(context)
+            : _buildMobileFilters(context);
+  }
+}
+Widget _buildDesktopFilters(BuildContext context) {
+  return Wrap(
+    spacing: 16,
+    runSpacing: 16,
+    children: [ 
+
+       if (reportType == 'products' ||
         reportType == 'sectors' ||
         reportType == 'farmer' ||
-        reportType == 'comparison') {
-      return isDesktop
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DateRangePickerWidget(
-                  dateRange: dateRange,
-                  onDateRangeChanged: onDateRangeChanged,
-                ),
-                const SizedBox(width: 32),
-                _buildDesktopFilters(context),
-              ],
-            )
-          : Column(
-              children: [
-                DateRangePickerWidget(
-                  dateRange: dateRange,
-                  onDateRangeChanged: onDateRangeChanged,
-                ),
-                const SizedBox(height: 16),
-                isTablet
-                    ? _buildTabletFilters(context)
-                    : _buildMobileFilters(context),
-              ],
-            );
-    } else {
-      return isDesktop
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [_buildDesktopFilters(context)],
-            )
-          : isTablet
-              ? _buildTabletFilters(context)
-              : _buildMobileFilters(context);
-    }
-  }
+        reportType == 'barangay') 
+      DateRangePickerWidget(
+        dateRange: dateRange,
+        onDateRangeChanged: onDateRangeChanged,
+      ),
+      ..._buildDynamicFilters(context, true),
+    ],
+  );
+}
 
-  Widget _buildDesktopFilters(BuildContext context) {
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: _buildDynamicFilters(context, true),
-    );
-  }
+
+
+
 
   Widget _buildTabletFilters(BuildContext context) {
     return Column(
@@ -333,226 +345,134 @@ class _FiltersSection extends StatelessWidget {
       ],
     );
   }
+List<Widget> _buildDynamicFilters(BuildContext context, bool isDesktop) {
+  final userProvider = Provider.of<UserProvider>(context, listen: false);
+  final _isFarmer = userProvider.isFarmer;
+  final _farmerId = userProvider.farmer?.id;
 
-  List<Widget> _buildDynamicFilters(BuildContext context, bool isDesktop) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final _isFarmer = userProvider.isFarmer;
+  // Common filter widgets that can be reused
+  Widget barangayFilter = buildComboBox(
+    hint: 'Barangay',
+    options: FilterOptions.barangays,
+    selectedValue: selectedBarangay,
+    onSelected: onBarangayChanged,
+    width: isDesktop ? 130 : double.infinity,
+  );
 
-    final _farmerId = userProvider.farmer?.id;
+  Widget sectorFilter = buildComboBox(
+    hint: 'Sector',
+    options: FilterOptions.sectors,
+    selectedValue: selectedSector,
+    onSelected: onSectorChanged,
+    width: isDesktop ? 130 : double.infinity,
+  );
 
-    switch (reportType) {
-      case 'farmers':
-        return [
-          buildComboBox(
-            hint: 'Barangay',
-            options: FilterOptions.barangays,
-            selectedValue: selectedBarangay,
-            onSelected: onBarangayChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-          buildComboBox(
-            hint: 'Sector',
-            options: FilterOptions.sectors,
-            selectedValue: selectedSector,
-            onSelected: onSectorChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-          BlocBuilder<AssocsBloc, AssocsState>(
-            builder: (context, state) {
-              return buildComboBox(
-                hint: 'Association',
-                options: FilterOptions.getAssocs(context),
-                selectedValue: selectedAssoc,
-                onSelected: onAssocChanged,
-                width: isDesktop ? 130 : double.infinity,
-              );
-            },
-          ),
-          buildComboBox(
-            hint: 'Count',
-            options: FilterOptions.Count,
-            selectedValue: selectedCount,
-            onSelected: onCountChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-        ];
-      case 'farmer':
-        return [
-          if (!_isFarmer)
-            BlocBuilder<FarmerBloc, FarmerState>(
-              builder: (context, state) {
-                return buildComboBox(
-                  hint: 'Farmer',
-                  options: FilterOptions.getFarmers(context),
-                  selectedValue: selectedFarmer,
-                  onSelected: onFarmerChanged,
-                  width: isDesktop ? 130 : double.infinity,
-                );
-              },
-            ),
-          BlocBuilder<ProductBloc, ProductState>(
-            builder: (context, state) {
-              return buildComboBox(
-                hint: 'Product',
-                options: FilterOptions.getProducts(context),
-                selectedValue: selectedProduct,
-                onSelected: onProductChanged,
-                width: isDesktop ? 130 : double.infinity,
-              );
-            },
-          ),
-          BlocBuilder<FarmBloc, FarmState>(
-            builder: (context, state) {
-              return buildComboBox(
-                hint: 'Farm',
-                options: FilterOptions.getFarms(context, _farmerId),
-                selectedValue: selectedFarm,
-                onSelected: onFarmChanged,
-                width: isDesktop ? 130 : double.infinity,
-              );
-            },
-          ),
-          if (!_isFarmer)
-            BlocBuilder<AssocsBloc, AssocsState>(
-              builder: (context, state) {
-                return buildComboBox(
-                  hint: 'Association',
-                  options: FilterOptions.getAssocs(context),
-                  selectedValue: selectedAssoc,
-                  onSelected: onAssocChanged,
-                  width: isDesktop ? 130 : double.infinity,
-                );
-              },
-            ),
-          buildComboBox(
-            hint: 'View By',
-            options: FilterOptions.viewBy,
-            selectedValue: selectedView,
-            onSelected: onViewChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-          buildComboBox(
-            hint: 'Count',
-            options: FilterOptions.Count,
-            selectedValue: selectedCount,
-            onSelected: onCountChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-        ];
-      case 'products':
-        return [
-          BlocBuilder<ProductBloc, ProductState>(
-            builder: (context, state) {
-              return buildComboBox(
-                hint: 'Product',
-                options: FilterOptions.getProducts(context),
-                selectedValue: selectedProduct,
-                onSelected: onProductChanged,
-                width: isDesktop ? 130 : double.infinity,
-              );
-            },
-          ),
-          buildComboBox(
-            hint: 'View By',
-            options: FilterOptions.viewBy,
-            selectedValue: selectedView,
-            onSelected: onViewChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-          if (!_isFarmer)
-            buildComboBox(
-              hint: 'Barangay',
-              options: FilterOptions.barangays,
-              selectedValue: selectedBarangay,
-              onSelected: onBarangayChanged,
-              width: isDesktop ? 130 : double.infinity,
-            ),
-          if (!_isFarmer)
-            buildComboBox(
-              hint: 'Sector',
-              options: FilterOptions.sectors,
-              selectedValue: selectedSector,
-              onSelected: onSectorChanged,
-              width: isDesktop ? 130 : double.infinity,
-            ),
-          buildComboBox(
-            hint: 'Count',
-            options: FilterOptions.Count,
-            selectedValue: selectedCount,
-            onSelected: onCountChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-        ];
+  Widget assocFilter = BlocBuilder<AssocsBloc, AssocsState>(
+    builder: (context, state) {
+      return buildComboBox(
+        hint: 'Association',
+        options: FilterOptions.getAssocs(context),
+        selectedValue: selectedAssoc,
+        onSelected: onAssocChanged,
+        width: isDesktop ? 130 : double.infinity,
+      );
+    },
+  );
 
-      case 'barangay':
-        return [
-          buildComboBox(
-            hint: 'Barangay',
-            options: FilterOptions.barangays,
-            selectedValue: selectedBarangay,
-            onSelected: onBarangayChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-          BlocBuilder<ProductBloc, ProductState>(
-            builder: (context, state) {
-              return buildComboBox(
-                hint: 'Product',
-                options: FilterOptions.getProducts(context),
-                selectedValue: selectedProduct,
-                onSelected: onProductChanged,
-                width: isDesktop ? 130 : double.infinity,
-              );
-            },
-          ),
-          buildComboBox(
-            hint: 'View By',
-            options: FilterOptions.viewBy,
-            selectedValue: selectedView,
-            onSelected: onViewChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-          buildComboBox(
-            hint: 'Sector',
-            options: FilterOptions.sectors,
-            selectedValue: selectedSector,
-            onSelected: onSectorChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-          buildComboBox(
-            hint: 'Count',
-            options: FilterOptions.Count,
-            selectedValue: selectedCount,
-            onSelected: onCountChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-        ];
+  Widget countFilter = buildComboBox(
+    hint: 'Count',
+    options: FilterOptions.Count,
+    selectedValue: selectedCount,
+    onSelected: onCountChanged,
+    width: isDesktop ? 130 : double.infinity,
+  );
 
-      case 'sectors':
-        return [
-          buildComboBox(
-            hint: 'Sector',
-            options: FilterOptions.sectors,
-            selectedValue: selectedSector,
-            onSelected: onSectorChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-          buildComboBox(
-            hint: 'View By',
-            options: FilterOptions.viewBy,
-            selectedValue: selectedView,
-            onSelected: onViewChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-          buildComboBox(
-            hint: 'Count',
-            options: FilterOptions.Count,
-            selectedValue: selectedCount,
-            onSelected: onCountChanged,
-            width: isDesktop ? 130 : double.infinity,
-          ),
-        ];
-      default:
-        return [];
-    }
+  Widget viewByFilter = buildComboBox(
+    hint: 'View By',
+    options: FilterOptions.viewBy,
+    selectedValue: selectedView,
+    onSelected: onViewChanged,
+    width: isDesktop ? 130 : double.infinity,
+  );
+
+  Widget farmerFilter = BlocBuilder<FarmerBloc, FarmerState>(
+    builder: (context, state) {
+      return buildComboBox(
+        hint: 'Farmer',
+        options: FilterOptions.getFarmers(context),
+        selectedValue: selectedFarmer,
+        onSelected: onFarmerChanged,
+        width: isDesktop ? 130 : double.infinity,
+      );
+    },
+  );
+
+  Widget productFilter = BlocBuilder<ProductBloc, ProductState>(
+    builder: (context, state) {
+      return buildComboBox(
+        hint: 'Product',
+        options: FilterOptions.getProducts(context),
+        selectedValue: selectedProduct,
+        onSelected: onProductChanged,
+        width: isDesktop ? 130 : double.infinity,
+      );
+    },
+  );
+
+  Widget farmFilter = BlocBuilder<FarmBloc, FarmState>(
+    builder: (context, state) {
+      return buildComboBox(
+        hint: 'Farm',
+        options: FilterOptions.getFarms(context, _farmerId),
+        selectedValue: selectedFarm,
+        onSelected: onFarmChanged,
+        width: isDesktop ? 130 : double.infinity,
+      );
+    },
+  );
+
+  switch (reportType) {
+    case 'farmers':
+      return [
+        if (!_isFarmer) barangayFilter,
+        sectorFilter,
+        if (!_isFarmer) assocFilter,
+        countFilter,
+      ];
+    case 'farmer':
+      return [
+        if (!_isFarmer) farmerFilter,
+        productFilter,
+        farmFilter,
+        if (!_isFarmer) assocFilter,
+        viewByFilter,
+        countFilter,
+      ];
+    case 'products':
+      return [
+        productFilter,
+        viewByFilter,
+        if (!_isFarmer) barangayFilter,
+        if (!_isFarmer) sectorFilter,
+        countFilter,
+      ];
+    case 'barangay':
+      return [
+        barangayFilter,
+        productFilter,
+        viewByFilter,
+        sectorFilter,
+        countFilter,
+      ];
+    case 'sectors':
+      return [
+        sectorFilter,
+        viewByFilter,
+        countFilter,
+      ];
+    default:
+      return [];
   }
+}
+
 }

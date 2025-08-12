@@ -91,8 +91,7 @@ class Dashboard extends LayoutWidget {
             return GridCard(selectedYear: yearProvider.selectedYear);
           },
         ),
-        const SizedBox(height: 16),
-        const SizedBox(height: 16),
+        const SizedBox(height: 16), 
         Consumer<YearPickerProvider>(
           builder: (context, yearProvider, child) {
             return AnalyticsWidget(selectedYear: yearProvider.selectedYear);
@@ -100,7 +99,7 @@ class Dashboard extends LayoutWidget {
         ),
         if (_hasRole(user, 'admin')) const SizedBox(height: 30),
         const SizedBox(height: 20),
-        if (_hasRole(user, 'admin') || _hasRole(user, 'manager'))
+        if (_hasRole(user, 'admin') || _hasRole(user, 'officer'))
           const RevenueWidget(),
         const SizedBox(height: 16),
         if (_hasRole(user, 'admin')) ChannelWidget(),

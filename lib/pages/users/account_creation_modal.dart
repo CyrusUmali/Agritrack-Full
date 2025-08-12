@@ -20,7 +20,7 @@ class AccountCreationMethodModal {
       title: 'Create New Account',
       showTitle: true,
       showTitleDivider: true,
-      modalType: isSmallScreen ? ModalType.small : ModalType.medium,
+      modalType: isSmallScreen ? ModalType.large : ModalType.medium,
       onCancelTap: () => Navigator.of(context).pop(),
       onSaveTap: () {
         Navigator.of(context).pop();

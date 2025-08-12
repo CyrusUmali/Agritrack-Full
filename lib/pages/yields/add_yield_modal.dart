@@ -55,7 +55,7 @@ class AddYieldModal extends StatefulWidget {
       title: 'Add Yield Record',
       showTitle: true,
       showTitleDivider: true,
-      modalType: screenWidth < 600 ? ModalType.small : ModalType.medium,
+      modalType: screenWidth < 600 ? ModalType.large : ModalType.medium,
       child: _AddYieldModalContent(
         key: contentKey,
         onLoadingStateChanged: (loading) {
@@ -138,6 +138,7 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
   bool _cropTypeValidated = false;
   bool _farmerValidated = false;
   bool _farmAreaValidated = false;
+  bool _areaHaValidated = false;
   bool _yieldAmountValidated = false;
 
   late Farmer? _currentFarmer;
@@ -160,8 +161,15 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
           .toList();
       if (farmsForFarmer.isNotEmpty) {
         selectedFarm = farmsForFarmer.first;
-        farmAreaController.text = selectedFarm!.name;
+        farmAreaController.text = selectedFarm!.name; 
+        _setAreaHarvestedFromFarm(selectedFarm!);
       }
+    }
+  }
+ 
+  void _setAreaHarvestedFromFarm(Farm farm) {
+    if (farm.hectare != null && farm.hectare! > 0) {
+      areaHaController.text = farm.hectare.toString();
     }
   }
 
@@ -342,6 +350,7 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
       _farmerValidated = true;
       _farmAreaValidated = true;
       _yieldAmountValidated = true;
+      _areaHaValidated = true; // Add this line
     });
 
     if (!_formKey.currentState!.validate()) {
@@ -367,6 +376,9 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
           : double.tryParse(areaHaController.text.trim());
 
       // Call the callback with the image URLs instead of XFiles
+
+      print('areaHa-------');
+      print(areaHa);
       widget.onYieldAdded(
         selectedProduct!.id,
         selectedFarmer!.id,
@@ -510,7 +522,6 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
                     ),
                   )
                 :
-
                 // Farmer Autocomplete
                 SizedBox(
                     height: fieldHeight,
@@ -528,7 +539,8 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
                         setState(() {
                           selectedFarmer = farmer;
                           selectedFarm = null;
-                          farmAreaController.text = '';
+                          farmAreaController.text = ''; 
+                          areaHaController.text = '';
                         });
                       },
                       displayStringForOption: (farmer) => farmer.name,
@@ -608,7 +620,8 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
                 },
                 onSelected: (Farm farm) {
                   setState(() {
-                    selectedFarm = farm;
+                    selectedFarm = farm; 
+                    _setAreaHarvestedFromFarm(farm);
                   });
                 },
                 displayStringForOption: (farm) => farm.name,
@@ -675,21 +688,65 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
               ),
             ),
             SizedBox(height: isSmallScreen ? 8.0 : 16.0),
-
-            // Area (ha) - Optional
-            SizedBox(
-              height: fieldHeight,
-              child: TextFormField(
-                controller: areaHaController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Area (ha) - Optional',
-                  border: OutlineInputBorder(),
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                ),
-              ),
-            ),
+SizedBox(
+  height: fieldHeight,
+  child: TextFormField(
+    controller: areaHaController,
+    keyboardType: TextInputType.number,
+    decoration: InputDecoration(
+      labelText: 'Area harvested (ha) - Optional',
+      border: const OutlineInputBorder(),
+      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      errorStyle: const TextStyle(fontSize: 12),
+      errorBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: Colors.red.shade400,
+          width: 1.5,
+        ),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: Colors.red.shade400,
+          width: 1.5,
+        ),
+      ),
+    ),
+    validator: (value) {
+      // If field is empty, it's optional so return null (no error)
+      if (value == null || value.trim().isEmpty) {
+        return null;
+      }
+      
+      // If user entered something, validate it
+      final area = double.tryParse(value.trim());
+      if (area == null) {
+        return 'Please enter a valid number';
+      }
+      
+      if (area <= 0) {
+        return 'Area must be greater than 0';
+      }
+      
+      // Optional: Add maximum area validation if needed
+      if (area > 10000) { // Example: max 10,000 hectares
+        return 'Area seems too large. Please check your input';
+      }
+      
+      // Optional: Check against farm's total area if available
+      if (selectedFarm != null && selectedFarm!.hectare != null) {
+        if (area > selectedFarm!.hectare!) {
+          return 'Area cannot exceed farm size (${selectedFarm!.hectare} ha)';
+        }
+      }
+      
+      return null;
+    },
+    autovalidateMode: _areaHaValidated
+        ? AutovalidateMode.onUserInteraction
+        : AutovalidateMode.disabled,
+  ),
+),
+       
             SizedBox(height: isSmallScreen ? 8.0 : 16.0),
 
             // Yield Amount

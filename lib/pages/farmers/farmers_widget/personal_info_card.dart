@@ -42,8 +42,8 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
     super.initState();
     _effectiveFormKey = widget.formKey ?? GlobalKey<FormState>();
 
-print('farmer:');
-    print(widget.farmer);
+    // print('farmer:');
+    // print(widget.farmer);
 
     // Format options with "id: name"
     _assocOptions =
@@ -76,49 +76,104 @@ print('farmer:');
     return (value == null || value.isEmpty) ? '---' : value;
   }
 
-
-
-
-Widget _buildComboBoxField({
-  required String label,
-  required String value,
-  required List<String> options,
-  required Function(String) onChanged,
-  bool isRequired = false,
-  double? comboBoxHeight, // Optional height for the ComboBox
-}) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        '$label${isRequired ? '*' : ''}',
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey[600],
+  Widget _buildComboBoxField({
+    required String label,
+    required String value,
+    required List<String> options,
+    required Function(String) onChanged,
+    bool isRequired = false,
+    double? comboBoxHeight, // Optional height for the ComboBox
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$label${isRequired ? '*' : ''}',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
         ),
-      ),
-      const SizedBox(height: 4),
-      buildComboBox(
-        
-        context: context,
-        hint: 'Select $label',
-        options: options,
-        selectedValue: value,
-        onSelected: (newValue) {
-          if (newValue != null) {
-            onChanged(newValue);
-          }
-        },
-        width: 200,
-        height: comboBoxHeight, // Pass the optional height to the ComboBox
-      ),
-    ],
-  );
-}
+        const SizedBox(height: 4),
+        buildComboBox(
+          context: context,
+          hint: 'Select $label',
+          options: options,
+          selectedValue: value,
+          onSelected: (newValue) {
+            if (newValue != null) {
+              onChanged(newValue);
+            }
+          },
+          width: 200,
+          height: comboBoxHeight, // Pass the optional height to the ComboBox
+        ),
+      ],
+    );
+  }
 
+  Widget _buildDatePickerField({
+    required String label,
+    required String value,
+    required Function(String) onChanged,
+    bool isRequired = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$label${isRequired ? '*' : ''}',
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 4),
+        InkWell(
+          onTap: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: value != '---' && value.isNotEmpty
+                  ? DateTime.tryParse(value) ?? DateTime.now()
+                  : DateTime.now(),
+              firstDate: DateTime(1900),
+              lastDate: DateTime.now(),
+            );
+            if (picked != null) {
+              final formattedDate = picked.toIso8601String().split('T')[0];
+              onChanged(formattedDate);
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            height: 30,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value == '---' || value.isEmpty ? 'Select Date' : value,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: value == '---' || value.isEmpty
+                          ? Colors.grey[600]
+                          : Colors.black87,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
- 
- 
   @override
   Widget build(BuildContext context) {
     return CommonCard(
@@ -189,20 +244,33 @@ Widget _buildComboBoxField({
 
             const SizedBox(height: 12),
 
-
-
-
-
-       Row(
+            Row(
               children: [
                 Expanded(
                   child: DetailField(
-                          label: 'Email',
-                          value: getValue('email'),
-                        ),
+                    label: 'Email',
+                    value: getValue('email'),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
+                  child: widget.isEditing
+                      ? _buildDatePickerField(
+                          label: 'Birthday',
+                          value: getValue('birthday'),
+                          onChanged: (value) {
+                            widget.onFieldChanged(MapEntry('birthday', value));
+                          },
+                        )
+                      : DetailField(
+                          label: 'Birthday',
+                          value: getValue('birthday'),
+                        ),
+                ),
+         
+         
+            const SizedBox(width: 12),
+                   Expanded(
                   child: widget.isEditing
                       ? EditableField(
                           label: 'Contact*',
@@ -211,7 +279,7 @@ Widget _buildComboBoxField({
                             widget.onFieldChanged(MapEntry('phone', value));
                             _effectiveFormKey.currentState?.validate();
                           },
-                     validator: (value) {
+                          validator: (value) {
                             if (value != null && value.length > 50) {
                               return 'Maximum 50 characters allowed';
                             }
@@ -222,20 +290,43 @@ Widget _buildComboBoxField({
                           label: 'Contact',
                           value: getValue('phone'),
                         ),
-                ),
+                ), 
+           
+         
+         
               ],
             ),
 
             const SizedBox(height: 12),
 
-
-
-
-
-
-
-
-
+            // Row(
+            //   children: [
+            //     Expanded(
+            //       child: widget.isEditing
+            //           ? EditableField(
+            //               label: 'Contact*',
+            //               value: getValue('phone'),
+            //               onChanged: (value) {
+            //                 widget.onFieldChanged(MapEntry('phone', value));
+            //                 _effectiveFormKey.currentState?.validate();
+            //               },
+            //               validator: (value) {
+            //                 if (value != null && value.length > 50) {
+            //                   return 'Maximum 50 characters allowed';
+            //                 }
+            //                 return null;
+            //               },
+            //             )
+            //           : DetailField(
+            //               label: 'Contact',
+            //               value: getValue('phone'),
+            //             ),
+            //     ),
+            //     const SizedBox(width: 12),
+            //     // Empty expanded to maintain layout consistency
+            //     const Expanded(child: SizedBox()),
+            //   ],
+            // ), 
 
             // Middle Name, Extension, Gender
             Row(
@@ -299,14 +390,14 @@ Widget _buildComboBoxField({
             const SizedBox(height: 12),
 
             Row(
-              children: [ 
+              children: [
                 Expanded(
                   child: widget.isEditing
-                      ? _buildComboBoxField(comboBoxHeight: 30,
+                      ? _buildComboBoxField(
+                          comboBoxHeight: 30,
                           label: 'Barangay',
                           value: getValue('barangay'),
                           options: widget.barangayNames,
-                          
                           onChanged: (value) {
                             widget.onFieldChanged(MapEntry('barangay', value));
                           },
@@ -323,7 +414,8 @@ Widget _buildComboBoxField({
                       ? _buildComboBoxField(
                           label: 'Sector',
                           value: getValue('sector'),
-                          options: _sectors,comboBoxHeight: 30,
+                          options: _sectors,
+                          comboBoxHeight: 30,
                           onChanged: (value) {
                             widget.onFieldChanged(MapEntry('sector', value));
                           },
@@ -367,10 +459,11 @@ Widget _buildComboBoxField({
                         value: _initialAssocValue ?? '---',
                       ),
               ),
+              const SizedBox(width: 12),
               Expanded(
                 child: widget.isEditing
                     ? _buildComboBoxField(
-                      comboBoxHeight: 30,
+                        comboBoxHeight: 30,
                         label: 'Account Status',
                         value: getValue('accountStatus'),
                         options: const [

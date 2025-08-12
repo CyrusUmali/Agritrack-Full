@@ -31,6 +31,7 @@ class AddYield extends YieldEvent {
   final int farmerId;
   final int productId;
   final DateTime harvestDate;
+  final double? areaHarvested; 
   final int farmId;
   final double volume;
   final String? notes;
@@ -43,6 +44,7 @@ class AddYield extends YieldEvent {
     required this.harvestDate,
     required this.farmId,
     required this.volume,
+    this.areaHarvested,
     this.notes,
     this.value,
     this.images = const [],
@@ -53,6 +55,7 @@ class AddYield extends YieldEvent {
         farmerId,
         productId,
         harvestDate,
+        areaHarvested,
         farmId,
         volume,
         notes,

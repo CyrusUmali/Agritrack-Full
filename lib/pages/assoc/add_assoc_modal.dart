@@ -20,7 +20,7 @@ class AddAssociationModal extends StatefulWidget {
       title: 'Add New Association',
       showTitle: true,
       showTitleDivider: true,
-      modalType: screenWidth < 600 ? ModalType.small : ModalType.medium,
+      modalType: screenWidth < 600 ? ModalType.large : ModalType.medium,
       child: BlocProvider.value(
         value: associationBloc,
         child: _AddAssociationModalContent(

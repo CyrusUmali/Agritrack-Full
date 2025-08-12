@@ -57,6 +57,7 @@ class FarmerBloc extends Bloc<FarmerEvent, FarmerState> {
 
       emit(FarmerLoaded(updatedFarmer));
     } catch (e) {
+      print('error her');
       print('Error updating farmer: $e');
       emit(FarmersError(e.toString()));
       // On error, try to reload the current farmer if we have an ID

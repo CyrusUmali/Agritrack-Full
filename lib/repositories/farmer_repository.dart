@@ -40,6 +40,8 @@ class FarmerRepository {
         throw Exception('User not authenticated');
       }
 
+      print(farmer.toJson()); 
+
       final response = await apiService.put(
         '/auth/farmers/${farmer.id}',
         data: {
@@ -47,7 +49,7 @@ class FarmerRepository {
           'firstname': farmer.firstname,
           'middlename': farmer.middlename,
           'surname': farmer.surname,
-          'extension': farmer.extension,
+          'extension': farmer.extension, 
           'email': farmer.email,
           'phone': farmer.phone,
           'address': farmer.address,
@@ -57,6 +59,7 @@ class FarmerRepository {
           'imageUrl': farmer.imageUrl,
           'farm_name': farmer.farmName,
           'association': farmer.association,
+     'birthday': farmer.birthday?.toIso8601String(), // Add this line
           'total_land_area': farmer.hectare?.toString(),
           // New fields
           'house_hold_head': farmer.house_hold_head,

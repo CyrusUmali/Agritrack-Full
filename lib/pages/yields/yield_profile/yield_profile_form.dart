@@ -29,7 +29,7 @@ class YieldProfileForm extends StatefulWidget {
 
 class _YieldProfileFormState extends State<YieldProfileForm> {
   final YieldImageHandler _imageHandler = YieldImageHandler();
-  late TextEditingController _hectareController;
+  late TextEditingController _areaHarvestedController;
   late TextEditingController _volumeController;
   late TextEditingController _valueController;
   late TextEditingController _notesController;
@@ -51,8 +51,8 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
             .cast<String>()
             .toList() ??
         [];
-    _hectareController = TextEditingController(
-        text: widget.yieldData.hectare?.toStringAsFixed(2) ?? '0.00');
+    _areaHarvestedController = TextEditingController(
+        text: widget.yieldData.areaHarvested?.toStringAsFixed(3) ?? '0.00');
     _volumeController = TextEditingController(
         text: widget.yieldData.volume?.toStringAsFixed(2) ?? '0.00');
     _valueController = TextEditingController(
@@ -64,7 +64,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
 
   @override
   void dispose() {
-    _hectareController.dispose();
+    _areaHarvestedController.dispose();
     _volumeController.dispose();
     _valueController.dispose();
     _notesController.dispose();
@@ -132,7 +132,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
 
       final updatedYield = widget.yieldData.copyWith(
         images: allImages,
-        hectare: double.tryParse(_hectareController.text),
+        areaHarvested: double.tryParse(_areaHarvestedController.text),
         volume: double.tryParse(_volumeController.text),
         value: double.tryParse(_valueController.text),
         notes: _notesController.text,
@@ -191,7 +191,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
           if (widget.onYieldUpdated != null) {
             final updatedYield = widget.yieldData.copyWith(
               images: [..._imageHandler.existingImages],
-              hectare: double.tryParse(_hectareController.text),
+              areaHarvested: double.tryParse(_areaHarvestedController.text),
               volume: double.tryParse(_volumeController.text),
               value: double.tryParse(_valueController.text),
               notes: _notesController.text,
@@ -293,9 +293,9 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
                           isMobile,
                           enabled: false,
                         ),
-                        buildEditableTextField(
-                          controller: _hectareController,
-                          label: "Area used (Ha)",
+                        buildEditableTextField( 
+                          controller: _areaHarvestedController,
+                          label: "Area harvested (Ha)",
                           isMobile: isMobile,
                           keyboardType:
                               TextInputType.numberWithOptions(decimal: true),
@@ -365,7 +365,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
                         print('Accept action triggered');
                         _updateYield('Accepted');
                       },
-                      onReject: () {
+                      onReject: () { 
                         print('Reject action triggered');
                         _updateYield('Rejected');
                       },

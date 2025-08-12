@@ -33,9 +33,11 @@ class Farmer extends Equatable {
   final String? personToNotify;
   final String? ptnContact;
   final String? ptnRelationship;
+   final DateTime? birthday;
 
   const Farmer({
     required this.id,
+    this.birthday, // Add to constructor
     required this.name,
     this.association,
     this.firstname,
@@ -75,6 +77,9 @@ class Farmer extends Equatable {
       id: map['id'] ?? 0,
       name: map['name'] ?? '',
       firstname: map['firstname'],
+      birthday: map['birthday'] != null
+          ? DateTime.tryParse(map['birthday'])
+          : null, // Parse birthday if available
       middlename: map['middlename'],
       accountStatus: map['accountStatus'],
       association: map['association'],
@@ -115,6 +120,14 @@ class Farmer extends Equatable {
       name: (json['name'] as String?) ?? 'Unknown',
       accountStatus: (json['accountStatus'] as String?) ?? 'Unregistered',
       firstname: (json['firstname'] as String?) ?? '',
+      birthday: json['birthday'] != null
+          ? DateTime.tryParse(json['birthday'])
+          : null, // Parse birthday if available
+
+
+     // When sending to API:
+     //'
+    //  birthday: farmer.birthday?.toIso8601String().split('T')[0]  ,
       surname: (json['surname'] as String?) ?? '',
       middlename: (json['middlename'] as String?) ?? '',
       association: (json['association' as String?]) ?? '',
@@ -167,6 +180,9 @@ class Farmer extends Equatable {
       'contact': contact,
       'farmName': farmName,
       'sex': sex,
+    'birthday': birthday != null 
+        ? "${birthday!.year}-${birthday!.month.toString().padLeft(2, '0')}-${birthday!.day.toString().padLeft(2, '0')}"
+        : null,
       'hectare': hectare,
       'email': email,
       'phone': phone,
@@ -195,6 +211,7 @@ class Farmer extends Equatable {
       'firstname': firstname,
       'surname': surname,
       'middlename': middlename,
+      'birthday': birthday?.toIso8601String(),
       'accountStatus': accountStatus,
       'association': association,
       'extension': extension,
@@ -277,6 +294,7 @@ class Farmer extends Equatable {
   List<Object?> get props => [
         id,
         name,
+        birthday,
         firstname,
         surname,
         middlename,

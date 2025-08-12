@@ -173,13 +173,14 @@ class _SectorBarChartState extends State<SectorBarChart> {
   Widget _buildChart(List<Map<String, dynamic>> sectors) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final chartData = sectors
-        .map((sector) => _ChartData(
-              sector['name'] ?? 'Unknown',
-              (sector['stats']?['totalLandArea'] ?? 0).toDouble(),
-              (sector['stats']?['totalYieldVolume'] ?? 0).toDouble(),
-            ))
-        .toList();
+final chartData = sectors
+    .map((sector) => _ChartData(
+          sector['name'] ?? 'Unknown',
+          (sector['stats']?['totalAreaHarvested'] ?? 0).toDouble(),
+          ((sector['stats']?['totalYieldVolume'] ?? 0) / 1000).toDouble(), // kg → MT
+        ))
+    .toList();
+
 
     return SfCartesianChart(
       plotAreaBorderWidth: 0,
@@ -202,7 +203,7 @@ class _SectorBarChartState extends State<SectorBarChart> {
           xValueMapper: (_ChartData data, _) => data.x,
           yValueMapper: (_ChartData data, _) => data.y,
           color: Color(0xFFFE8111),
-          name: 'Farm Area (ha)',
+          name: 'Area harvested (ha)',
           width: 0.3,
           spacing: 0.1,
           dataLabelSettings: const DataLabelSettings(

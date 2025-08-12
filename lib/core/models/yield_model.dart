@@ -21,6 +21,9 @@ class Yield extends Equatable {
   final List<String?> images;
   final String? status;
   final double? hectare;
+    final double? areaHarvested;
+
+
 
   const Yield(
       {required this.id,
@@ -42,6 +45,7 @@ class Yield extends Equatable {
       this.farmerName,
       this.hectare,
       this.productName,
+      this.areaHarvested,
       this.farmName});
 
   factory Yield.fromJson(Map<String, dynamic> json) {
@@ -96,6 +100,12 @@ class Yield extends Equatable {
       hectare: json['farmArea'] != null
           ? (json['farmArea'] as num).toDouble()
           : null,
+       areaHarvested: json['area_harvested'] != null
+          ? (json['area_harvested'] as num).toDouble()
+          : null,
+
+
+          
     );
   }
 
@@ -120,6 +130,7 @@ class Yield extends Equatable {
     List<String?>? images,
     String? status,
     double? hectare,
+    double? areaHarvested,
   }) {
     return Yield(
       id: id ?? this.id,
@@ -142,6 +153,7 @@ class Yield extends Equatable {
       images: images ?? this.images,
       status: status ?? this.status,
       hectare: hectare ?? this.hectare,
+      areaHarvested: areaHarvested ?? this.areaHarvested,
     );
   }
 
@@ -160,6 +172,7 @@ class Yield extends Equatable {
       'value': value,
       'images': images,
       'hectare': hectare,
+      'areaHarvested':areaHarvested,
       'barangay': barangay,
       'sector': sector,
       'sectorId': sectorId,
@@ -171,63 +184,13 @@ class Yield extends Equatable {
     };
   }
 
-  // Sample data for development/demo purposes
-  static List<Yield> get sampleYields {
-    return [
-      Yield(
-        id: 1,
-        farmerId: 101,
-        productId: 1, // Organic Rice
-        harvestDate: DateTime(2023, 6, 15),
-        createdAt: DateTime(2023, 6, 15),
-        updatedAt: DateTime(2023, 6, 15),
-        farmId: 201,
-        volume: 500,
-        notes: 'First harvest of the season',
-        value: 2500,
-        images: [
-          'https://example.com/rice-harvest1.jpg',
-          'https://example.com/rice-harvest2.jpg'
-        ],
-      ),
-      Yield(
-        id: 2,
-        farmerId: 102,
-        productId: 2, // Free Range Eggs
-        harvestDate: DateTime(2023, 6, 10),
-        createdAt: DateTime(2023, 6, 10),
-        updatedAt: DateTime(2023, 6, 10),
-        farmId: 202,
-        volume: 1200,
-        notes: 'Weekly egg collection',
-        value: 3600,
-        images: ['https://example.com/eggs-collection.jpg'],
-      ),
-      Yield(
-        id: 3,
-        farmerId: 103,
-        productId: 3, // Fresh Tilapia
-        harvestDate: DateTime(2023, 6, 5),
-        createdAt: DateTime(2023, 6, 5),
-        updatedAt: DateTime(2023, 6, 5),
-        farmId: 203,
-        volume: 300,
-        notes: 'Pond harvest - good yield',
-        value: 4500,
-        images: [
-          'https://example.com/tilapia-harvest1.jpg',
-          'https://example.com/tilapia-harvest2.jpg',
-          'https://example.com/tilapia-harvest3.jpg'
-        ],
-      ),
-    ];
-  }
-
+ 
   @override
   List<Object?> get props => [
         id,
         farmerId,
         productId,
+        areaHarvested,
         harvestDate,
         createdAt,
         updatedAt,

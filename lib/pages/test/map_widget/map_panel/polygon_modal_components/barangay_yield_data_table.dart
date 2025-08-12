@@ -761,9 +761,8 @@ Widget _buildViewTypeToggle(ThemeData theme) {
 
 
 
-
-
 Widget _buildDataDisplay(Map<String, Map<String, double>> yieldData) {
+  final ScrollController scrollController = ScrollController();
   Widget chartWidget;
   
   if (_viewType == DataViewType.table) {
@@ -804,31 +803,35 @@ Widget _buildDataDisplay(Map<String, Map<String, double>> yieldData) {
     );
   }
 
-  // Check if we're on mobile and it's a chart (not table or pie chart)
-  final screenWidth = MediaQuery.of(context).size.width;
-  final isMobile = screenWidth < 600;
-  final isChart = _viewType == DataViewType.barchart || _viewType == DataViewType.linechart 
-      || _viewType == DataViewType.piechart;
+  // Make all charts scrollable horizontally (not just mobile)
+  final isChart = _viewType == DataViewType.barchart || 
+                  _viewType == DataViewType.linechart || 
+                  _viewType == DataViewType.piechart;
   
-  if (isMobile && isChart) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Container(
-        // Set minimum width for charts to ensure they're not cramped
-        width: _showMonthlyData ? 800 : 600, // Adjust based on your needs
-        child: chartWidget,
+  if (isChart) {
+    return Scrollbar(
+      controller: scrollController, // Add the scroll controller
+      thumbVisibility: true, // Always show the scrollbar thumb
+      trackVisibility: true, // Show the scrollbar track
+      thickness: 8.0, // Thickness of the scrollbar
+      radius: const Radius.circular(4.0), // Rounded corners
+      interactive: true, // Enable clicking and dragging on the scrollbar
+      child: SingleChildScrollView(
+        controller: scrollController, // Use the same controller
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Container(
+          // Set minimum width for charts to ensure they're not cramped
+          width: _showMonthlyData ? 800 : 600, // Adjust based on your needs
+          child: chartWidget,
+        ),
       ),
     );
   }
   
+  // Tables remain as they are (no horizontal scroll wrapper)
   return chartWidget;
 }
-
-
-
-
-
 
 
 

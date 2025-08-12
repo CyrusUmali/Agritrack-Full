@@ -28,7 +28,7 @@ void showFarmerOptionsModal(
     title: 'Farmer Account Creation',
     showTitle: true,
     showTitleDivider: true,
-    modalType: isSmallScreen ? ModalType.small : ModalType.medium,
+    modalType: isSmallScreen ? ModalType.large : ModalType.medium,
     child: Padding(
       padding: EdgeInsets.all(isSmallScreen ? 8.0 : 16.0),
       child: Column(

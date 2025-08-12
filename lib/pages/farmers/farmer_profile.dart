@@ -195,7 +195,11 @@ abstract class _BaseFarmersProfileState<T extends StatefulWidget>
       return;
     }
 
+
+
     final updatedFarmer = Farmer.fromJson(editedFarmer);
+    
+    print('Saving updated farmer: ${updatedFarmer.toJson()}');
     context.read<FarmerBloc>().add(UpdateFarmer(updatedFarmer));
   }
 
