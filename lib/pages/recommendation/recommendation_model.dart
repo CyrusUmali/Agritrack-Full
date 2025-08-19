@@ -24,6 +24,7 @@ class RecommendationModel extends ChangeNotifier {
     'Random Forest': {'accuracy': 0.9924},
     'Decision Tree': {'accuracy': 0.9848},
     'Logistic Regression': {'accuracy': 0.9590},
+    'XGBoost': {'accuracy': 0.9590},
     'All Models': {'accuracy': 0.0}, // Will be calculated based on ensemble
   };
 
