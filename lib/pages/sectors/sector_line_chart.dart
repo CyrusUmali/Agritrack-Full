@@ -335,7 +335,7 @@ Future<void> _selectYearRange(BuildContext context) async {
                           dropdownItems: [],
                           datas: filteredData,
                           annotations: _annotationManager.customAnnotations,
-                          unit: selectedSector == 'Livestock' ? 'heads' : 'mt',
+                          unit: selectedSector == 'Livestock' ? 'heads' : 'kg',
                         ),
                       ),
                     )
@@ -345,7 +345,7 @@ Future<void> _selectYearRange(BuildContext context) async {
                       dropdownItems: [],
                       datas: filteredData,
                       annotations: _annotationManager.customAnnotations,
-                      unit: selectedSector == 'Livestock' ? 'heads' : 'mt',
+                      unit: selectedSector == 'Livestock' ? 'heads' : 'kg',
                     ),
             ),
           ),

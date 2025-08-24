@@ -36,7 +36,12 @@ class AssocsBloc extends Bloc<AssocsEvent, AssocsState> {
   ) async {
     emit(AssocsLoading());
     try {
-      _associations = await associationRepository.fetchAssociations();
+
+print('Loading associations for year: ${event.year}');
+      // Fetch associations for the selected year
+print(event.year);
+
+      _associations = await associationRepository.fetchAssociations(event.year);
       emit(AssocsLoaded(_filteredAssociations));
     } catch (e) {
       emit(AssocsError(e.toString()));

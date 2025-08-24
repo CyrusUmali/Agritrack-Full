@@ -8,7 +8,7 @@ class YieldHistory extends StatefulWidget {
   final bool isMobile;
 
   const YieldHistory({
-    super.key,
+    super.key, 
     required this.product,
     this.isMobile = false,
   });
@@ -27,6 +27,7 @@ class YieldHistoryState extends State<YieldHistory> {
   @override
   void initState() {
     super.initState();
+    // print(widget.product);
     _initializeSelections();
   }
 
@@ -332,32 +333,34 @@ class YieldHistoryState extends State<YieldHistory> {
   Widget _buildMonthlyChart(List<Map<String, dynamic>> yields) {
     final selectedYield = yields.firstWhere(
       (y) => y['year'] == _selectedYear,
-      orElse: () => {'monthly': List.filled(12, 0), 'year': ''},
+      orElse: () => {
+        'monthlyVolume': List.filled(12, 0),
+        'monthlyArea': List.filled(12, 0),
+        'monthlyYieldPerHectare': List.filled(12, 0),
+        'monthlyMetricTons': List.filled(12, 0),
+        'year': ''
+      },
     );
 
-    final monthlyData =
-        selectedYield['monthly'] as List<dynamic>? ?? List.filled(12, 0);
+    final monthlyVolume = selectedYield['monthlyVolume'] as List<dynamic>? ?? List.filled(12, 0);
+    final monthlyArea = selectedYield['monthlyArea'] as List<dynamic>? ?? List.filled(12, 0);
+    final monthlyYieldPerHectare = selectedYield['monthlyYieldPerHectare'] as List<dynamic>? ?? List.filled(12, 0);
+    final monthlyMetricTons = selectedYield['monthlyMetricTons'] as List<dynamic>? ?? List.filled(12, 0);
+    
     final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
 
     final chartData = List.generate(12, (index) {
+      final kgPerHaValue = (monthlyYieldPerHectare[index] as num?)?.toDouble() ?? 0;
+      final mtValue = (monthlyMetricTons[index] as num?)?.toDouble() ?? 0;
+      
       return _ChartData(
         months[index],
-        (monthlyData[index] as num?)?.toDouble() ?? 0,
-        0, // We don't have value data in this example
-        _generateRandomColor(), // Generate random color for each bar
+        kgPerHaValue,
+        mtValue,
+        _generateRandomColor(),
       );
     });
 
@@ -365,7 +368,8 @@ class YieldHistoryState extends State<YieldHistory> {
       height: 300,
       child: _buildBarChart(
         chartData,
-        title: 'Monthly Yield for $_selectedYear (kg)',
+        title: 'Monthly Yield for $_selectedYear',
+        isMonthly: true,
       ),
     );
   }
@@ -381,15 +385,35 @@ class YieldHistoryState extends State<YieldHistory> {
 
     final chartData = filteredYields.map((yieldData) {
       final year = yieldData['year']?.toString() ?? 'Unknown';
-      final monthly = yieldData['monthly'] as List<dynamic>? ?? [];
-      final totalYield = monthly.fold<double>(
-          0, (sum, value) => sum + (value is num ? value.toDouble() : 0));
-
+      
+      // Calculate average yield per hectare for the year
+      final monthlyYieldPerHectare = yieldData['monthlyYieldPerHectare'] as List<dynamic>? ?? [];
+      final monthlyMetricTons = yieldData['monthlyMetricTons'] as List<dynamic>? ?? [];
+      
+      // Calculate yearly averages
+      double totalKgPerHa = 0;
+      int count = 0;
+      double totalMetricTons = 0;
+      
+      for (int i = 0; i < monthlyYieldPerHectare.length; i++) {
+        final kgPerHa = (monthlyYieldPerHectare[i] as num?)?.toDouble() ?? 0;
+        final mt = (monthlyMetricTons[i] as num?)?.toDouble() ?? 0;
+        
+        if (kgPerHa > 0) {
+          totalKgPerHa += kgPerHa;
+          count++;
+        }
+        
+        totalMetricTons += mt;
+      }
+      
+      final avgKgPerHa = count > 0 ? totalKgPerHa / count : 0;
+      
       return _ChartData(
         year,
-        totalYield,
-        0, // We don't have value data in this example
-        _generateRandomColor(), // Generate random color for each bar
+        avgKgPerHa.toDouble(),
+        totalMetricTons,
+        _generateRandomColor(),
       );
     }).toList();
 
@@ -397,12 +421,16 @@ class YieldHistoryState extends State<YieldHistory> {
       height: 300,
       child: _buildBarChart(
         chartData,
-        title: 'Yearly Yield (${_startYear} - ${_endYear}) (tons)',
+        title: 'Yearly Yield (${_startYear} - ${_endYear})',
+        isMonthly: false,
       ),
     );
   }
 
-  Widget _buildBarChart(List<_ChartData> chartData, {String title = ''}) {
+  Widget _buildBarChart(List<_ChartData> chartData, {
+    String title = '',
+    bool isMonthly = true,
+  }) {
     final needsScrolling = widget.isMobile && chartData.length > 5;
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -421,14 +449,48 @@ class YieldHistoryState extends State<YieldHistory> {
         majorGridLines: const MajorGridLines(width: 1),
         rangePadding: ChartRangePadding.additional,
       ),
-      series: <ColumnSeries<_ChartData, String>>[
+      series: <CartesianSeries>[
         ColumnSeries<_ChartData, String>(
           dataSource: chartData,
           xValueMapper: (_ChartData data, _) => data.x,
-          yValueMapper: (_ChartData data, _) => data.y,
-          pointColorMapper: (_ChartData data, _) => data.color, // Use individual colors
-          name: 'Yield (tons)',
-          width: 0.6,
+          yValueMapper: (_ChartData data, _) => data.yieldKgPerHa,
+           color: Color(0xFF12E3D7),
+          // pointColorMapper: (_ChartData data, _) => data.color,
+          name: 'Yield (t/ha)',
+          width: 0.4,
+          spacing: 0.2,
+          dataLabelSettings: const DataLabelSettings(
+            isVisible: true,
+            textStyle: TextStyle(fontSize: 10),
+          ),
+        ),
+        ColumnSeries<_ChartData, String>(
+          dataSource: chartData,
+          xValueMapper: (_ChartData data, _) => data.x,
+          yValueMapper: (_ChartData data, _) => data.yieldMetricTons,
+          // pointColorMapper: (_ChartData data, _) => data.color.withOpacity(0.7),
+                 color: Color(0xFFFE8111),
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          name: 'Yield (Metric Tons)',
+          width: 0.4,
           spacing: 0.2,
           dataLabelSettings: const DataLabelSettings(
             isVisible: true,
@@ -440,7 +502,23 @@ class YieldHistoryState extends State<YieldHistory> {
         enable: true,
         header: '',
         canShowMarker: false,
-        textStyle: TextStyle(color: isDark ? Colors.black : Colors.grey),
+        builder: (dynamic data, dynamic point, dynamic series, int pointIndex, int seriesIndex) {
+          final chartData = data as _ChartData;
+          return Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[800] : Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Column( 
+              children: [
+                Text('${chartData.x}'),
+                Text('t/ha: ${chartData.yieldKgPerHa.toStringAsFixed(2)}'),
+                Text('Metric Tons: ${chartData.yieldMetricTons.toStringAsFixed(2)}'),
+              ],
+            ),
+          );
+        },
       ),
     );
 
@@ -458,10 +536,10 @@ class YieldHistoryState extends State<YieldHistory> {
 }
 
 class _ChartData {
-  _ChartData(this.x, this.y, this.y2, this.color);
+  _ChartData(this.x, this.yieldKgPerHa, this.yieldMetricTons, this.color);
 
   final String x; // Month or Year
-  final double y; // Yield value
-  final double y2; // Not used in this implementation
+  final double yieldKgPerHa; // Yield efficiency in kg/ha
+  final double yieldMetricTons; // Yield value in metric tons
   final Color color; // Individual color for each bar
 }

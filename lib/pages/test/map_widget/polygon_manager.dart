@@ -617,7 +617,8 @@ class PolygonManager with RouteAware {
     _isModalShowing = true;
     selectedPolygon = polygon;
     selectedPolygonNotifier.value = polygon;
-
+print("farmers");
+print(farmers);
     await PolygonModal.show(
       context: context,
       products: products,

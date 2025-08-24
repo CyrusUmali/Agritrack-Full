@@ -7,7 +7,10 @@ import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flareline_uikit/components/forms/outborder_text_form_field.dart';
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/flutter_gen/app_localizations.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class SignInWidget extends BaseWidget<SignInProvider> {
   @override
@@ -48,6 +51,12 @@ class SignInWidget extends BaseWidget<SignInProvider> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Toggle button
+                          if (kIsWeb)
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: _toggleButton(context, viewModel),
+                            ),
                           const SizedBox(height: 16),
                           SizedBox(
                             width: 80,
@@ -61,7 +70,11 @@ class SignInWidget extends BaseWidget<SignInProvider> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          _signInFormWidget(context, viewModel),
+                          const SizedBox(height: 20),
+                          // Show either sign-in form or download section
+                          viewModel.showDownloadSection
+                              ? _androidDownloadSection(context)
+                              : _signInFormWidget(context, viewModel),
                         ],
                       ),
                     ),
@@ -87,6 +100,149 @@ class SignInWidget extends BaseWidget<SignInProvider> {
   @override
   SignInProvider viewModelBuilder(BuildContext context) {
     return SignInProvider(context);
+  }
+
+  Widget _toggleButton(BuildContext context, SignInProvider viewModel) {
+    return GestureDetector(
+      onTap: () {
+        viewModel.toggleDownloadSection();
+      },
+      child: Container(
+        padding: EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 2,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Icon(
+          viewModel.showDownloadSection ? Icons.person : Icons.download,
+          size: 16,
+          color: GlobalColors.primary,
+        ),
+      ),
+    );
+  }
+
+  Widget _androidDownloadSection(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          'Get the Mobile App',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Download AgriTrack mobile app for the best experience',
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 14,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        // Download APK button
+        GestureDetector(
+          onTap: () async {
+            // Replace with your actual APK download URL
+            const apkUrl = 'https://yourdomain.com/downloads/agritrack.apk';
+            
+            try {
+              if (await canLaunchUrl(Uri.parse(apkUrl))) {
+                await launchUrl(
+                  Uri.parse(apkUrl),
+                  mode: LaunchMode.externalApplication,
+                );
+              } else {
+                // Show error message if URL can't be launched
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Unable to download app. Please try again later.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Download failed. Please check your connection.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [GlobalColors.primary, GlobalColors.primary.withOpacity(0.8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: GlobalColors.primary.withOpacity(0.3),
+                  blurRadius: 6,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.download,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Download APK',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Version 1.0 • Android 5.0+',
+          style: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Back to sign in button
+        TextButton(
+          onPressed: () {
+            // This will be handled by the toggle button, but adding for convenience
+            final viewModel = Provider.of<SignInProvider>(context, listen: false);
+            viewModel.toggleDownloadSection();
+          },
+          child: Text(
+            'Back to Sign In',
+            style: TextStyle(
+              color: GlobalColors.primary,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _signInFormWidget(BuildContext context, SignInProvider viewModel) {
@@ -155,7 +311,6 @@ class SignInWidget extends BaseWidget<SignInProvider> {
             child: TextButton(
               onPressed: () {
                 Navigator.of(context).pushNamed('/forgotPwd');
-                // Add forgot password functionality
               },
               child: Text(
                 'Forgot Password?',
@@ -229,7 +384,6 @@ class SignInWidget extends BaseWidget<SignInProvider> {
               Text("Don't have an account?"),
               TextButton(
                 onPressed: () {
-                  // Add navigation to sign up
                   Navigator.of(context).pushNamed('/signUp');
                 },
                 child: Text(

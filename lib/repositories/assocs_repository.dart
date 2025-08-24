@@ -1,105 +1,65 @@
 import 'package:dio/dio.dart';
 import 'package:flareline/core/models/assocs_model.dart';
 import 'package:flareline/services/api_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flareline/repositories/base_repository.dart'; // Import the base repository
 
-class AssociationRepository {
-  final ApiService apiService;
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-
-  AssociationRepository({required this.apiService});
+class AssociationRepository extends BaseRepository {
+  AssociationRepository({required super.apiService});
 
   Future<Association> getAssociationById(int associationId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
-      final response =
-          await apiService.get('/auth/associations/$associationId');
-
-      if (response.data == null || response.data['association'] == null) {
-        throw Exception('Invalid association data format');
-      }
-
-      return Association.fromJson(response.data['association']);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Association not found');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
+      final response = await apiService.get('/assocs/associations/$associationId');
+      return _validateAndParseAssociationResponse(response);
     } catch (e) {
-      throw Exception('Failed to load association: $e');
+      handleError(e, operation: 'load association'); // Use inherited method
     }
   }
 
   Future<Association> updateAssociation(Association association) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
+      _validateAssociationRequiredFields(association);
 
       final response = await apiService.put(
-        '/auth/associations/${association.id}',
-        data: {
-          'name': association.name,
-          'description': association.description,
-        },
+        '/assocs/associations/${association.id}',
+        data: _buildAssociationData(association),
       );
 
-      if (response.data == null || response.data['association'] == null) {
-        throw Exception('Invalid association data format');
-      }
-
-      return Association.fromJson(response.data['association']);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Association not found');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+      return _validateAndParseAssociationResponse(response);
     } catch (e) {
-      throw Exception('Failed to update association: $e');
+      handleError(e, operation: 'update association'); // Use inherited method
     }
   }
 
-  Future<List<Association>> fetchAssociations() async {
+  Future<List<Association>> fetchAssociations(int? year) async {
     try {
-      // if (_firebaseAuth.currentUser == null) {
-      //   throw Exception('User not authenticated');
-      // }
+      checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/auth/associations');
-
-      if (response.data == null || response.data['associations'] == null) {
-        throw Exception('Invalid associations data format');
+      // Build query parameters
+      final Map<String, dynamic> queryParams = {};
+      if (year != null) {
+        queryParams['year'] = year;
       }
 
-      final associationsData = response.data['associations'] as List;
-      return associationsData
-          .map((json) => Association.fromJson(json))
-          .toList();
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
+      final response = await apiService.get(
+        '/assocs/associations',
+        queryParameters: queryParams,
+      );
+
+      return _validateAndParseAssociationsResponse(response);
     } catch (e) {
-      throw Exception('Failed to load associations: $e');
+      handleError(e, operation: 'load associations'); // Use inherited method
     }
   }
 
   Future<void> deleteAssociation(int associationId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
-
-      await apiService.delete('/auth/associations/$associationId');
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+      checkAuthentication(); // Use inherited method
+      await apiService.delete('/assocs/associations/$associationId');
     } catch (e) {
-      throw Exception('Failed to delete association: $e');
+      handleError(e, operation: 'delete association'); // Use inherited method
     }
   }
 
@@ -108,32 +68,79 @@ class AssociationRepository {
     required String description,
   }) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
+      _validateCreateAssociationFields(name, description);
 
       final response = await apiService.post(
-        '/auth/associations',
-        data: {
-          'name': name,
-          'description': description,
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        },
+        '/assocs/sassociations',
+        data: _buildCreateAssociationData(name, description),
       );
 
-      if (response.data == null || response.data['association'] == null) {
-        throw Exception('Invalid association data format');
-      }
-
-      return Association.fromJson(response.data['association']);
-    } on DioException catch (e) {
-      final errorMessage = e.response?.data?['message'] ??
-          e.message ??
-          'Failed to create association';
-      throw Exception('API Error: $errorMessage');
+      return _validateAndParseAssociationResponse(response);
     } catch (e) {
-      throw Exception('Failed to create association: ${e.toString()}');
+      handleError(e, operation: 'create association'); // Use inherited method
     }
+  }
+
+  // Helper method for association validation
+  void _validateAssociationRequiredFields(Association association) {
+    if (association.name == null || association.name!.isEmpty) {
+      throw Exception('Association name is required');
+    }
+  }
+
+  // Helper method for create association validation
+  void _validateCreateAssociationFields(String name, String description) {
+    if (name.isEmpty) {
+      throw Exception('Association name is required');
+    }
+    if (description.isEmpty) {
+      throw Exception('Association description is required');
+    }
+  }
+
+  // Helper method to build association data for update
+  Map<String, dynamic> _buildAssociationData(Association association) {
+    return {
+      'name': association.name,
+      'description': association.description,
+    };
+  }
+
+  // Helper method to build association data for create
+  Map<String, dynamic> _buildCreateAssociationData(String name, String description) {
+    return {
+      'name': name,
+      'description': description,
+      'created_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+  }
+
+  // Helper method for response validation
+  Association _validateAndParseAssociationResponse(Response response) {
+    if (response.data == null) {
+      throw Exception('Server returned empty response');
+    }
+    
+    if (response.data['association'] == null) {
+      throw Exception('Invalid association data format received from server');
+    }
+
+    return Association.fromJson(response.data['association']);
+  }
+
+  // Helper method for associations list validation
+  List<Association> _validateAndParseAssociationsResponse(Response response) {
+    if (response.data == null) {
+      throw Exception('Server returned empty response');
+    }
+    
+    if (response.data['associations'] == null) {
+      throw Exception('Invalid associations data format received from server');
+    }
+
+    final associationsData = response.data['associations'] as List;
+    return associationsData.map((json) => Association.fromJson(json)).toList();
   }
 }

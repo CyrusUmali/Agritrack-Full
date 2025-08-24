@@ -33,25 +33,25 @@ class SuitabilityInputs extends StatelessWidget {
           child: Column(
             children: [
               _buildSlider(
-                  context, 'Nitrogen (N, kg/ha)', model.nitrogen, 0, 150,
+                  context, 'Nitrogen (N, kg/ha)', model.nitrogen, 0, 450,
                   (value) {
                 model.nitrogen = value;
                 onChanged();
               }),
               const SizedBox(height: 16),
               _buildSlider(
-                  context, 'Phosphorous (P, kg/ha)', model.phosphorous, 0, 150,
+                  context, 'Phosphorous (P, kg/ha)', model.phosphorous, 0, 450,
                   (value) {
                 model.phosphorous = value;
                 onChanged();
               }),
               const SizedBox(height: 16),
               _buildSlider(
-                  context, 'Potassium (K, kg/ha)', model.potassium, 0, 220,
+                  context, 'Potassium (K, kg/ha)', model.potassium, 0, 450,
                   (value) {
                 model.potassium = value;
                 onChanged();
-              }),
+              }), 
               const SizedBox(height: 16),
               _buildSlider(
                   context, 'Temperature (°C)', model.temperature, 0, 50,
@@ -74,10 +74,10 @@ class SuitabilityInputs extends StatelessWidget {
               const SizedBox(height: 16),
               _buildSlider(context, 'pH Level', model.ph, 3, 10, (value) {
                 model.ph = value;
-                onChanged();
+                onChanged(); 
               }),
               const SizedBox(height: 16),
-              _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 300,
+              _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 2000,
                   (value) {
                 model.rainfall = value;
                 onChanged();
@@ -92,20 +92,20 @@ class SuitabilityInputs extends StatelessWidget {
   Widget _buildMobileInputs(BuildContext context) {
     return Column(
       children: [
-        _buildSlider(context, 'Nitrogen (N, kg/ha)', model.nitrogen, 0, 150,
+        _buildSlider(context, 'Nitrogen (N, kg/ha)', model.nitrogen, 0, 450,
             (value) {
           model.nitrogen = value;
           onChanged();
         }),
         const SizedBox(height: 16),
         _buildSlider(
-            context, 'Phosphorous (P, kg/ha)', model.phosphorous, 0, 150,
+            context, 'Phosphorous (P, kg/ha)', model.phosphorous, 0, 450,
             (value) {
           model.phosphorous = value;
           onChanged();
         }),
         const SizedBox(height: 16),
-        _buildSlider(context, 'Potassium (K, kg/ha)', model.potassium, 0, 220,
+        _buildSlider(context, 'Potassium (K, kg/ha)', model.potassium, 0, 450,
             (value) {
           model.potassium = value;
           onChanged();
@@ -127,7 +127,7 @@ class SuitabilityInputs extends StatelessWidget {
           onChanged();
         }),
         const SizedBox(height: 16),
-        _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 300, (value) {
+        _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 2000, (value) {
           model.rainfall = value;
           onChanged();
         }),

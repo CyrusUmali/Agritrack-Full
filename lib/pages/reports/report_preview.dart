@@ -256,6 +256,8 @@ class _ReportTableWidget extends TableWidget<ReportTableViewModel> {
       context,
       reportData,
       selectedColumns,
+       sortColumn,
+    sortAscending,
     );
   }
 
@@ -328,21 +330,43 @@ class _ReportTableWidget extends TableWidget<ReportTableViewModel> {
 class ReportTableViewModel extends BaseTableProvider {
   final List<Map<String, dynamic>> reportData;
   final List<String> selectedColumns;
+  final String? sortColumn;
+  final bool sortAscending;
 
   ReportTableViewModel(
     super.context,
     this.reportData,
     this.selectedColumns,
+    this.sortColumn,
+    this.sortAscending,
   );
+
+  List<Map<String, dynamic>> get _sortedData {
+    if (sortColumn == null || !selectedColumns.contains(sortColumn)) {
+      return reportData;
+    }
+
+    final sorted = List<Map<String, dynamic>>.from(reportData);
+    sorted.sort((a, b) {
+      final aValue = a[sortColumn]?.toString() ?? '';
+      final bValue = b[sortColumn]?.toString() ?? '';
+
+      return sortAscending
+          ? aValue.compareTo(bValue)
+          : bValue.compareTo(aValue);
+    });
+    return sorted;
+  }
 
   @override
   Future loadData(BuildContext context) async {
     final headers = [...selectedColumns];
+    final sortedData = _sortedData;
 
     List<List<TableDataRowsTableDataRows>> rows = [];
 
-    for (var i = 0; i < reportData.length; i++) {
-      final rowData = reportData[i];
+    for (var i = 0; i < sortedData.length; i++) {
+      final rowData = sortedData[i];
       List<TableDataRowsTableDataRows> row = [];
 
       for (var column in selectedColumns) {

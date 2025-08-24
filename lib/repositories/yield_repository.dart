@@ -2,49 +2,32 @@ import 'package:dio/dio.dart';
 import 'package:flareline/core/models/yield_model.dart';
 import 'package:flareline/services/api_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flareline/repositories/base_repository.dart'; // Import the base repository
 
-class YieldRepository {
-  final ApiService apiService;
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+class YieldRepository extends BaseRepository {
+  YieldRepository({required super.apiService});
 
-  YieldRepository({required this.apiService});
+  Future<List<Yield>> getYieldByBarangay(String barangay) async {
+    try {
+      checkAuthentication(); // Use inherited method
 
- 
+      final response = await apiService.get('/yields/barangay/$barangay');
 
+      if (response.data == null || response.data['yields'] == null) {
+        throw Exception('Invalid yield data format');
+      }
 
-Future<List<Yield>> getYieldByBarangay(String barangay) async {
-  try {
-    if (_firebaseAuth.currentUser == null) {
-      throw Exception('User not authenticated');
+      final yieldsData = response.data['yields'] as List;
+      return yieldsData.map((json) => Yield.fromJson(json)).toList();
+      
+    } catch (e) {
+      handleError(e, operation: 'load yields for barangay $barangay'); // Use inherited method
     }
-
-    final response = await apiService.get('/yields/barangay/$barangay');
-
-    if (response.data == null || response.data['yields'] == null) {
-      throw Exception('Invalid yield data format');
-    }
-
-    final yieldsData = response.data['yields'] as List;
-    return yieldsData.map((json) => Yield.fromJson(json)).toList();
-    
-  } on DioException catch (e) {
-    if (e.response?.statusCode == 404) {
-      throw Exception('No yields found for barangay $barangay');
-    }
-    throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-  } on FirebaseAuthException catch (e) {
-    throw Exception('Authentication error: ${e.message}');
-  } catch (e) {
-    throw Exception('Failed to load yields for barangay: $e');
   }
-}
-
 
   Future<List<Yield>> getYieldByFarmId(int farmId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
       final response = await apiService.get('/yields/yields/farm/$farmId');
 
@@ -52,29 +35,16 @@ Future<List<Yield>> getYieldByBarangay(String barangay) async {
         throw Exception('Invalid yield data format');
       }
 
-      // final yieldData = response.data['yields'];
-      // return Yield.fromJson(yieldData);
-
       final yieldsData = response.data['yields'] as List;
-
       return yieldsData.map((json) => Yield.fromJson(json)).toList();
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Yield record not found');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
     } catch (e) {
-      throw Exception('Failed to load yield: $e');
+      handleError(e, operation: 'load yields for farm $farmId'); // Use inherited method
     }
   }
 
   Future<List<Yield>> fetchYields() async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
       final response = await apiService.get('/yields/farmer-yields');
 
@@ -83,37 +53,20 @@ Future<List<Yield>> getYieldByBarangay(String barangay) async {
       }
 
       final yieldsData = response.data['yields'] as List;
-
       return yieldsData.map((json) => Yield.fromJson(json)).toList();
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
     } catch (e) {
-      throw Exception('Failed to load yields: $e');
+      handleError(e, operation: 'load yields'); // Use inherited method
     }
   }
 
   Future<Yield> updateYield(Yield yieldRecord) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
+      _validateYieldRequiredFields(yieldRecord);
 
       final response = await apiService.put(
         '/yields/yields/${yieldRecord.id}',
-        data: {
-          'farmer_id': yieldRecord.farmerId,
-          'product_id': yieldRecord.productId,
-          'harvest_date': yieldRecord.harvestDate!.toIso8601String(),
-          'status': yieldRecord.status,
-          'area_harvested': yieldRecord.areaHarvested,
-          'farm_id': yieldRecord.farmId,
-          'volume': yieldRecord.volume,
-          'notes': yieldRecord.notes,
-          'value': yieldRecord.value,
-          'images': yieldRecord.images,
-        },
+        data: _buildYieldData(yieldRecord),
       );
 
       if (response.data == null || response.data['yield'] == null) {
@@ -121,24 +74,14 @@ Future<List<Yield>> getYieldByBarangay(String barangay) async {
       }
 
       return Yield.fromJson(response.data['yield']);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Yield record not found');
-      } else if (e.response?.statusCode == 400) {
-        final errorData = e.response?.data;
-        throw Exception(errorData['message'] ?? 'Invalid request');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
     } catch (e) {
-      throw Exception('Failed to update yield: $e');
+      handleError(e, operation: 'update yield'); // Use inherited method
     }
   }
 
   Future<List<Yield>> fetchYieldsByFarmer(int farmerId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
       final response = await apiService.get('/yields/farmer-yields/$farmerId');
 
@@ -147,79 +90,37 @@ Future<List<Yield>> getYieldByBarangay(String barangay) async {
       }
 
       final yieldsData = response.data['yields'] as List;
-
       return yieldsData.map((json) => Yield.fromJson(json)).toList();
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
     } catch (e) {
-      throw Exception('Failed to load farmer yields: $e');
+      handleError(e, operation: 'load yields for farmer $farmerId'); // Use inherited method
     }
   }
 
   Future<List<Yield>> fetchYieldsByProduct(int productId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
-      // final response = await apiService.get('/products/$productId/yields');
-      final response =
-          await apiService.get('/yields/yields/product/$productId');
+      final response = await apiService.get('/yields/yields/product/$productId');
 
       if (response.data == null || response.data['yields'] == null) {
         throw Exception('Invalid yields data format');
       }
 
       final yieldsData = response.data['yields'] as List;
-
       return yieldsData.map((json) => Yield.fromJson(json)).toList();
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
     } catch (e) {
-      throw Exception('Failed to load product yields: $e');
+      handleError(e, operation: 'load yields for product $productId'); // Use inherited method
     }
   }
 
   Future<Yield> addYield(Yield yieldRecord) async {
- 
-  
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated. Please sign in first.');
-      }
-
-      // Validate required fields
-      if (yieldRecord.farmerId == null) {
-        throw Exception('Farmer ID is required');
-      }
-      if (yieldRecord.productId == null) {
-        throw Exception('Product ID is required');
-      }
-      if (yieldRecord.harvestDate == null) {
-        throw Exception('Harvest date is required');
-      }
-      if (yieldRecord.volume == null) {
-        throw Exception('Volume is required');
-      }
+      checkAuthentication(); // Use inherited method
+      _validateYieldRequiredFields(yieldRecord);
 
       final response = await apiService.post(
         '/yields/yields',
-        data: {
-          'farmer_id': yieldRecord.farmerId,
-          'product_id': yieldRecord.productId,
-          'harvest_date': yieldRecord.harvestDate!.toIso8601String(),
-          'area_harvested': yieldRecord.areaHarvested,
-          'farm_id': yieldRecord.farmId,
-          'volume': yieldRecord.volume,
-          'notes': yieldRecord.notes,
-          'value': yieldRecord.value,
-          'images': yieldRecord.images,
-          'status': yieldRecord.status
-        },
+        data: _buildYieldData(yieldRecord),
       );
 
       if (response.data == null || response.data['yield'] == null) {
@@ -227,39 +128,49 @@ Future<List<Yield>> getYieldByBarangay(String barangay) async {
       }
 
       return Yield.fromJson(response.data['yield']);
-    } on DioException catch (e) {
-      final statusCode = e.response?.statusCode;
-      final errorMessage = e.response?.data?['message'] ?? e.message;
-      final requestUrl = e.requestOptions.uri;
-
-      throw Exception('''
-API Request Failed:
-- URL: $requestUrl
-- Status: $statusCode
-- Error: $errorMessage
-- Details: ${e.response?.data}
-''');
     } catch (e) {
-      throw Exception('''
-Failed to add yieldRecord:
-- Error Type: ${e.runtimeType}
-- Error Details: $e
-- Stack Trace: ${e is Error ? e.stackTrace : ''}
-''');
+      handleError(e, operation: 'add yield'); // Use inherited method
     }
+  }
+
+  // Helper method for yield validation
+  void _validateYieldRequiredFields(Yield yieldRecord) {
+    if (yieldRecord.farmerId == null) {
+      throw Exception('Farmer ID is required');
+    }
+    if (yieldRecord.productId == null) {
+      throw Exception('Product ID is required');
+    }
+    if (yieldRecord.harvestDate == null) {
+      throw Exception('Harvest date is required');
+    }
+    if (yieldRecord.volume == null) {
+      throw Exception('Volume is required');
+    }
+  }
+
+  // Helper method to build yield data
+  Map<String, dynamic> _buildYieldData(Yield yieldRecord) {
+    return {
+      'farmer_id': yieldRecord.farmerId,
+      'product_id': yieldRecord.productId,
+      'harvest_date': yieldRecord.harvestDate!.toIso8601String(),
+      'status': yieldRecord.status,
+      'area_harvested': yieldRecord.areaHarvested,
+      'farm_id': yieldRecord.farmId,
+      'volume': yieldRecord.volume,
+      'notes': yieldRecord.notes,
+      'value': yieldRecord.value,
+      'images': yieldRecord.images,
+    };
   }
 
   Future<void> deleteYield(int yieldId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
-
+      checkAuthentication(); // Use inherited method
       await apiService.delete('/yields/yields/$yieldId');
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
     } catch (e) {
-      throw Exception('Failed to delete yieldRecord: $e');
+      handleError(e, operation: 'delete yield'); // Use inherited method
     }
   }
 }

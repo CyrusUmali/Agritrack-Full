@@ -26,7 +26,7 @@ import 'package:flareline/pages/auth/sign_up/sign_up_page.dart'
 import 'package:flareline/pages/calendar/calendar_page.dart'
     deferred as calendar;
 import 'package:flareline/pages/chart/chart_page.dart' deferred as chart;
-import 'package:flareline/pages/dashboard/ecommerce_page.dart';
+import 'package:flareline/pages/dashboard/dashboard_page.dart';
 import 'package:flareline/pages/inbox/index.dart' deferred as inbox;
 import 'package:flareline/pages/invoice/invoice_page.dart' deferred as invoice;
 import 'package:flareline/pages/profile/profile_page.dart' deferred as profile;
@@ -38,8 +38,8 @@ import 'package:flareline/pages/table/tables_page.dart' deferred as tables;
 import 'package:flareline/pages/table/advance_table_page.dart'
     deferred as advanceTable;
 
-import 'package:flareline/pages/test/new_page.dart'
-    deferred as newPage; // Import your new page
+import 'package:flareline/pages/test/Map.dart'
+    deferred as mapPage; // Import your new page
 
 import 'package:flareline/pages/farms/farms_page.dart'
     deferred as farmsPage; // Import your new page
@@ -146,11 +146,11 @@ final List<Map<String, Object>> MAIN_PAGES = [
     'widget': DeferredWidget(toast.loadLibrary, () => toast.ToastPage())
   },
   {
-    'routerPath': '/newPage',
+    'routerPath': '/map',
     'widget': DeferredWidget(
-        newPage.loadLibrary,
+        mapPage.loadLibrary,
         () =>
-            newPage.NewPage(routeObserver: routeObserver) // Pass observer here
+            mapPage.Map(routeObserver: routeObserver) // Pass observer here
         ), // Add new page
   },
   {

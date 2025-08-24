@@ -52,18 +52,7 @@ class AssocKpiCards extends StatelessWidget {
 
   List<Widget> _buildAllCards(BuildContext context) {
     // Access stats from the nested object
-    // final stats = association['stats'] ?? {};
-
-    // Calculate growth percentage if annual yield data exists
-    double? growthPercent;
-    // final annualYield = association.volume as List?;
-    // if (annualYield != null && annualYield.length >= 2) {
-    //   final currentYear = annualYield[0]['totalVolume'] as int?;
-    //   final previousYear = annualYield[1]['totalVolume'] as int?;
-    //   if (currentYear != null && previousYear != null && previousYear != 0) {
-    //     growthPercent = ((currentYear - previousYear) / previousYear) * 100;
-    //   }
-    // }
+   
 
     return [
       _buildKpiCard(
@@ -90,20 +79,28 @@ class AssocKpiCards extends StatelessWidget {
         context,
         title: 'Annual Yield',
         value:
-            association.volume != null ? '${association.volume} tons' : 'N/A',
+            association.volume != null ? '${association.volume} kg' : 'N/A',
         icon: Icons.assessment,
       ),
+
+
       _buildKpiCard(
         context,
-        title: 'Growth %',
-        value: growthPercent != null
-            ? '${growthPercent.toStringAsFixed(1)}%'
-            : 'N/A',
-        icon: growthPercent != null && growthPercent > 0
-            ? Icons.trending_up
-            : Icons.trending_down,
-        isPositive: growthPercent != null && growthPercent > 0,
+        title: 'Area Harvested',
+        value:
+            association.areaHarvested != null ? '${association.areaHarvested} ha' : 'N/A',
+        icon: Icons.area_chart,
       ),
+
+
+        _buildKpiCard(
+        context,
+        title: 'Annual Production',
+        value:
+            association.production != null ? '${association.production} mt' : 'N/A',
+        icon: Icons.assessment,
+      ),
+      
     ];
   }
 
@@ -144,38 +141,8 @@ class AssocKpiCards extends StatelessWidget {
                     size: 18,
                     color: colorScheme.onPrimaryContainer,
                   ),
-                ),
-                const Spacer(),
-                if (title == 'Growth %')
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isPositive
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isPositive ? Icons.trending_up : Icons.trending_down,
-                          size: 14,
-                          color: isPositive ? Colors.green : Colors.red,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isPositive ? 'Up' : 'Down',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isPositive ? Colors.green : Colors.red,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+                ), 
+             ],
             ),
             const SizedBox(height: 12),
             Text(

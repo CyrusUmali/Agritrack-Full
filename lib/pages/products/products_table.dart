@@ -1,5 +1,7 @@
 import 'package:flareline/core/models/product_model.dart';
+import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/products/product/product_filter_widget.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
@@ -45,15 +47,10 @@ class ProductsTable extends StatelessWidget {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is ProductsError) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.flat,
-            title: Text(state.message),
-            alignment: Alignment.topRight,
-            showProgressBar: false,
-            autoCloseDuration: const Duration(seconds: 3),
-          );
+      ToastHelper.showErrorToast(
+       state.message,
+        context, maxLines: 3
+      );
         }
       },
       child: SizedBox(
@@ -117,15 +114,10 @@ class ProductsTable extends StatelessWidget {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is ProductsError) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.flat,
-            title: Text(state.message),
-            alignment: Alignment.topRight,
-            showProgressBar: false,
-            autoCloseDuration: const Duration(seconds: 3),
-          );
+    ToastHelper.showErrorToast(
+       state.message,
+        context, maxLines: 3
+      );
         }
       },
       child: Column(
@@ -334,6 +326,8 @@ class DataTableWidget extends TableWidget<ProductsViewModel> {
               );
             },
           ),
+     
+     
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
@@ -456,16 +450,48 @@ class ProductsViewModel extends BaseTableProvider {
   }
 }
 
-
-
-
-class MobileProductListWidget extends StatelessWidget {
+class MobileProductListWidget extends StatefulWidget {
   final ProductsLoaded state;
+  final int itemsPerPage;
   
   const MobileProductListWidget({
     required this.state,
+    this.itemsPerPage = 10, // Default items per page
     Key? key,
   }) : super(key: key);
+
+  @override
+  State<MobileProductListWidget> createState() => _MobileProductListWidgetState();
+}
+
+class _MobileProductListWidgetState extends State<MobileProductListWidget> {
+  int currentPage = 0;
+  
+  int get totalPages => (widget.state.products.length / widget.itemsPerPage).ceil();
+  
+  List<dynamic> get currentPageData {
+    final startIndex = currentPage * widget.itemsPerPage;
+    final endIndex = (startIndex + widget.itemsPerPage).clamp(0, widget.state.products.length);
+    return widget.state.products.sublist(startIndex, endIndex);
+  }
+
+  void _goToPage(int page) {
+    setState(() {
+      currentPage = page.clamp(0, totalPages - 1);
+    });
+  }
+
+  void _previousPage() {
+    if (currentPage > 0) {
+      _goToPage(currentPage - 1);
+    }
+  }
+
+  void _nextPage() {
+    if (currentPage < totalPages - 1) {
+      _goToPage(currentPage + 1);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -473,146 +499,329 @@ class MobileProductListWidget extends StatelessWidget {
     final userProvider = context.read<UserProvider>();
     final isFarmer = userProvider.isFarmer;
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(0),
-      // physics: const ClampingScrollPhysics(),
-       physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: state.products.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final product = state.products[index];
-        final sectorIcon = _getSectorIcon(product.sector);
-        final sectorColor = _getSectorColor(product.sector);
+    if (widget.state.products.isEmpty) {
+      return CommonCard(
+        margin: EdgeInsets.all(0),
+        padding: EdgeInsets.all(16),
+        child: Center(
+          child: Text('No products available'),
+        ),
+      );
+    }
 
-        return CommonCard(
-          // elevation: 1,
-          margin: EdgeInsets.zero,
-          // shape: RoundedRectangleBorder(
-          //   borderRadius: BorderRadius.circular(12),
-          // ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProductProfile(product: product),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  // Leading icon/avatar
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: sectorColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: product.imageUrl != null 
-                        ? ClipOval(
-                            child: Image.network(
-                              product.imageUrl!,
-                              fit: BoxFit.cover,
-                              width: 40,
-                              height: 40,
-                              errorBuilder: (_, __, ___) => 
-                                Icon(sectorIcon, color: sectorColor),
-                            ),
-                          )
-                        : Icon(sectorIcon, color: sectorColor, size: 24),
+    return Column(
+      children: [
+        // List content
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.all(0),
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: currentPageData.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final product = currentPageData[index];
+              final sectorIcon = _getSectorIcon(product.sector);
+              final sectorColor = _getSectorColor(product.sector);
+
+              return CommonCard(
+                margin: EdgeInsets.zero,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProductProfile(product: product),
                     ),
                   ),
-                  
-                  const SizedBox(width: 16),
-                  
-                  // Product info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
                       children: [
-                        Text(
-                          product.name,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                        // Leading icon/avatar
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: sectorColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          child: Center(
+                            child: product.imageUrl != null 
+                              ? ClipOval(
+                                  child: Image.network(
+                                    product.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    width: 40,
+                                    height: 40,
+                                    errorBuilder: (_, __, ___) => 
+                                      Icon(sectorIcon, color: sectorColor),
+                                  ),
+                                )
+                              : Icon(sectorIcon, color: sectorColor, size: 24),
+                          ),
                         ),
                         
-                        const SizedBox(height: 4),
+                        const SizedBox(width: 16),
                         
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            Chip(
-                              label: Text(
-                                product.sector,
-                                style: TextStyle(
-                                  color: sectorColor,
-                                  fontSize: 12,
-                                ),
+                        // Product info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Product name and sector on the same row
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      product.name,
+                                      style: theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: sectorColor.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      product.sector,
+                                      style: TextStyle(
+                                        color: sectorColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              backgroundColor: sectorColor.withOpacity(0.1),
-                              visualDensity: VisualDensity.compact,
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ],
+                              
+                              const SizedBox(height: 4),
+                              
+                              if (product.description?.isNotEmpty ?? false) ...[
+                                Text(
+                                  product.description!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                         
-                        if (product.description?.isNotEmpty ?? false) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            product.description!,
-                                 style: const TextStyle(
-              fontSize: 12,
-              // color: Colors.grey,
-            ),
-                            // style:  (
-                            //   color: theme.colorScheme.onSurface.withOpacity(0.6),
-                            //   fontSize: 13 , fontWeight: FontWeight.w200,
-                            // ), 
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                        const SizedBox(width: 8),
+
+
+
+                               if (!isFarmer)
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () {
+              ModalDialog.show(
+                context: context,
+                title: 'Delete Product',
+                showTitle: true,
+                showTitleDivider: true,
+                modalType: ModalType.medium,
+                onCancelTap: () => Navigator.of(context).pop(),
+                onSaveTap: () {
+                  context.read<ProductBloc>().add(DeleteProduct(product.id));
+                  Navigator.of(context).pop();
+                },
+                child: Center(
+                  child: Text(
+                    'Are you sure you want to delete ${product.name}?',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                footer: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 10.0,
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          child: ButtonWidget(
+                            btnText: 'Cancel',
+                            textColor: FlarelineColors.darkBlackText,
+                            onTap: () => Navigator.of(context).pop(),
                           ),
-                        ],
+                        ),
+                        const SizedBox(width: 20),
+                        SizedBox(
+                          width: 120,
+                          child: ButtonWidget(
+                            btnText: 'Delete',
+                            onTap: () {
+                              context
+                                  .read<ProductBloc>()
+                                  .add(DeleteProduct(product.id));
+                              Navigator.of(context).pop();
+                            },
+                            type: ButtonType.primary.type,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  
-                  const SizedBox(width: 8),
-                  
-                  // Trailing icon
-                  Icon(
-                    Icons.chevron_right,
-                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                ),
+              );
+            },
+          ),
+     
+                        
+                        // Trailing icon
+                        // Icon(
+                        //   Icons.chevron_right,
+                        //   color: theme.colorScheme.onSurface.withOpacity(0.3),
+                        // ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
+              );
+            },
+          ),
+        ),
+        
+        // Pagination controls
+        if (totalPages > 1)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: Colors.grey.shade300,
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Previous button
+                IconButton(
+                  onPressed: currentPage > 0 ? _previousPage : null,
+                  icon: Icon(
+                    Icons.chevron_left,
+                    color: currentPage > 0 ? GlobalColors.primary : Colors.grey,
+                  ),
+                ),
+                
+                // Page indicators
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Show page numbers (limited to 5 visible pages)
+                      ...List.generate(
+                        totalPages.clamp(0, 5),
+                        (index) {
+                          int pageIndex;
+                          if (totalPages <= 5) {
+                            pageIndex = index;
+                          } else {
+                            // Smart pagination: show current page in center
+                            int start = (currentPage - 2).clamp(0, totalPages - 5);
+                            pageIndex = start + index;
+                          }
+                          
+                          return GestureDetector(
+                            onTap: () => _goToPage(pageIndex),
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: currentPage == pageIndex 
+                                  ? GlobalColors.primary 
+                                  : Colors.transparent,
+                                border: Border.all(
+                                  color: currentPage == pageIndex 
+                                    ? GlobalColors.primary 
+                                    : Colors.grey.shade400,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${pageIndex + 1}',
+                                  style: TextStyle(
+                                    color: currentPage == pageIndex 
+                                      ? Colors.white 
+                                      : null, 
+                                    fontSize: 12,
+                                    fontWeight: currentPage == pageIndex 
+                                      ? FontWeight.w600 
+                                      : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      
+                      // Show ellipsis if there are more pages
+                      if (totalPages > 5)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            '...',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                
+                // Next button
+                IconButton(
+                  onPressed: currentPage < totalPages - 1 ? _nextPage : null,
+                  icon: Icon(
+                    Icons.chevron_right,
+                    color: currentPage < totalPages - 1 ? GlobalColors.primary : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        
+        // Page info
+        if (totalPages > 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Page ${currentPage + 1} of $totalPages • ${widget.state.products.length} total items',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
               ),
             ),
           ),
-        );
-      },
+      ],
     );
   }
 
   IconData _getSectorIcon(String sector) {
     switch (sector.toLowerCase()) {
-
-
-      case 'Rice': return Icons.grass;
-      case 'Corn': return Icons.agriculture;
-      case 'Livestock':  return Icons.agriculture;
-        case 'Fishery': return Icons.water;
-          case 'HVC':  return Icons.agriculture;
-            case 'Organic':  return Icons.agriculture;
-
-      
-      // case 'crops': return Icons.grass;
-      // case 'livestock': return Icons.agriculture;
-      // case 'fisheries': return Icons.water;
+      case 'rice': return Icons.grass;
+      case 'corn': return Icons.agriculture;
+      case 'livestock': return Icons.agriculture;
+      case 'fishery': return Icons.water;
+      case 'hvc': return Icons.agriculture;
+      case 'organic': return Icons.agriculture;
       default: return Icons.category;
     } 
   }
@@ -622,10 +831,12 @@ class MobileProductListWidget extends StatelessWidget {
       case 'Rice': return Colors.green;
       case 'Corn': return Colors.yellow;
       case 'Livestock': return Colors.deepOrange;  
-        case 'Fishery': return Colors.blue;  
-          case 'HVC': return Colors.purple;  
-            case 'Organic': return Colors.grey;  
+      case 'Fishery': return Colors.blue;  
+      case 'HVC': return Colors.purple;  
+      case 'Organic': return Colors.grey;  
       default: return Colors.grey;
     }
   }
 }
+
+

@@ -1,231 +1,155 @@
 import 'package:dio/dio.dart';
 import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flareline/services/api_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flareline/repositories/base_repository.dart'; // Import the base repository
 
-class FarmerRepository {
-  final ApiService apiService;
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-
-  FarmerRepository({required this.apiService});
+class FarmerRepository extends BaseRepository {
+  FarmerRepository({required super.apiService});
 
   Future<Farmer> getFarmerById(int farmerId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/auth/farmers/$farmerId');
-
-      if (response.data == null || response.data['farmer'] == null) {
-        throw Exception('Invalid farmer data format');
-      }
-
-      return Farmer.fromJson(response.data['farmer']);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Farmer not found');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
+      final response = await apiService.get('/farmers/farmers/$farmerId');
+      return _validateAndParseFarmerResponse(response);
     } catch (e) {
-      throw Exception('Failed to load farmer: $e');
+      handleError(e, operation: 'load farmer'); // Use inherited method
     }
   }
 
   Future<Farmer> updateFarmer(Farmer farmer) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
-
-      print(farmer.toJson()); 
+      checkAuthentication(); // Use inherited method
 
       final response = await apiService.put(
-        '/auth/farmers/${farmer.id}',
-        data: {
-          'name': farmer.name,
-          'firstname': farmer.firstname,
-          'middlename': farmer.middlename,
-          'surname': farmer.surname,
-          'extension': farmer.extension, 
-          'email': farmer.email,
-          'phone': farmer.phone,
-          'address': farmer.address,
-          'sex': farmer.sex,
-          'barangay': farmer.barangay,
-          'sectorId': _getSectorId(farmer.sector!),
-          'imageUrl': farmer.imageUrl,
-          'farm_name': farmer.farmName,
-          'association': farmer.association,
-     'birthday': farmer.birthday?.toIso8601String(), // Add this line
-          'total_land_area': farmer.hectare?.toString(),
-          // New fields
-          'house_hold_head': farmer.house_hold_head,
-          'civil_status': farmer.civilStatus,
-          'spouse_name': farmer.spouseName,
-          'religion': farmer.religion,
-          'household_num': farmer.householdNum,
-          'male_members_num': farmer.maleMembersNum,
-          'female_members_num': farmer.femaleMembersNum,
-          'mother_maiden_name': farmer.motherMaidenName,
-          'person_to_notify': farmer.personToNotify,
-          'ptn_contact': farmer.ptnContact,
-          'ptn_relationship': farmer.ptnRelationship,
-          'accountStatus': farmer.accountStatus
-        },
+        '/farmers/farmers/${farmer.id}',
+        data: _buildFarmerUpdateData(farmer),
       );
 
-      if (response.data == null || response.data['farmer'] == null) {
-        throw Exception('Invalid farmer data format');
-      }
-
-      return Farmer.fromJson(response.data['farmer']);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Farmer not found');
-      } else if (e.response?.statusCode == 400) {
-        final errorData = e.response?.data;
-        if (errorData != null &&
-            errorData['message'] == 'Email already in use by another farmer') {
-          throw Exception('Email already in use by another farmer');
-        }
-        throw Exception(errorData['message'] ?? 'Invalid request');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+      return _validateAndParseFarmerResponse(response);
     } catch (e) {
-      throw Exception('Failed to update farmer: $e');
+      handleError(e, operation: 'update farmer'); // Use inherited method
     }
+  }
+
+  // Helper method to build update data
+  Map<String, dynamic> _buildFarmerUpdateData(Farmer farmer) {
+    return {
+      'name': farmer.name,
+      'firstname': farmer.firstname,
+      'middlename': farmer.middlename,
+      'surname': farmer.surname,
+      'extension': farmer.extension, 
+      'email': farmer.email,
+      'phone': farmer.phone,
+      'address': farmer.address,
+      'sex': farmer.sex,
+      'barangay': farmer.barangay,
+      'sectorId': getSectorId(farmer.sector!), // Use inherited method
+      'imageUrl': farmer.imageUrl,
+      'farm_name': farmer.farmName,
+      'association': farmer.association,
+      'birthday': farmer.birthday?.toIso8601String(),
+      'total_land_area': farmer.hectare?.toString(),
+      'house_hold_head': farmer.house_hold_head,
+      'civil_status': farmer.civilStatus,
+      'spouse_name': farmer.spouseName,
+      'religion': farmer.religion,
+      'household_num': farmer.householdNum,
+      'male_members_num': farmer.maleMembersNum,
+      'female_members_num': farmer.femaleMembersNum,
+      'mother_maiden_name': farmer.motherMaidenName,
+      'person_to_notify': farmer.personToNotify,
+      'ptn_contact': farmer.ptnContact,
+      'ptn_relationship': farmer.ptnRelationship,
+      'accountStatus': farmer.accountStatus
+    };
   }
 
   Future<List<Farmer>> fetchFarmers() async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/auth/farmers');
-
-      // Debug print: Print the entire raw response
-      // print('Raw API response: ${response.data}');
-
-      if (response.data == null || response.data['farmers'] == null) {
-        throw Exception('Invalid farmers data format');
-      }
-
-      final farmersData = response.data['farmers'] as List;
-
-      return farmersData.map((json) => Farmer.fromJson(json)).toList();
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
+      final response = await apiService.get('/farmers/farmers');
+      return _validateAndParseFarmersResponse(response);
     } catch (e) {
-      throw Exception('Failed to load farmers: $e');
+      handleError(e, operation: 'load farmers'); // Use inherited method
     }
   }
 
   Future<Farmer> addFarmer(Farmer farmer) async {
     try {
-      // Validate authentication
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated. Please sign in first.');
-      }
+      checkAuthentication(); // Use inherited method
+      _validateFarmerRequiredFields(farmer);
 
-      // Validate required fields
-      if (farmer.name == null || farmer.name!.isEmpty) {
-        throw Exception('Farmer name is required');
-      }
-      if (farmer.barangay == null || farmer.barangay!.isEmpty) {
-        throw Exception('Barangay is required');
-      }
-      if (farmer.sector == null) {
-        throw Exception('Sector is required');
-      }
+      final requestData = _buildFarmerAddData(farmer);
+      final response = await apiService.post('/farmers/farmers', data: requestData);
 
-      // Prepare the request data with explicit null checks
-      final requestData = {
-        'name': farmer.name!,
-        'email': farmer.email ?? "---",
-        'phone': farmer.phone ?? "---",
-        'barangay': farmer.barangay!,
-        'sectorId': _getSectorId(farmer.sector!),
-        'imageUrl':
-            farmer.imageUrl ?? "---", // Assuming imageUrl can be optional
-      };
-
-      // Log the request data for debugging
-      print('Sending farmer data: $requestData');
-
-      final response = await apiService.post(
-        '/auth/farmers',
-        data: requestData,
-      );
-
-      // Validate response format
-      if (response.data == null) {
-        throw Exception('Server returned empty response');
-      }
-      if (response.data['farmer'] == null) {
-        throw Exception(
-            'Server response missing farmer data. Full response: ${response.data}');
-      }
-
-      return Farmer.fromJson(response.data['farmer']);
-    } on DioException catch (e) {
-      // Enhanced Dio error handling
-      final statusCode = e.response?.statusCode;
-      final errorMessage = e.response?.data?['message'] ?? e.message;
-      final requestUrl = e.requestOptions.uri;
-
-      throw Exception('''
-API Request Failed:
-- URL: $requestUrl
-- Status: $statusCode
-- Error: $errorMessage
-- Details: ${e.response?.data}
-''');
+      return _validateAndParseFarmerResponse(response);
     } catch (e) {
-      // More detailed error message for other exceptions
-      throw Exception('''
-Failed to add farmer:
-- Error Type: ${e.runtimeType}
-- Error Details: $e
-- Stack Trace: ${e is Error ? e.stackTrace : ''}
-''');
+      handleError(e, operation: 'add farmer'); // Use inherited method
     }
+  }
+
+  // Helper method for farmer validation (PRESERVED - no changes)
+  void _validateFarmerRequiredFields(Farmer farmer) {
+    if (farmer.name == null || farmer.name!.isEmpty) {
+      throw Exception('Farmer name is required');
+    }
+    if (farmer.barangay == null || farmer.barangay!.isEmpty) {
+      throw Exception('Barangay is required');
+    }
+    if (farmer.sector == null) {
+      throw Exception('Sector is required');
+    }
+  }
+
+  // Helper method to build add data (PRESERVED - no changes)
+  Map<String, dynamic> _buildFarmerAddData(Farmer farmer) {
+    return {
+      'name': farmer.name!,
+      'email': farmer.email ?? "---",
+      'phone': farmer.phone ?? "---",
+      'barangay': farmer.barangay!,
+      'sectorId': getSectorId(farmer.sector!), // Use inherited method
+      'imageUrl': farmer.imageUrl ?? "---",
+      // Add other optional fields if needed
+    };
   }
 
   Future<void> deleteFarmer(int farmerId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
-
-      await apiService.delete('/auth/farmers/$farmerId');
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+      checkAuthentication(); // Use inherited method
+      await apiService.delete('/farmers/farmers/$farmerId');
     } catch (e) {
-      throw Exception('Failed to delete farmer: $e');
+      handleError(e, operation: 'delete farmer'); // Use inherited method
     }
   }
 
-  // Reusing the same sector mapping as in ProductRepository
-  int _getSectorId(String sectorName) {
- 
+  // Helper method for response validation (PRESERVED - no changes)
+  Farmer _validateAndParseFarmerResponse(Response response) {
+    if (response.data == null) {
+      throw Exception('Server returned empty response');
+    }
+    
+    if (response.data['farmer'] == null) {
+      throw Exception('Invalid farmer data format received from server');
+    }
 
+    return Farmer.fromJson(response.data['farmer']);
+  }
 
-    const sectorMap = {
-      'Fishery': 5,
-      'Livestock': 4,
-      'Organic': 6,
-      'HVC': 3,
-      'Corn': 2,
-      'Rice': 1,
-    };
+  // Helper method for farmers list validation (PRESERVED - no changes)
+  List<Farmer> _validateAndParseFarmersResponse(Response response) {
+    if (response.data == null) {
+      throw Exception('Server returned empty response');
+    }
+    
+    if (response.data['farmers'] == null) {
+      throw Exception('Invalid farmers data format received from server');
+    }
 
-
-    return sectorMap[sectorName] ?? 4; // Default to HVC if not found
+    final farmersData = response.data['farmers'] as List;
+    return farmersData.map((json) => Farmer.fromJson(json)).toList();
   }
 }

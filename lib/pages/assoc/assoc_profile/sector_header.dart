@@ -20,6 +20,8 @@ class AssociationHeader extends StatelessWidget {
     // Get the image URL from sector data, default to null if not available
     final imgUrl = association.imageUrl as String?;
 
+ 
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -29,7 +31,7 @@ class AssociationHeader extends StatelessWidget {
           decoration: BoxDecoration(
             image: DecorationImage(
               image: imgUrl != null && imgUrl.isNotEmpty
-                  ? NetworkImage(imgUrl) // Use network image if URL exists
+                  ? NetworkImage('https://res.cloudinary.com/dk41ykxsq/image/upload/v1750587301/hvc_huuaeg.jpg') // Use network image if URL exists
                   : const AssetImage('assets/cover/cover-01.png')
                       as ImageProvider, // Fallback to asset
               fit: BoxFit.cover,

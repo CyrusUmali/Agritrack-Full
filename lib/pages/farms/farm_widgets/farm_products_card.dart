@@ -366,7 +366,7 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
       height: 300,
       child: _buildBarChart(
         chartData,
-        title: 'Monthly Yield for $_selectedYear (tons)',
+        title: 'Monthly Yield for $_selectedYear (kg)',
       ),
     );
   }
@@ -442,7 +442,7 @@ class _FarmProductsCardState extends State<FarmProductsCard> {
               ? (_ChartData data, int index) => yearColors[index]
               : null,
           color: yearColors == null ? Theme.of(context).primaryColor : null,
-          name: 'Yield (tons)',
+          name: 'Yield (kg)',
           width: 0.6,
           spacing: 0.2,
           dataLabelSettings: const DataLabelSettings(

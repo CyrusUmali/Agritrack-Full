@@ -34,22 +34,32 @@ class ChatbotContentState extends State<ChatbotWidget> {
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
     final bool isTablet = MediaQuery.of(context).size.width < 900;
+    final double screenHeight = MediaQuery.of(context).size.height;
 
     return ChangeNotifierProvider.value(
       value: _chatbotModel,
-      child: Center(
-        child: ConstrainedBox(
-          constraints:
-              BoxConstraints(maxWidth: isMobile ? double.infinity : 1200),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildResponsiveHeader(isMobile, isTablet),
-                const SizedBox(height: 24),
-                _buildChatInterfaceCard(isMobile),
-              ],
+      child: SingleChildScrollView(
+        child: Container(
+          height: screenHeight - 100, // Fixed height minus some padding
+          padding: EdgeInsets.all(isMobile ? 8.0 : 16.0),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isMobile ? double.infinity : 1200,
+                minHeight: screenHeight - 132, // Account for padding
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildResponsiveHeader(isMobile, isTablet),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: screenHeight - 250, // Fixed height for chat area
+                    child: _buildChatInterfaceCard(isMobile),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -105,63 +115,136 @@ class ChatbotContentState extends State<ChatbotWidget> {
       }
     }
 
-    void _showModelSelectionMenu() async {
-      final RenderBox? renderBox =
-          _navigationMenuKey.currentContext?.findRenderObject() as RenderBox?;
-      if (renderBox == null) return;
-
-      final Offset buttonPosition = renderBox.localToGlobal(Offset.zero);
-      final Size buttonSize = renderBox.size;
-
-      final result = await showMenu(
-        context: context,
-        position: RelativeRect.fromLTRB(
-          buttonPosition.dx,
-          buttonPosition.dy + buttonSize.height,
-          buttonPosition.dx + 200,
-          buttonPosition.dy + buttonSize.height + 200,
-        ),
-        items: _availableModels
-            .map((model) => PopupMenuItem(
-                  value: model,
-                  child: ListTile(
-                    title: Text(model),
-                    trailing: _selectedModel == model
-                        ? const Icon(Icons.check, size: 16)
-                        : null,
-                  ),
-                ))
-            .toList(),
-      );
-
-      if (result != null) {
-        setState(() {
-          _selectedModel = result;
-          // Here you would update the chatbot model to use the selected AI
-          _chatbotModel.setModel(result);
-        });
-      }
-    }
-
     if (!isMobile && !isTablet) {
       return Consumer<ChatbotModel>(
         builder: (context, model, child) {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Agriculture Assistant',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 32,
-                          color: const Color.fromARGB(255, 1, 1, 1),
-                        ),
+          return Container(
+            height: 80, // Fixed height to prevent layout issues
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                    flex: 3,
+                    child: Container(
+                      // Added Container to constrain height
+                      height: 80,
+
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Agriculture Assistant',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 32,
+                                  color: const Color.fromARGB(255, 1, 1, 1),
+                                ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          // const SizedBox(height: 0),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Tooltip(
+                              message: 'Navigation Options',
+                              child: IconButton(
+                                key: _navigationMenuKey,
+                                icon: Transform(
+                                  alignment: Alignment.center,
+                                  transform: Matrix4.identity()
+                                    ..scale(-1.0, 1.0),
+                                  child: const Icon(
+                                    Icons.keyboard_return,
+                                    size: 16,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                onPressed: _showNavigationMenu,
+                                splashRadius: 16,
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+                Tooltip(
+                  message: 'Select AI Model',
+                  child: PopupMenuButton<String>(
+                    onSelected: (value) {
+                      setState(() {
+                        _selectedModel = value;
+                        _chatbotModel.setModel(value);
+                      });
+                    },
+                    itemBuilder: (BuildContext context) {
+                      return _availableModels.map((String model) {
+                        return PopupMenuItem<String>(
+                          value: model,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(model),
+                              if (_selectedModel == model)
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 8.0),
+                                  child: Icon(Icons.check, size: 16),
+                                ),
+                            ],
+                          ),
+                        );
+                      }).toList();
+                    },
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey[500]!, width: 2),
+                        color: Colors.white,
+                      ),
+                      child: Icon(
+                        Icons.memory,
+                        size: 30,
+                        color: Colors.grey[700],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    return Consumer<ChatbotModel>(
+      builder: (context, model, child) {
+        return Container(
+          height: 80, // Fixed height for mobile/tablet
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Agriculture Assistant',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: isMobile ? 24 : 28,
+                      color: const Color.fromARGB(255, 1, 1, 1),
+                    ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
                   Tooltip(
                     message: 'Navigation Options',
                     child: IconButton(
@@ -171,7 +254,7 @@ class ChatbotContentState extends State<ChatbotWidget> {
                         transform: Matrix4.identity()..scale(-1.0, 1.0),
                         child: const Icon(
                           Icons.keyboard_return,
-                          size: 16,
+                          size: 20,
                           color: Colors.grey,
                         ),
                       ),
@@ -180,145 +263,55 @@ class ChatbotContentState extends State<ChatbotWidget> {
                       padding: EdgeInsets.zero,
                     ),
                   ),
-                ],
-              ),
-              Tooltip(
-                message: 'Select AI Model',
-                child: PopupMenuButton<String>(
-                  onSelected: (value) {
-                    setState(() {
-                      _selectedModel = value;
-                      _chatbotModel.setModel(value);
-                    });
-                  },
-                  itemBuilder: (BuildContext context) {
-                    return _availableModels.map((String model) {
-                      return PopupMenuItem<String>(
-                        value: model,
-                        child: Row(
-                          children: [
-                            Text(model),
-                            if (_selectedModel == model)
-                              const Padding(
-                                padding: EdgeInsets.only(left: 8.0),
-                                child: Icon(Icons.check, size: 16),
-                              ),
-                          ],
+                  Tooltip(
+                    message: 'Select AI Model',
+                    child: PopupMenuButton<String>(
+                      onSelected: (value) {
+                        setState(() {
+                          _selectedModel = value;
+                          _chatbotModel.setModel(value);
+                        });
+                      },
+                      itemBuilder: (BuildContext context) {
+                        return _availableModels.map((String model) {
+                          return PopupMenuItem<String>(
+                            value: model,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(model),
+                                if (_selectedModel == model)
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 8.0),
+                                    child: Icon(Icons.check, size: 16),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }).toList();
+                      },
+                      child: Container(
+                        width: 25,
+                        height: 25,
+                        padding: const EdgeInsets.all(0),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: Colors.grey[500]!, width: 1),
+                          color: Colors.white,
                         ),
-                      );
-                    }).toList();
-                  },
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey[500]!, width: 2),
-                      color: Colors.white,
-                    ),
-                    child: Icon(
-                      Icons.memory, // AI model icon
-                      size: 30,
-                      color: Colors.grey[700],
+                        child: Icon(
+                          Icons.memory,
+                          size: 15,
+                          color: Colors.grey[700],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ],
-          );
-        },
-      );
-    }
-
-    return Consumer<ChatbotModel>(
-      builder: (context, model, child) {
-        return Column(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Agriculture Assistant',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isMobile ? 24 : 28,
-                        color: const Color.fromARGB(255, 1, 1, 1),
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Tooltip(
-                      message: 'Navigation Options',
-                      child: IconButton(
-                        key: _navigationMenuKey,
-                        icon: Transform(
-                          alignment: Alignment.center,
-                          transform: Matrix4.identity()..scale(-1.0, 1.0),
-                          child: const Icon(
-                            Icons.keyboard_return,
-                            size: 20,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        onPressed: _showNavigationMenu,
-                        splashRadius: 16,
-                        padding: EdgeInsets.zero,
-                      ),
-                    ),
-                    Tooltip(
-                      message: 'Select AI Model',
-                      child: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          setState(() {
-                            _selectedModel = value;
-                            _chatbotModel.setModel(value);
-                          });
-                        },
-                        itemBuilder: (BuildContext context) {
-                          return _availableModels.map((String model) {
-                            return PopupMenuItem<String>(
-                              value: model,
-                              child: Row(
-                                children: [
-                                  Text(model),
-                                  if (_selectedModel == model)
-                                    const Padding(
-                                      padding: EdgeInsets.only(left: 8.0),
-                                      child: Icon(Icons.check, size: 16),
-                                    ),
-                                ],
-                              ),
-                            );
-                          }).toList();
-                        },
-                        child: Container(
-                          width: 25,
-                          height: 25,
-                          padding: const EdgeInsets.all(0),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border:
-                                Border.all(color: Colors.grey[500]!, width: 1),
-                            color: Colors.white,
-                          ),
-                          child: Icon(
-                            Icons.memory, // AI model icon
-                            size: 15,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+          ),
         );
       },
     );
@@ -331,104 +324,85 @@ class ChatbotContentState extends State<ChatbotWidget> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.max,
               children: [
-                // Add this to your _buildChatInterfaceCard method, in the Row with model selection:
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.lightbulb_outline,
-                            color: Colors.grey[600],
-                            size: 16,
+                Container(
+                  height: 60, // Fixed height for the info row
+                  child: Row(
+                    children: [
+                      Flexible(
+                        flex: isMobile ? 1 : 2,
+                        child: Container(
+                          height: 48,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Model: ${model.currentModel}',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // // Add streaming toggle
-                    // Container(
-                    //   padding: const EdgeInsets.symmetric(
-                    //       horizontal: 8, vertical: 4),
-                    //   decoration: BoxDecoration(
-                    //     color: Colors.grey[50],
-                    //     borderRadius: BorderRadius.circular(8),
-                    //   ),
-                    //   child: Row(
-                    //     mainAxisSize: MainAxisSize.min,
-                    //     children: [
-                    //       Icon(
-                    //         model.useStreaming ? Icons.stream : Icons.chat,
-                    //         color: Colors.grey[600],
-                    //         size: 16,
-                    //       ),
-                    //       const SizedBox(width: 4),
-                    //       Text(
-                    //         model.useStreaming ? 'Streaming' : 'Regular',
-                    //         style: TextStyle(
-                    //           color: Colors.grey[600],
-                    //           fontSize: 10,
-                    //         ),
-                    //       ),
-                    //       const SizedBox(width: 4),
-                    //       Switch(
-                    //         value: model.useStreaming,
-                    //         onChanged: (value) {
-                    //           model.toggleStreamingMode(value);
-                    //         },
-                    //         materialTapTargetSize:
-                    //             MaterialTapTargetSize.shrinkWrap,
-                    //         // visualDensity: VisualDensity.compact,
-                    //       ),
-                    //     ],
-                    //   ),
-                    // ),
-                    if (!isMobile)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.lightbulb_outline,
-                              color: Colors.grey[600],
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Try asking about soil, crops, pests, etc.',
-                              style: TextStyle(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.lightbulb_outline,
                                 color: Colors.grey[600],
-                                fontSize: 12,
+                                size: 16,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'Model: ${model.currentModel}',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                  ],
+                      if (!isMobile) ...[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          flex: 3,
+                          child: Container(
+                            height: 48,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.lightbulb_outline,
+                                  color: Colors.grey[600],
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    'Try asking about soil, crops, pests, etc.',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
-                SizedBox(
-                  height:
-                      isMobile ? MediaQuery.of(context).size.height * 0.6 : 400,
+                Expanded(
                   child: Chat(
                     messages: model.messages,
                     onSendPressed: model.handleSendPressed,
@@ -468,8 +442,7 @@ class ChatbotContentState extends State<ChatbotWidget> {
                     avatarBuilder: (userId) {
                       final bool isBot = userId == model.bot.id;
                       return Padding(
-                        padding: const EdgeInsets.only(
-                            right: 8.0), // Add padding to the right
+                        padding: const EdgeInsets.only(right: 8.0),
                         child: CircleAvatar(
                           backgroundColor:
                               isBot ? Colors.green[100] : Colors.blue[100],

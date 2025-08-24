@@ -1,77 +1,50 @@
-import 'package:dio/dio.dart';
+ import 'package:dio/dio.dart';
 import 'package:flareline/core/models/farms_model.dart';
 import 'package:flareline/services/api_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flareline/repositories/base_repository.dart'; // Import the base repository
 
-class FarmRepository {
-  final ApiService apiService;
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-
-  FarmRepository({required this.apiService});
+class FarmRepository extends BaseRepository {
+  FarmRepository({required super.apiService});
 
   Future<Farm> getFarmById(int farmId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/auth/farms/$farmId');
+      final response = await apiService.get('/farms/farms/$farmId');
 
       if (response.data == null || response.data['farm'] == null) {
         throw Exception('Invalid farm data format');
       }
 
       return Farm.fromJson(response.data['farm']);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Farm not found');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
     } catch (e) {
-      throw Exception('Failed to load farm: $e');
+      handleError(e, operation: 'load farm'); // Use inherited method
     }
   }
 
   Future<List<Farm>> getFarmsByProductId(int productId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
-      final response =
-          await apiService.get('/auth/farms/by-product/$productId');
+      final response = await apiService.get('/farms/farms/by-product/$productId');
 
       if (response.data == null || response.data['farms'] == null) {
         throw Exception('Invalid farm data format');
       }
 
-      // return Farm.fromJson(response.data['farm']);
-
       final farmsData = response.data['farms'] as List;
-
       return farmsData.map((json) => Farm.fromJson(json)).toList();
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Farm not found');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
     } catch (e) {
-      throw Exception('Failed to load farm: $e');
+      handleError(e, operation: 'load farms by product'); // Use inherited method
     }
   }
 
   Future<Farm> updateFarm(Farm farm) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
       final response = await apiService.put(
-        '/auth/farmsProfile/${farm.id}',
+        '/farms/farmsProfile/${farm.id}',
         data: {
           'name': farm.name,
           'owner': farm.owner,
@@ -91,77 +64,56 @@ class FarmRepository {
       }
 
       return Farm.fromJson(response.data['farm']);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Farm not found');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
     } catch (e) {
-      throw Exception('Failed to update farm: $e');
+      handleError(e, operation: 'update farm'); // Use inherited method
     }
   }
 
-Future<List<Farm>> fetchFarms({int? farmerId}) async {
-  try {
-    if (_firebaseAuth.currentUser == null) {
-      throw Exception('User not authenticated');
-    }
-
-    final Map<String, dynamic> queryParams = {};
-    if (farmerId != null) {
-      queryParams['farmerId'] = farmerId.toString(); // Convert int to String for query params
-    }
-
-    final response = await apiService.get('/auth/farms', queryParameters: queryParams);
-
-    if (response.data == null || response.data['farms'] == null) {
-      throw Exception('Invalid farms data format');
-    }
-
-    final farmsData = response.data['farms'] as List;
-    return farmsData.map((json) => Farm.fromJson(json)).toList();
-  } on DioException catch (e) {
-    throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-  } on FirebaseAuthException catch (e) {
-    throw Exception('Authentication error: ${e.message}');
-  } catch (e) {
-    throw Exception('Failed to load farms: $e');
-  }
-}
-  Future<void> deleteFarm(int farmId) async {
+  Future<List<Farm>> fetchFarms({int? farmerId}) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
+      checkAuthentication(); // Use inherited method
+
+      final Map<String, dynamic> queryParams = {};
+      if (farmerId != null) {
+        queryParams['farmerId'] = farmerId.toString();
       }
 
-      await apiService.delete('/auth/farms/$farmId');
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } catch (e) {
-      throw Exception('Failed to delete farm: $e');
-    }
-  }
-
-  // Optional: Get farms by owner (farmer) ID
-  Future<List<Farm>> getFarmsByOwnerId(int ownerId) async {
-    try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
-
-      final response = await apiService.get('/auth/farms/owner/$ownerId');
+      final response = await apiService.get('/farms/farms', queryParameters: queryParams);
 
       if (response.data == null || response.data['farms'] == null) {
         throw Exception('Invalid farms data format');
       }
 
       final farmsData = response.data['farms'] as List;
-
       return farmsData.map((json) => Farm.fromJson(json)).toList();
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
     } catch (e) {
-      throw Exception('Failed to load farms by owner: $e');
+      handleError(e, operation: 'load farms'); // Use inherited method
+    }
+  }
+
+  Future<void> deleteFarm(int farmId) async {
+    try {
+      checkAuthentication(); // Use inherited method
+      await apiService.delete('/farms/farms/$farmId');
+    } catch (e) {
+      handleError(e, operation: 'delete farm'); // Use inherited method
+    }
+  }
+
+  Future<List<Farm>> getFarmsByOwnerId(int ownerId) async {
+    try {
+      checkAuthentication(); // Use inherited method
+
+      final response = await apiService.get('/farms/farms/owner/$ownerId');
+
+      if (response.data == null || response.data['farms'] == null) {
+        throw Exception('Invalid farms data format');
+      }
+
+      final farmsData = response.data['farms'] as List;
+      return farmsData.map((json) => Farm.fromJson(json)).toList();
+    } catch (e) {
+      handleError(e, operation: 'load farms by owner'); // Use inherited method
     }
   }
 }

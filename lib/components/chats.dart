@@ -1,6 +1,7 @@
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/flutter_gen/app_localizations.dart';
 import 'package:flareline/pages/dashboard/yield_service.dart';
+import 'package:flareline/pages/farmers/farmer_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,7 +19,7 @@ class TopContributorsWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              const Text( 
                 'Top Contributors',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
@@ -157,7 +158,7 @@ class _ContributorItem extends StatelessWidget {
                 Text(contributor['farmerName']),
                 const SizedBox(height: 4),
                 Text(
-                  '${contributor['totalValue'].toStringAsFixed(2)} - ${contributor['sector']}',
+                  '${contributor['totalValue'].toStringAsFixed(2)} ',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
@@ -166,22 +167,37 @@ class _ContributorItem extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            height: 30,
-            width: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey, width: 1),
-            ),
-            child: const Icon(
-              Icons.more_horiz,
-              color: Colors.grey,
-              size: 16,
-            ),
-          ),
-        ],
+  
+  
+  
+  InkWell(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            FarmersProfile(farmerID: contributor['farmerID']),
+      ),
+    );
+  },
+  child: Container(
+    height: 30,
+    width: 30,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: Colors.transparent,
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.grey, width: 1),
+    ),
+    child: const Icon(
+      Icons.more_horiz,
+      color: Colors.grey,
+      size: 16,
+    ),
+  ),
+)
+  
+        ], 
       ),
     );
   }

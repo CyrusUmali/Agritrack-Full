@@ -155,6 +155,7 @@ dependencies:
   uuid: ^4.5.1
   flutter_localization: ^0.3.3
   equatable: ^2.0.7 
+  google_generative_ai: ^0.4.7
 
 
 dependency_overrides:
@@ -216,6 +217,7 @@ flutter:
     - assets/rice.svg
     - assets/loginBG.jpg
     - assets/loginBG2.jpg
+    - assets/notfound.png
 
     
   #   - assets/a_dot_burr.jpeg

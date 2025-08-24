@@ -1,44 +1,31 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flareline/core/models/user_model.dart';
 import 'package:flareline/services/api_service.dart';
+import 'package:flareline/repositories/base_repository.dart'; // Import the base repository
 import 'package:firebase_auth/firebase_auth.dart';
 
-class UserRepository {
-  final ApiService apiService;
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-
-  UserRepository({required this.apiService});
+class UserRepository extends BaseRepository {
+  UserRepository({required super.apiService});
 
   Future<UserModel> getUserById(int userId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/auth/users/$userId');
+      final response = await apiService.get('/auth/users/$userId')
+          .timeout(const Duration(seconds: 30));
 
-      if (response.data == null || response.data['user'] == null) {
-        throw Exception('Invalid user data format');
-      }
-
-      return UserModel.fromJson(response.data['user']);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('User not found');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
+      return _validateAndParseUserResponse(response);
     } catch (e) {
-      throw Exception('Failed to load user: $e');
+      handleError(e, operation: 'load user'); // Use inherited method
     }
   }
 
   Future<UserModel> updateUser(UserModel user) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
       final response = await apiService.put(
         '/auth/users/${user.id}',
@@ -54,51 +41,24 @@ class UserRepository {
           'password': user.password,
           'newPassword': user.newPassword
         },
-      );
+      ).timeout(const Duration(seconds: 30));
 
-      if (response.data == null || response.data['user'] == null) {
-        throw Exception('Invalid user data format');
-      }
-
-      return UserModel.fromJson(response.data['user']);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('User not found');
-      } else if (e.response?.statusCode == 400) {
-        final errorData = e.response?.data;
-        if (errorData != null &&
-            errorData['message'] == 'Email already in use by another user') {
-          throw Exception('Email already in use by another user');
-        }
-        throw Exception(errorData['message'] ?? 'Invalid request');
-      }
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+      return _validateAndParseUserResponse(response, method: 'update');
     } catch (e) {
-      throw Exception('Failed to update user: $e');
+      handleError(e, operation: 'update user'); // Use inherited method
     }
   }
-
+ 
   Future<List<UserModel>> fetchUsers() async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/auth/users');
+      final response = await apiService.get('/auth/users')
+          .timeout(const Duration(seconds: 30));
 
-      if (response.data == null || response.data['users'] == null) {
-        throw Exception('Invalid users data format');
-      }
-
-      final usersData = response.data['users'] as List;
-
-      return usersData.map((json) => UserModel.fromJson(json)).toList();
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
+      return _validateAndParseUsersResponse(response);
     } catch (e) {
-      throw Exception('Failed to load users: $e');
+      handleError(e, operation: 'load users'); // Use inherited method
     }
   }
 
@@ -112,9 +72,8 @@ class UserRepository {
       'Organic': 6,
     };
 
-    // Handle null case and invalid values
     if (sectorName == null || !sectorMap.containsKey(sectorName)) {
-      return 1; // Default to HVC (1) which might be more appropriate
+      return 1;
     }
 
     return sectorMap[sectorName]!;
@@ -122,20 +81,12 @@ class UserRepository {
 
   Future<UserModel> addUser(UserModel user) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated. Please sign in first.');
-      }
+      checkAuthentication(); // Use inherited method
 
       // Validate required fields
-      if (user.email.isEmpty) {
-        throw Exception('Email is required');
-      }
-      if (user.name.isEmpty) {
-        throw Exception('Name is required');
-      }
-      if (user.role.isEmpty) {
-        throw Exception('Role is required');
-      }
+      if (user.email.isEmpty) throw Exception('Email is required');
+      if (user.name.isEmpty) throw Exception('Name is required');
+      if (user.role.isEmpty) throw Exception('Role is required');
 
       final requestData = {
         'email': user.email,
@@ -145,8 +96,6 @@ class UserRepository {
         'fname': user.fname,
         'lname': user.lname,
         'sectorId': _getSectorId(user.sector ?? 'N/A'),
-        // print('sector${user.sector ?? 'N/A'}');
-        // 'sectorId': 1,
         'barangay': user.barangay,
         'phone': user.phone,
         'password': user.password,
@@ -157,58 +106,29 @@ class UserRepository {
       final response = await apiService.post(
         '/auth/users',
         data: requestData,
-      );
+      ).timeout(const Duration(seconds: 30));
 
-      if (response.data == null) {
-        throw Exception('Server returned empty response');
-      }
-      if (response.data['user'] == null) {
-        throw Exception(
-            'Server response missing user data. Full response: ${response.data}');
-      }
-
-      return UserModel.fromJson(response.data['user']);
-    } on DioException catch (e) {
-      final statusCode = e.response?.statusCode;
-      final errorMessage = e.response?.data?['message'] ?? e.message;
-      final requestUrl = e.requestOptions.uri;
-
-      throw Exception('''
-            API Request Failed:
-            - URL: $requestUrl
-            - Status: $statusCode
-            - Error: $errorMessage
-            - Details: ${e.response?.data}
-            ''');
+      return _validateAndParseUserResponse(response, method: 'add');
     } catch (e) {
-      throw Exception('''
-      Failed to add user:
-      - Error Type: ${e.runtimeType}
-      - Error Details: $e
-      - Stack Trace: ${e is Error ? e.stackTrace : ''}
-      ''');
+      handleError(e, operation: 'add user'); // Use inherited method
     }
   }
 
   Future<void> deleteUser(int userId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
-      await apiService.delete('/auth/users/$userId');
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+      await apiService.delete('/auth/users/$userId')
+          .timeout(const Duration(seconds: 30));
     } catch (e) {
-      throw Exception('Failed to delete user: $e');
+      handleError(e, operation: 'delete user'); // Use inherited method
     }
   }
 
-  // Optional: Add user-specific methods like changePassword, updateProfile, etc.
-  Future<void> changePassword(
-      String currentPassword, String newPassword) async {
+  Future<void> changePassword(String currentPassword, String newPassword) async {
     try {
-      final user = _firebaseAuth.currentUser;
+      // Note: This method uses Firebase Auth directly, so we need to handle it specially
+      final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         throw Exception('User not authenticated');
       }
@@ -222,10 +142,35 @@ class UserRepository {
 
       // Then update password
       await user.updatePassword(newPassword);
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Password change failed: ${e.message}');
     } catch (e) {
-      throw Exception('Failed to change password: $e');
+      handleError(e, operation: 'change password'); // Use inherited method
     }
+  }
+
+  // Helper method for response validation (PRESERVED - no changes)
+  UserModel _validateAndParseUserResponse(Response response, {String method = 'get'}) {
+    if (response.data == null) {
+      throw Exception('Server returned empty response');
+    }
+    
+    if (response.data['user'] == null) {
+      throw Exception('Invalid user data format received from server');
+    }
+
+    return UserModel.fromJson(response.data['user']);
+  }
+
+  // Helper method for users list validation (PRESERVED - no changes)
+  List<UserModel> _validateAndParseUsersResponse(Response response) {
+    if (response.data == null) {
+      throw Exception('Server returned empty response');
+    }
+    
+    if (response.data['users'] == null) {
+      throw Exception('Invalid users data format received from server');
+    }
+
+    final usersData = response.data['users'] as List;
+    return usersData.map((json) => UserModel.fromJson(json)).toList();
   }
 }

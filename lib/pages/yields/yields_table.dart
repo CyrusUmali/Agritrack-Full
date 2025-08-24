@@ -4,6 +4,7 @@ import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flareline/pages/products/product/product_bloc.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flareline/pages/yields/add_yield_modal.dart';
 import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
@@ -66,15 +67,15 @@ class _YieldsWidgetState extends State<YieldsWidget> {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is YieldsError) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.flat,
-            title: Text(state.message),
-            alignment: Alignment.topRight,
-            showProgressBar: false,
-            autoCloseDuration: const Duration(seconds: 3),
-          );
+
+ 
+
+             ToastHelper.showErrorToast(
+       state.message,
+        context, maxLines: 3
+      );
+
+      
         }
       },
       child: _channels(),
@@ -507,14 +508,14 @@ class _YieldsWidgetState extends State<YieldsWidget> {
         BlocListener<ProductBloc, ProductState>(
           listener: (context, state) {
             if (state is ProductsError) {
-              toastification.show(
-                context: context,
-                type: ToastificationType.error,
-                style: ToastificationStyle.flat,
-                title: Text(state.message),
-                alignment: Alignment.topRight,
-                autoCloseDuration: const Duration(seconds: 3),
-              );
+               
+
+ToastHelper.showErrorToast(
+       state.message,
+        context, maxLines: 3
+      );
+
+
             }
           },
         ),

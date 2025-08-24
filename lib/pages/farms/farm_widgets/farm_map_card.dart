@@ -33,7 +33,12 @@ class _FarmMapCardState extends State<FarmMapCard> {
   }
 
   double _calculateZoomLevel(double hectare) {
-    if (hectare < 1) return 20.0;
+    print(
+        'Calculating zoom level for hectare '
+    );
+    print(hectare);
+    if (hectare < 0.5) return 20.0;
+    if (hectare < 0.6) return 19.0;
     if (hectare < 5) return 18.0;
     if (hectare < 20) return 16.0;
     if (hectare < 50) return 14.0;
@@ -41,7 +46,7 @@ class _FarmMapCardState extends State<FarmMapCard> {
   }
 
   Color _getColorForSector(String sector) {
-    switch (sector?.toLowerCase()) {
+    switch (sector) {
       case 'Rice':
         return Colors.green;
       case 'Corn':
@@ -113,7 +118,7 @@ class _FarmMapCardState extends State<FarmMapCard> {
           options: MapOptions(
             center: LatLng(centerLat, centerLng),
             zoom: zoomLevel,
-            minZoom: 10,
+            minZoom: 18,
             onMapReady: () {
               // Calculate bounds after map is ready
               final bounds = LatLngBounds.fromPoints(polygonPoints);

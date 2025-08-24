@@ -1,3 +1,4 @@
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flutter/material.dart';
 
 class EditableField extends StatelessWidget {
@@ -31,29 +32,36 @@ class EditableField extends StatelessWidget {
         TextFormField(
           initialValue: value,
           onChanged: onChanged,
-          keyboardType: keyboardType,
+          keyboardType: keyboardType, 
           validator: validator,
           decoration: InputDecoration(
             isDense: true,
             contentPadding:
                 const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+            // Copied border style from OutBorderTextFormField
+            border: const OutlineInputBorder(
+              borderSide: BorderSide(color: FlarelineColors.border, width: 1),
+            ),
+            enabledBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: FlarelineColors.border, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 1,
+              ),
             ),
             errorMaxLines: 2,
             errorStyle: TextStyle(
-              // Add this to make error text red
               color: Colors.red, // Explicit red color
-              fontSize: 12, // Optional: adjust font size
+              fontSize: 12, // Optional: adjust font size 
             ),
-            // Optional: you can also style the border color when there's an error
-            errorBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red),
-              borderRadius: BorderRadius.circular(8),
+            // Using the error border style from OutBorderTextFormField
+            errorBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.redAccent),
             ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red),
-              borderRadius: BorderRadius.circular(8),
+            focusedErrorBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.redAccent),
             ),
           ),
         ),

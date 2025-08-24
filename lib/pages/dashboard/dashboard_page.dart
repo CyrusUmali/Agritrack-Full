@@ -37,8 +37,7 @@ class Dashboard extends LayoutWidget {
           },
         ),
 
-        const SizedBox(height: 16),
-        const SizedBox(height: 16),
+        const SizedBox(height: 16), 
 
         // Show AnalyticsWidget only for admin and manager
         Consumer<YearPickerProvider>(
@@ -50,7 +49,7 @@ class Dashboard extends LayoutWidget {
 
         const SizedBox(height: 20),
 
-        if (_hasRole(user, 'admin') || _hasRole(user, 'manager'))
+        if (_hasRole(user, 'admin') || _hasRole(user, 'officer'))
           const RevenueWidget(),
 
         const SizedBox(height: 16),

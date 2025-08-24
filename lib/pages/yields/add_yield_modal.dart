@@ -1,6 +1,7 @@
 import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flareline/core/models/farms_model.dart';
 import 'package:flareline/core/models/product_model.dart';
+import 'package:flareline/pages/farms/farm_widgets/farm_map_card.dart';
 import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/foundation.dart';
@@ -12,7 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart'; 
 
 class AddYieldModal extends StatefulWidget {
   final Function(
@@ -127,7 +128,7 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
   final TextEditingController notesController = TextEditingController();
   TextEditingController farmAreaController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-
+ bool _isMapMinimized = false; // Add this line
   DateTime selectedDate = DateTime.now();
   Product? selectedProduct;
   Farmer? selectedFarmer;
@@ -147,6 +148,14 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
   final GlobalKey cropTypeFieldKey = GlobalKey();
   final GlobalKey farmerFieldKey = GlobalKey();
   final GlobalKey farmAreaFieldKey = GlobalKey();
+
+
+
+void _toggleMapVisibility() {
+  setState(() {
+    _isMapMinimized = !_isMapMinimized;
+  });
+}
 
   @override
   void initState() {
@@ -171,6 +180,19 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
     if (farm.hectare != null && farm.hectare! > 0) {
       areaHaController.text = farm.hectare.toString();
     }
+  }
+
+  // Convert Farm model to Map for FarmMapCard
+  Map<String, dynamic> _farmToMap(Farm farm) {
+    return {
+      'id': farm.id,
+      'name': farm.name,
+      'owner': farm.owner,
+      'hectare': farm.hectare,
+      'sector': farm.sector, // Add sector if available in your Farm model
+      'vertices': farm.vertices, // Assuming your Farm model has vertices
+      // Add other properties as needed
+    };
   }
 
   Future<List<String>> _uploadImagesToCloudinary() async {
@@ -293,6 +315,55 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
     );
   }
 
+
+
+Widget _buildFarmMapSection() {
+  if (selectedFarm == null) {
+    return const SizedBox.shrink();
+  }
+
+  final screenWidth = MediaQuery.of(context).size.width;
+  final isSmallScreen = screenWidth < 600;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Farm Location:',
+            style: TextStyle(fontSize: 13),
+          ),
+          IconButton(
+            icon: Icon(
+              _isMapMinimized ? Icons.expand_more : Icons.expand_less,
+              size: 20,
+            ),
+            onPressed: _toggleMapVisibility,
+            tooltip: _isMapMinimized ? 'Show Map' : 'Hide Map',
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        height: _isMapMinimized ? 0 : (isSmallScreen ? 250 : 300),
+        width: double.infinity,
+        child: _isMapMinimized
+            ? null
+            : FarmMapCard(
+                farm: _farmToMap(selectedFarm!),
+                isMobile: isSmallScreen,
+              ),
+      ),
+      SizedBox(height: isSmallScreen ? 8.0 : 16.0),
+    ],
+  );
+}
+
+
+
   Widget _buildOptionsView<T extends Object>(
     BuildContext context,
     AutocompleteOnSelected<T> onSelected,
@@ -350,7 +421,7 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
       _farmerValidated = true;
       _farmAreaValidated = true;
       _yieldAmountValidated = true;
-      _areaHaValidated = true; // Add this line
+      _areaHaValidated = true;
     });
 
     if (!_formKey.currentState!.validate()) {
@@ -363,7 +434,6 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
     });
 
     try {
-      // First upload images to Cloudinary
       List<String> imageUrls = [];
       if (selectedImages.isNotEmpty) {
         imageUrls = await _uploadImagesToCloudinary();
@@ -374,8 +444,6 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
       final double? areaHa = areaHaController.text.trim().isEmpty
           ? null
           : double.tryParse(areaHaController.text.trim());
-
-      // Call the callback with the image URLs instead of XFiles
 
       print('areaHa-------');
       print(areaHa);
@@ -475,7 +543,10 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
                       suffixIcon: const Icon(Icons.arrow_drop_down),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 12, horizontal: 12),
-                      errorStyle: const TextStyle(fontSize: 12),
+                      errorStyle: TextStyle(
+        fontSize: 10,
+        color: Colors.red.shade600, // Add your desired error text color here
+      ),
                       errorBorder: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: Colors.red.shade400,
@@ -521,9 +592,7 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
                       readOnly: true,
                     ),
                   )
-                :
-                // Farmer Autocomplete
-                SizedBox(
+                : SizedBox(
                     height: fieldHeight,
                     child: Autocomplete<Farmer>(
                       key: farmerFieldKey,
@@ -566,7 +635,10 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
                             suffixIcon: const Icon(Icons.arrow_drop_down),
                             contentPadding: const EdgeInsets.symmetric(
                                 vertical: 12, horizontal: 12),
-                            errorStyle: const TextStyle(fontSize: 12),
+                             errorStyle: TextStyle(
+        fontSize: 10,
+        color: Colors.red.shade600, // Add your desired error text color here
+      ),
                             errorBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: Colors.red.shade400,
@@ -651,7 +723,10 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
                           : null,
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 12, horizontal: 12),
-                      errorStyle: const TextStyle(fontSize: 12),
+                      errorStyle: TextStyle(
+        fontSize: 10,
+        color: Colors.red.shade600, // Add your desired error text color here
+      ),
                       errorBorder: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: Colors.red.shade400,
@@ -688,64 +763,67 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
               ),
             ),
             SizedBox(height: isSmallScreen ? 8.0 : 16.0),
-SizedBox(
-  height: fieldHeight,
-  child: TextFormField(
-    controller: areaHaController,
-    keyboardType: TextInputType.number,
-    decoration: InputDecoration(
-      labelText: 'Area harvested (ha) - Optional',
-      border: const OutlineInputBorder(),
-      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-      errorStyle: const TextStyle(fontSize: 12),
-      errorBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: Colors.red.shade400,
-          width: 1.5,
-        ),
+
+            // Farm Map Section - Added here
+            _buildFarmMapSection(),
+
+            SizedBox(
+              height: fieldHeight,
+              child: TextFormField(
+                controller: areaHaController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Area harvested (ha) - Optional',
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                  errorStyle: TextStyle(
+        fontSize: 10,
+        color: Colors.red.shade600, // Add your desired error text color here
       ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderSide: BorderSide(
-          color: Colors.red.shade400,
-          width: 1.5,
-        ),
-      ),
-    ),
-    validator: (value) {
-      // If field is empty, it's optional so return null (no error)
-      if (value == null || value.trim().isEmpty) {
-        return null;
-      }
-      
-      // If user entered something, validate it
-      final area = double.tryParse(value.trim());
-      if (area == null) {
-        return 'Please enter a valid number';
-      }
-      
-      if (area <= 0) {
-        return 'Area must be greater than 0';
-      }
-      
-      // Optional: Add maximum area validation if needed
-      if (area > 10000) { // Example: max 10,000 hectares
-        return 'Area seems too large. Please check your input';
-      }
-      
-      // Optional: Check against farm's total area if available
-      if (selectedFarm != null && selectedFarm!.hectare != null) {
-        if (area > selectedFarm!.hectare!) {
-          return 'Area cannot exceed farm size (${selectedFarm!.hectare} ha)';
-        }
-      }
-      
-      return null;
-    },
-    autovalidateMode: _areaHaValidated
-        ? AutovalidateMode.onUserInteraction
-        : AutovalidateMode.disabled,
-  ),
-),
+                  errorBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Colors.red.shade400,
+                      width: 1.5,
+                    ),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Colors.red.shade400,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return null;
+                  }
+                  
+                  final area = double.tryParse(value.trim());
+                  if (area == null) {
+                    return 'Please enter a valid number';
+                  }
+                  
+                  if (area <= 0) {
+                    return 'Area must be greater than 0';
+                  }
+                  
+                  if (area > 10000) {
+                    return 'Area seems too large. Please check your input';
+                  }
+                  
+                  if (selectedFarm != null && selectedFarm!.hectare != null) {
+                    if (area > selectedFarm!.hectare!) {
+                      return 'Area cannot exceed farm size (${selectedFarm!.hectare} ha)';
+                    }
+                  }
+                  
+                  return null;
+                },
+                autovalidateMode: _areaHaValidated
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+              ),
+            ),
        
             SizedBox(height: isSmallScreen ? 8.0 : 16.0),
 
@@ -760,7 +838,10 @@ SizedBox(
                   border: const OutlineInputBorder(),
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                  errorStyle: const TextStyle(fontSize: 12),
+                  errorStyle: TextStyle(
+        fontSize: 10, 
+        color: Colors.red.shade600, // Add your desired error text color here
+      ),
                   errorBorder: OutlineInputBorder(
                     borderSide: BorderSide(
                       color: Colors.red.shade400,
@@ -856,7 +937,7 @@ SizedBox(
                 Text(
                   '${selectedImages.length}/5 images selected',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 10,
                     color:
                         selectedImages.length >= 5 ? Colors.red : Colors.grey,
                   ),
@@ -918,5 +999,4 @@ class _AddYieldModalFooter extends StatelessWidget {
         ),
       ),
     );
-  }
-}
+  }}

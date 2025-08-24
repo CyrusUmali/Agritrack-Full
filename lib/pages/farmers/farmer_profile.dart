@@ -369,8 +369,9 @@ class _ProfileHeader extends StatelessWidget {
       margin: EdgeInsets.zero,
       child: Stack(
         children: [
+         const SizedBox(height: 16),
           SizedBox(
-            height: isMobile ? 150 : 200,
+            height: isMobile ? 150 : 240,
             width: double.infinity,
             child: Image.asset(
               'assets/cover/cover-01.png',

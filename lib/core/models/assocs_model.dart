@@ -9,18 +9,22 @@ class Association extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final double? volume;
+    final double? production;
   final double? hectare;
+   final double? areaHarvested;
   final double? avgFarmSize;
   final String? imageUrl;
-
+ 
   const Association({
     required this.id,
     required this.name,
     this.volume,
+    this.production,
     this.totalMembers,
     this.totalFarms,
     this.avgFarmSize,
     this.hectare,
+    this.areaHarvested,
     this.imageUrl =
         'https://cdn2.iconfinder.com/data/icons/food-solid-icons-volume-2/128/054-512.png',
     this.description,
@@ -40,8 +44,14 @@ class Association extends Equatable {
       totalFarms: (stats['totalFarms']) as int? ?? 0,
       volume: (stats['totalYieldVolume'] as num?)?.toDouble() ?? 0,
 
+            production: (stats['metricTons'] as num?)?.toDouble() ?? 0,
+
       hectare: (stats['totalLandArea'] as num?)?.toDouble() ??
           0, // Access from stats
+
+  areaHarvested: (stats['totalAreaHarvested'] as num?)?.toDouble() ??
+          0, // Access from stats
+
       // hectare: (json['avgFarmSize'] as num?)?.toDouble() ?? 0,
 
       avgFarmSize: (stats['totalLandArea'] as num?)?.toDouble() ?? 0,
@@ -65,7 +75,10 @@ class Association extends Equatable {
     DateTime? createdAt,
     DateTime? updatedAt,
     double? volume,
+    double? production,
     double? hectare,
+
+    double? areaHarvested,
     double? avgFarmSize,
     String? imageUrl,
   }) {
@@ -78,6 +91,8 @@ class Association extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       volume: volume ?? this.volume,
+      areaHarvested: areaHarvested ?? this.areaHarvested,
+      production: production ?? this.production,
       hectare: hectare ?? this.hectare,
       avgFarmSize: avgFarmSize ?? this.avgFarmSize,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -92,7 +107,9 @@ class Association extends Equatable {
       'totalFarms': totalFarms,
       'description': description,
       'volume': volume,
+      'production': production,
       'avgFarmSize': avgFarmSize,
+      'areaHarvested': areaHarvested,
       'hectare': hectare,
       'imageUrl': imageUrl,
       'createdAt': createdAt?.toIso8601String(),
@@ -110,6 +127,8 @@ class Association extends Equatable {
         totalFarms,
         avgFarmSize,
         volume,
+        areaHarvested,
+        production,
         imageUrl,
         createdAt,
         updatedAt,

@@ -11,7 +11,7 @@
       {
         "icon": "assets/sidebar/map.svg",
         "menuName": "Map",
-        "path": "/newPage"
+        "path": "/map"
       },
       {
         "icon": "assets/sidebar/farm.svg",

@@ -10,6 +10,7 @@ part 'yield_state.dart';
 
 class YieldBloc extends Bloc<YieldEvent, YieldState> {
   final YieldRepository yieldRepository;
+  int? _currentFarmerId;
 
   YieldBloc({required this.yieldRepository}) : super(YieldInitial()) {
     on<LoadYields>(_onLoadYields);
@@ -47,6 +48,42 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
   String get searchQuery => _searchQuery;
   String? get sortColumn => _sortColumn;
   bool get sortAscending => _sortAscending;
+
+
+Future<void> _onAddYield(
+  AddYield event,
+  Emitter<YieldState> emit,
+) async {
+  emit(YieldsLoading());
+  try {
+    final newYield = Yield(
+      id: 0, // Will be assigned by server
+      farmerId: event.farmerId,
+      productId: event.productId,
+      harvestDate: event.harvestDate,
+      areaHarvested: event.areaHarvested,
+      farmId: event.farmId,
+      volume: event.volume,
+      notes: event.notes,
+      value: event.value,
+      images: event.images,
+    ); 
+
+    await yieldRepository.addYield(newYield);
+    
+    // Refresh based on current context
+      if (_currentFarmerId != null) {
+        _yields = await yieldRepository.fetchYieldsByFarmer(_currentFarmerId!);
+      } else {
+        _yields = await yieldRepository.fetchYields();
+      }
+    
+    emit(YieldsLoaded(_applyFilters(),
+        message: 'Yield record added successfully!'));
+  } catch (e) {
+    emit(YieldsError('Failed to add yield record: ${e.toString()}'));
+  }
+}
 
   Future<void> _onDeleteYield(
     DeleteYield event,
@@ -150,20 +187,18 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
 
 
 
-
-
-
+// Update the LoadYieldsByFarmer handler to store the farmer ID
   Future<void> _onLoadYieldsByFarmer(
     LoadYieldsByFarmer event,
     Emitter<YieldState> emit,
   ) async {
+    _currentFarmerId = event.farmerId; // Store the farmer ID
     emit(YieldsLoading());
-
     try {
       _yields = await yieldRepository.fetchYieldsByFarmer(event.farmerId);
       emit(YieldsLoaded(_applyFilters()));
     } catch (e) {
-      emit(YieldsError(e.toString()));
+      emit(YieldsError('Failed to load yields: ${e.toString()}'));
     }
   }
 
@@ -181,37 +216,7 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
     }
   }
 
-  Future<void> _onAddYield(
-    AddYield event,
-    Emitter<YieldState> emit,
-  ) async {
-    emit(YieldsLoading());
-    try {
-      final newYield = Yield(
-        id: 0, // Will be assigned by server
-        farmerId: event.farmerId,
-        productId: event.productId,
-        harvestDate: event.harvestDate,
-        areaHarvested:event.areaHarvested,
-        farmId: event.farmId,
-        volume: event.volume,
-        notes: event.notes,
-        value: event.value,
-        images: event.images,
-      );
-      print('areaHarvested---');
-  print('areaHarvested: ${event.areaHarvested}');
-      print('Adding new yield: ${newYield.toJson()}');
-
-      await yieldRepository.addYield(newYield);
-      _yields = await yieldRepository.fetchYields(); // Refresh list
-      emit(YieldsLoaded(_applyFilters(),
-          message: 'Yield record added successfully!'));
-    } catch (e) {
-      emit(YieldsError('Failed to add yield record: ${e.toString()}'));
-    }
-  }
-
+ 
   Future<void> _onFilterYields(
     FilterYields event,
     Emitter<YieldState> emit,

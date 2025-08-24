@@ -38,21 +38,31 @@ class SignUpForms {
       child: Column(
         children: [
           OutBorderTextFormField(
-            labelText: "Email",
-            hintText: "Enter your email",
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Email is required';
-              }
-              if (!value.contains('@')) {
-                return 'Enter a valid email';
-              }
-              return null;
-            },
-            maxLength: 100,
-            controller: viewModel.emailController,
-          ),
+  labelText: "Email",
+  hintText: "Enter your email",
+  keyboardType: TextInputType.emailAddress,
+  validator: (value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Email is required';
+    }
+
+    final email = value.trim();
+
+    // Practical regex for common email formats
+    final emailRegex = RegExp(
+      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$',
+    );
+
+    if (!emailRegex.hasMatch(email)) {
+      return 'Enter a valid email address';
+    }
+
+    return null;
+  },
+  maxLength: 100,
+  controller: viewModel.emailController,
+)
+,
           const SizedBox(height: 16),
           OutBorderTextFormField(
             obscureText: true,

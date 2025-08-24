@@ -11,7 +11,7 @@ class FarmService {
 
   Future<List<Map<String, dynamic>>> fetchFarms() async {
     try {
-      final response = await _apiService.get('/auth/farms-view');
+      final response = await _apiService.get('/farms/farms-view');
       if (response.statusCode == 200) {
         return List<Map<String, dynamic>>.from(response.data['farms']);
       }
@@ -24,7 +24,7 @@ class FarmService {
   Future<List<Map<String, dynamic>>> fetchFarmsByFarmerId(
       String farmerId) async {
     try {
-      final response = await _apiService.get('/auth/farms', queryParameters: {
+      final response = await _apiService.get('/farms/farms', queryParameters: {
         'farmerId': farmerId,
       });
 
@@ -40,7 +40,7 @@ class FarmService {
   Future<Map<String, dynamic>> createFarm(PolygonData polygon) async {
     try {
       final response = await _apiService.post(
-        '/auth/farms', // Make sure this matches your backend endpoint
+        '/farms/farms', // Make sure this matches your backend endpoint
         data: {
           'name': polygon.name,
           'farmerId': polygon.farmerId,
@@ -76,7 +76,7 @@ class FarmService {
 
   Future<void> updateFarm(PolygonData polygon) async {
     final response = await _apiService.put(
-      '/auth/farms/${polygon.id}',
+      '/farms/farms/${polygon.id}',
       data: {
         'name': polygon.name,
         'owner': polygon.owner,
@@ -99,7 +99,7 @@ class FarmService {
 
   Future<bool> deleteFarm(int farmId) async {
     try {
-      final response = await _apiService.delete('/auth/farms/$farmId');
+      final response = await _apiService.delete('/farms/farms/$farmId');
 
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;

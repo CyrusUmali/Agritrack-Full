@@ -51,8 +51,10 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       emit(UserUpdated(updatedUser, passwordChanged: event.passwordChanged));
       emit(UserLoaded(updatedUser));
     } catch (e) {
+      
+      // print('Error updating user: ${e.toString()}');
       emit(UsersError(e.toString()));
-    }
+    } 
   }
 
   Future<void> _onGetUserById(

@@ -225,66 +225,121 @@ class SuitabilityContentState extends State<SuitabilityContent> {
       },
     );
   }
-
-  Widget _buildCropSelectionDropdown() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Select Crop',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 20,
-                    color: const Color.fromARGB(255, 18, 18, 18),
-                  ),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: model!.selectedCrop,
-              hint: const Text('Choose a crop'),
-              items: availableCrops.map((String crop) {
-                return DropdownMenuItem<String>(
-                  value: crop,
-                  child: Text(crop),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  model!.selectedCrop = newValue;
-                  model!.suitabilityResult = null;
+Widget _buildCropSelectionDropdown() {
+  return Card(
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Select Crop',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                  color: const Color.fromARGB(255, 18, 18, 18),
+                ),
+          ),
+          const SizedBox(height: 8),
+          Autocomplete<String>(
+            optionsBuilder: (TextEditingValue textEditingValue) {
+              if (textEditingValue.text.isEmpty) {
+                return availableCrops;
+              }
+              return availableCrops.where((String option) {
+                return option
+                    .toLowerCase()
+                    .contains(textEditingValue.text.toLowerCase());
+              });
+            },
+            onSelected: (String selection) {
+              setState(() {
+                model!.selectedCrop = selection;
+                model!.suitabilityResult = null;
+              });
+            },
+            fieldViewBuilder: (BuildContext context,
+                TextEditingController textEditingController,
+                FocusNode focusNode,
+                VoidCallback onFieldSubmitted) {
+              // Set initial value if a crop is already selected
+              if (model!.selectedCrop != null && textEditingController.text.isEmpty) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  textEditingController.text = model!.selectedCrop!;
                 });
-              },
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+              }
+              
+              return TextFormField(
+                controller: textEditingController,
+                focusNode: focusNode,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue, width: 1),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16, // Increased for better touch area
+                  ),
+                  hintText: 'Type to search crops...',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+              );
+            },
+            optionsViewBuilder: (BuildContext context,
+                AutocompleteOnSelected<String> onSelected,
+                Iterable<String> options) {
+              return Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  elevation: 4.0,
+                  child: Container(
+                    // Constrain the width to match the input field
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 200),
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        shrinkWrap: true,
+                        itemCount: options.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final String option = options.elementAt(index);
+                          return InkWell(
+                            onTap: () {
+                              onSelected(option);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(16.0),
+                              // Ensure the option text doesn't overflow
+                              child: Text(
+                                option,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.blue, width: 1),
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 0,
-                ),
-                hintStyle: TextStyle(color: Colors.grey[600]),
-              ),
-            ),
-          ],
-        ),
+              );
+            },
+          ),
+        ],
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildModelSelectionCard() {
     return Card(
       child: Padding(

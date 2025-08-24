@@ -27,20 +27,20 @@ class RecommendationInputs extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              _buildSlider(context, 'Nitrogen (N)', model.nitrogen, 0, 150,
+              _buildSlider(context, 'Nitrogen (N)', model.nitrogen, 0, 450,
                   (value) {
                 model.nitrogen = value;
                 onChanged(); // Trigger rebuild
               }),
               const SizedBox(height: 16),
               _buildSlider(
-                  context, 'Phosphorous (P)', model.phosphorous, 0, 150,
+                  context, 'Phosphorous (P)', model.phosphorous, 0, 450,
                   (value) {
                 model.phosphorous = value;
                 onChanged(); // Trigger rebuild
               }),
               const SizedBox(height: 16),
-              _buildSlider(context, 'Potassium (K)', model.potassium, 0, 220,
+              _buildSlider(context, 'Potassium (K)', model.potassium, 0, 450,
                   (value) {
                 model.potassium = value;
                 onChanged(); // Trigger rebuild
@@ -70,7 +70,7 @@ class RecommendationInputs extends StatelessWidget {
                 onChanged(); // Trigger rebuild
               }),
               const SizedBox(height: 16),
-              _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 300,
+              _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 2000,
                   (value) {
                 model.rainfall = value;
                 onChanged(); // Trigger rebuild
@@ -85,18 +85,18 @@ class RecommendationInputs extends StatelessWidget {
   Widget _buildMobileInputs(BuildContext context) {
     return Column(
       children: [
-        _buildSlider(context, 'Nitrogen (N)', model.nitrogen, 0, 100, (value) {
+        _buildSlider(context, 'Nitrogen (N)', model.nitrogen, 0, 450, (value) {
           model.nitrogen = value;
           onChanged(); // Add this
         }),
         const SizedBox(height: 16),
-        _buildSlider(context, 'Phosphorous (P)', model.phosphorous, 0, 100,
+        _buildSlider(context, 'Phosphorous (P)', model.phosphorous, 0, 450,
             (value) {
           model.phosphorous = value;
           onChanged(); // Add this
         }),
         const SizedBox(height: 16),
-        _buildSlider(context, 'Potassium (K)', model.potassium, 0, 100,
+        _buildSlider(context, 'Potassium (K)', model.potassium, 0, 450,
             (value) {
           model.potassium = value;
           onChanged(); // Add this
@@ -118,7 +118,7 @@ class RecommendationInputs extends StatelessWidget {
           onChanged(); // Add this
         }),
         const SizedBox(height: 16),
-        _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 300, (value) {
+        _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 2000, (value) {
           model.rainfall = value;
           onChanged(); // Add this
         }),

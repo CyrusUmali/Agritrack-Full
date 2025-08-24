@@ -1,11 +1,9 @@
-import 'package:dio/dio.dart';
-import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
+import 'package:dio/dio.dart'; 
 import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline/services/api_service.dart';
 import 'package:flareline_uikit/core/mvvm/base_viewmodel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/widgets.dart'; 
 import 'package:provider/provider.dart';
 
 class SignUpProvider extends BaseViewModel {
@@ -112,7 +110,7 @@ class SignUpProvider extends BaseViewModel {
         barangay: barangayController.text,
         association: associationController.text,
         sector: sectorController.text,
-        imageUrl: null,
+        imageUrl: 'https://res.cloudinary.com/dk41ykxsq/image/upload/v1745590990/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTAxL3JtNjA5LXNvbGlkaWNvbi13LTAwMi1wLnBuZw-removebg-preview_myrmrf.png',
         fname: firstNameController.text,
         lname: lastNameController.text,
         mname: middleNameController.text,
@@ -216,7 +214,7 @@ class SignUpProvider extends BaseViewModel {
 
 class FarmerData {
   final String name;
-  final String email;
+  final String email; 
   final String password;
   final String association;
   final String phone;

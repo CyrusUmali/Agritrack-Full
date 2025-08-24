@@ -14,7 +14,7 @@ class SectorService {
       }
 
       final response = await _apiService.get(
-        '/auth/associations', // Changed endpoint to associations
+        '/assocs/associations', // Changed endpoint to associations
         queryParameters: queryParams,
       );
 
@@ -37,7 +37,7 @@ class SectorService {
       }
 
       final response =
-          await _apiService.get('/auth/sectors', queryParameters: queryParams);
+          await _apiService.get('/sectors/sectors', queryParameters: queryParams);
 
       if (response.statusCode == 200) {
         // Extract just the sectors list from the response to maintain compatibility
@@ -57,7 +57,7 @@ class SectorService {
   Future<List<Map<String, dynamic>>> fetchAnnotations() async {
     try {
       final response = await _apiService.get(
-          '/auth/annotations'); // Also fixed the URL path (removed '/auth')
+          '/sectors/annotations'); // Also fixed the URL path (removed '/auth')
 
       if (response.statusCode == 200) {
         return List<Map<String, dynamic>>.from(response.data['annotations']);
@@ -73,7 +73,7 @@ class SectorService {
       Map<String, dynamic> annotationData) async {
     try {
       final response = await _apiService.post(
-        '/auth/annotations',
+        '/sectors/annotations',
         data: annotationData,
       );
 
@@ -93,7 +93,7 @@ class SectorService {
       int id, Map<String, dynamic> updatedData) async {
     try {
       final response = await _apiService.put(
-        '/auth/annotations/$id',
+        '/sectors/annotations/$id',
         data: updatedData,
       );
 
@@ -112,7 +112,7 @@ class SectorService {
   Future<void> deleteAnnotation(int id) async {
     try {
       // print('delete annot' + id);
-      final response = await _apiService.delete('/auth/annotations/$id');
+      final response = await _apiService.delete('/sectors/annotations/$id');
 
       if (response.statusCode != 204) {
         throw Exception('Failed to delete annotation: ${response.statusCode}');
@@ -134,7 +134,7 @@ class SectorService {
       }
 
       final response = await _apiService.get(
-        '/auth/shi-values',
+        '/sectors/shi-values',
         queryParameters: queryParams,
       );
 
@@ -222,7 +222,7 @@ class SectorService {
       }
 
       final response = await _apiService.get(
-        '/auth/farmer-statistics',
+        '/farmers/farmer-statistics',
         queryParameters: queryParams,
       );
 
@@ -272,7 +272,7 @@ class SectorService {
       }
 
       final response = await _apiService.get(
-        '/auth/farm-statistics',
+        '/farms/farm-statistics',
         queryParameters: queryParams,
       );
 
@@ -298,7 +298,7 @@ class SectorService {
       }
 
       final response = await _apiService.get(
-        '/auth/sectors/$sectorId',
+        '/sectors/sectors/$sectorId',
         queryParameters: queryParams,
       );
 

@@ -3,6 +3,7 @@ import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flareline/pages/farms/farm_profile.dart';
 import 'package:flareline/pages/modal/barangay_filter_modal.dart';
 import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline/pages/widget/combo_box.dart';
 import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flareline/providers/user_provider.dart';
@@ -54,15 +55,10 @@ class _FarmsTableWidgetState extends State<FarmsTableWidget> {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is FarmsError) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.flat,
-            title: Text(state.message),
-            alignment: Alignment.topRight,
-            showProgressBar: false,
-            autoCloseDuration: const Duration(seconds: 3),
-          );
+       ToastHelper.showErrorToast(
+       state.message,
+        context, maxLines: 3
+      );
         }
       },
       child: ScreenTypeLayout.builder(

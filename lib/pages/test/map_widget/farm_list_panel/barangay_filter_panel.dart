@@ -215,10 +215,13 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
                   },
                   controlAffinity: ListTileControlAffinity.leading,
                   activeColor: theme.colorScheme.primary,
+                   checkColor: Colors.white,
                 );
               }).toList(),
             ),
           ),
+      
+      
           SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {

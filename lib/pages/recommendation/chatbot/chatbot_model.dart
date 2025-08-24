@@ -15,7 +15,7 @@ class ChatbotModel extends ChangeNotifier {
   bool _useStreaming = true; // Add streaming toggle
 
   // Streaming-related properties
-  StreamSubscription? _streamSubscription;
+  StreamSubscription? _streamSubscription;  
   String _currentStreamingMessageId = '';
   String _currentStreamingText = '';
 

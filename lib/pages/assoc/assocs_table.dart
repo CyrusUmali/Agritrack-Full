@@ -2,6 +2,7 @@ import 'package:flareline/core/models/assocs_model.dart';
 import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/assoc/assoc_filter_widget.dart';
 import 'package:flareline/pages/assoc/assoc_profile.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,9 @@ import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:toastification/toastification.dart';
 
 class AssocsWidget extends StatelessWidget {
-  const AssocsWidget({super.key});
+    final int selectedYear; // Add selectedYear parameter
+  const AssocsWidget({super.key, required this.selectedYear});
+
  
   @override
   Widget build(BuildContext context) {
@@ -44,15 +47,10 @@ class AssocsWidget extends StatelessWidget {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is AssocsError) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.flat,
-            title: Text(state.message),
-            alignment: Alignment.topRight,
-            showProgressBar: false,
-            autoCloseDuration: const Duration(seconds: 3),
-          );
+     ToastHelper.showErrorToast(
+       state.message,
+        context, maxLines: 3
+      );
         }
       },
       child: SizedBox(
@@ -60,7 +58,7 @@ class AssocsWidget extends StatelessWidget {
         child: Column(
           children: [
             AssociationFilterWidget(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 16), 
             Expanded(
               child: BlocBuilder<AssocsBloc, AssocsState>(
                 builder: (context, state) {
@@ -70,7 +68,7 @@ class AssocsWidget extends StatelessWidget {
                     return NetworkErrorWidget(
                       error: state.message,
                       onRetry: () {
-                        context.read<AssocsBloc>().add(LoadAssocs());
+ context.read<AssocsBloc>().add(LoadAssocs(year: selectedYear));
                       },
                     );
                   } else if (state is AssocsLoaded) {
@@ -82,9 +80,9 @@ class AssocsWidget extends StatelessWidget {
                         Expanded(
                           flex: 2,
                           child: DataTableWidget(
-                            key: ValueKey(
-                                'assocs_table_${state.associations.length}'),
+                            key: ValueKey('assocs_table_${state.associations.length}_$selectedYear'), // Include year in key
                             associations: state.associations,
+                            selectedYear: selectedYear,
                           ),
                         ),
                       ],
@@ -114,15 +112,10 @@ class AssocsWidget extends StatelessWidget {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is AssocsError) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.flat,
-            title: Text(state.message),
-            alignment: Alignment.topRight,
-            showProgressBar: false,
-            autoCloseDuration: const Duration(seconds: 3),
-          );
+      ToastHelper.showErrorToast(
+       state.message,
+        context, maxLines: 3
+      );
         }
       },
       child: Column(
@@ -139,7 +132,7 @@ class AssocsWidget extends StatelessWidget {
                   return NetworkErrorWidget(
                     error: state.message,
                     onRetry: () {
-                      context.read<AssocsBloc>().add(LoadAssocs());
+                      context.read<AssocsBloc>().add(LoadAssocs(year: selectedYear));
                     },
                   );
                 } else if (state is AssocsLoaded) {
@@ -147,8 +140,9 @@ class AssocsWidget extends StatelessWidget {
                     return _buildNoResultsWidget();
                   }
                   return DataTableWidget(
-                    key: ValueKey('assocs_table_${state.associations.length}'),
-                    associations: state.associations,
+ key: ValueKey('assocs_table_${state.associations.length}_$selectedYear'), // Include year in key
+                            associations: state.associations,
+                            selectedYear: selectedYear, // Pass year to table
                   );
                 }
                 return _buildNoResultsWidget();
@@ -187,15 +181,21 @@ class AssocsWidget extends StatelessWidget {
 
 class DataTableWidget extends TableWidget<AssocsViewModel> {
   final List<Association> associations;
+    final int selectedYear; // Add selectedYear
 
   DataTableWidget({
     required this.associations,
+     required this.selectedYear, // Make it required
     Key? key,
   }) : super(key: key);
 
   @override
   AssocsViewModel viewModelBuilder(BuildContext context) {
-    return AssocsViewModel(context, associations);
+   return AssocsViewModel(
+      context, 
+      associations, 
+      selectedYear // Pass to ViewModel
+    );
   }
 
   @override
@@ -373,19 +373,24 @@ class DataTableWidget extends TableWidget<AssocsViewModel> {
 }
 
 class AssocsViewModel extends BaseTableProvider {
-  final List<Association> associations;
+  final List<Association> associations;  final int selectedYear;
 
   AssocsViewModel(
     super.context,
-    this.associations,
+    this.associations, this.selectedYear, // Receive year
   );
 
   @override
   Future loadData(BuildContext context) async {
     const headers = [
       "Name",
-      "Total Members",
-      "Land Area",
+         "Land Area",
+         "Area Harvested",
+      "Members",
+       "Farms",
+       "Yield Volume",
+   
+      "Production",
       "Description",
       "Action"
     ];
@@ -395,7 +400,7 @@ class AssocsViewModel extends BaseTableProvider {
     for (final association in associations) {
       List<TableDataRowsTableDataRows> row = [];
 
-      // Name
+      // Name 
       var nameCell = TableDataRowsTableDataRows()
         ..text = association.name
         ..dataType = CellDataType.TEXT.type
@@ -403,20 +408,56 @@ class AssocsViewModel extends BaseTableProvider {
         ..id = association.id.toString();
       row.add(nameCell);
 
-      var totalMembersCell = TableDataRowsTableDataRows()
-        ..text = association.totalMembers ?? '0'
-        ..dataType = CellDataType.TEXT.type
-        ..columnName = 'Total Members'
-        ..id = association.id.toString();
-      row.add(totalMembersCell);
 
-      var areaCell = TableDataRowsTableDataRows()
+        var areaCell = TableDataRowsTableDataRows()
         // ..text = yieldRecord.hectare as String?
         ..text = '${association.hectare} ha'
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Area'
         ..id = association.id.toString();
       row.add(areaCell);
+
+      
+        var areaHavestedCell = TableDataRowsTableDataRows()
+        // ..text = yieldRecord.hectare as String?
+        ..text = '${association.areaHarvested} ha'
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = 'Area Harvested'
+        ..id = association.id.toString();
+      row.add(areaHavestedCell);
+
+      var totalMembersCell = TableDataRowsTableDataRows()
+        ..text = association.totalMembers ?? '0'
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = 'Members'
+        ..id = association.id.toString();
+      row.add(totalMembersCell);
+
+        var totalFarmsCell = TableDataRowsTableDataRows()
+        ..text = association.totalFarms.toString() ?? '0' 
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = 'Farms'
+        ..id = association.id.toString();
+      row.add(totalFarmsCell);
+
+
+        var totalVolumeCell = TableDataRowsTableDataRows()
+        ..text = association.volume.toString() ?? '0' 
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = ' Yield Volume'
+        ..id = association.id.toString();
+      row.add(totalVolumeCell);
+
+    
+
+
+       var productionCell = TableDataRowsTableDataRows()
+       
+        ..text = '${association.production} mt'
+        ..dataType = CellDataType.TEXT.type
+        ..columnName = 'Production'
+        ..id = association.id.toString();
+      row.add(productionCell);
 
       // Description
       var descCell = TableDataRowsTableDataRows()

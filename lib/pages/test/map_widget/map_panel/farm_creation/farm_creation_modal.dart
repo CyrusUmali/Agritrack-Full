@@ -100,7 +100,8 @@ class FarmCreationModal {
                   insetPadding: const EdgeInsets.all(20),
                   backgroundColor: Theme.of(context).cardTheme.color,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(16),   
+                 
                   ),
                   child: Container(
                     width: MediaQuery.of(context).size.width * 0.5,
@@ -131,7 +132,14 @@ class FarmCreationModal {
                             labelText: 'Farm Name',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
+                              
                             ),
+                             enabledBorder: OutlineInputBorder( // Border when not focused
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: FlarelineColors.border,
+      ),
+    ),
                             filled: true,
                             fillColor:
                                 Theme.of(context).brightness == Brightness.dark
@@ -189,6 +197,13 @@ class FarmCreationModal {
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
+
+                                       enabledBorder: OutlineInputBorder( // Border when not focused
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: FlarelineColors.border,
+      ),
+    ),
                                       filled: true,
                                       fillColor: Theme.of(context).brightness ==
                                               Brightness.dark
@@ -516,6 +531,13 @@ class _ModalContentState extends State<_ModalContent> {
                   color: Colors.grey.shade400,
                 ),
               ),
+
+               enabledBorder: OutlineInputBorder( // Border when not focused
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: FlarelineColors.border,
+      ),
+    ),
               filled: true,
               fillColor: Theme.of(context).brightness == Brightness.dark
                   ? GlobalColors.darkerCardColor
@@ -579,6 +601,13 @@ class _ModalContentState extends State<_ModalContent> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+
+                         enabledBorder: OutlineInputBorder( // Border when not focused
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: FlarelineColors.border,
+      ),
+    ),
                         filled: true,
                         fillColor: Colors.grey.shade50,
                         errorStyle: const TextStyle(color: Colors.red),

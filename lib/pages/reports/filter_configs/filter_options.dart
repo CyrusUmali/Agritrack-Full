@@ -73,8 +73,7 @@ class FilterOptions {
   static Map<String, String> getFilteredReportTypes(bool isFarmer) {
     if (isFarmer) {
       return {
-        'farmer': 'Farmer Record', // Only show the farmer report for farmers
-        'products': 'Products & Yield',
+        'farmer': 'Farmer Record',  
       };
     } else {
       return reportTypes; // Show all reports for admin/non-farmers

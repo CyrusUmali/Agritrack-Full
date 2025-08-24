@@ -10,12 +10,19 @@ import 'package:flareline_uikit/core/mvvm/base_viewmodel.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 
-class SignInProvider extends BaseViewModel {
+class SignInProvider extends BaseViewModel { 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final FirebaseAuth _auth;
   final ApiService _apiService;
   final GoogleSignIn _googleSignIn;
+  bool _showDownloadSection = false;
+  bool get showDownloadSection => _showDownloadSection;
+
+  void toggleDownloadSection() {
+    _showDownloadSection = !_showDownloadSection;
+    notifyListeners();
+  }
 
   bool _testLoading = false;
 
@@ -71,7 +78,7 @@ class SignInProvider extends BaseViewModel {
       String errorMsg;
 
       if (e is FirebaseAuthException) {
-        errorMsg = 'Authentication failed: ${e.message}';
+        errorMsg = _mapAuthError(e.code);
       } else if (e is DioException) {
         if (e.response != null) {
           if (e.response?.data is Map && e.response?.data['message'] != null) {
@@ -86,7 +93,7 @@ class SignInProvider extends BaseViewModel {
         } else if (e.type == DioExceptionType.receiveTimeout) {
           errorMsg = 'Server took too long to respond. Please try again.';
         } else {
-          errorMsg = 'Network error ';
+          errorMsg = 'Network error. Please check your connection.';
         }
       } else {
         errorMsg = 'An unexpected error occurred: ${e.toString()}';
@@ -94,10 +101,11 @@ class SignInProvider extends BaseViewModel {
 
       _showErrorToast(context, errorMsg);
 
-      // await Future.wait([
-      //   _auth.signOut(),
-      //   _googleSignIn.signOut(),
-      // ]);
+      // Sign out from both Firebase and Google if authentication fails
+      await Future.wait([
+        _auth.signOut(),
+        _googleSignIn.signOut(),
+      ]);
 
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.clearUser();
@@ -127,7 +135,7 @@ class SignInProvider extends BaseViewModel {
       await _handleSignInResponse(userCredential, context);
     } on FirebaseAuthException catch (e) {
       setLoading(false);
-      _showErrorToast(context, 'Google Sign-In failed: ${e.message}');
+      _showErrorToast(context, _mapAuthError(e.code));
     } catch (e) {
       setLoading(false);
       _showErrorToast(context, 'Google Sign-In error: ${e.toString()}');
@@ -176,8 +184,9 @@ class SignInProvider extends BaseViewModel {
       await _handleSignInResponse(userCredential, context);
     } on FirebaseAuthException catch (e) {
       setLoading(false);
-      _showErrorToast(context, _mapAuthError(e.code));
-      debugPrint('Firebase Auth Error: ${e.code} - ${_mapAuthError(e.code)}');
+      String errorMessage = _mapAuthError(e.code);
+      _showErrorToast(context, errorMessage);
+      debugPrint('Firebase Auth Error: ${e.code} - $errorMessage');
     } catch (e) {
       setLoading(false);
       _showErrorToast(
@@ -188,11 +197,16 @@ class SignInProvider extends BaseViewModel {
 
   String _mapAuthError(String code) {
     return switch (code) {
-      'user-not-found' => 'No account found with this email',
-      'wrong-password' => 'Incorrect password',
-      'invalid-email' => 'Invalid email format',
-      'user-disabled' => 'This account has been disabled',
-      _ => 'Authentication failed',
+      'user-not-found' => 'No account found with this email address.',
+      'wrong-password' => 'Incorrect password. Please try again.',
+      'invalid-email' => 'Invalid email format. Please enter a valid email address.',
+      'user-disabled' => 'This account has been disabled. Please contact support.',
+      'invalid-credential' => 'Invalid login credentials. Please check your email and password.',
+      'INVALID_LOGIN_CREDENTIALS' => 'Invalid login credentials. Please check your email and password.',
+      'too-many-requests' => 'Too many unsuccessful login attempts. Please try again later or reset your password.',
+      'operation-not-allowed' => 'Email/password sign-in is not enabled. Please contact support.',
+      'network-request-failed' => 'Network error. Please check your internet connection.',
+      _ => 'Authentication failed. Please try again.',
     };
   }
 }

@@ -10,8 +10,8 @@ import 'package:flareline/services/api_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
-class NewPage extends LayoutWidget {
-  const NewPage({super.key, required this.routeObserver});
+class Map extends LayoutWidget {
+  const Map({super.key, required this.routeObserver});
 
   final RouteObserver<PageRoute> routeObserver;
 
@@ -73,60 +73,65 @@ class NewPage extends LayoutWidget {
                         ),
                       );
                     }
+// Replace your current error handling with this:
+if (productState is ProductsError || farmerState is FarmersError) {
+  String errorMessage = '';
+  bool isFarmerError = farmerState is FarmersError;
+  bool isProductError = productState is ProductsError;
 
-                    // Handle error cases
-                    if (productState is ProductsError ||
-                        farmerState is FarmersError) {
-                      String errorMessage = '';
+  if (isProductError && isFarmerError) {
+    errorMessage = 'Failed to load both products and farmers';
+  } else if (isProductError) {
+    errorMessage = 'Failed to load products: ${(productState as ProductsError).message}';
+  } else if (isFarmerError) {
+    errorMessage = 'Failed to load farmers: ${(farmerState as FarmersError).message}';
+    
+    // Add specific retry for farmers
+    Future.delayed(Duration.zero, () {
+      context.read<FarmerBloc>().add(LoadFarmers());
+    });
+  }
 
-                      if (productState is ProductsError &&
-                          farmerState is FarmersError) {
-                        errorMessage =
-                            'Failed to load both products and farmers';
-                      } else if (productState is ProductsError) {
-                        errorMessage =
-                            'Failed to load products: ${productState.message}';
-                      } else if (farmerState is FarmersError) {
-                        errorMessage =
-                            'Failed to load farmers: ${farmerState.message}';
-                      }
-
-                      return 
-                      
-                       SizedBox(
+  return SizedBox(
     height: MediaQuery.of(context).size.height,
-    child: 
-                      Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: Colors.red,
-                              size: 50,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(errorMessage,
-                                style: const TextStyle(color: Colors.red)),
-                            const SizedBox(height: 16),
-                            IconButton(
-                              icon: const Icon(Icons.refresh),
-                              color: Colors.grey,
-                              iconSize: 40,
-                              onPressed: () {
-                                context.read<ProductBloc>().add(LoadProducts());
-                                context.read<FarmerBloc>().add(LoadFarmers());
-                              },
-                            ),
-                          ],
-                        ),
-                      )
-                  
-                  
-                       );
-                  
-                  
-                    }
+    child: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: Colors.red,
+            size: 50,
+          ),
+          SizedBox(height: 16),
+          Text(errorMessage, style: TextStyle(color: Colors.red)),
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isFarmerError)
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<FarmerBloc>().add(LoadFarmers());
+                  },
+                  child: Text('Retry Farmers'),
+                ),
+              if (isProductError)
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<ProductBloc>().add(LoadProducts());
+                  },
+                  child: Text('Retry Products'),
+                ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+
 
                     // Both data loaded successfully
                     if (productState is ProductsLoaded &&

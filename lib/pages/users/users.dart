@@ -4,6 +4,7 @@ import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/add_farmer_modal_2.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
+import 'package:flareline/pages/toast/toast_helper.dart';
 import 'package:flareline/pages/users/add_user_modal.dart';
 import 'package:flareline/pages/users/account_creation_modal.dart';
 import 'package:flareline/pages/users/auth_service.dart';
@@ -61,15 +62,10 @@ class _UsersState extends State<Users> {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is UsersError) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.flat,
-            title: Text(state.message),
-            alignment: Alignment.topRight,
-            showProgressBar: false,
-            autoCloseDuration: const Duration(seconds: 3),
-          );
+    ToastHelper.showErrorToast(
+       state.message,
+        context, maxLines: 3
+      );
         }
       },
       child: _channels(),

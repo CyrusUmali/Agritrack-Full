@@ -7,8 +7,14 @@ abstract class AssocsEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class LoadAssocs extends AssocsEvent {}
+// class LoadAssocs extends AssocsEvent {}
 
+
+
+class LoadAssocs extends AssocsEvent {
+  final int? year; // Add year parameter
+  const LoadAssocs({this.year});
+}
 class CreateAssoc extends AssocsEvent {
   final String name;
   final String description;

@@ -62,10 +62,89 @@ class _YieldDataTableState extends State<YieldDataTable> {
     return 'Mixed Crops';
   }
 
-  List<String> _getUniqueProducts() {
-    if (_yields.isEmpty) return [];
-    return _yields.map((y) => y.productName ?? 'Unknown').toSet().toList();
+// 3. Keep the _getUniqueProducts method as original (include all products)
+List<String> _getUniqueProducts() {
+  if (_yields.isEmpty) return [];
+  return _yields.map((y) => y.productName ?? 'Unknown').toSet().toList();
+}
+
+// 4. Update the _buildDataDisplay method to pass the new data structure
+Widget _buildDataDisplay(Map<String, Map<String, Map<String, double>>> yieldData) {
+  final ScrollController scrollController = ScrollController();
+  Widget chartWidget;
+  
+  if (_viewType == DataViewType.table) {
+    chartWidget = _showMonthlyData
+        ? MonthlyDataTable(
+            product: _selectedProduct, 
+            year: selectedYear,
+            monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
+          )
+        : YearlyDataTable(
+            product: _selectedProduct,
+            yearlyData: yieldData[_selectedProduct] != null
+                ? yieldData[_selectedProduct]! as Map<String, Map<String, double>>
+                : <String, Map<String, double>>{});
+  } else if (_viewType == DataViewType.barchart) {
+    chartWidget = _showMonthlyData
+        ? MonthlyBarChart(
+            product: _selectedProduct,
+            year: selectedYear,
+            monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
+          )
+        : YearlyBarChart(
+            product: _selectedProduct,
+            yearlyData: yieldData[_selectedProduct] != null
+                ? yieldData[_selectedProduct]! as Map<String, Map<String, double>>
+                : <String, Map<String, double>>{});
+  } else if (_viewType == DataViewType.linechart) {
+    chartWidget = _showMonthlyData
+        ? MonthlyLineChart(
+            product: _selectedProduct,
+            year: selectedYear,
+            monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
+          )
+        : YearlyLineChart(
+            product: _selectedProduct,
+            yearlyData: yieldData[_selectedProduct] != null
+                ? yieldData[_selectedProduct]! as Map<String, Map<String, double>>
+                : <String, Map<String, double>>{});
+  } else {
+    chartWidget = BarangayYieldPieChart(
+      yields: _yields, // Include all yields (including livestock)
+      showByVolume: _showPieByVolume,
+      selectedYear: _showMonthlyData ? selectedYear.toString() : null,
+    );
   }
+
+  final isChart = _viewType == DataViewType.barchart || 
+                  _viewType == DataViewType.linechart || 
+                  _viewType == DataViewType.piechart;
+  
+  if (isChart) {
+    return Scrollbar(
+      controller: scrollController,
+      thumbVisibility: true,
+      trackVisibility: true,
+      thickness: 8.0,
+      radius: const Radius.circular(4.0),
+      interactive: true,
+      child: SingleChildScrollView(
+        controller: scrollController,
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Container(
+          width: _showMonthlyData ? 800 : 600,
+          child: chartWidget,
+        ),
+      ),
+    );
+  }
+  
+  return chartWidget;
+}
+
+
 
   String? _getProductImage(String productName) {
     for (final yield in _yields) {
@@ -84,6 +163,11 @@ class _YieldDataTableState extends State<YieldDataTable> {
       if (state is YieldsLoaded && mounted) {
         setState(() {
           _yields = state.yields;
+
+
+   print('Yields loaded: ${_yields.length}'); 
+          print(_yields[0]);
+    
           final currentProducts = _getUniqueProducts();
           if (currentProducts.isNotEmpty &&
               !currentProducts.contains(_selectedProduct)) {
@@ -94,66 +178,85 @@ class _YieldDataTableState extends State<YieldDataTable> {
     });
   }
 
-  Map<String, Map<String, double>> _getYieldData() {
-    final data = <String, Map<String, double>>{};
-    final products = _getUniqueProducts();
 
-    for (final product in products) {
-      final productData = <String, double>{};
-      final yearGroups = <int, List<Yield>>{};
 
-      for (final yield in _yields.where((y) => y.productName == product)) {
-        final year = yield.harvestDate?.year ?? DateTime.now().year;
-        yearGroups.putIfAbsent(year, () => []).add(yield);
-      }
+Map<String, Map<String, Map<String, double>>> _getYieldData() {
+  final data = <String, Map<String, Map<String, double>>>{};
+  final products = _getUniqueProducts();
 
-      for (final entry in yearGroups.entries) {
-        final totalYield = entry.value
-            .fold<double>(0, (sum, yield) => sum + (yield.volume ?? 0));
-        productData[entry.key.toString()] = totalYield;
-      }
+  for (final product in products) {
+    final productData = <String, Map<String, double>>{};
+    final yearGroups = <int, List<Yield>>{};
 
-      data[product] = productData;
+    for (final yield in _yields.where((y) => y.productName == product)) {
+      final year = yield.harvestDate?.year ?? DateTime.now().year;
+      yearGroups.putIfAbsent(year, () => []).add(yield);
     }
 
-    return data;
+    for (final entry in yearGroups.entries) {
+      final totalVolume = entry.value
+          .fold<double>(0, (sum, yield) => sum + (yield.volume ?? 0));
+      
+      // Only include area harvested for non-livestock sectors
+      final totalAreaHarvested = entry.value
+          .where((yield) => yield.sectorId != 4) // Exclude livestock
+          .fold<double>(0, (sum, yield) => sum + (yield.areaHarvested ?? 0));
+      
+      productData[entry.key.toString()] = {
+        'volume': totalVolume,
+        'areaHarvested': totalAreaHarvested,
+      };
+    }
+
+    data[product] = productData;
   }
 
-  Map<String, double> _getMonthlyYieldData(String product, int year) {
-    final monthlyData = <String, double>{};
-    final monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
+  return data;
+}
 
-    for (final month in monthNames) {
-      monthlyData[month] = 0;
-    }
 
-    final relevantYields = _yields.where((yield) {
-      final yieldYear = yield.harvestDate?.year ?? DateTime.now().year;
-      return yield.productName == product && yieldYear == year;
-    });
 
-    for (final yield in relevantYields) {
-      final month = yield.harvestDate?.month ?? 1;
-      final monthName = monthNames[month - 1];
-      monthlyData[monthName] =
-          (monthlyData[monthName] ?? 0) + (yield.volume ?? 0);
-    }
 
-    return monthlyData;
+
+
+Map<String, Map<String, double>> _getMonthlyYieldData(String product, int year) {
+  final monthlyData = <String, Map<String, double>>{};
+  final monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Initialize all months with zero values
+  for (final month in monthNames) {
+    monthlyData[month] = {
+      'volume': 0.0,
+      'areaHarvested': 0.0,
+    };
   }
+
+  final relevantYields = _yields.where((yield) {
+    final yieldYear = yield.harvestDate?.year ?? DateTime.now().year;
+    return yield.productName == product && yieldYear == year;
+  });
+
+  for (final yield in relevantYields) {
+    final month = yield.harvestDate?.month ?? 1;
+    final monthName = monthNames[month - 1];
+    
+    // Always include volume
+    monthlyData[monthName]!['volume'] = 
+        (monthlyData[monthName]!['volume'] ?? 0) + (yield.volume ?? 0);
+    
+    // Only include area harvested for non-livestock sectors
+    if (yield.sectorId != 4) {
+      monthlyData[monthName]!['areaHarvested'] = 
+          (monthlyData[monthName]!['areaHarvested'] ?? 0) + (yield.areaHarvested ?? 0);
+    }
+  }
+
+  return monthlyData;
+}
+
 
   Future<void> _showYearPicker(BuildContext context) async {
     final int? pickedYear = await showDialog<int>(
@@ -302,38 +405,41 @@ class _YieldDataTableState extends State<YieldDataTable> {
     );
   }
 
-  Widget _buildWideScreenLayout(ThemeData theme,
-      Map<String, Map<String, double>> yieldData, List<String> products) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 350,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildProductSelectionCard(theme, products, isVertical: true),
-              const SizedBox(height: 20),
-              _buildControlPanel(theme),
-            ],
-          ),
+Widget _buildWideScreenLayout(ThemeData theme,
+    Map<String, Map<String, Map<String, double>>> yieldData, List<String> products) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      SizedBox(
+        width: 350,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProductSelectionCard(theme, products, isVertical: true),
+            const SizedBox(height: 20),
+            _buildControlPanel(theme),
+          ],
         ),
-        const SizedBox(width: 24),
-        Expanded(
-          child: _buildDataDisplayCard(theme, yieldData),
-        ),
-      ],
-    );
-  }
+      ),
+      const SizedBox(width: 24),
+      Expanded(
+        child: _buildDataDisplayCard(theme, yieldData),
+      ),
+    ],
+  );
+}
 
-  Widget _buildOwnerAdminView(ThemeData theme, bool isWeb, double screenWidth) {
-    final yieldData = _getYieldData();
-    final products = _getUniqueProducts();
 
-    return isWeb && screenWidth > 1200
-        ? _buildWideScreenLayout(theme, yieldData, products)
-        : _buildMobileLayout(theme, yieldData, products);
-  }
+Widget _buildOwnerAdminView(ThemeData theme, bool isWeb, double screenWidth) {
+  final yieldData = _getYieldData(); // This now returns the updated structure
+
+ 
+  final products = _getUniqueProducts();
+
+  return isWeb && screenWidth > 1200
+      ? _buildWideScreenLayout(theme, yieldData, products)
+      : _buildMobileLayout(theme, yieldData, products);
+}
 
   Widget _buildNonOwnerView(ThemeData theme) {
     final products = _getUniqueProducts();
@@ -465,8 +571,8 @@ class _YieldDataTableState extends State<YieldDataTable> {
   }
 
   // Updated _buildDataDisplayCard with chart options
-  Widget _buildDataDisplayCard(
-      ThemeData theme, Map<String, Map<String, double>> yieldData) {
+Widget _buildDataDisplayCard(
+    ThemeData theme, Map<String, Map<String, Map<String, double>>> yieldData) {
     final productImage = _getProductImage(_selectedProduct);
 
     return Card(
@@ -797,81 +903,7 @@ class _YieldDataTableState extends State<YieldDataTable> {
 
 
 
-
-
-Widget _buildDataDisplay(Map<String, Map<String, double>> yieldData) {
-  final ScrollController scrollController = ScrollController();
-  Widget chartWidget;
-  
-  if (_viewType == DataViewType.table) {
-    chartWidget = _showMonthlyData
-        ? MonthlyDataTable(
-            product: _selectedProduct, 
-            year: selectedYear,
-            monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
-          )
-        : YearlyDataTable(
-            product: _selectedProduct,
-            yearlyData: yieldData[_selectedProduct] ?? {});
-  } else if (_viewType == DataViewType.barchart) {
-    chartWidget = _showMonthlyData
-        ? MonthlyBarChart(
-            product: _selectedProduct,
-            year: selectedYear,
-            monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
-          )
-        : YearlyBarChart(
-            product: _selectedProduct,
-            yearlyData: yieldData[_selectedProduct] ?? {});
-  } else if (_viewType == DataViewType.linechart) {
-    chartWidget = _showMonthlyData
-        ? MonthlyLineChart(
-            product: _selectedProduct,
-            year: selectedYear,
-            monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
-          )
-        : YearlyLineChart(
-            product: _selectedProduct,
-            yearlyData: yieldData[_selectedProduct] ?? {});
-  } else {
-    chartWidget = BarangayYieldPieChart(
-      yields: _yields,
-      showByVolume: _showPieByVolume,
-      selectedYear: _showMonthlyData ? selectedYear.toString() : null,
-    );
-  }
-
-  // Make all charts scrollable horizontally (not just mobile)
-  final isChart = _viewType == DataViewType.barchart || 
-                  _viewType == DataViewType.linechart || 
-                  _viewType == DataViewType.piechart;
-  
-  if (isChart) {
-    return Scrollbar(
-      controller: scrollController, // Add the scroll controller
-      thumbVisibility: true, // Always show the scrollbar thumb
-      trackVisibility: true, // Show the scrollbar track
-      thickness: 8.0, // Thickness of the scrollbar
-      radius: const Radius.circular(4.0), // Rounded corners
-      interactive: true, // Enable clicking and dragging on the scrollbar
-      child: SingleChildScrollView(
-        controller: scrollController, // Use the same controller
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        child: Container(
-          // Set minimum width for charts to ensure they're not cramped
-          width: _showMonthlyData ? 800 : 600, // Adjust based on your needs
-          child: chartWidget,
-        ),
-      ),
-    );
-  }
-  
-  // Tables remain as they are (no horizontal scroll wrapper)
-  return chartWidget;
-}
-
-
+ 
 
 
 
@@ -1056,7 +1088,7 @@ Widget _buildDataDisplay(Map<String, Map<String, double>> yieldData) {
                   : Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
+        child: Row( 
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
@@ -1080,17 +1112,18 @@ Widget _buildDataDisplay(Map<String, Map<String, double>> yieldData) {
     );
   }
 
-  Widget _buildMobileLayout(ThemeData theme,
-      Map<String, Map<String, double>> yieldData, List<String> products) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildProductSelectionCard(theme, products, isVertical: false),
-        const SizedBox(height: 16),
-        _buildControlPanel(theme),
-        const SizedBox(height: 16),
-        _buildDataDisplayCard(theme, yieldData),
-      ],
-    );
-  }
+Widget _buildMobileLayout(ThemeData theme,
+    Map<String, Map<String, Map<String, double>>> yieldData, List<String> products) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _buildProductSelectionCard(theme, products, isVertical: false),
+      const SizedBox(height: 16),
+      _buildControlPanel(theme),
+      const SizedBox(height: 16),
+      _buildDataDisplayCard(theme, yieldData),
+    ],
+  );
+}
+
 }

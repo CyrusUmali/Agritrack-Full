@@ -1,119 +1,106 @@
 import 'package:dio/dio.dart';
-import 'package:flareline/core/models/product_model.dart';
-import 'package:flareline/services/api_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flareline/core/models/product_model.dart'; 
+import 'package:flareline/repositories/base_repository.dart'; // Import the base repository
 
-class ProductRepository {
-  final ApiService apiService;
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-
-  ProductRepository({required this.apiService});
+class ProductRepository extends BaseRepository {
+  ProductRepository({required super.apiService});
 
   Future<List<Product>> fetchProducts() async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/auth/products');
-
-      if (response.data == null || response.data['products'] == null) {
-        throw Exception('Invalid products data format');
-      }
-
-      final productsData = response.data['products'] as List;
-      return productsData.map((json) => Product.fromJson(json)).toList();
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception('Authentication error: ${e.message}');
+      final response = await apiService.get('/products/products');
+      return _validateAndParseProductsResponse(response);
     } catch (e) {
-      throw Exception('Failed to load products: $e');
+      handleError(e, operation: 'load products'); // Use inherited method
     }
   }
 
   Future<Product> addProduct(Product product) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
+      _validateProductRequiredFields(product);
 
       final response = await apiService.post(
-        '/auth/products',
-        data: {
-          'name': product.name,
-          'description': product.description,
-          'sector_id': _getSectorId(product.sector),
-          'imageUrl': product.imageUrl,
-        },
+        '/products/products',
+        data: _buildProductData(product),
       );
 
-      if (response.data == null || response.data['product'] == null) {
-        throw Exception('Invalid product data format');
-      }
-
-      return Product.fromJson(response.data['product']);
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+      return _validateAndParseProductResponse(response);
     } catch (e) {
-      throw Exception('Failed to add product: $e');
+      handleError(e, operation: 'add product'); // Use inherited method
     }
   }
 
   Future<Product> updateProduct(Product product) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
+      checkAuthentication(); // Use inherited method
+      _validateProductRequiredFields(product);
 
       final response = await apiService.put(
-        '/auth/products/${product.id}',
-        data: {
-          'name': product.name,
-          'description': product.description,
-          'sector_id': _getSectorId(product.sector),
-          'imageUrl': product.imageUrl,
-        },
+        '/products/products/${product.id}',
+        data: _buildProductData(product),
       );
 
-      if (response.data == null || response.data['product'] == null) {
-        throw Exception('Invalid product data format');
-      }
-
-      return Product.fromJson(response.data['product']);
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+      return _validateAndParseProductResponse(response);
     } catch (e) {
-      throw Exception('Failed to update product: $e');
+      handleError(e, operation: 'update product'); // Use inherited method
     }
   }
 
-// Helper method to map sector names to IDs
-  int _getSectorId(String sectorName) {
-    // Implement your mapping logic here
-    // Example:
-    const sectorMap = {
-      'Fishery': 5,
-      'Livestock': 4,
-      'Organic': 6,
-      'HVC': 3,
-      'Corn': 2,
-      'Rice': 1,
+  // Helper method for product validation
+  void _validateProductRequiredFields(Product product) {
+    if (product.name == null || product.name!.isEmpty) {
+      throw Exception('Product name is required');
+    }
+    if (product.sector == null || product.sector!.isEmpty) {
+      throw Exception('Sector is required');
+    }
+  }
+
+  // Helper method to build product data
+  Map<String, dynamic> _buildProductData(Product product) {
+    return {
+      'name': product.name,
+      'description': product.description,
+      'sector_id': getSectorId(product.sector!), // Use inherited method
+      'imageUrl': product.imageUrl,
     };
-    return sectorMap[sectorName] ?? 4; // Default to HVC if not found
   }
 
   Future<void> deleteProduct(int productId) async {
     try {
-      if (_firebaseAuth.currentUser == null) {
-        throw Exception('User not authenticated');
-      }
-
-      await apiService.delete('/auth/products/$productId');
-    } on DioException catch (e) {
-      throw Exception('API Error: ${e.response?.statusCode} - ${e.message}');
+      checkAuthentication(); // Use inherited method
+      await apiService.delete('/products/products/$productId');
     } catch (e) {
-      throw Exception('Failed to delete product: $e');
+      handleError(e, operation: 'delete product'); // Use inherited method
     }
+  }
+
+  // Helper method for response validation
+  Product _validateAndParseProductResponse(Response response) {
+    if (response.data == null) {
+      throw Exception('Server returned empty response');
+    }
+    
+    if (response.data['product'] == null) {
+      throw Exception('Invalid product data format received from server');
+    }
+
+    return Product.fromJson(response.data['product']);
+  }
+
+  // Helper method for products list validation
+  List<Product> _validateAndParseProductsResponse(Response response) {
+    if (response.data == null) {
+      throw Exception('Server returned empty response');
+    }
+    
+    if (response.data['products'] == null) {
+      throw Exception('Invalid products data format received from server');
+    }
+
+    final productsData = response.data['products'] as List;
+    return productsData.map((json) => Product.fromJson(json)).toList();
   }
 }

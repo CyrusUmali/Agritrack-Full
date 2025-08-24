@@ -363,7 +363,7 @@ class MapChartWidget extends StatelessWidget {
                             icon: Icons.agriculture,
                             label: '${provider.selectedProduct} Yield',
                             value:
-                                '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(1) ?? 'N/A'} tons',
+                                '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(1) ?? 'N/A'}',
                             textColor: textColor,
                           ),
                           if (yieldPercentage != null)
@@ -471,7 +471,7 @@ class MapChartWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${provider.selectedProduct} Yield (tons)',
+            '${provider.selectedProduct} Yield ',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 12,
@@ -575,7 +575,7 @@ class MapChartWidget extends StatelessWidget {
                     ),
                     subtitle: provider.selectedProduct.isNotEmpty
                         ? Text(
-                            '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(2) ?? 'N/A'} tons',
+                            '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(2) ?? 'N/A'}',
                             style: Theme.of(context).textTheme.bodySmall,
                           )
                         : null,

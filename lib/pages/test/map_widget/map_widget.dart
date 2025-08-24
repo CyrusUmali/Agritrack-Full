@@ -47,6 +47,8 @@ class _MapWidgetState extends State<MapWidget>
   bool _isLoading = true;
   String? _loadingError;
 
+    bool get isMobile => MediaQuery.of(context).size.width < 600;
+
   late final AnimatedMapController _animatedMapController;
   late PolygonManager polygonManager;
   late BarangayManager barangayManager;
@@ -56,6 +58,8 @@ class _MapWidgetState extends State<MapWidget>
 
   @override
   void initState() {
+    print("Initializing MapWidget with products and farmers"); 
+    print(widget.farmers);
     super.initState();
     _loadFarmsFromApi();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -285,7 +289,7 @@ class _MapWidgetState extends State<MapWidget>
         // Legend Panel
         if (_showLegendPanel)
           Positioned(
-            left: _showFarmListPanel ? 270 : 50,
+            left: _showFarmListPanel ? 320 : 60,
             top: 20,
             child: _buildLegendPanel(),
           ),
@@ -293,7 +297,7 @@ class _MapWidgetState extends State<MapWidget>
         // Panel and Legend Toggle Buttons in Column
         Positioned(
           top: 10,
-          left: _showFarmListPanel ? 260 : 10,
+          left: _showFarmListPanel ? 270 : 10,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -315,9 +319,9 @@ class _MapWidgetState extends State<MapWidget>
                 },
                 backgroundColor: Colors.white,
                 iconSize: 15,
-                buttonSize: 30.0,
+                 buttonSize:  isMobile ?40.0 : 30,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
               ),
               SizedBox(height: 10), // Add some spacing between buttons
@@ -333,9 +337,9 @@ class _MapWidgetState extends State<MapWidget>
                 },
                 backgroundColor: Colors.white,
                 iconSize: 15,
-                buttonSize: 30.0,
+                buttonSize:  isMobile ?40.0 : 30,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
               ),
             ],
@@ -416,9 +420,9 @@ class _MapWidgetState extends State<MapWidget>
               ),
             ),
           ),
-        if (polygonManager.selectedBarangays.isNotEmpty ||
-            BarangayFilterPanel.filterOptions.values
-                .any((isChecked) => !isChecked))
+        if (polygonManager.selectedBarangays.isNotEmpty && !_showFarmListPanel ||
+            BarangayFilterPanel.filterOptions.values 
+                .any((isChecked) => !isChecked)  && !_showFarmListPanel   )
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -440,121 +444,192 @@ class _MapWidgetState extends State<MapWidget>
     );
   }
 
-  Widget _buildLegendPanel() {
-    return Container(
-      width: 180,
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
+Widget _buildLegendPanel() {
+  return Container(
+    width: 200,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Theme.of(context).cardColor,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Theme.of(context).shadowColor.withOpacity(0.1),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+          spreadRadius: 0,
+        ),
+      ],
+      border: Border.all(
+        color: Theme.of(context).dividerColor.withOpacity(0.1),
+        width: 1,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Legends',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          SizedBox(height: 10),
-          _buildLegendItem(PinStyle.Rice),
-          _buildLegendItem(PinStyle.Corn),
-          _buildLegendItem(PinStyle.HVC),
-          _buildLegendItem(PinStyle.Livestock),
-          _buildLegendItem(PinStyle.Fishery),
-          _buildLegendItem(PinStyle.Organic),
-          // _buildLegendItem(PinStyle.Barangay),
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Legend',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).textTheme.titleMedium?.color,
+              ),
+        ),
+        const SizedBox(height: 16),
+        ...PinStyle.values.map((style) => _buildLegendItem(style)),
+        const SizedBox(height: 8),
+        _buildBarangayLegendItem(),
+      ],
+    ),
+  );
+}
 
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent, // Using imported function
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                      child: Icon(
-                    Icons.account_balance, // Government building icon
-                    color: Colors.white,
-                    size: 24,
-                  )),
+Widget _buildLegendItem(PinStyle pinStyle) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: getPinColor(pinStyle),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: getPinColor(pinStyle).withOpacity(0.3),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: getPinIcon(pinStyle),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            _formatPinStyleName(pinStyle),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
-                SizedBox(width: 8),
-                Text(
-                  "Barangay",
-                  style: TextStyle(fontSize: 14),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildBarangayLegendItem() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: Colors.redAccent,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.redAccent.withOpacity(0.3),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.account_balance,
+            color: Colors.white,
+            size: 16,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'Barangay',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
-            ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
-  Widget _buildLegendItem(PinStyle pinStyle) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: getPinColor(pinStyle), // Using imported function
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: getPinIcon(pinStyle), // Using imported function
-            ),
-          ),
-          SizedBox(width: 8),
-          Text(
-            pinStyle.toString().split('.').last,
-            style: TextStyle(fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStyledIconButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-    Color? backgroundColor,
-    double iconSize = 24.0,
-    double buttonSize = 48.0,
-    ShapeBorder? shape,
-  }) {
-    return Container(
+Widget _buildStyledIconButton({
+  required IconData icon,
+  required VoidCallback onPressed,
+  Color? backgroundColor,
+  Color? iconColor,
+  double iconSize = 24.0,
+  double buttonSize = 48.0,
+  ShapeBorder? shape,
+  bool elevated = false,
+}) {
+  final defaultBackgroundColor = Theme.of(context).cardColor;
+  final defaultIconColor = Theme.of(context).iconTheme.color;
+  
+  return Material(
+    color: Colors.transparent,
+    child: Container(
       width: buttonSize,
       height: buttonSize,
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color ?? Colors.white,
+        color: backgroundColor ?? defaultBackgroundColor,
         shape: shape is CircleBorder ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: shape is RoundedRectangleBorder
             ? (shape.borderRadius as BorderRadius?)
+            : shape == null
+                ? BorderRadius.circular(8)
+                : null,
+        boxShadow: elevated
+            ? [
+                BoxShadow(
+                  color: Theme.of(context).shadowColor.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
             : null,
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withOpacity(0.1),
+          width: 1,
+        ),
       ),
-      child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(icon, size: iconSize),
-        padding: EdgeInsets.zero,
-        alignment: Alignment.center,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: shape is CircleBorder
+            ? BorderRadius.circular(buttonSize / 2)
+            : shape is RoundedRectangleBorder
+                ? (shape.borderRadius as BorderRadius?)
+                : BorderRadius.circular(8),
+        child: Icon(
+          icon,
+          size: iconSize,
+          color: iconColor ?? defaultIconColor,
+        ),
       ),
-    );
+    ),
+  );
+}
+
+// Helper method to format pin style names
+String _formatPinStyleName(PinStyle pinStyle) {
+  String name = pinStyle.toString().split('.').last;
+  
+  // Handle special cases for better readability
+  switch (name.toLowerCase()) {
+    case 'hvc':
+      return 'High Value Crops';
+    default:
+      return name;
   }
+}
+
 }

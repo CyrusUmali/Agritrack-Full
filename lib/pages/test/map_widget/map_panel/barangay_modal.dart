@@ -173,7 +173,7 @@ class _BarangayContent extends StatefulWidget {
 }
 
 class _BarangayContentState extends State<_BarangayContent> {
-  bool _showFarmsList = true; // true for farms list, false for yield data
+  bool _showFarmsList = false; // true for farms list, false for yield data
 
   @override
   Widget build(BuildContext context) {

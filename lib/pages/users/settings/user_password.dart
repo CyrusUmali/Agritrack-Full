@@ -135,6 +135,7 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
       listener: (context, state) {
         if (state is UsersError) {
           ToastHelper.showErrorToast(state.message, context);
+          // print('Error updating user: ${state.message}');
         } else if (state is UserUpdated) {
           if (state.passwordChanged) {
             Provider.of<UserProvider>(context, listen: false).signOut();

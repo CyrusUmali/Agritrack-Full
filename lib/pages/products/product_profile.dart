@@ -14,7 +14,7 @@ import 'package:flareline/pages/products/profile_widgets/product_header.dart';
 import 'package:flareline/pages/products/profile_widgets/farms_table.dart';
 import 'package:flareline/pages/products/profile_widgets/yield_history.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart'; 
 
 class ProductProfile extends LayoutWidget {
   final Product product;
@@ -93,45 +93,66 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
     transformedYieldData['name'] = _currentProduct.name;
   }
 
-  Map<String, dynamic> transformYields(List<Yield> yields) {
-    // First filter out yields that don't have Accepted status
-    final acceptedYields =
-        yields.where((yield) => yield.status == 'Accepted').toList();
 
-    // Group yields by year
-    final yieldsByYear = <String, List<Yield>>{};
 
-    for (final yield in acceptedYields) {
-      final year = yield.harvestDate?.year.toString() ?? 'Unknown';
-      yieldsByYear.putIfAbsent(year, () => []).add(yield);
-    }
+Map<String, dynamic> transformYields(List<Yield> yields) {
+  final acceptedYields =
+      yields.where((yield) => yield.status == 'Accepted').toList();
+  final yieldsByYear = <String, List<Yield>>{};
 
-    // Transform to the required format
-    final transformedYields = <Map<String, dynamic>>[];
-
-    yieldsByYear.forEach((year, yearYields) {
-      // Initialize monthly data with zeros (using num to handle both int and double)
-      final monthlyData = List<num>.filled(12, 0);
-
-      // Aggregate volumes by month (1-12)
-      for (final yield in yearYields) {
-        final month = yield.harvestDate?.month ?? 1;
-        // Subtract 1 because list is 0-indexed
-        monthlyData[month - 1] += yield.volume ?? 0;
-      }
-
-      transformedYields.add({
-        'year': year,
-        'monthly': monthlyData,
-      });
-    });
-
-    return {
-      'name': _currentProduct.name,
-      'yields': transformedYields,
-    };
+  for (final yield in acceptedYields) {
+    final year = yield.harvestDate?.year.toString() ?? 'Unknown';
+    yieldsByYear.putIfAbsent(year, () => []).add(yield);
   }
 
+  final transformedYields = <Map<String, dynamic>>[];
+
+  yieldsByYear.forEach((year, yearYields) {
+    final monthlyVolume = List<num>.filled(12, 0);
+    final monthlyArea = List<num>.filled(12, 0);
+    final monthlyYieldPerHectare = List<num>.filled(12, 0);
+
+    for (final yield in yearYields) {
+      final month = yield.harvestDate?.month ?? 1;
+      final index = month - 1;
+
+      monthlyVolume[index] += yield.volume ?? 0;
+      monthlyArea[index] += yield.areaHarvested ?? 0;
+    }
+
+    // Now compute yield per hectare (t/ha) per month
+    for (int i = 0; i < 12; i++) {
+      if (monthlyArea[i] > 0) {
+        final yieldPerHaTons = (monthlyVolume[i] / monthlyArea[i]) / 1000;
+        monthlyYieldPerHectare[i] =
+            double.parse(yieldPerHaTons.toStringAsFixed(2));
+      }
+    }
+
+    transformedYields.add({
+      'year': year,
+      'monthlyVolume': monthlyVolume, // kg
+      'monthlyArea': monthlyArea, // hectares
+      'monthlyYieldPerHectare': monthlyYieldPerHectare, // t/ha
+      'monthlyMetricTons':
+          monthlyVolume.map((v) => (v / 1000)).toList(),
+    });
+  });
+
+  return {
+    'name': _currentProduct.name,
+    'yields': transformedYields,
+    'units': {
+      'monthlyVolume': 'kg',
+      'monthlyArea': 'hectares',
+      'monthlyYieldPerHectare': 't/ha',
+      'monthlyMetricTons': 'metric tons'
+    }
+  };
+}
+
+  
+  
   Widget _buildViewToggle(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;

@@ -1,3 +1,5 @@
+ 
+import 'package:flareline/pages/products/profile_widgets/product_header_ui_components';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,17 +12,17 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:transparent_image/transparent_image.dart';
+import 'package:flutter/foundation.dart'; 
+ 
 
 class ProductHeader extends StatefulWidget {
   final Product item;
-  final Function(Product)? onProductUpdated; // Add this callback
+  final Function(Product)? onProductUpdated;
 
   const ProductHeader({
     super.key,
     required this.item,
-    this.onProductUpdated, // Add this parameter
+    this.onProductUpdated,
   });
 
   @override
@@ -69,81 +71,6 @@ class _ProductHeaderState extends State<ProductHeader>
     _descriptionController.dispose();
     _animationController.dispose();
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final isFarmer = userProvider.isFarmer;
-
-    return BlocListener<ProductBloc, ProductState>(
-      listener: (context, state) {
-        if (state is ProductsLoaded && state.message != null) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.success,
-            style: ToastificationStyle.flat,
-            title: Text(state.message!),
-            // description: const Text('Product updated successfully'),
-            alignment: Alignment.topRight,
-            autoCloseDuration: const Duration(seconds: 4),
-            showProgressBar: true,
-          );
-          setState(() {
-            _isEditing = false;
-            _isLoading = false;
-            _newImageUrl = null;
-          });
-          _animationController.reverse();
-        } else if (state is ProductsError) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.flat,
-            title: Text(state.message),
-            // description: const Text('Failed to update product'),
-            alignment: Alignment.topRight,
-            autoCloseDuration: const Duration(seconds: 4),
-            showProgressBar: true,
-          );
-          setState(() => _isLoading = false);
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(160),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: CommonCard(
-          child: Container(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(theme, colorScheme),
-                  const SizedBox(height: 24),
-                  _buildContent(theme, colorScheme),
-                  const SizedBox(height: 24),
-                  if (!isFarmer) _buildEditControls(colorScheme),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   void _toggleEditing() {
@@ -266,8 +193,6 @@ class _ProductHeaderState extends State<ProductHeader>
       description: _descriptionController.text.trim(),
       sector: _selectedSector,
       imageUrl: _newImageUrl ?? widget.item.imageUrl,
-      // Include any other fields from the original product
-      // ...widget.item.toJson(),
     );
 
     context.read<ProductBloc>().add(
@@ -286,454 +211,99 @@ class _ProductHeaderState extends State<ProductHeader>
     }
   }
 
-  Widget _buildHeader(ThemeData theme, ColorScheme colorScheme) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.inventory_2_outlined,
-                size: 16,
-                color: colorScheme.onPrimaryContainer,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Product Details',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const Spacer(),
-        if (_isEditing)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: colorScheme.tertiaryContainer,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.edit_outlined,
-                  size: 16,
-                  color: colorScheme.onTertiaryContainer,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Edit Mode',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onTertiaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-  Widget _buildContent(ThemeData theme, ColorScheme colorScheme) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isTablet = constraints.maxWidth > 600;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
 
-        if (isTablet) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildProductImage(theme, colorScheme),
-              const SizedBox(width: 32),
-              Expanded(
-                child: _buildProductInfo(theme, colorScheme),
-              ),
-            ],
+    return BlocListener<ProductBloc, ProductState>(
+      listener: (context, state) {
+        if (state is ProductsLoaded && state.message != null) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.flat,
+            title: Text(state.message!),
+            alignment: Alignment.topRight,
+            autoCloseDuration: const Duration(seconds: 4),
+            showProgressBar: true,
           );
-        } else {
-          return Column(
-            children: [
-              _buildProductImage(theme, colorScheme),
-              const SizedBox(height: 24),
-              _buildProductInfo(theme, colorScheme),
-            ],
+          setState(() {
+            _isEditing = false;
+            _isLoading = false;
+            _newImageUrl = null;
+          });
+          _animationController.reverse();
+        } else if (state is ProductsError) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.error,
+            style: ToastificationStyle.flat,
+            title: Text(state.message),
+            alignment: Alignment.topRight,
+            autoCloseDuration: const Duration(seconds: 4),
+            showProgressBar: true,
           );
+          setState(() => _isLoading = false);
         }
       },
-    );
-  }
-
-  Widget _buildProductImage(ThemeData theme, ColorScheme colorScheme) {
-    return Hero(
-      tag: 'product_image_${widget.item.id}',
-      child: GestureDetector(
-        onTap: _isEditing ? _pickAndUploadImage : null,
-        child: Container(
-          width: 160,
-          height: 160,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            // gradient: LinearGradient(
-            //   begin: Alignment.topLeft,
-            //   end: Alignment.bottomRight,
-            //   colors: [
-            //     colorScheme.surfaceVariant,
-            //     colorScheme.surfaceVariant.withOpacity(0.7),
-            //   ],
-            // ),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.shadow.withOpacity(0.15),
-                blurRadius: 15,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Stack(
-              children: [
-                if (_isUploading)
-                  Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.primary,
-                      ),
-                    ),
-                  )
-                else
-                  FadeInImage(
-                    placeholder:
-                        MemoryImage(kTransparentImage), // Better placeholder
-                    image: NetworkImage(_newImageUrl ??
-                        widget.item.imageUrl ??
-                        'https://static.toiimg.com/photo/67882583.cms'),
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    imageErrorBuilder: (context, error, stackTrace) =>
-                        Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            colorScheme.errorContainer,
-                            colorScheme.errorContainer.withOpacity(0.7),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.photo_outlined,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                ),
-                if (_isEditing)
-                  Positioned.fill(
-                    child: Container(
-                      color: Colors.black.withOpacity(0.3),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.edit_outlined,
-                              color: Colors.white,
-                              size: 32,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Tap to change image',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(160),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
-          ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildProductInfo(ThemeData theme, ColorScheme colorScheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Product Name
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: !_isEditing
-              ? _buildDisplayName(theme, colorScheme)
-              : _buildEditName(theme, colorScheme),
-        ),
-        const SizedBox(height: 16),
-
-        // Product Description
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: !_isEditing
-              ? _buildDisplayDescription(theme, colorScheme)
-              : _buildEditDescription(theme, colorScheme),
-        ),
-        const SizedBox(height: 20),
-
-        // Sector Information
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: !_isEditing
-              ? _buildDisplaySector(theme, colorScheme)
-              : _buildEditSector(theme, colorScheme),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDisplayName(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      key: const ValueKey('display_name'),
-      child: Text(
-        widget.item.name,
-        style: theme.textTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: colorScheme.onSurface,
-          height: 1.2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEditName(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      key: const ValueKey('edit_name'),
-      child: TextFormField(
-        controller: _nameController,
-        decoration: InputDecoration(
-          labelText: 'Product Name',
-          prefixIcon: Icon(
-            Icons.label_outline,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.outline),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-          filled: true,
-          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-        style: theme.textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDisplayDescription(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      key: const ValueKey('display_description'),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.description_outlined,
-            color: colorScheme.onSurfaceVariant,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              widget.item.description?.isNotEmpty == true
-                  ? widget.item.description!
-                  : 'No description available',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: widget.item.description?.isNotEmpty == true
-                    ? colorScheme.onSurface
-                    : colorScheme.onSurfaceVariant,
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEditDescription(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      key: const ValueKey('edit_description'),
-      child: TextFormField(
-        controller: _descriptionController,
-        decoration: InputDecoration(
-          labelText: 'Description',
-          prefixIcon: Icon(
-            Icons.description_outlined,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.outline),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-          filled: true,
-          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-        maxLines: 4,
-        style: theme.textTheme.bodyLarge,
-      ),
-    );
-  }
-
-  Widget _buildDisplaySector(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      key: const ValueKey('display_sector'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Sector',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.secondaryContainer,
-                  colorScheme.secondaryContainer.withOpacity(0.7),
+        child: CommonCard(
+          child: Container(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ProductHeaderUI.buildHeader(
+                    theme, 
+                    colorScheme, 
+                    _isEditing
+                  ),
+                  const SizedBox(height: 24),
+                  ProductHeaderUI.buildContent(
+                    context,
+                    theme, 
+                    colorScheme, 
+                    widget.item,
+                    _isEditing,
+                    _isUploading,
+                    _newImageUrl,
+                    _nameController,
+                    _descriptionController,
+                    _selectedSector,
+                    _pickAndUploadImage,
+                    _getSectorIcon
+                  ),
+                  const SizedBox(height: 24),
+                  if (!isFarmer)
+                    ProductHeaderUI.buildEditControls(
+                      colorScheme,
+                      _isEditing,
+                      _isLoading,
+                      _toggleEditing,
+                      _submitChanges
+                    ),
                 ],
               ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colorScheme.secondary.withOpacity(0.3),
-              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _getSectorIcon(widget.item.sector),
-                  color: colorScheme.onSecondaryContainer,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  widget.item.sector,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEditSector(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      key: const ValueKey('edit_sector'),
-      child: DropdownButtonFormField<String>(
-        value: _selectedSector,
-        decoration: InputDecoration(
-          labelText: 'Sector',
-          prefixIcon: Icon(
-            Icons.category_outlined,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.outline),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-          filled: true,
-          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
           ),
         ),
-        items: [
-          _buildDropdownItem('Rice', Icons.rice_bowl_outlined),
-          _buildDropdownItem('Corn', Icons.agriculture_outlined),
-          _buildDropdownItem('HVC', Icons.local_florist_outlined),
-          _buildDropdownItem('Livestock', Icons.pets_outlined),
-          _buildDropdownItem('Fishery', Icons.set_meal_outlined),
-          _buildDropdownItem('Organic', Icons.eco_outlined),
-        ],
-        onChanged: (value) {
-          if (value != null) {
-            setState(() => _selectedSector = value);
-          }
-        },
-      ),
-    );
-  }
-
-  DropdownMenuItem<String> _buildDropdownItem(String value, IconData icon) {
-    return DropdownMenuItem(
-      value: value,
-      child: Row(
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 12),
-          Text(value),
-        ],
       ),
     );
   }
@@ -755,77 +325,5 @@ class _ProductHeaderState extends State<ProductHeader>
       default:
         return Icons.category_outlined;
     }
-  }
-
-  Widget _buildEditControls(ColorScheme colorScheme) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _isEditing
-              ? colorScheme.primary.withOpacity(0.3)
-              : colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (_isEditing) ...[
-            TextButton.icon(
-              onPressed: _isLoading ? null : _toggleEditing,
-              icon:
-                  Icon(Icons.close_outlined, color: Colors.white), // White icon
-              label: const Text('Cancel',
-                  style: TextStyle(color: Colors.white)), // White text
-              style: TextButton.styleFrom(
-                foregroundColor:
-                    Colors.white, // This will also affect both icon and text
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              ),
-            ),
-            const SizedBox(width: 12),
-          ],
-          FilledButton.icon(
-            onPressed: _isLoading
-                ? null
-                : _isEditing
-                    ? _submitChanges
-                    : _toggleEditing,
-            icon: _isLoading
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.white, // White progress indicator
-                      ),
-                    ),
-                  )
-                : Icon(_isEditing ? Icons.save_outlined : Icons.edit_outlined,
-                    color: Colors.white), // White icon
-            label: Text(
-                _isEditing
-                    ? _isLoading
-                        ? 'Saving...'
-                        : 'Save Changes'
-                    : 'Edit Product',
-                style: TextStyle(color: Colors.white)), // White text
-            style: FilledButton.styleFrom(
-              foregroundColor:
-                  Colors.white, // This will also affect both icon and text
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

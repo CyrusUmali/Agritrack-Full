@@ -1,14 +1,9 @@
-import 'package:flareline/pages/toast/toast_helper.dart';
-import 'package:flareline_uikit/components/modal/modal_dialog.dart';
-import 'package:flareline_uikit/service/year_picker_provider.dart';
+import 'package:flareline/pages/toast/toast_helper.dart'; 
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
-import 'package:flareline_uikit/entity/table_data_entity.dart';
-import 'package:provider/provider.dart';
+import 'package:flareline_uikit/entity/table_data_entity.dart'; 
 import 'package:responsive_builder/responsive_builder.dart';
-import 'package:flareline/pages/sectors/sector_profile.dart';
-import 'package:flareline_uikit/components/buttons/button_widget.dart';
-import 'package:flareline_uikit/core/theme/flareline_colors.dart';
+import 'package:flareline/pages/sectors/sector_profile.dart'; 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
 
@@ -121,7 +116,7 @@ class SectorDataTableWidget extends TableWidget<SectorsViewModel> {
         } catch (e) {
           ToastHelper.showErrorToast(
             'Failed to delete sector: ${e.toString()}',
-            context,
+            context, maxLines: 3
           );
         }
       },
@@ -248,10 +243,11 @@ class SectorsViewModel extends BaseTableProvider {
     const headers = [
       "Sector Name",
       "Land Area",
+      
+      "Area Harvested",
       "Farmers",
       "Farms",
       "Yield Volume",
-      "Area Harvested",
       "Production",
       "Action",
 
@@ -286,6 +282,14 @@ class SectorsViewModel extends BaseTableProvider {
           ..id = sector['id'].toString();
         row.add(landAreaCell);
 
+         var areaHarvestedCell = TableDataRowsTableDataRows()
+          ..text = (sector['stats']?['totalAreaHarvested']?.toString() ?? '0') +
+              ' hectare'
+          ..dataType = CellDataType.TEXT.type
+          ..columnName = 'Area Harvested'
+          ..id = sector['id'].toString();
+        row.add(areaHarvestedCell);
+
         var farmersCell = TableDataRowsTableDataRows()
           ..text = (sector['stats']?['totalFarmers']?.toString() ?? '0')
           ..dataType = CellDataType.TEXT.type
@@ -308,13 +312,7 @@ class SectorsViewModel extends BaseTableProvider {
           ..id = sector['id'].toString();
         row.add(yieldVolumeCell);
 
-        var areaHarvestedCell = TableDataRowsTableDataRows()
-          ..text = (sector['stats']?['totalAreaHarvested']?.toString() ?? '0') +
-              ' hectare'
-          ..dataType = CellDataType.TEXT.type
-          ..columnName = 'Area Harvested'
-          ..id = sector['id'].toString();
-        row.add(areaHarvestedCell);
+       
 
         var productionCell = TableDataRowsTableDataRows()
           ..text = (sector['stats']?['metricTons']?.toString() ?? '0') + ' mt'
