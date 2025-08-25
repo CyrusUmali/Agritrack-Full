@@ -285,7 +285,7 @@ class _MapWidgetState extends State<MapWidget>
               },
             ),
           ),
-
+  
         // Legend Panel
         if (_showLegendPanel)
           Positioned(
@@ -448,8 +448,8 @@ Widget _buildLegendPanel() {
   return Container(
     width: 200,
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Theme.of(context).cardColor,
+    decoration: BoxDecoration( 
+      color:Theme.of(context).cardTheme.color ?? Colors.white,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(
@@ -574,6 +574,8 @@ Widget _buildStyledIconButton({
 }) {
   final defaultBackgroundColor = Theme.of(context).cardColor;
   final defaultIconColor = Theme.of(context).iconTheme.color;
+
+      final cardColor = Theme.of(context).cardTheme.color ?? Colors.white;
   
   return Material(
     color: Colors.transparent,
@@ -581,7 +583,7 @@ Widget _buildStyledIconButton({
       width: buttonSize,
       height: buttonSize,
       decoration: BoxDecoration(
-        color: backgroundColor ?? defaultBackgroundColor,
+        color: cardColor,
         shape: shape is CircleBorder ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: shape is RoundedRectangleBorder
             ? (shape.borderRadius as BorderRadius?)

@@ -13,7 +13,7 @@ import 'package:flareline/pages/layout.dart';
 import 'package:flareline/pages/products/profile_widgets/product_header.dart';
 import 'package:flareline/pages/products/profile_widgets/farms_table.dart';
 import 'package:flareline/pages/products/profile_widgets/yield_history.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart'; 
 import 'package:provider/provider.dart'; 
 
 class ProductProfile extends LayoutWidget {

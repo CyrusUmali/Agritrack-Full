@@ -78,7 +78,7 @@ class ModalDialog {
                   ),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Column(

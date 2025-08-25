@@ -243,14 +243,18 @@ Map<String, Map<String, double>> _getMonthlyYieldData(String product, int year) 
 
     return BlocBuilder<YieldBloc, YieldState>(
       builder: (context, state) {
-        if (state is YieldsLoading) {
-          return Center(
-            child: LoadingAnimationWidget.inkDrop(
-              color: Theme.of(context).primaryColor,
-              size: 50,
-            ),
-          );
-        }
+      // Handle loading state
+if (state is YieldsLoading) {
+  return SizedBox(
+    height: MediaQuery.of(context).size.height * 0.5, // 50% of screen height
+    child: Center(
+      child: LoadingAnimationWidget.inkDrop(
+        color: Theme.of(context).primaryColor,
+        size: 50,
+      ),
+    ),
+  );
+}
 
         if (state is YieldsError) {
           return Center(
@@ -551,7 +555,7 @@ Widget _buildWideScreenLayout(ThemeData theme,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: theme.dividerColor),
         color: theme.brightness == Brightness.dark
-            ? theme.cardColor
+            ?  theme.primaryColor.withOpacity(0.1)
             : Colors.grey.shade50,
       ),
       child: Row(
@@ -636,7 +640,7 @@ Widget _buildViewTypeToggle(ThemeData theme) {
       borderRadius: BorderRadius.circular(8),
       border: Border.all(color: theme.dividerColor),
       color: theme.brightness == Brightness.dark
-          ? theme.cardColor
+          ?  theme.primaryColor.withOpacity(0.1)
           : Colors.grey.shade50,
     ),
     child: Row(

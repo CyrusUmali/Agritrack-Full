@@ -143,7 +143,7 @@ class RecommendationContentState extends State<RecommendationContent> {
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       fontSize: 32,
-                      color: const Color.fromARGB(255, 1, 1, 1),
+                      // color: const Color.fromARGB(255, 1, 1, 1),
                     ),
               ),
               const SizedBox(height: 4),
@@ -308,20 +308,21 @@ class RecommendationContentState extends State<RecommendationContent> {
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   fontSize: 20,
-                  color: const Color.fromARGB(255, 18, 18, 18),
+                  // color: const Color.fromARGB(255, 18, 18, 18),
                 ),
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: model.selectedModel,
+            
             items: model.models.keys.map((String modelName) {
               return DropdownMenuItem<String>(
                 value: modelName,
                 child: Text(
                   modelName,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[800],
+                  style: TextStyle( 
+                    fontSize: 14, 
+                    color: Theme.of(context).colorScheme.onSurface,  
                   ),
                 ),
               );
@@ -335,7 +336,8 @@ class RecommendationContentState extends State<RecommendationContent> {
             },
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[800],
+              // color: Colors.grey[800],
+                color: Theme.of(context).colorScheme.onSurface, 
             ),
             decoration: InputDecoration(
               border: OutlineInputBorder(
@@ -350,15 +352,14 @@ class RecommendationContentState extends State<RecommendationContent> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.blue, width: 0.5),
               ),
-              filled: true,
-              fillColor: Colors.grey[50],
+              filled: true, 
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 0,
               ),
-              hintStyle: TextStyle(color: Colors.grey[600]),
+              // hintStyle: TextStyle(color: Colors.grey[600]),
             ),
-            dropdownColor: Colors.grey[50],
+            dropdownColor: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(12),
             elevation: 2,
             icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),

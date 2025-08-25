@@ -130,7 +130,7 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: theme.dividerColor),
         color: theme.brightness == Brightness.dark
-            ? theme.cardColor
+            ? theme.primaryColor.withOpacity(0.1)
             : Colors.grey.shade50,
       ),
       child: Row(
@@ -329,7 +329,7 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: theme.dividerColor),
         color: theme.brightness == Brightness.dark
-            ? theme.cardColor
+            ? theme.primaryColor.withOpacity(0.1)
             : Colors.grey.shade50,
       ),
       child: Row(

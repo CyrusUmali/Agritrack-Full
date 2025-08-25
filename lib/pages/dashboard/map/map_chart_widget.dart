@@ -151,7 +151,8 @@ class _MapChartWidgetState extends State<MapChartWidget> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: theme.cardColor,
+                // color: theme.cardColor,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: theme.dividerColor,

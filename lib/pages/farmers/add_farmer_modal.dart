@@ -23,7 +23,7 @@ class AddFarmerModal extends StatefulWidget {
   }) async {
     final screenWidth = MediaQuery.of(context).size.width;
     final contentKey = GlobalKey<_AddFarmerModalContentState>();
-    bool isLoading = false;
+    bool isLoading = false; 
 
     await ModalDialog.show(
       context: context,
@@ -274,6 +274,7 @@ class _AddFarmerModalContentState extends State<_AddFarmerModalContent> {
         alignment: Alignment.topLeft,
         child: Material(
           elevation: 4.0,
+           color: Theme.of(context).cardTheme.color,
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: fieldWidth,
@@ -534,6 +535,7 @@ class _AddFarmerModalContentState extends State<_AddFarmerModalContent> {
                   horizontal: 10.0,
                 ),
               ),
+              dropdownColor: Theme.of(context).cardTheme.color,
               items: sectors.map((String sector) {
                 return DropdownMenuItem<String>(
                   value: sector,

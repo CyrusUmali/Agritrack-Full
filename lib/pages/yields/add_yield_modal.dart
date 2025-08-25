@@ -377,13 +377,14 @@ Widget _buildFarmMapSection() {
 
     return SizedBox(
       width: fieldWidth,
-      child: Align(
+      child: Align( 
         alignment: Alignment.topLeft,
         child: Material(
           elevation: 4.0,
+          color: Theme.of(context).cardTheme.color,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: fieldWidth,
+              maxWidth: fieldWidth, 
               maxHeight: 200,
             ),
             child: ListView.builder(

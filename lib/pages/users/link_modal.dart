@@ -278,10 +278,11 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
     GlobalKey key,
     String Function(T) displayString,
   ) {
-    return Align(
+    return Align( 
       alignment: Alignment.topLeft,
       child: Material(
         elevation: 4.0,
+         color: Theme.of(context).cardTheme.color,
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight: 200,

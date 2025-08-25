@@ -10,7 +10,7 @@ class SectorOverviewPanel extends StatelessWidget {
     this.isMobile = false,
   });
 
-  @override
+  @override   
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
@@ -96,8 +96,8 @@ class SectorOverviewPanel extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color:
-                isHighlighted ? colors.primaryContainer : colors.surfaceVariant,
+            // color:
+            //     isHighlighted ? colors.primaryContainer : colors.surfaceVariant,
             borderRadius: BorderRadius.circular(12),
             border: isHighlighted
                 ? Border.all(color: colors.primary.withOpacity(0.2))

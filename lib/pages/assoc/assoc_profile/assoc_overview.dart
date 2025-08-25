@@ -236,7 +236,7 @@ class _AssociationOverviewPanelState extends State<AssociationOverviewPanel> {
             width: double.infinity,
             padding: EdgeInsets.all(widget.isMobile ? 12 : 16),
             decoration: BoxDecoration(
-              color: colors.surfaceVariant,
+              color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.circular(widget.isMobile ? 8 : 12),
             ),
             child: TextFormField(
@@ -277,7 +277,7 @@ class _AssociationOverviewPanelState extends State<AssociationOverviewPanel> {
             width: double.infinity,
             padding: EdgeInsets.all(widget.isMobile ? 12 : 16),
             decoration: BoxDecoration(
-              color: colors.surfaceVariant,
+              color:Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.circular(widget.isMobile ? 8 : 12),
             ),
             child: TextFormField(
@@ -337,8 +337,9 @@ class _AssociationOverviewPanelState extends State<AssociationOverviewPanel> {
           width: double.infinity,
           padding: EdgeInsets.all(widget.isMobile ? 12 : 16),
           decoration: BoxDecoration(
-            color:
-                isHighlighted ? colors.primaryContainer : colors.surfaceVariant,
+            color: Theme.of(context).cardTheme.color,
+            // color:
+            //     isHighlighted ? colors.primaryContainer : colors.surfaceVariant,
             borderRadius: BorderRadius.circular(widget.isMobile ? 8 : 12),
             border: isHighlighted
                 ? Border.all(color: colors.primary.withOpacity(0.2))

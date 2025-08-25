@@ -139,7 +139,7 @@ class AssocKpiCards extends StatelessWidget {
                   child: Icon(
                     icon,
                     size: 18,
-                    color: colorScheme.onPrimaryContainer,
+                    color: Colors.black,
                   ),
                 ), 
              ],

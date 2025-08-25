@@ -193,7 +193,7 @@ class _YearlyDataTableState extends State<YearlyDataTable> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: theme.dividerColor),
         color: theme.brightness == Brightness.dark
-            ? theme.cardColor
+            ? theme.primaryColor.withOpacity(0.1)
             : Colors.grey.shade50,
       ),
       child: Row(

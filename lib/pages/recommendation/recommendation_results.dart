@@ -1,4 +1,4 @@
-import 'package:flareline/pages/products/product_profile.dart';
+import 'package:flareline/pages/products/product_profile.dart'; 
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 
@@ -66,7 +66,7 @@ class RecommendationResults extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
+        color:  Theme.of(context).cardTheme.color,
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
@@ -184,40 +184,42 @@ class RecommendationResults extends StatelessWidget {
             ),
           ),
           // Floating action button
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: Icon(
-                  Icons.arrow_forward_rounded,
-                  color: Colors.green[700],
-                  size: 20,
-                ),
-                tooltip: 'View Details',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ProductProfile(product: recommendation),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
+          // Positioned(
+          //   top: 12,
+          //   right: 12,
+          //   child: Container(
+          //     decoration: BoxDecoration(
+          //       color: Colors.white,
+          //       borderRadius: BorderRadius.circular(25),
+          //       boxShadow: [
+          //         BoxShadow(
+          //           color: Colors.black.withOpacity(0.1),
+          //           blurRadius: 8,
+          //           offset: const Offset(0, 2),
+          //         ),
+          //       ],
+          //     ),
+          //     child: IconButton(
+          //       icon: Icon(
+          //         Icons.arrow_forward_rounded,
+          //         color: Colors.green[700],
+          //         size: 20,
+          //       ),
+          //       tooltip: 'View Details',
+          //       onPressed: () {
+          //         Navigator.push(
+          //           context,
+          //           MaterialPageRoute(
+          //             builder: (context) =>
+          //                 ProductProfile(product: recommendation),
+          //           ),
+          //         );
+          //       },
+          //     ),
+          //   ),
+          // ),
+     
+     
         ],
       ),
     );
@@ -333,7 +335,7 @@ class RecommendationResults extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
@@ -433,6 +435,7 @@ class RecommendationResults extends StatelessWidget {
               ],
             ),
           ),
+      
           // Floating detail button
           Positioned(
             top: 8,
@@ -468,6 +471,8 @@ class RecommendationResults extends StatelessWidget {
               ),
             ),
           ),
+     
+     
         ],
       ),
     );
@@ -673,7 +678,7 @@ class RecommendationResults extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(

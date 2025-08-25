@@ -1,4 +1,4 @@
- 
+  
 import 'package:flareline/pages/products/profile_widgets/product_header_ui_components';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';

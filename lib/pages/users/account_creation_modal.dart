@@ -18,6 +18,7 @@ class AccountCreationMethodModal {
     ModalDialog.show(
       context: context,
       title: 'Create New Account',
+      
       showTitle: true,
       showTitleDivider: true,
       modalType: isSmallScreen ? ModalType.large : ModalType.medium,
@@ -36,14 +37,18 @@ class AccountCreationMethodModal {
                 // Role Selection
                 DropdownButtonFormField<String>(
                   value: selectedRole,
-                  decoration: InputDecoration(
+                  
+                  decoration: InputDecoration( 
                     labelText: 'Account Role',
                     border: const OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
                       vertical: isSmallScreen ? 10.0 : 16.0,
                       horizontal: 10.0,
                     ),
+                    // filled: true, // Add this
+    // fillColor:Theme.of(context).cardTheme.color,
                   ),
+                  dropdownColor: Theme.of(context).cardTheme.color,
                   items: const [
                     DropdownMenuItem(value: 'admin', child: Text('Admin')),
                     DropdownMenuItem(value: 'officer', child: Text('Officer')),
@@ -84,11 +89,14 @@ class AccountCreationMethodModal {
                                 selectedMethod = 'email';
                               });
                             },
+
+                               backgroundColor:   Theme.of(context).cardTheme.color,   
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: ChoiceChip(
+                        
+                          child: ChoiceChip( 
                             label: const Text('Google Account'),
                             selected: selectedMethod == 'google',
                             onSelected: (bool selected) {
@@ -96,7 +104,11 @@ class AccountCreationMethodModal {
                                 selectedMethod = 'google';
                               });
                             },
-                          ),
+                         
+                         
+                          backgroundColor:   Theme.of(context).cardTheme.color,   
+      
+                          ), 
                         ),
                       ],
                     ),

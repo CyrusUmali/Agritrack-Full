@@ -1,3 +1,4 @@
+import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_maps/maps.dart';
 import 'barangay_data_provider.dart';
@@ -226,6 +227,8 @@ class MapChartUIComponents {
                   final textColor =
                       colorLightness > 0.5 ? Colors.black : Colors.white;
 
+                      
+
                   double? yieldPercentage;
                   if (provider.selectedProduct.isNotEmpty) {
                     final yields = provider.data
@@ -337,10 +340,14 @@ class MapChartUIComponents {
                 ),
                 strokeColor: Colors.white,
                 strokeWidth: 0.8,
-                dataLabelSettings: const MapDataLabelSettings(
+                dataLabelSettings: MapDataLabelSettings(
                   textStyle: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
+                    // color: Colors.black, 
+                    color:Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            :GlobalColors.darkerCardColor,
+                    
+                    // fontWeight: FontWeight.bold,
                     fontSize: 10,
                   ),
                 ),
@@ -540,4 +547,4 @@ class MapChartUIComponents {
       ),
     );
   }
-}
+} 

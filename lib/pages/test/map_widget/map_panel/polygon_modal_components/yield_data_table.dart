@@ -337,14 +337,18 @@ Map<String, Map<String, double>> _getMonthlyYieldData(String product, int year) 
     return BlocBuilder<YieldBloc, YieldState>(
       builder: (context, state) {
         // Handle loading state
-        if (state is YieldsLoading) {
-          return Center(
-            child: LoadingAnimationWidget.inkDrop(
-              color: Theme.of(context).primaryColor,
-              size: 50,
-            ),
-          );
-        }
+       // Handle loading state
+if (state is YieldsLoading) {
+  return SizedBox(
+    height: MediaQuery.of(context).size.height * 0.5, // 50% of screen height
+    child: Center(
+      child: LoadingAnimationWidget.inkDrop(
+        color: Theme.of(context).primaryColor,
+        size: 50,
+      ),
+    ),
+  );
+}
 
         // Handle error state
         if (state is YieldsError) {
@@ -404,6 +408,14 @@ Map<String, Map<String, double>> _getMonthlyYieldData(String product, int year) 
       },
     );
   }
+
+
+
+
+
+
+
+
 
 Widget _buildWideScreenLayout(ThemeData theme,
     Map<String, Map<String, Map<String, double>>> yieldData, List<String> products) {
@@ -477,7 +489,7 @@ Widget _buildOwnerAdminView(ThemeData theme, bool isWeb, double screenWidth) {
                     backgroundColor:
                         Theme.of(context).brightness == Brightness.dark
                             ? GlobalColors.darkerCardColor
-                            : theme.primaryColor.withOpacity(0.1),
+                            : theme.primaryColor.withOpacity(0.1), 
                     labelStyle: TextStyle(color: theme.primaryColor),
                     avatar: CircleAvatar(
                       backgroundImage: productImage != null
@@ -733,9 +745,14 @@ Widget _buildDataDisplayCard(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: theme.dividerColor),
-        color: theme.brightness == Brightness.dark
-            ? theme.cardColor
+
+            color: theme.brightness == Brightness.dark
+            ? theme.primaryColor.withOpacity(0.1)
             : Colors.grey.shade50,
+
+
+            //  color: theme.primaryColor.withOpacity(0.1),
+ 
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -816,7 +833,7 @@ Widget _buildDataDisplayCard(
                 : theme.iconTheme.color?.withOpacity(0.6),
           ),
         ),
-      ),
+      ), 
     );
   }
 
@@ -827,7 +844,7 @@ Widget _buildDataDisplayCard(
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: theme.dividerColor),
         color: theme.brightness == Brightness.dark
-            ? theme.cardColor
+            ? theme.primaryColor.withOpacity(0.1)
             : Colors.grey.shade50,
       ),
       child: Row(
