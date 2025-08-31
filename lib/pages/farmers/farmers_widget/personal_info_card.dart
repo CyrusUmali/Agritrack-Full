@@ -42,9 +42,6 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
     super.initState();
     _effectiveFormKey = widget.formKey ?? GlobalKey<FormState>();
 
-    // print('farmer:');
-    // print(widget.farmer);
-
     // Format options with "id: name"
     _assocOptions =
         widget.assocs.map((assoc) => '${assoc.id}: ${assoc.name}').toList();
@@ -124,7 +121,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
         Text(
           '$label${isRequired ? '*' : ''}',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 10,
             color: Colors.grey[600],
           ),
         ),
@@ -146,7 +143,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
           },
           child: Container(
             width: double.infinity,
-            height: 30,
+            height: 38,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey[300]!),
@@ -244,89 +241,118 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
 
             const SizedBox(height: 12),
 
-            Row(
-              children: [
-                Expanded(
-                  child: DetailField(
-                    label: 'Email',
-                    value: getValue('email'),
+            // Mobile layout adjustment: Email as single item, Birthday and Contact in a row
+            if (widget.isMobile) ...[
+              // Email as full width on mobile
+              widget.isEditing
+                  ? EditableField(
+                      label: 'Email',
+                      value: getValue('email'),
+                      onChanged: (value) {
+                        widget.onFieldChanged(MapEntry('email', value));
+                      },
+                    )
+                  : DetailField(
+                      label: 'Email',
+                      value: getValue('email'),
+                    ),
+              const SizedBox(height: 12),
+
+              // Birthday and Contact in a row on mobile
+              Row(
+                children: [
+                  Expanded(
+                    child: widget.isEditing
+                        ? _buildDatePickerField(
+                            label: 'Birthday',
+                            value: getValue('birthday'),
+                            onChanged: (value) {
+                              widget
+                                  .onFieldChanged(MapEntry('birthday', value));
+                            },
+                          )
+                        : DetailField(
+                            label: 'Birthday',
+                            value: getValue('birthday'),
+                          ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: widget.isEditing
-                      ? _buildDatePickerField(
-                          label: 'Birthday',
-                          value: getValue('birthday'),
-                          onChanged: (value) {
-                            widget.onFieldChanged(MapEntry('birthday', value));
-                          },
-                        )
-                      : DetailField(
-                          label: 'Birthday',
-                          value: getValue('birthday'),
-                        ),
-                ),
-         
-         
-            const SizedBox(width: 12),
-                   Expanded(
-                  child: widget.isEditing
-                      ? EditableField(
-                          label: 'Contact*',
-                          value: getValue('phone'),
-                          onChanged: (value) {
-                            widget.onFieldChanged(MapEntry('phone', value));
-                            _effectiveFormKey.currentState?.validate();
-                          },
-                          validator: (value) {
-                            if (value != null && value.length > 50) {
-                              return 'Maximum 50 characters allowed';
-                            }
-                            return null;
-                          },
-                        )
-                      : DetailField(
-                          label: 'Contact',
-                          value: getValue('phone'),
-                        ),
-                ), 
-           
-         
-         
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: widget.isEditing
+                        ? EditableField(
+                            label: 'Contact*',
+                            value: getValue('phone'),
+                            onChanged: (value) {
+                              widget.onFieldChanged(MapEntry('phone', value));
+                              _effectiveFormKey.currentState?.validate();
+                            },
+                            validator: (value) {
+                              if (value != null && value.length > 50) {
+                                return 'Maximum 50 characters allowed';
+                              }
+                              return null;
+                            },
+                          )
+                        : DetailField(
+                            label: 'Contact',
+                            value: getValue('phone'),
+                          ),
+                  ),
+                ],
+              ),
+            ] else ...[
+              // Original desktop layout
+              Row(
+                children: [
+                  Expanded(
+                    child: DetailField(
+                      label: 'Email',
+                      value: getValue('email'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: widget.isEditing
+                        ? _buildDatePickerField(
+                            label: 'Birthday',
+                            value: getValue('birthday'),
+                            onChanged: (value) {
+                              widget
+                                  .onFieldChanged(MapEntry('birthday', value));
+                            },
+                          )
+                        : DetailField(
+                            label: 'Birthday',
+                            value: getValue('birthday'),
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: widget.isEditing
+                        ? EditableField(
+                            label: 'Contact*',
+                            value: getValue('phone'),
+                            onChanged: (value) {
+                              widget.onFieldChanged(MapEntry('phone', value));
+                              _effectiveFormKey.currentState?.validate();
+                            },
+                            validator: (value) {
+                              if (value != null && value.length > 50) {
+                                return 'Maximum 50 characters allowed';
+                              }
+                              return null;
+                            },
+                          )
+                        : DetailField(
+                            label: 'Contact',
+                            value: getValue('phone'),
+                          ),
+                  ),
+                ],
+              ),
+            ],
 
             const SizedBox(height: 12),
-
-            // Row(
-            //   children: [
-            //     Expanded(
-            //       child: widget.isEditing
-            //           ? EditableField(
-            //               label: 'Contact*',
-            //               value: getValue('phone'),
-            //               onChanged: (value) {
-            //                 widget.onFieldChanged(MapEntry('phone', value));
-            //                 _effectiveFormKey.currentState?.validate();
-            //               },
-            //               validator: (value) {
-            //                 if (value != null && value.length > 50) {
-            //                   return 'Maximum 50 characters allowed';
-            //                 }
-            //                 return null;
-            //               },
-            //             )
-            //           : DetailField(
-            //               label: 'Contact',
-            //               value: getValue('phone'),
-            //             ),
-            //     ),
-            //     const SizedBox(width: 12),
-            //     // Empty expanded to maintain layout consistency
-            //     const Expanded(child: SizedBox()),
-            //   ],
-            // ), 
 
             // Middle Name, Extension, Gender
             Row(
@@ -394,7 +420,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                 Expanded(
                   child: widget.isEditing
                       ? _buildComboBoxField(
-                          comboBoxHeight: 30,
+                          comboBoxHeight: 38,
                           label: 'Barangay',
                           value: getValue('barangay'),
                           options: widget.barangayNames,
@@ -415,7 +441,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                           label: 'Sector',
                           value: getValue('sector'),
                           options: _sectors,
-                          comboBoxHeight: 30,
+                          comboBoxHeight: 38,
                           onChanged: (value) {
                             widget.onFieldChanged(MapEntry('sector', value));
                           },
@@ -437,7 +463,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                 child: widget.isEditing
                     ? _buildComboBoxField(
                         label: 'Association',
-                        comboBoxHeight: 30,
+                        comboBoxHeight: 38,
                         value: _selectedAssocValue ?? '---',
                         options: _assocOptions,
                         onChanged: (value) {
@@ -463,7 +489,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
               Expanded(
                 child: widget.isEditing
                     ? _buildComboBoxField(
-                        comboBoxHeight: 30,
+                        comboBoxHeight: 38,
                         label: 'Account Status',
                         value: getValue('accountStatus'),
                         options: const [

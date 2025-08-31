@@ -32,7 +32,7 @@ class EditableField extends StatelessWidget {
         TextFormField(
           initialValue: value,
           onChanged: onChanged,
-          keyboardType: keyboardType, 
+          keyboardType: keyboardType,
           validator: validator,
           decoration: InputDecoration(
             isDense: true,
@@ -54,7 +54,7 @@ class EditableField extends StatelessWidget {
             errorMaxLines: 2,
             errorStyle: TextStyle(
               color: Colors.red, // Explicit red color
-              fontSize: 12, // Optional: adjust font size 
+              fontSize: 12, // Optional: adjust font size
             ),
             // Using the error border style from OutBorderTextFormField
             errorBorder: const OutlineInputBorder(

@@ -7,7 +7,8 @@ import 'package:flareline_uikit/components/forms/outborder_text_form_field.dart'
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 
 class ProductHeaderUI {
-  static Widget buildHeader(ThemeData theme, ColorScheme colorScheme, bool isEditing) {
+  static Widget buildHeader(
+      ThemeData theme, ColorScheme colorScheme, bool isEditing) {
     return Row(
       children: [
         //
@@ -68,19 +69,18 @@ class ProductHeaderUI {
   }
 
   static Widget buildContent(
-    BuildContext context,
-    ThemeData theme, 
-    ColorScheme colorScheme, 
-    Product item,
-    bool isEditing,
-    bool isUploading,
-    String? newImageUrl,
-    TextEditingController nameController,
-    TextEditingController descriptionController,
-    String selectedSector,
-    Function pickAndUploadImage,
-    Function(String) getSectorIcon
-  ) {
+      BuildContext context,
+      ThemeData theme,
+      ColorScheme colorScheme,
+      Product item,
+      bool isEditing,
+      bool isUploading,
+      String? newImageUrl,
+      TextEditingController nameController,
+      TextEditingController descriptionController,
+      String selectedSector,
+      Function pickAndUploadImage,
+      Function(String) getSectorIcon) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isTablet = constraints.maxWidth > 600;
@@ -89,55 +89,37 @@ class ProductHeaderUI {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProductImage(
-                theme, 
-                colorScheme, 
-                item, 
-                isEditing, 
-                isUploading, 
-                newImageUrl, 
-                pickAndUploadImage,
-                getSectorIcon
-              ),
+              _buildProductImage(theme, colorScheme, item, isEditing,
+                  isUploading, newImageUrl, pickAndUploadImage, getSectorIcon),
               const SizedBox(width: 32),
               Expanded(
                 child: _buildProductInfo(
-                  theme, 
-                  colorScheme, 
-                  item, 
-                  isEditing, 
-                  nameController, 
-                  descriptionController, 
-                  selectedSector,
-                  getSectorIcon
-                ),
+                    theme,
+                    colorScheme,
+                    item,
+                    isEditing,
+                    nameController,
+                    descriptionController,
+                    selectedSector,
+                    getSectorIcon),
               ),
             ],
           );
         } else {
           return Column(
             children: [
-              _buildProductImage(
-                theme, 
-                colorScheme, 
-                item, 
-                isEditing, 
-                isUploading, 
-                newImageUrl, 
-                pickAndUploadImage,
-                getSectorIcon
-              ),
+              _buildProductImage(theme, colorScheme, item, isEditing,
+                  isUploading, newImageUrl, pickAndUploadImage, getSectorIcon),
               const SizedBox(height: 24),
               _buildProductInfo(
-                theme, 
-                colorScheme, 
-                item, 
-                isEditing, 
-                nameController, 
-                descriptionController, 
-                selectedSector,
-                getSectorIcon
-              ),
+                  theme,
+                  colorScheme,
+                  item,
+                  isEditing,
+                  nameController,
+                  descriptionController,
+                  selectedSector,
+                  getSectorIcon),
             ],
           );
         }
@@ -146,15 +128,14 @@ class ProductHeaderUI {
   }
 
   static Widget _buildProductImage(
-    ThemeData theme, 
-    ColorScheme colorScheme, 
-    Product item,
-    bool isEditing,
-    bool isUploading,
-    String? newImageUrl,
-    Function pickAndUploadImage,
-    Function(String) getSectorIcon
-  ) {
+      ThemeData theme,
+      ColorScheme colorScheme,
+      Product item,
+      bool isEditing,
+      bool isUploading,
+      String? newImageUrl,
+      Function pickAndUploadImage,
+      Function(String) getSectorIcon) {
     return Hero(
       tag: 'product_image_${item.id}',
       child: GestureDetector(
@@ -237,9 +218,8 @@ class ProductHeaderUI {
                             const SizedBox(height: 8),
                             Text(
                               'Tap to change image',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: theme.textTheme.bodySmall
+                                  ?.copyWith(color: Colors.white, fontSize: 12),
                             ),
                           ],
                         ),
@@ -254,56 +234,49 @@ class ProductHeaderUI {
     );
   }
 
-
-
-
-static Widget _buildProductInfo(
-  ThemeData theme, 
-  ColorScheme colorScheme, 
-  Product item,
-  bool isEditing,
-  TextEditingController nameController,
-  TextEditingController descriptionController,
-  String selectedSector,
-  Function(String) getSectorIcon
-) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Product Name
-      AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: !isEditing
-            ? _buildDisplayName(theme, colorScheme, item)
-            : _buildEditName(theme, colorScheme, nameController),
-      ),
-      const SizedBox(height: 16),
-
-      // Product Description
-      AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: !isEditing
-            ? _buildDisplayDescription(theme, colorScheme, item)
-            : _buildEditDescription(theme, colorScheme, descriptionController),
-      ),
-      const SizedBox(height: 20),
-
-      // Only show sector here when editing (below description)
-      if (isEditing)
+  static Widget _buildProductInfo(
+      ThemeData theme,
+      ColorScheme colorScheme,
+      Product item,
+      bool isEditing,
+      TextEditingController nameController,
+      TextEditingController descriptionController,
+      String selectedSector,
+      Function(String) getSectorIcon) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Product Name
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
-          child: _buildEditSector(theme, colorScheme, selectedSector),
+          child: !isEditing
+              ? _buildDisplayName(theme, colorScheme, item)
+              : _buildEditName(theme, colorScheme, nameController),
         ),
-    ],
-  );
-}
+        const SizedBox(height: 16),
 
+        // Product Description
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: !isEditing
+              ? _buildDisplayDescription(theme, colorScheme, item)
+              : _buildEditDescription(
+                  theme, colorScheme, descriptionController),
+        ),
+        const SizedBox(height: 20),
 
+        // Only show sector here when editing (below description)
+        if (isEditing)
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _buildEditSector(theme, colorScheme, selectedSector),
+          ),
+      ],
+    );
+  }
 
-
-
-
-  static Widget _buildDisplayName(ThemeData theme, ColorScheme colorScheme, Product item) {
+  static Widget _buildDisplayName(
+      ThemeData theme, ColorScheme colorScheme, Product item) {
     return Container(
       key: const ValueKey('display_name'),
       child: Text(
@@ -317,30 +290,32 @@ static Widget _buildProductInfo(
     );
   }
 
-  static Widget _buildEditName(ThemeData theme, ColorScheme colorScheme, TextEditingController controller) {
+  static Widget _buildEditName(ThemeData theme, ColorScheme colorScheme,
+      TextEditingController controller) {
     return Container(
       key: const ValueKey('edit_name'),
       child: OutBorderTextFormField(
         controller: controller,
-        labelText: 'Product Name',  
-      
+        labelText: 'Product Name',
       ),
     );
   }
 
-  static Widget _buildEditDescription(ThemeData theme, ColorScheme colorScheme, TextEditingController controller) {
+  static Widget _buildEditDescription(ThemeData theme, ColorScheme colorScheme,
+      TextEditingController controller) {
     return Container(
       key: const ValueKey('edit_description'),
       child: OutBorderTextFormField(
         controller: controller,
-        labelText: 'Description', 
+        labelText: 'Description',
         maxLines: 4,
         textStyle: theme.textTheme.bodyLarge,
       ),
     );
   }
 
-  static Widget _buildEditSector(ThemeData theme, ColorScheme colorScheme, String selectedSector) {
+  static Widget _buildEditSector(
+      ThemeData theme, ColorScheme colorScheme, String selectedSector) {
     return Container(
       key: const ValueKey('edit_sector'),
       child: Column(
@@ -391,7 +366,8 @@ static Widget _buildProductInfo(
     );
   }
 
-  static Widget _buildDisplayDescription(ThemeData theme, ColorScheme colorScheme, Product item) {
+  static Widget _buildDisplayDescription(
+      ThemeData theme, ColorScheme colorScheme, Product item) {
     return Container(
       key: const ValueKey('display_description'),
       padding: const EdgeInsets.all(16),
@@ -429,70 +405,65 @@ static Widget _buildProductInfo(
     );
   }
 
-
-
-
-
-// Update the buildDisplaySector method to work better in a row layout
-static Widget buildDisplaySector(ThemeData theme, ColorScheme colorScheme, Product item, Function(String) getSectorIcon) {
-  return Container(
-    key: const ValueKey('display_sector'),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min, // Add this to prevent taking too much vertical space
-      children: [
-        Text(
-          'Sector',
-          style: theme.textTheme.labelMedium?.copyWith( // Changed from labelLarge to labelMedium
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
+  // Updated buildDisplaySector method with better spacing and alignment
+  static Widget buildDisplaySector(ThemeData theme, ColorScheme colorScheme,
+      Product item, Function(String) getSectorIcon) {
+    return Container(
+      key: const ValueKey('display_sector'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Sector',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Reduced padding
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                colorScheme.secondaryContainer,
-                colorScheme.secondaryContainer.withOpacity(0.7),
+          const SizedBox(height: 8),
+          Container(
+            height: 48, // Fixed height to match button
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  colorScheme.secondaryContainer,
+                  colorScheme.secondaryContainer.withOpacity(0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.secondary.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center, // Center the content
+              children: [
+                Icon(
+                  getSectorIcon(item.sector),
+                  color: colorScheme.onSecondaryContainer,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  item.sector,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSecondaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: colorScheme.secondary.withOpacity(0.3),
-            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                getSectorIcon(item.sector),
-                color: colorScheme.onSecondaryContainer,
-                size: 18, // Slightly smaller icon
-              ),
-              const SizedBox(width: 8), // Reduced spacing
-              Text(
-                item.sector,
-                style: theme.textTheme.bodyMedium?.copyWith( // Changed from bodyLarge to bodyMedium
-                  color: colorScheme.onSecondaryContainer,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
-
-
-
-
-
-  static DropdownMenuItem<String> _buildDropdownItem(String value, IconData icon) {
+  static DropdownMenuItem<String> _buildDropdownItem(
+      String value, IconData icon) {
     return DropdownMenuItem(
       value: value,
       child: Row(
@@ -505,62 +476,57 @@ static Widget buildDisplaySector(ThemeData theme, ColorScheme colorScheme, Produ
     );
   }
 
-
-
-
-
-static Widget buildEditControls(
-  ColorScheme colorScheme,
-  ThemeData theme,
-  Product item,
-  bool isEditing,
-  bool isLoading,
-  Function toggleEditing,
-  Function submitChanges,
-  Function(String) getSectorIcon
-) {
-  return AnimatedContainer(
-    duration: const Duration(milliseconds: 300),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: colorScheme.surfaceVariant.withOpacity(0.3),
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: isEditing
-            ? colorScheme.primary.withOpacity(0.3)
-            : colorScheme.outline.withOpacity(0.2),
+  // Fixed buildEditControls method with balanced layout
+  static Widget buildEditControls(
+      ColorScheme colorScheme,
+      ThemeData theme,
+      Product item,
+      bool isEditing,
+      bool isLoading,
+      Function toggleEditing,
+      Function submitChanges,
+      Function(String) getSectorIcon) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isEditing
+              ? colorScheme.primary.withOpacity(0.3)
+              : colorScheme.outline.withOpacity(0.2),
+        ),
       ),
-    ),
-    child: Row(
+      child: isEditing
+          ? _buildEditingControls(
+              colorScheme, theme, isLoading, toggleEditing, submitChanges)
+          : _buildDisplayControls(
+              theme, colorScheme, item, toggleEditing, getSectorIcon),
+    );
+  }
+
+  // Separated edit controls for cleaner code
+  static Widget _buildEditingControls(ColorScheme colorScheme, ThemeData theme,
+      bool isLoading, Function toggleEditing, Function submitChanges) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // Show sector display when not editing
-        if (!isEditing) ...[
-          Expanded(
-            child: buildDisplaySector(theme, colorScheme, item, getSectorIcon),
-          ),
-          const SizedBox(width: 16),
-        ],
-        
-        // Edit controls
-        if (isEditing) ...[
-          TextButton.icon(
-            onPressed: isLoading ? null : () => toggleEditing(),
-            icon: Icon(Icons.close_outlined, color: Colors.white),
-            label: const Text('Cancel', style: TextStyle(color: Colors.white)),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        TextButton.icon(
+          onPressed: isLoading ? null : () => toggleEditing(),
+          icon: const Icon(Icons.close_outlined),
+          label: const Text('Cancel'),
+          style: TextButton.styleFrom(
+            foregroundColor: colorScheme.onSurfaceVariant,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
-          const SizedBox(width: 12),
-        ],
-        
+        ),
+        const SizedBox(width: 12),
         FilledButton.icon(
-          onPressed: isLoading
-              ? null
-              : isEditing
-                  ? () => submitChanges()
-                  : () => toggleEditing(),
+          onPressed: isLoading ? null : () => submitChanges(),
           icon: isLoading
               ? SizedBox(
                   width: 16,
@@ -570,16 +536,13 @@ static Widget buildEditControls(
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
-              : Icon(isEditing ? Icons.save_outlined : Icons.edit_outlined,
-                  color: Colors.white),
+              : const Icon(Icons.save_outlined, color: Colors.white),
           label: Text(
-              isEditing
-                  ? isLoading
-                      ? 'Saving...'
-                      : 'Save Changes'
-                  : 'Edit Product',
-              style: TextStyle(color: Colors.white)),
+            isLoading ? 'Saving...' : 'Save Changes',
+            style: const TextStyle(color: Colors.white),
+          ),
           style: FilledButton.styleFrom(
+            backgroundColor: colorScheme.primary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
@@ -588,14 +551,42 @@ static Widget buildEditControls(
           ),
         ),
       ],
-    ),
-  );
-}
+    );
+  }
 
-
-
-
-
-
-
+  // Display controls with proper sector alignment
+  static Widget _buildDisplayControls(ThemeData theme, ColorScheme colorScheme,
+      Product item, Function toggleEditing, Function(String) getSectorIcon) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end, // Align to bottom
+      children: [
+        Expanded(
+          flex: 1,
+          child: buildDisplaySector(theme, colorScheme, item, getSectorIcon),
+        ),
+        const SizedBox(width: 16),
+        // Wrap button in container to control height
+        Container(
+          height: 48, // Match the sector container height
+          child: FilledButton.icon(
+            onPressed: () => toggleEditing(),
+            icon:
+                const Icon(Icons.edit_outlined, color: Colors.white, size: 18),
+            label: const Text(
+              'Edit Product',
+              style: TextStyle(color: Colors.white),
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

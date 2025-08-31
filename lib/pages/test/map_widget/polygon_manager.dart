@@ -55,6 +55,37 @@ class PolygonManager with RouteAware {
     required this.farmers, // Add this
   });
 
+  void initializePolyEditor(PolygonData polygon) {
+    polyEditor = PolyEditor(
+      points: selectedPolygon!.vertices,
+      pointIcon: Container(
+        width: 40, // Adjust the size of the container
+        height: 40, // Adjust the size of the container
+        decoration: BoxDecoration(
+          shape: BoxShape.circle, // Make the container circular
+          color: Colors.orange, // Fill color of the circle
+          border: Border.all(
+            color: Colors.white, // Border color
+            width: 2.0, // Border width
+          ),
+        ),
+      ),
+      intermediateIcon: Icon(
+        Icons.lens,
+        size: 25,
+        color: Colors.grey,
+      ),
+      callbackRefresh: () {
+        if (selectedPolygonIndex != null) {
+          polygons[selectedPolygonIndex!].vertices = polyEditor!.points;
+          selectedPolygon = polygons[selectedPolygonIndex!];
+          selectedPolygonNotifier.value = selectedPolygon;
+        }
+      },
+      addClosePathMarker: true, // Set to true for polygons
+    );
+  }
+
   void handleSelectionTap(LatLng tapPoint, BuildContext context) {
     // print(polygons);
     if (polyEditor != null) {
@@ -185,37 +216,6 @@ class PolygonManager with RouteAware {
       selectedPolygonNotifier.value = selectedPolygon;
       debugPrint('Undo completed. Selected index: $selectedPolygonIndex');
     }
-  }
-
-  void initializePolyEditor(PolygonData polygon) {
-    polyEditor = PolyEditor(
-      points: selectedPolygon!.vertices,
-      pointIcon: Container(
-        width: 40, // Adjust the size of the container
-        height: 40, // Adjust the size of the container
-        decoration: BoxDecoration(
-          shape: BoxShape.circle, // Make the container circular
-          color: Colors.orange, // Fill color of the circle
-          border: Border.all(
-            color: Colors.white, // Border color
-            width: 2.0, // Border width
-          ),
-        ),
-      ),
-      intermediateIcon: Icon(
-        Icons.lens,
-        size: 25,
-        color: Colors.grey,
-      ),
-      callbackRefresh: () {
-        if (selectedPolygonIndex != null) {
-          polygons[selectedPolygonIndex!].vertices = polyEditor!.points;
-          selectedPolygon = polygons[selectedPolygonIndex!];
-          selectedPolygonNotifier.value = selectedPolygon;
-        }
-      },
-      addClosePathMarker: true, // Set to true for polygons
-    );
   }
 
   void selectPolygon(int index, {BuildContext? context}) async {
@@ -617,8 +617,8 @@ class PolygonManager with RouteAware {
     _isModalShowing = true;
     selectedPolygon = polygon;
     selectedPolygonNotifier.value = polygon;
-print("farmers");
-print(farmers);
+    print("farmers");
+    print(farmers);
     await PolygonModal.show(
       context: context,
       products: products,

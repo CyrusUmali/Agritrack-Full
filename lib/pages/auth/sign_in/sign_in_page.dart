@@ -154,8 +154,9 @@ class SignInWidget extends BaseWidget<SignInProvider> {
         GestureDetector(
           onTap: () async {
             // Replace with your actual APK download URL
-            const apkUrl = 'https://yourdomain.com/downloads/agritrack.apk';
-            
+            const apkUrl =
+                'https://agritrack-server.onrender.com/download/apk/app-release.apk';
+
             try {
               if (await canLaunchUrl(Uri.parse(apkUrl))) {
                 await launchUrl(
@@ -166,7 +167,8 @@ class SignInWidget extends BaseWidget<SignInProvider> {
                 // Show error message if URL can't be launched
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Unable to download app. Please try again later.'),
+                    content:
+                        Text('Unable to download app. Please try again later.'),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -174,7 +176,8 @@ class SignInWidget extends BaseWidget<SignInProvider> {
             } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Download failed. Please check your connection.'),
+                  content:
+                      Text('Download failed. Please check your connection.'),
                   backgroundColor: Colors.red,
                 ),
               );
@@ -184,7 +187,10 @@ class SignInWidget extends BaseWidget<SignInProvider> {
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [GlobalColors.primary, GlobalColors.primary.withOpacity(0.8)],
+                colors: [
+                  GlobalColors.primary,
+                  GlobalColors.primary.withOpacity(0.8)
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -231,7 +237,8 @@ class SignInWidget extends BaseWidget<SignInProvider> {
         TextButton(
           onPressed: () {
             // This will be handled by the toggle button, but adding for convenience
-            final viewModel = Provider.of<SignInProvider>(context, listen: false);
+            final viewModel =
+                Provider.of<SignInProvider>(context, listen: false);
             viewModel.toggleDownloadSection();
           },
           child: Text(
@@ -269,7 +276,7 @@ class SignInWidget extends BaseWidget<SignInProvider> {
               height: 22,
             ),
             controller: viewModel.emailController,
-            showErrorText: false,
+            showErrorText: true,
             errorBorderColor: Colors.red,
           ),
 
@@ -300,7 +307,7 @@ class SignInWidget extends BaseWidget<SignInProvider> {
                 viewModel.signIn(context);
               }
             },
-            showErrorText: false,
+            showErrorText: true,
             errorBorderColor: Colors.red,
           ),
 

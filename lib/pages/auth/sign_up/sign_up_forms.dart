@@ -38,31 +38,30 @@ class SignUpForms {
       child: Column(
         children: [
           OutBorderTextFormField(
-  labelText: "Email",
-  hintText: "Enter your email",
-  keyboardType: TextInputType.emailAddress,
-  validator: (value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Email is required';
-    }
+            labelText: "Email",
+            hintText: "Enter your email",
+            keyboardType: TextInputType.emailAddress,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Email is required';
+              }
 
-    final email = value.trim();
+              final email = value.trim();
 
-    // Practical regex for common email formats
-    final emailRegex = RegExp(
-      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$',
-    );
+              // Practical regex for common email formats
+              final emailRegex = RegExp(
+                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$',
+              );
 
-    if (!emailRegex.hasMatch(email)) {
-      return 'Enter a valid email address';
-    }
+              if (!emailRegex.hasMatch(email)) {
+                return 'Enter a valid email address';
+              }
 
-    return null;
-  },
-  maxLength: 100,
-  controller: viewModel.emailController,
-)
-,
+              return null;
+            },
+            maxLength: 100,
+            controller: viewModel.emailController,
+          ),
           const SizedBox(height: 16),
           OutBorderTextFormField(
             obscureText: true,
@@ -512,7 +511,6 @@ class SignUpForms {
     );
   }
 
-  // FIXED: Improved autocomplete that handles focus better
   static Widget _buildDropdownAutocomplete({
     required String label,
     required String hintText,
@@ -528,8 +526,8 @@ class SignUpForms {
         Text(
           label,
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+            fontSize: 12, // Changed to 12
+            fontWeight: FontWeight.w100, // Smallest weight
             color: Colors.black87,
           ),
         ),
@@ -566,12 +564,31 @@ class SignUpForms {
             return TextFormField(
               controller: fieldTextEditingController,
               focusNode: fieldFocusNode,
+              style: TextStyle(
+                fontSize: 12, // Changed to 12
+                fontWeight: FontWeight.w100, // Smallest weight
+              ),
               decoration: InputDecoration(
                 hintText: hintText,
+                hintStyle: TextStyle(
+                  fontSize: 12, // Changed to 12
+                  fontWeight: FontWeight.w100, // Smallest weight
+                ),
                 border: OutlineInputBorder(),
                 contentPadding:
                     EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 suffixIcon: Icon(Icons.arrow_drop_down),
+                errorStyle: TextStyle(
+                  fontSize: 12, // Changed to 12
+                  fontWeight: FontWeight.w100, // Smallest weight
+                  color: Colors.red,
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red),
+                ),
               ),
               validator: validator,
               onChanged: (value) {
@@ -612,6 +629,10 @@ class SignUpForms {
                             padding: const EdgeInsets.all(16.0),
                             child: Text(
                               option,
+                              style: TextStyle(
+                                fontSize: 12, // Changed to 12
+                                fontWeight: FontWeight.w100, // Smallest weight
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -639,8 +660,20 @@ class SignUpForms {
       value: value,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        border: const OutlineInputBorder(),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        errorStyle: const TextStyle(
+          fontSize: 12, // Changed to 12
+          fontWeight: FontWeight.w100, // Smallest weight
+          color: Colors.red,
+        ),
+        errorBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.red),
+        ),
+        focusedErrorBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.red),
+        ),
       ),
       items: items.map((String value) {
         return DropdownMenuItem<String>(

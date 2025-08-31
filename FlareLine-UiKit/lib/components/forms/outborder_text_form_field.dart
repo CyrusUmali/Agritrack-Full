@@ -63,78 +63,74 @@ class OutBorderTextFormField extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
-        SizedBox(
-          width: double.maxFinite,
-          height: maxLines == 1 ? 50 : null,
-          child: Stack(
-            children: [
-              Align(
-                alignment: Alignment.center,
-                child: TextFormField(
-                  keyboardType: keyboardType,
-                  obscureText: obscureText ?? false,
-                  enabled: enabled,
-                  initialValue: initialValue,
-                  controller: controller,
-                  maxLines: maxLines,
-                  validator: validator,
-                  textInputAction: textInputAction,
-                  onFieldSubmitted: onFieldSubmitted,
-                  style: textStyle,
-                  decoration: InputDecoration(
-                    prefixIcon: icon,
-                    prefixIconConstraints: const BoxConstraints(
-                      maxWidth: 35,
-                      maxHeight: 35,
-                    ),
-                    border: const OutlineInputBorder(
-                      borderSide:
-                          BorderSide(color: FlarelineColors.border, width: 1),
-                    ),
-                    enabledBorder: const OutlineInputBorder(
-                      borderSide:
-                          BorderSide(color: FlarelineColors.border, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: (focusColor ?? FlarelineColors.primary),
-                        width: 1,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    hintText: hintText,
-                    hintStyle: hintStyle,
-                    // This is the key fix:
-                    errorStyle: showErrorText
-                        ? errorTextStyle ??
-                            TextStyle(
-                              color: errorBorderColor,
-                              fontSize: 9,
-                            )
-                        : TextStyle(height: 0, fontSize: 0),
-                    errorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: errorBorderColor),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: errorBorderColor),
-                    ),
-                  ),
-                ),
-              ),
-              if (suffixWidget != null)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 10),
+        TextFormField(
+          keyboardType: keyboardType,
+          obscureText: obscureText ?? false,
+          enabled: enabled,
+          initialValue: initialValue,
+          controller: controller,
+          maxLines: maxLines,
+          validator: validator,
+          textInputAction: textInputAction,
+          onFieldSubmitted: onFieldSubmitted,
+          style: textStyle,
+          maxLength: maxLength,
+          decoration: InputDecoration(
+            counterStyle: TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+            prefixIcon: icon,
+            prefixIconConstraints: const BoxConstraints(
+              maxWidth: 35,
+              maxHeight: 35,
+            ),
+            suffixIcon: suffixWidget != null
+                ? Padding(
+                    padding: const EdgeInsets.all(12.0),
                     child: suffixWidget,
-                  ),
-                )
-            ],
+                  )
+                : null,
+            suffixIconConstraints: const BoxConstraints(
+              maxHeight: 24,
+              maxWidth: 24,
+            ),
+            border: const OutlineInputBorder(
+              borderSide: BorderSide(color: FlarelineColors.border, width: 1),
+            ),
+            enabledBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: FlarelineColors.border, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: (focusColor ?? FlarelineColors.primary),
+                width: 1,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: errorBorderColor, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: errorBorderColor, width: 1),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 16, // Slightly more vertical padding
+            ),
+            hintText: hintText,
+            hintStyle: hintStyle,
+            // Use the provided errorTextStyle or create a default one
+            errorStyle: errorTextStyle ??
+                TextStyle(
+                  color: errorBorderColor,
+                  fontSize: showErrorText ? 12 : 0,
+                  fontWeight: FontWeight.w100,
+                  height: showErrorText ? 1.2 : 0,
+                ),
+            errorMaxLines: 2,
+            isDense: true,
           ),
-        )
+        ),
       ],
     );
   }

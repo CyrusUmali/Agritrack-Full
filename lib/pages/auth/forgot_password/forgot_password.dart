@@ -146,7 +146,7 @@ class ForgotPasswordWidget extends BaseWidget<ForgotPasswordProvider> {
               height: 22,
             ),
             controller: viewModel.emailController,
-            showErrorText: false,
+            showErrorText: true,
             errorBorderColor: Colors.red,
           ),
           const SizedBox(height: 30),
@@ -211,7 +211,7 @@ class ForgotPasswordWidget extends BaseWidget<ForgotPasswordProvider> {
               return null;
             },
             controller: viewModel.otpController,
-            showErrorText: false,
+            showErrorText: true,
             errorBorderColor: Colors.red,
           ),
           const SizedBox(height: 30),
@@ -286,7 +286,7 @@ class ForgotPasswordWidget extends BaseWidget<ForgotPasswordProvider> {
               return null;
             },
             controller: viewModel.newPasswordController,
-            showErrorText: false,
+            showErrorText: true,
             errorBorderColor: Colors.red,
           ),
           const SizedBox(height: 20),
@@ -304,7 +304,7 @@ class ForgotPasswordWidget extends BaseWidget<ForgotPasswordProvider> {
               return null;
             },
             controller: viewModel.confirmPasswordController,
-            showErrorText: false,
+            showErrorText: true,
             errorBorderColor: Colors.red,
           ),
           const SizedBox(height: 30),

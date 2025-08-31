@@ -23,7 +23,7 @@ class DateRangePickerWidget extends StatelessWidget {
             ConstrainedBox(
               constraints: BoxConstraints(
                 minWidth: width ?? 150,
-                maxHeight: 35,
+                maxHeight: 40,
               ),
               child: _buildDateRangeButton(context),
             ),
@@ -34,11 +34,12 @@ class DateRangePickerWidget extends StatelessWidget {
   }
 
   Widget _buildDateRangeButton(BuildContext context) {
-    final dateFormat = DateFormat('MMM yyyy'); // Changed to show month/year only
+    final dateFormat = DateFormat('MMM yyyy');
     final isRangeSelected = dateRange.start != dateRange.end;
 
     return SizedBox(
       height: 48,
+      width: width ?? 150, // Use the provided width or default to 150
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.all(12),
@@ -54,9 +55,11 @@ class DateRangePickerWidget extends StatelessWidget {
         ),
         onPressed: () async => await _showDatePicker(context),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment
+              .spaceBetween, // This distributes space between children
           children: [
-            Flexible(
+            Expanded(
+              // This makes the text take available space but not push the icon
               child: Text(
                 isRangeSelected
                     ? '${dateFormat.format(dateRange.start)} - ${dateFormat.format(dateRange.end)}'
@@ -69,7 +72,6 @@ class DateRangePickerWidget extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
             Icon(
               isRangeSelected ? Icons.close : Icons.calendar_today,
               size: 20,
@@ -81,11 +83,12 @@ class DateRangePickerWidget extends StatelessWidget {
     );
   }
 
+  // ... rest of the code remains the same
   Future<void> _showDatePicker(BuildContext context) async {
     final now = DateTime.now();
     final currentYear = now.year;
     final years = List.generate(11, (index) => currentYear - 5 + index);
-    
+
     // Set default values to current year, January to December
     int selectedStartYear = currentYear;
     int selectedEndYear = currentYear;
@@ -126,7 +129,7 @@ class DateRangePickerWidget extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Start Year/Month Selection
                     _buildYearMonthSelector(
                       context,
@@ -137,8 +140,9 @@ class DateRangePickerWidget extends StatelessWidget {
                       onYearChanged: (year) {
                         setState(() => selectedStartYear = year);
                         // Ensure end date is not before start date
-                        if (selectedStartYear > selectedEndYear || 
-                            (selectedStartYear == selectedEndYear && selectedStartMonth > selectedEndMonth)) {
+                        if (selectedStartYear > selectedEndYear ||
+                            (selectedStartYear == selectedEndYear &&
+                                selectedStartMonth > selectedEndMonth)) {
                           selectedEndYear = selectedStartYear;
                           selectedEndMonth = selectedStartMonth;
                         }
@@ -146,16 +150,17 @@ class DateRangePickerWidget extends StatelessWidget {
                       onMonthChanged: (month) {
                         setState(() => selectedStartMonth = month);
                         // Ensure end date is not before start date
-                        if (selectedStartYear > selectedEndYear || 
-                            (selectedStartYear == selectedEndYear && selectedStartMonth > selectedEndMonth)) {
+                        if (selectedStartYear > selectedEndYear ||
+                            (selectedStartYear == selectedEndYear &&
+                                selectedStartMonth > selectedEndMonth)) {
                           selectedEndYear = selectedStartYear;
                           selectedEndMonth = selectedStartMonth;
                         }
                       },
                     ),
-                    
+
                     const SizedBox(height: 20),
-                    
+
                     // End Year/Month Selection
                     _buildYearMonthSelector(
                       context,
@@ -166,8 +171,9 @@ class DateRangePickerWidget extends StatelessWidget {
                       onYearChanged: (year) {
                         setState(() => selectedEndYear = year);
                         // Ensure end date is not before start date
-                        if (selectedStartYear > selectedEndYear || 
-                            (selectedStartYear == selectedEndYear && selectedStartMonth > selectedEndMonth)) {
+                        if (selectedStartYear > selectedEndYear ||
+                            (selectedStartYear == selectedEndYear &&
+                                selectedStartMonth > selectedEndMonth)) {
                           selectedStartYear = selectedEndYear;
                           selectedStartMonth = selectedEndMonth;
                         }
@@ -175,16 +181,17 @@ class DateRangePickerWidget extends StatelessWidget {
                       onMonthChanged: (month) {
                         setState(() => selectedEndMonth = month);
                         // Ensure end date is not before start date
-                        if (selectedStartYear > selectedEndYear || 
-                            (selectedStartYear == selectedEndYear && selectedStartMonth > selectedEndMonth)) {
+                        if (selectedStartYear > selectedEndYear ||
+                            (selectedStartYear == selectedEndYear &&
+                                selectedStartMonth > selectedEndMonth)) {
                           selectedStartYear = selectedEndYear;
                           selectedStartMonth = selectedEndMonth;
                         }
                       },
                     ),
-                    
+
                     const SizedBox(height: 30),
-                    
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -193,7 +200,8 @@ class DateRangePickerWidget extends StatelessWidget {
                           child: Text(
                             'Cancel',
                             style: TextStyle(
-                              color: Theme.of(context).textTheme.bodyMedium?.color,
+                              color:
+                                  Theme.of(context).textTheme.bodyMedium?.color,
                             ),
                           ),
                         ),
@@ -208,7 +216,8 @@ class DateRangePickerWidget extends StatelessWidget {
                           child: Text(
                             'Clear',
                             style: TextStyle(
-                              color: Theme.of(context).textTheme.bodyMedium?.color,
+                              color:
+                                  Theme.of(context).textTheme.bodyMedium?.color,
                             ),
                           ),
                         ),
@@ -218,15 +227,20 @@ class DateRangePickerWidget extends StatelessWidget {
                             backgroundColor: Theme.of(context).primaryColor,
                           ),
                           onPressed: () {
-                            final startDate = DateTime(selectedStartYear, selectedStartMonth, 1);
-                            final endDate = DateTime(selectedEndYear, selectedEndMonth + 1, 0); // Last day of the month
-                            
+                            final startDate = DateTime(
+                                selectedStartYear, selectedStartMonth, 1);
+                            final endDate = DateTime(
+                                selectedEndYear,
+                                selectedEndMonth + 1,
+                                0); // Last day of the month
+
                             Navigator.of(context).pop(DateTimeRange(
                               start: startDate,
                               end: endDate,
                             ));
                           },
-                          child: const Text('Apply',
+                          child: const Text(
+                            'Apply',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,

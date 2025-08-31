@@ -1,5 +1,4 @@
-  
-import 'package:flareline/pages/products/profile_widgets/product_header_ui_components';
+import 'package:flareline/pages/products/profile_widgets/prod_ui_components.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,8 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter/foundation.dart'; 
- 
+import 'package:flutter/foundation.dart';
 
 class ProductHeader extends StatefulWidget {
   final Product item;
@@ -270,34 +268,32 @@ class _ProductHeaderState extends State<ProductHeader>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ProductHeaderUI.buildHeader(
-                    theme, 
-                    colorScheme, 
-                    _isEditing
-                  ),
+                  ProductHeaderUI.buildHeader(theme, colorScheme, _isEditing),
                   const SizedBox(height: 24),
                   ProductHeaderUI.buildContent(
-                    context,
-                    theme, 
-                    colorScheme, 
-                    widget.item,
-                    _isEditing,
-                    _isUploading,
-                    _newImageUrl,
-                    _nameController,
-                    _descriptionController,
-                    _selectedSector,
-                    _pickAndUploadImage,
-                    _getSectorIcon
-                  ),
+                      context,
+                      theme,
+                      colorScheme,
+                      widget.item,
+                      _isEditing,
+                      _isUploading,
+                      _newImageUrl,
+                      _nameController,
+                      _descriptionController,
+                      _selectedSector,
+                      _pickAndUploadImage,
+                      _getSectorIcon),
                   const SizedBox(height: 24),
                   if (!isFarmer)
                     ProductHeaderUI.buildEditControls(
                       colorScheme,
+                      theme, // Add theme parameter
+                      widget.item, // Add item parameter
                       _isEditing,
                       _isLoading,
                       _toggleEditing,
-                      _submitChanges
+                      _submitChanges,
+                      _getSectorIcon, // Add getSectorIcon parameter
                     ),
                 ],
               ),

@@ -139,9 +139,7 @@ class _SectorLineChartState extends State<SectorLineChart> {
     );
   }
 
-
-
-Future<void> _selectYearRange(BuildContext context) async {
+  Future<void> _selectYearRange(BuildContext context) async {
     final List<int>? picked = await showDialog<List<int>>(
       context: context,
       builder: (BuildContext context) {
@@ -154,10 +152,11 @@ Future<void> _selectYearRange(BuildContext context) async {
               data: Theme.of(context).copyWith(
                 colorScheme: ColorScheme.light(
                   onPrimary: Colors.white, // Selected year text color
-                  primary: Theme.of(context).colorScheme.primary, // Selected year background color
+                  primary: Theme.of(context)
+                      .colorScheme
+                      .primary, // Selected year background color
                   // onSurface: Colors.white, // Unselected years text color
                 ),
-            
               ),
               child: AlertDialog(
                 title: const Text('Select Year Range'),
@@ -168,7 +167,9 @@ Future<void> _selectYearRange(BuildContext context) async {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('From Year:',  ),
+                      const Text(
+                        'From Year:',
+                      ),
                       SizedBox(
                         height: 150,
                         child: YearPicker(
@@ -186,7 +187,9 @@ Future<void> _selectYearRange(BuildContext context) async {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      const Text('To Year:',  ),
+                      const Text(
+                        'To Year:',
+                      ),
                       SizedBox(
                         height: 150,
                         child: YearPicker(
@@ -230,10 +233,6 @@ Future<void> _selectYearRange(BuildContext context) async {
     }
   }
 
-
-
-
-
   void _handleChartTap(TapDownDetails details) {
     final filteredData = _getFilteredData();
     _annotationManager.handleChartTap(details, _chartKey, selectedFromYear,
@@ -254,7 +253,7 @@ Future<void> _selectYearRange(BuildContext context) async {
     final scrollBreakpoint = 600.0;
     final screenWidth = MediaQuery.of(context).size.width;
     final needsScrolling = screenWidth < scrollBreakpoint;
-    final useVerticalHeader = screenWidth < 450;
+    final useVerticalHeader = screenWidth < 550;
     final filteredData = _getFilteredData();
 
     return CommonCard(
@@ -365,97 +364,89 @@ Future<void> _selectYearRange(BuildContext context) async {
     );
   }
 
+  List<SectorData> _getFilteredData() {
+    if (selectedSector == 'All') {
+      final Map<String, List<Map<String, dynamic>>> sectorGroupedData = {};
+      final Map<String, Color> sectorColors = {};
 
-List<SectorData> _getFilteredData() {
-  if (selectedSector == 'All') {
-    final Map<String, List<Map<String, dynamic>>> sectorGroupedData = {};
-    final Map<String, Color> sectorColors = {};
+      sectorData.forEach((sectorKey, sectorItems) {
+        for (final item in sectorItems) {
+          for (final point in item.data) {
+            final year = point['x'];
+            final value = point['y'].toDouble();
 
-    sectorData.forEach((sectorKey, sectorItems) {
-      for (final item in sectorItems) {
-        for (final point in item.data) {
-          final year = point['x'];
-          final value = point['y'].toDouble();
+            final yearInt = int.parse(year);
+            if (yearInt >= selectedFromYear && yearInt <= selectedToYear) {
+              if (!sectorGroupedData.containsKey(sectorKey)) {
+                sectorGroupedData[sectorKey] = [];
+                sectorColors[sectorKey] = item.color;
+              }
 
-          final yearInt = int.parse(year);
-          if (yearInt >= selectedFromYear && yearInt <= selectedToYear) {
-            if (!sectorGroupedData.containsKey(sectorKey)) {
-              sectorGroupedData[sectorKey] = [];
-              sectorColors[sectorKey] = item.color;
-            }
+              final existingIndex = sectorGroupedData[sectorKey]!
+                  .indexWhere((e) => e['x'] == year);
 
-            final existingIndex = sectorGroupedData[sectorKey]!
-                .indexWhere((e) => e['x'] == year);
-
-            if (existingIndex >= 0) {
-              sectorGroupedData[sectorKey]![existingIndex]['y'] += value;
-            } else {
-              sectorGroupedData[sectorKey]!.add({
-                'x': year,
-                'y': value,
-              });
+              if (existingIndex >= 0) {
+                sectorGroupedData[sectorKey]![existingIndex]['y'] += value;
+              } else {
+                sectorGroupedData[sectorKey]!.add({
+                  'x': year,
+                  'y': value,
+                });
+              }
             }
           }
         }
-      }
-      
-      // Sort the years for each sector
-      if (sectorGroupedData.containsKey(sectorKey)) {
-        sectorGroupedData[sectorKey]!.sort((a, b) => 
-            int.parse(a['x']).compareTo(int.parse(b['x'])));
-      }
-    });
 
-    return sectorGroupedData.entries
-        .map((entry) {
-          return SectorData(
-            name: entry.key,
-            color: sectorColors[entry.key] ?? Colors.grey,
-            data: entry.value,
-            annotations: null,
-          );
-        })
-        .where((sector) => sector.data.isNotEmpty)
-        .toList();
-  } else {
-    if (!_sectorProductSelections.containsKey(selectedSector)) {
-      final sectorProducts = sectorData[selectedSector] ?? [];
-      _sectorProductSelections[selectedSector] =
-          sectorProducts.take(8).map((product) => product.name).toList();
+        // Sort the years for each sector
+        if (sectorGroupedData.containsKey(sectorKey)) {
+          sectorGroupedData[sectorKey]!
+              .sort((a, b) => int.parse(a['x']).compareTo(int.parse(b['x'])));
+        }
+      });
+
+      return sectorGroupedData.entries
+          .map((entry) {
+            return SectorData(
+              name: entry.key,
+              color: sectorColors[entry.key] ?? Colors.grey,
+              data: entry.value,
+              annotations: null,
+            );
+          })
+          .where((sector) => sector.data.isNotEmpty)
+          .toList();
+    } else {
+      if (!_sectorProductSelections.containsKey(selectedSector)) {
+        final sectorProducts = sectorData[selectedSector] ?? [];
+        _sectorProductSelections[selectedSector] =
+            sectorProducts.take(8).map((product) => product.name).toList();
+      }
+
+      final currentSelections = _sectorProductSelections[selectedSector] ?? [];
+
+      return (sectorData[selectedSector] ?? [])
+          .where((sector) =>
+              currentSelections.isEmpty ||
+              currentSelections.contains(sector.name))
+          .map((sector) {
+            final filteredSeriesData = sector.data.where((point) {
+              final year = int.parse(point['x']);
+              return year >= selectedFromYear && year <= selectedToYear;
+            }).toList()
+              ..sort((a, b) =>
+                  int.parse(a['x']).compareTo(int.parse(b['x']))); // Sort here
+
+            return SectorData(
+              name: sector.name,
+              color: sector.color,
+              data: filteredSeriesData,
+              annotations: sector.annotations,
+            );
+          })
+          .where((sector) => sector.data.isNotEmpty)
+          .toList();
     }
-
-    final currentSelections = _sectorProductSelections[selectedSector] ?? [];
-
-    return (sectorData[selectedSector] ?? [])
-        .where((sector) =>
-            currentSelections.isEmpty ||
-            currentSelections.contains(sector.name))
-        .map((sector) {
-          final filteredSeriesData = sector.data
-              .where((point) {
-                final year = int.parse(point['x']);
-                return year >= selectedFromYear && year <= selectedToYear;
-              })
-              .toList()
-              ..sort((a, b) => int.parse(a['x']).compareTo(int.parse(b['x']))); // Sort here
-
-          return SectorData(
-            name: sector.name,
-            color: sector.color,
-            data: filteredSeriesData,
-            annotations: sector.annotations,
-          );
-        })
-        .where((sector) => sector.data.isNotEmpty)
-        .toList();
   }
-}
-
-
-
-
-
-
 
   Widget _buildSelectProductsButton() {
     return InkWell(
@@ -545,7 +536,4 @@ List<SectorData> _getFilteredData() {
       ),
     );
   }
-
-
-
 }

@@ -17,10 +17,9 @@ import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:toastification/toastification.dart';
 
 class AssocsWidget extends StatelessWidget {
-    final int selectedYear; // Add selectedYear parameter
+  final int selectedYear; // Add selectedYear parameter
   const AssocsWidget({super.key, required this.selectedYear});
 
- 
   @override
   Widget build(BuildContext context) {
     return ScreenTypeLayout.builder(
@@ -47,10 +46,7 @@ class AssocsWidget extends StatelessWidget {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is AssocsError) {
-     ToastHelper.showErrorToast(
-       state.message,
-        context, maxLines: 3
-      );
+          ToastHelper.showErrorToast(state.message, context, maxLines: 3);
         }
       },
       child: SizedBox(
@@ -58,7 +54,7 @@ class AssocsWidget extends StatelessWidget {
         child: Column(
           children: [
             AssociationFilterWidget(),
-            const SizedBox(height: 16), 
+            const SizedBox(height: 16),
             Expanded(
               child: BlocBuilder<AssocsBloc, AssocsState>(
                 builder: (context, state) {
@@ -68,7 +64,9 @@ class AssocsWidget extends StatelessWidget {
                     return NetworkErrorWidget(
                       error: state.message,
                       onRetry: () {
- context.read<AssocsBloc>().add(LoadAssocs(year: selectedYear));
+                        context
+                            .read<AssocsBloc>()
+                            .add(LoadAssocs(year: selectedYear));
                       },
                     );
                   } else if (state is AssocsLoaded) {
@@ -80,7 +78,8 @@ class AssocsWidget extends StatelessWidget {
                         Expanded(
                           flex: 2,
                           child: DataTableWidget(
-                            key: ValueKey('assocs_table_${state.associations.length}_$selectedYear'), // Include year in key
+                            key: ValueKey(
+                                'assocs_table_${state.associations.length}_$selectedYear'), // Include year in key
                             associations: state.associations,
                             selectedYear: selectedYear,
                           ),
@@ -112,10 +111,7 @@ class AssocsWidget extends StatelessWidget {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is AssocsError) {
-      ToastHelper.showErrorToast(
-       state.message,
-        context, maxLines: 3
-      );
+          ToastHelper.showErrorToast(state.message, context, maxLines: 3);
         }
       },
       child: Column(
@@ -132,7 +128,9 @@ class AssocsWidget extends StatelessWidget {
                   return NetworkErrorWidget(
                     error: state.message,
                     onRetry: () {
-                      context.read<AssocsBloc>().add(LoadAssocs(year: selectedYear));
+                      context
+                          .read<AssocsBloc>()
+                          .add(LoadAssocs(year: selectedYear));
                     },
                   );
                 } else if (state is AssocsLoaded) {
@@ -140,9 +138,10 @@ class AssocsWidget extends StatelessWidget {
                     return _buildNoResultsWidget();
                   }
                   return DataTableWidget(
- key: ValueKey('assocs_table_${state.associations.length}_$selectedYear'), // Include year in key
-                            associations: state.associations,
-                            selectedYear: selectedYear, // Pass year to table
+                    key: ValueKey(
+                        'assocs_table_${state.associations.length}_$selectedYear'), // Include year in key
+                    associations: state.associations,
+                    selectedYear: selectedYear, // Pass year to table
                   );
                 }
                 return _buildNoResultsWidget();
@@ -181,21 +180,19 @@ class AssocsWidget extends StatelessWidget {
 
 class DataTableWidget extends TableWidget<AssocsViewModel> {
   final List<Association> associations;
-    final int selectedYear; // Add selectedYear
+  final int selectedYear; // Add selectedYear
 
   DataTableWidget({
     required this.associations,
-     required this.selectedYear, // Make it required
+    required this.selectedYear, // Make it required
     Key? key,
   }) : super(key: key);
 
   @override
   AssocsViewModel viewModelBuilder(BuildContext context) {
-   return AssocsViewModel(
-      context, 
-      associations, 
-      selectedYear // Pass to ViewModel
-    );
+    return AssocsViewModel(
+        context, associations, selectedYear // Pass to ViewModel
+        );
   }
 
   @override
@@ -233,76 +230,73 @@ class DataTableWidget extends TableWidget<AssocsViewModel> {
   ) {
     final association = viewModel.associations.firstWhere(
       (a) => a.id.toString() == columnData.id,
-    );   
+    );
 
-
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final isAdmin = userProvider.user?.role == 'admin'; 
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isAdmin = userProvider.user?.role == 'admin';
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-
-
-          if (isAdmin )
-        IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () {
-            ModalDialog.show(
-              context: context,
-              title: 'Delete Association',
-              showTitle: true,
-              showTitleDivider: true,
-              modalType: ModalType.medium,
-              onCancelTap: () => Navigator.of(context).pop(),
-              onSaveTap: () {
-                context.read<AssocsBloc>().add(DeleteAssoc(association.id));
-                Navigator.of(context).pop();
-              },
-              child: Center(
-                child: Text(
-                  'Are you sure you want to delete ${association.name}?',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              footer: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20.0,
-                  vertical: 10.0,
-                ),
+        if (isAdmin)
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () {
+              ModalDialog.show(
+                context: context,
+                title: 'Delete Association',
+                showTitle: true,
+                showTitleDivider: true,
+                modalType: ModalType.medium,
+                onCancelTap: () => Navigator.of(context).pop(),
+                onSaveTap: () {
+                  context.read<AssocsBloc>().add(DeleteAssoc(association.id));
+                  Navigator.of(context).pop();
+                },
                 child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: ButtonWidget(
-                          btnText: 'Cancel',
-                          textColor: FlarelineColors.darkBlackText,
-                          onTap: () => Navigator.of(context).pop(),
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      SizedBox(
-                        width: 120,
-                        child: ButtonWidget(
-                          btnText: 'Delete',
-                          onTap: () {
-                            context
-                                .read<AssocsBloc>()
-                                .add(DeleteAssoc(association.id));
-                            Navigator.of(context).pop();
-                          },
-                          type: ButtonType.primary.type,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'Are you sure you want to delete ${association.name}?',
+                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-            );
-          },
-        ),
+                footer: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 10.0,
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          child: ButtonWidget(
+                            btnText: 'Cancel',
+                            textColor: FlarelineColors.darkBlackText,
+                            onTap: () => Navigator.of(context).pop(),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        SizedBox(
+                          width: 120,
+                          child: ButtonWidget(
+                            btnText: 'Delete',
+                            onTap: () {
+                              context
+                                  .read<AssocsBloc>()
+                                  .add(DeleteAssoc(association.id));
+                              Navigator.of(context).pop();
+                            },
+                            type: ButtonType.primary.type,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         IconButton(
           icon: const Icon(Icons.arrow_forward),
           onPressed: () {
@@ -365,7 +359,7 @@ class DataTableWidget extends TableWidget<AssocsViewModel> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 800,
+        width: 1000,
         child: super.build(context),
       ),
     );
@@ -373,23 +367,24 @@ class DataTableWidget extends TableWidget<AssocsViewModel> {
 }
 
 class AssocsViewModel extends BaseTableProvider {
-  final List<Association> associations;  final int selectedYear;
+  final List<Association> associations;
+  final int selectedYear;
 
   AssocsViewModel(
     super.context,
-    this.associations, this.selectedYear, // Receive year
+    this.associations,
+    this.selectedYear, // Receive year
   );
 
   @override
   Future loadData(BuildContext context) async {
     const headers = [
       "Name",
-         "Land Area",
-         "Area Harvested",
+      "Land Area",
+      "Area Harvested",
       "Members",
-       "Farms",
-       "Yield Volume",
-   
+      "Farms",
+      "Yield Volume",
       "Production",
       "Description",
       "Action"
@@ -400,7 +395,7 @@ class AssocsViewModel extends BaseTableProvider {
     for (final association in associations) {
       List<TableDataRowsTableDataRows> row = [];
 
-      // Name 
+      // Name
       var nameCell = TableDataRowsTableDataRows()
         ..text = association.name
         ..dataType = CellDataType.TEXT.type
@@ -408,8 +403,7 @@ class AssocsViewModel extends BaseTableProvider {
         ..id = association.id.toString();
       row.add(nameCell);
 
-
-        var areaCell = TableDataRowsTableDataRows()
+      var areaCell = TableDataRowsTableDataRows()
         // ..text = yieldRecord.hectare as String?
         ..text = '${association.hectare} ha'
         ..dataType = CellDataType.TEXT.type
@@ -417,8 +411,7 @@ class AssocsViewModel extends BaseTableProvider {
         ..id = association.id.toString();
       row.add(areaCell);
 
-      
-        var areaHavestedCell = TableDataRowsTableDataRows()
+      var areaHavestedCell = TableDataRowsTableDataRows()
         // ..text = yieldRecord.hectare as String?
         ..text = '${association.areaHarvested} ha'
         ..dataType = CellDataType.TEXT.type
@@ -433,26 +426,21 @@ class AssocsViewModel extends BaseTableProvider {
         ..id = association.id.toString();
       row.add(totalMembersCell);
 
-        var totalFarmsCell = TableDataRowsTableDataRows()
-        ..text = association.totalFarms.toString() ?? '0' 
+      var totalFarmsCell = TableDataRowsTableDataRows()
+        ..text = association.totalFarms.toString() ?? '0'
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Farms'
         ..id = association.id.toString();
       row.add(totalFarmsCell);
 
-
-        var totalVolumeCell = TableDataRowsTableDataRows()
-        ..text = association.volume.toString() ?? '0' 
+      var totalVolumeCell = TableDataRowsTableDataRows()
+        ..text = association.volume.toString() ?? '0'
         ..dataType = CellDataType.TEXT.type
         ..columnName = ' Yield Volume'
         ..id = association.id.toString();
       row.add(totalVolumeCell);
 
-    
-
-
-       var productionCell = TableDataRowsTableDataRows()
-       
+      var productionCell = TableDataRowsTableDataRows()
         ..text = '${association.production} mt'
         ..dataType = CellDataType.TEXT.type
         ..columnName = 'Production'

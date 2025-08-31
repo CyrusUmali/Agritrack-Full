@@ -13,8 +13,8 @@ import 'package:flareline/pages/layout.dart';
 import 'package:flareline/pages/products/profile_widgets/product_header.dart';
 import 'package:flareline/pages/products/profile_widgets/farms_table.dart';
 import 'package:flareline/pages/products/profile_widgets/yield_history.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; 
-import 'package:provider/provider.dart'; 
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 class ProductProfile extends LayoutWidget {
   final Product product;
@@ -82,7 +82,8 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
     'yields': [],
   };
   List<Farm> _farms = [];
-  int _selectedViewIndex = 0; // 0 for yield history, 1 for farms table, 2 for map
+  int _selectedViewIndex =
+      0; // 0 for yield history, 1 for farms table, 2 for map
 
   @override
   void initState() {
@@ -93,66 +94,61 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
     transformedYieldData['name'] = _currentProduct.name;
   }
 
+  Map<String, dynamic> transformYields(List<Yield> yields) {
+    final acceptedYields =
+        yields.where((yield) => yield.status == 'Accepted').toList();
+    final yieldsByYear = <String, List<Yield>>{};
 
+    for (final yield in acceptedYields) {
+      final year = yield.harvestDate?.year.toString() ?? 'Unknown';
+      yieldsByYear.putIfAbsent(year, () => []).add(yield);
+    }
 
-Map<String, dynamic> transformYields(List<Yield> yields) {
-  final acceptedYields =
-      yields.where((yield) => yield.status == 'Accepted').toList();
-  final yieldsByYear = <String, List<Yield>>{};
+    final transformedYields = <Map<String, dynamic>>[];
 
-  for (final yield in acceptedYields) {
-    final year = yield.harvestDate?.year.toString() ?? 'Unknown';
-    yieldsByYear.putIfAbsent(year, () => []).add(yield);
+    yieldsByYear.forEach((year, yearYields) {
+      final monthlyVolume = List<num>.filled(12, 0);
+      final monthlyArea = List<num>.filled(12, 0);
+      final monthlyYieldPerHectare = List<num>.filled(12, 0);
+
+      for (final yield in yearYields) {
+        final month = yield.harvestDate?.month ?? 1;
+        final index = month - 1;
+
+        monthlyVolume[index] += yield.volume ?? 0;
+        monthlyArea[index] += yield.areaHarvested ?? 0;
+      }
+
+      // Now compute yield per hectare (t/ha) per month
+      for (int i = 0; i < 12; i++) {
+        if (monthlyArea[i] > 0) {
+          final yieldPerHaTons = (monthlyVolume[i] / monthlyArea[i]) / 1000;
+          monthlyYieldPerHectare[i] =
+              double.parse(yieldPerHaTons.toStringAsFixed(2));
+        }
+      }
+
+      transformedYields.add({
+        'year': year,
+        'monthlyVolume': monthlyVolume, // kg
+        'monthlyArea': monthlyArea, // hectares
+        'monthlyYieldPerHectare': monthlyYieldPerHectare, // t/ha
+        'monthlyMetricTons': monthlyVolume.map((v) => (v / 1000)).toList(),
+      });
+    });
+
+    return {
+      'name': _currentProduct.name,
+      'yields': transformedYields,
+      'units': {
+        'monthlyVolume': 'kg',
+        'monthlyArea': 'hectares',
+        'monthlyYieldPerHectare': 't/ha',
+        'monthlyMetricTons': 'metric tons'
+      }
+    };
   }
 
-  final transformedYields = <Map<String, dynamic>>[];
-
-  yieldsByYear.forEach((year, yearYields) {
-    final monthlyVolume = List<num>.filled(12, 0);
-    final monthlyArea = List<num>.filled(12, 0);
-    final monthlyYieldPerHectare = List<num>.filled(12, 0);
-
-    for (final yield in yearYields) {
-      final month = yield.harvestDate?.month ?? 1;
-      final index = month - 1;
-
-      monthlyVolume[index] += yield.volume ?? 0;
-      monthlyArea[index] += yield.areaHarvested ?? 0;
-    }
-
-    // Now compute yield per hectare (t/ha) per month
-    for (int i = 0; i < 12; i++) {
-      if (monthlyArea[i] > 0) {
-        final yieldPerHaTons = (monthlyVolume[i] / monthlyArea[i]) / 1000;
-        monthlyYieldPerHectare[i] =
-            double.parse(yieldPerHaTons.toStringAsFixed(2));
-      }
-    }
-
-    transformedYields.add({
-      'year': year,
-      'monthlyVolume': monthlyVolume, // kg
-      'monthlyArea': monthlyArea, // hectares
-      'monthlyYieldPerHectare': monthlyYieldPerHectare, // t/ha
-      'monthlyMetricTons':
-          monthlyVolume.map((v) => (v / 1000)).toList(),
-    });
-  });
-
-  return {
-    'name': _currentProduct.name,
-    'yields': transformedYields,
-    'units': {
-      'monthlyVolume': 'kg',
-      'monthlyArea': 'hectares',
-      'monthlyYieldPerHectare': 't/ha',
-      'monthlyMetricTons': 'metric tons'
-    }
-  };
-}
-
-  
-  
   Widget _buildViewToggle(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
@@ -241,11 +237,11 @@ Map<String, dynamic> transformYields(List<Yield> yields) {
               },
             ),
             const SizedBox(height: 16),
-            
+
             // Toggle button
             _buildViewToggle(context),
             const SizedBox(height: 16),
-            
+
             // Content based on selection
             if (_selectedViewIndex == 0) ...[
               BlocConsumer<YieldBloc, YieldState>(
@@ -262,10 +258,9 @@ Map<String, dynamic> transformYields(List<Yield> yields) {
                   if (state is YieldsLoading) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is YieldsLoaded) {
-                    return YieldHistory( 
-                      product: transformedYieldData, 
-                      isMobile: widget.isMobile
-                    );
+                    return YieldHistory(
+                        product: transformedYieldData,
+                        isMobile: widget.isMobile);
                   } else if (state is YieldsError) {
                     return Center(child: Text('Error: ${state.message}'));
                   }
@@ -277,18 +272,20 @@ Map<String, dynamic> transformYields(List<Yield> yields) {
                 listener: (context, state) {
                   if (state is FarmsLoaded) {
                     setState(() {
-                      _farms = state.farms.where((farm) => farm.volume != 0).toList();
+                      _farms = state.farms
+                          .where((farm) => farm.volume != 0)
+                          .toList();
                     });
                   }
                 },
-                builder: (context, state) { 
-                  if (state is FarmsLoading) { 
-                    return const Center(child: CircularProgressIndicator()); 
+                builder: (context, state) {
+                  if (state is FarmsLoading) {
+                    return const Center(child: CircularProgressIndicator());
                   } else if (state is FarmsLoaded) {
                     return FarmsTable(farms: _farms);
                   } else if (state is FarmsError) {
                     return Center(
-                      child: Text('Error loading farms: ${state.message}'));
+                        child: Text('Error loading farms: ${state.message}'));
                   }
                   return const SizedBox();
                 },
@@ -298,11 +295,13 @@ Map<String, dynamic> transformYields(List<Yield> yields) {
               Consumer<YearPickerProvider>(
                 builder: (context, yearProvider, child) {
                   return SizedBox(
-                    height: 700, 
-                    child: CommonCard( 
+                    height: 700,
+                    child: CommonCard(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints.expand(),
-                        child: MapChartWidget(selectedYear: yearProvider.selectedYear ,selectedProduct:widget.product.name),
+                        child: MapChartWidget(
+                            selectedYear: yearProvider.selectedYear,
+                            selectedProduct: widget.product.name),
                       ),
                     ),
                   );

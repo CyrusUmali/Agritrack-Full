@@ -57,8 +57,8 @@ class UserModel {
       farmerId: (json['farmerId'] as int?) ?? 0,
       authProvider: (json['authProvider'] as String?) ?? 'email',
       hasPassword: (json['hasPassword'] as bool?) ?? true,
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt'] as String) 
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
           : null, // Parse DateTime
     );
   }
@@ -85,7 +85,7 @@ class UserModel {
       'createdAt': createdAt?.toIso8601String(), // Convert to ISO string
     };
   }
- 
+
   @override
   List<Object?> get props => [
         id,
@@ -119,20 +119,17 @@ class UserModel {
       newPassword: map['newPassword'] ?? '',
       lname: map['lname'] ?? '',
       sector: map['sector'] ?? '',
-      phone: map['contact'] ?? '',
+      phone: map['phone'] ?? map['contact'] ?? '',
       farmerId: map['farmerId'] ?? 0,
       status: map['status'] ?? '',
       barangay: map['barangay'] ?? '',
       authProvider: map['authProvider'] ?? 'email',
       hasPassword: map['hasPassword'] ?? true,
-      createdAt: map['createdAt'] != null 
-          ? DateTime.parse(map['createdAt'] as String) 
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'] as String)
           : null, // Parse DateTime
     );
   }
-
-
-
 
 // Add the copyWith method
   UserModel copyWith({
@@ -176,10 +173,6 @@ class UserModel {
       createdAt: createdAt ?? this.createdAt,
     );
   }
-
-
-
-
 
   Map<String, dynamic> toMap() {
     return {
