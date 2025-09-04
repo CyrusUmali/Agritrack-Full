@@ -13,10 +13,15 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class SignInWidget extends BaseWidget<SignInProvider> {
+  // Move the form key to widget level to prevent recreation on rebuilds
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   @override
   Widget bodyWidget(
       BuildContext context, SignInProvider viewModel, Widget? child) {
     return Scaffold(
+      // Add this to prevent keyboard issues
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           // Background image
@@ -35,6 +40,8 @@ class SignInWidget extends BaseWidget<SignInProvider> {
           // Your content
           Center(
             child: SingleChildScrollView(
+              // Add physics to prevent keyboard bounce
+              physics: ClampingScrollPhysics(),
               child: ResponsiveBuilder(
                 builder: (context, sizingInfo) {
                   final maxWidth =
@@ -253,8 +260,7 @@ class SignInWidget extends BaseWidget<SignInProvider> {
   }
 
   Widget _signInFormWidget(BuildContext context, SignInProvider viewModel) {
-    final _formKey = GlobalKey<FormState>();
-
+    // Use the class-level form key instead of creating a new one
     return Form(
       key: _formKey,
       child: Column(
