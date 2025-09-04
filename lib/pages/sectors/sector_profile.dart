@@ -7,6 +7,7 @@ import 'package:flareline/pages/layout.dart';
 import 'package:flareline/pages/sectors/sector_profile/sector_header.dart';
 import 'package:flareline/pages/sectors/sector_profile/sector_kpi.dart';
 import 'package:flareline/pages/sectors/sector_profile/sector_overview.dart';
+import 'package:flareline/pages/sectors/sector_profile/sector_yield_data.dart'; // Import the new component
 import 'package:provider/provider.dart';
 
 class SectorProfile extends LayoutWidget {
@@ -136,13 +137,15 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
           SectorHeader(sector: currentSector, isMobile: widget.isMobile),
           const SizedBox(height: 24),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SectorKpiCards(
                     sector: currentSector, isMobile: widget.isMobile),
                 const SizedBox(height: 24),
+                
+                // Overview Panel and Chart
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 0),
                   child: Column(
@@ -161,12 +164,7 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
                                 isMobile: widget.isMobile,
                               ),
                             ),
-                            if (!widget.isMobile) const SizedBox(width: 16),
-                            // Chart (30%)
-                            Flexible(
-                              flex: 3,
-                              child: _buildChartCard(context),
-                            ),
+                         
                           ],
                         ),
                       ),
@@ -174,6 +172,11 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
                     ],
                   ),
                 ),
+                
+                const SizedBox(height: 24),
+                
+                // Yield Data Table
+                SectorYieldDataTable(sectorId: currentSector['id'].toString()),
               ],
             ),
           ),
@@ -182,99 +185,7 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
     );
   }
 
-  Widget _buildChartCard(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final currentSector = _updatedSector ?? widget.sector;
-
-    // Prepare chart data from yield distribution
-    List<Map<String, dynamic>> chartData = [];
-    if (_yieldDistribution != null && _yieldDistribution!.isNotEmpty) {
-      final sectorData = _yieldDistribution!.firstWhere(
-        (sector) => sector['sectorId'] == currentSector['id'],
-        orElse: () => _yieldDistribution!.first,
-      );
-
-      chartData =
-          (sectorData['products'] as List).map<Map<String, dynamic>>((product) {
-        return {
-          'x': product['productName'],
-          'y': product['percentageOfSectorVolume'],
-        };
-      }).toList();
-    } else {
-      // Fallback data if no distribution available
-      chartData = const [
-        {'x': 'No data', 'y': 100},
-      ];
-    }
-
-    return Card(
-      elevation: 24,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                Icon(Icons.pie_chart_outline,  ),
-                const SizedBox(width: 12),
-                Text(
-                  'Yield Distribution',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colors.onSurface,
-                  ), 
-                ),
-                if (_isLoadingYield) ...[
-                  const SizedBox(width: 12),
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (_yieldError != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                _yieldError!,
-                style: TextStyle(color: colors.error),
-              ),
-            ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              height: widget.isMobile ? 300 : 300,
-              child: CircularhartWidget(
-                title: '',
-                palette: const [
-                  GlobalColors.warn,
-                  GlobalColors.secondary,
-                  GlobalColors.primary,
-                  GlobalColors.success,
-                  GlobalColors.danger,
-                  GlobalColors.dark,
-                  // Add more colors if you have more products
-                ],
-                chartData: chartData,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+ 
   @override
   Widget build(BuildContext context) {
     return _buildContent();

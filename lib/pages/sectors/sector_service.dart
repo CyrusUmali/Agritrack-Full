@@ -1,10 +1,67 @@
 import 'package:dio/dio.dart';
+import 'package:flareline/core/models/yield_model.dart';
 import 'package:flareline/services/api_service.dart';
 
 class SectorService {
   final ApiService _apiService;
 
   SectorService(this._apiService);
+
+
+
+
+
+Future<List<Yield>> fetchSectorYieldData({required String sectorId, int? year}) async {
+  try {
+    final Map<String, dynamic> queryParams = {'sectorId': sectorId};
+    if (year != null) {
+      queryParams['year'] = year.toString();
+    }
+
+    final response = await _apiService.get(
+      '/sectors/yield-data-by-sector', // Endpoint for sector yield data
+      queryParameters: queryParams,
+    );
+
+    if (response.statusCode == 200) {
+      // Assuming the response contains a 'yields' key with the list of yield data
+      final List<dynamic> yieldData = response.data['yields'];
+      return yieldData.map((data) => Yield.fromJson(data)).toList();
+    }
+
+    throw Exception('Failed to load sector yield data: ${response.statusCode}');
+  } catch (e) {
+    throw Exception('Failed to fetch sector yield data: ${e.toString()}');
+  }
+}
+
+
+
+
+Future<List<Yield>> fetchAssocYieldData({required String assocId, int? year}) async {
+    try {
+      final Map<String, dynamic> queryParams = {'assocId': assocId};
+      if (year != null) {
+        queryParams['year'] = year.toString();
+      }
+
+      final response = await _apiService.get(
+        '/assocs/yield-data', // Endpoint for association yield data
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        // Assuming the response contains a list of yield data
+        final List<dynamic> yieldData = response.data['yields'] ?? response.data;
+        return yieldData.map((data) => Yield.fromJson(data)).toList();
+      }
+
+      throw Exception('Failed to load association yield data: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Failed to fetch association yield data: ${e.toString()}');
+    }
+  }
+
 
   Future<List<Map<String, dynamic>>> fetchAssociations({int? year}) async {
     try {
@@ -28,6 +85,9 @@ class SectorService {
       throw Exception('Failed to fetch associations: ${e.toString()}');
     }
   }
+
+
+
 
   Future<List<Map<String, dynamic>>> fetchSectors({int? year}) async {
     try {

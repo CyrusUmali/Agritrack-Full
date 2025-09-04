@@ -146,20 +146,14 @@ class _ReportDataTableState extends State<ReportDataTable> {
   Widget _buildDesktopTable() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return 
-        
-        SingleChildScrollView(
+        return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: 
-          
-          
-          
-          ConstrainedBox(
+          child: ConstrainedBox(
             constraints: BoxConstraints(minWidth: constraints.maxWidth),
             child: SizedBox(
               width: constraints.maxWidth > 1200 ? 1200 : constraints.maxWidth,
               child: _ReportTableWidget(
-                key: ValueKey(widget.selectedColumns.join(',')),
+                key: ValueKey('${widget.selectedColumns.join(',')}-$_sortColumn-$_sortAscending'),
                 reportData: _sortedData,
                 selectedColumns: widget.selectedColumns,
                 sortColumn: _sortColumn,
@@ -169,8 +163,6 @@ class _ReportDataTableState extends State<ReportDataTable> {
               ),
             ),
           ),
-        
-        
         );
       },
     );
@@ -182,7 +174,7 @@ class _ReportDataTableState extends State<ReportDataTable> {
       child: SizedBox(
         width: 800,
         child: _ReportTableWidget(
-          key: ValueKey(widget.selectedColumns.join(',')),
+          key: ValueKey('${widget.selectedColumns.join(',')}-$_sortColumn-$_sortAscending'),
           reportData: _sortedData,
           selectedColumns: widget.selectedColumns,
           sortColumn: _sortColumn,
@@ -238,11 +230,7 @@ class _ReportTableWidget extends TableWidget<ReportTableViewModel> {
                 .whereType<int>()
                 .toList();
             if (selectedIndices.isNotEmpty) {
-              print(selectedIndices);
-              print('as');
               onDeleteSelected(selectedIndices);
-            } else {
-              print('emptyy');
             }
           },
         ),
@@ -256,8 +244,8 @@ class _ReportTableWidget extends TableWidget<ReportTableViewModel> {
       context,
       reportData,
       selectedColumns,
-       sortColumn,
-    sortAscending,
+      sortColumn,
+      sortAscending,
     );
   }
 
@@ -341,32 +329,14 @@ class ReportTableViewModel extends BaseTableProvider {
     this.sortAscending,
   );
 
-  List<Map<String, dynamic>> get _sortedData {
-    if (sortColumn == null || !selectedColumns.contains(sortColumn)) {
-      return reportData;
-    }
-
-    final sorted = List<Map<String, dynamic>>.from(reportData);
-    sorted.sort((a, b) {
-      final aValue = a[sortColumn]?.toString() ?? '';
-      final bValue = b[sortColumn]?.toString() ?? '';
-
-      return sortAscending
-          ? aValue.compareTo(bValue)
-          : bValue.compareTo(aValue);
-    });
-    return sorted;
-  }
-
   @override
   Future loadData(BuildContext context) async {
     final headers = [...selectedColumns];
-    final sortedData = _sortedData;
-
+    
     List<List<TableDataRowsTableDataRows>> rows = [];
 
-    for (var i = 0; i < sortedData.length; i++) {
-      final rowData = sortedData[i];
+    for (var i = 0; i < reportData.length; i++) {
+      final rowData = reportData[i];
       List<TableDataRowsTableDataRows> row = [];
 
       for (var column in selectedColumns) {

@@ -116,6 +116,7 @@ class SuitabilityContentState extends State<SuitabilityContent> {
         buttonPosition.dx + 200,
         buttonPosition.dy + buttonSize.height + 100,
       ),
+       color: Theme.of(context).cardTheme.color,
       items: [
         const PopupMenuItem(
           value: 'back',
@@ -123,7 +124,7 @@ class SuitabilityContentState extends State<SuitabilityContent> {
             title: Text('Chatbot'),
           ),
         ),
-        const PopupMenuItem(
+        const PopupMenuItem( 
           value: 'recommendation',
           child: ListTile(
             title: Text('Crop Recommendation'),
@@ -225,6 +226,11 @@ class SuitabilityContentState extends State<SuitabilityContent> {
       },
     );
   }
+
+
+
+
+
 Widget _buildCropSelectionDropdown() {
   return Card(
     child: Padding(
@@ -237,7 +243,6 @@ Widget _buildCropSelectionDropdown() {
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   fontSize: 20,
-                  color: const Color.fromARGB(255, 18, 18, 18),
                 ),
           ),
           const SizedBox(height: 8),
@@ -272,6 +277,10 @@ Widget _buildCropSelectionDropdown() {
               return TextFormField(
                 controller: textEditingController,
                 focusNode: focusNode,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -286,13 +295,16 @@ Widget _buildCropSelectionDropdown() {
                     borderSide: BorderSide(color: Colors.blue, width: 1),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: Theme.of(context).cardTheme.color,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 16, // Increased for better touch area
+                    vertical: 16,
                   ),
                   hintText: 'Type to search crops...',
-                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  hintStyle: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
                 ),
               );
             },
@@ -303,8 +315,8 @@ Widget _buildCropSelectionDropdown() {
                 alignment: Alignment.topLeft,
                 child: Material(
                   elevation: 4.0,
+                  borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    // Constrain the width to match the input field
                     constraints: const BoxConstraints(maxWidth: 400),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxHeight: 200),
@@ -320,9 +332,15 @@ Widget _buildCropSelectionDropdown() {
                             },
                             child: Container(
                               padding: const EdgeInsets.all(16.0),
-                              // Ensure the option text doesn't overflow
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardTheme.color,
+                              ),
                               child: Text(
                                 option,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -340,65 +358,83 @@ Widget _buildCropSelectionDropdown() {
     ),
   );
 }
-  Widget _buildModelSelectionCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Select Model',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 20,
-                    color: const Color.fromARGB(255, 18, 18, 18),
+
+Widget _buildModelSelectionCard() {
+  return Card(
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Select Model',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: model!.selectedModel,
+            items: model!.models.keys.map((String modelName) {
+              return DropdownMenuItem<String>(
+                value: modelName,
+                child: Text(
+                  modelName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
+                ),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                model!.selectedModel = newValue!;
+                model!.modelAccuracy = newValue == 'All Models'
+                    ? 'Ensemble average will be calculated'
+                    : 'Accuracy: ${(model!.models[newValue]!['accuracy']! * 100).toStringAsFixed(2)}%';
+              });
+            },
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: model!.selectedModel,
-              items: model!.models.keys.map((String modelName) {
-                return DropdownMenuItem<String>(
-                  value: modelName,
-                  child: Text(modelName),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  model!.selectedModel = newValue!;
-                  model!.modelAccuracy = newValue == 'All Models'
-                      ? 'Ensemble average will be calculated'
-                      : 'Accuracy: ${(model!.models[newValue]!['accuracy']! * 100).toStringAsFixed(2)}%';
-                });
-              },
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.blue, width: 1),
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 0,
-                ),
-                hintStyle: TextStyle(color: Colors.grey[600]),
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue, width: 1),
+              ),
+              filled: true,
+              fillColor: Theme.of(context).cardTheme.color,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 0,
               ),
             ),
-          ],
-        ),
+            dropdownColor: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(12),
+            elevation: 2,
+            icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
+            iconSize: 24,
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+
+
+
 
   Widget _buildInputParametersCard(bool isMobile) {
     return Card(
@@ -483,8 +519,7 @@ Widget _buildCropSelectionDropdown() {
                 'Crop Suitability',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      fontSize: 32,
-                      color: const Color.fromARGB(255, 1, 1, 1),
+                      fontSize: 32,  
                     ),
               ),
               const SizedBox(height: 4),

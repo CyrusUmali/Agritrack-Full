@@ -94,6 +94,8 @@ class RecommendationContentState extends State<RecommendationContent> {
           buttonPosition.dx + 200,
           buttonPosition.dy + buttonSize.height + 100,
         ),
+  color:  Theme.of(context).cardTheme.color,
+
         items: [
           const PopupMenuItem(
             value: 'back',
@@ -163,19 +165,11 @@ class RecommendationContentState extends State<RecommendationContent> {
                   ),
                   onPressed: () {
                     _showNavigationMenu();
-
-                    // if (!mounted)
-                    //   return; // Check if the widget is still in the tree
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //       builder: (context) => const SuitabilityPage()),
-                    // );
                   },
                   splashRadius: 16, // Smaller splash effect
                   padding: EdgeInsets.zero, // Remove extra padding
                 ),
-              ),
+              )
             ],
           ),
 
@@ -298,93 +292,75 @@ class RecommendationContentState extends State<RecommendationContent> {
 
   Widget _buildModelSelectionCard() {
     return Card(
-        child: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Select Model',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20,
-                  // color: const Color.fromARGB(255, 18, 18, 18),
-                ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            value: model.selectedModel,
-            
-            items: model.models.keys.map((String modelName) {
-              return DropdownMenuItem<String>(
-                value: modelName,
-                child: Text(
-                  modelName,
-                  style: TextStyle( 
-                    fontSize: 14, 
-                    color: Theme.of(context).colorScheme.onSurface,  
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Select Model',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
                   ),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: model.selectedModel,
+              items: model.models.keys.map((String modelName) {
+                return DropdownMenuItem<String>(
+                  value: modelName,
+                  child: Text(
+                    modelName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  model.selectedModel = newValue!;
+                  model.modelAccuracy =
+                      'Accuracy: ${(model.models[newValue]!['accuracy']! * 100).toStringAsFixed(2)}%';
+                });
+              },
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              setState(() {
-                model.selectedModel = newValue!;
-                model.modelAccuracy =
-                    'Accuracy: ${(model.models[newValue]!['accuracy']! * 100).toStringAsFixed(2)}%';
-              });
-            },
-            style: TextStyle(
-              fontSize: 14,
-              // color: Colors.grey[800],
-                color: Theme.of(context).colorScheme.onSurface, 
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.blue, width: 0.5),
+                ),
+                filled: true,
+                fillColor:
+                    Theme.of(context).cardTheme.color, // Background color here
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 0,
+                ),
+              ),
+              dropdownColor: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(12),
+              elevation: 2,
+              icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
+              iconSize: 24,
             ),
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.blue, width: 0.5),
-              ),
-              filled: true, 
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 0,
-              ),
-              // hintStyle: TextStyle(color: Colors.grey[600]),
-            ),
-            dropdownColor: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(12),
-            elevation: 2,
-            icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
-            iconSize: 24,
-          ),
-          // if (model.modelAccuracy != null) ...[
-          //   const SizedBox(height: 8),
-          //   Container(
-          //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-          //     decoration: BoxDecoration(
-          //       color: Colors.green[50],
-          //       borderRadius: BorderRadius.circular(8),
-          //     ),
-          //     child: Text(
-          //       model.modelAccuracy!,
-          //       style: TextStyle(
-          //         color: Colors.green[800],
-          //         fontSize: 14,
-          //       ),
-          //     ),
-          //   ),
-          // ],
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildInputParametersCard(bool isMobile) {

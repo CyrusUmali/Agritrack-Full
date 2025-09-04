@@ -283,7 +283,7 @@ class MapChartUIComponents {
                             icon: Icons.agriculture,
                             label: '${provider.selectedProduct} Yield',
                             value:
-                                '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(1) ?? 'N/A'} tons',
+                                '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(1) ?? 'N/A'} kg',
                             textColor: textColor,
                           ),
                           if (yieldPercentage != null)

@@ -5,13 +5,15 @@ class LanguageService {
   static const Map<String, Map<String, String>> _translations = {
     'en': {
       // English
-      'language': 'Language',
+      'Crop Suitability Language': 'Crop Suitability Language',
       'save': 'Save',
     },
     'fil': {
       // Filipino
-      'language': 'Wika',
-      'save': 'I-save',
+      // 'language': 'Crop Suitability Language',
+       'Crop Suitability Language': 'Crop Suitability Language',
+      // 'save': 'I-save',
+      'save': 'Save',
     },
   };
 

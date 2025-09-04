@@ -445,18 +445,18 @@ class _FarmProfileMobileState extends State<FarmProfileMobile> {
             const SizedBox(height: 16),
             FarmInfoCard(
               farm: transformedFarm,
-              onSave: (updatedData) {
-                final updatedFarm = Farm(
-                  id: farmState.farm.id,
-                  name: updatedData['farmName'],
-                  sector: updatedData['sector'],
-                  barangay: updatedData['barangay'],
-                  farmerId: updatedData['farmerId'],
-                  createdAt: farmState.farm.createdAt,
-                  updatedAt: DateTime.now(),
-                );
-                context.read<FarmBloc>().add(UpdateFarm(updatedFarm));
-              },
+               onSave: (updatedData) {
+                          final updatedFarm = Farm(
+                              id: farmState.farm.id,
+                              name: updatedData['farmName'],
+                              sectorId: updatedData['sectorId'],
+                              barangay: updatedData['barangayName'],
+                              farmerId: updatedData['farmerId'],
+                              updatedAt: DateTime.now(),
+                              products: updatedData['products'],
+                              status: updatedData['status']);
+                          context.read<FarmBloc>().add(UpdateFarm(updatedFarm));
+                        },
             ),
             const SizedBox(height: 16),
 

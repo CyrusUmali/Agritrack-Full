@@ -316,7 +316,6 @@ void _toggleMapVisibility() {
   }
 
 
-
 Widget _buildFarmMapSection() {
   if (selectedFarm == null) {
     return const SizedBox.shrink();
@@ -353,6 +352,7 @@ Widget _buildFarmMapSection() {
         child: _isMapMinimized
             ? null
             : FarmMapCard(
+                key: ValueKey(selectedFarm!.id), // Add this line
                 farm: _farmToMap(selectedFarm!),
                 isMobile: isSmallScreen,
               ),
@@ -361,6 +361,8 @@ Widget _buildFarmMapSection() {
     ],
   );
 }
+
+
 
 
 

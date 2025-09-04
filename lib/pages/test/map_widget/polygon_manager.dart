@@ -55,6 +55,8 @@ class PolygonManager with RouteAware {
     required this.farmers, // Add this
   });
 
+
+
   void initializePolyEditor(PolygonData polygon) {
     polyEditor = PolyEditor(
       points: selectedPolygon!.vertices,
@@ -85,6 +87,8 @@ class PolygonManager with RouteAware {
       addClosePathMarker: true, // Set to true for polygons
     );
   }
+
+
 
   void handleSelectionTap(LatLng tapPoint, BuildContext context) {
     // print(polygons);
@@ -808,10 +812,7 @@ class PolygonManager with RouteAware {
   }
 
   void toggleEditing() {
-    // isDrawing = false;
-
-    // currentPolygon.clear();
-    // undoLastPoint();
+   
 
     if (isEditing) {
       isDrawing = false;

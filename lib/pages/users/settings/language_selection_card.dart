@@ -29,7 +29,7 @@ class LanguageSelectionCard extends StatelessWidget {
                 Icon(Icons.language_outlined ),
                 const SizedBox(width: 12),
                 Text(
-                  languageProvider.translate('language'), // Simple translation
+                  languageProvider.translate('Crop Suitability Language'), // Simple translation
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
