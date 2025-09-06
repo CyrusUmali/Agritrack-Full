@@ -1,5 +1,7 @@
 import 'package:flareline/core/models/user_model.dart';
 import 'package:flareline/pages/toast/toast_helper.dart';
+import 'package:flareline/services/language_service.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -163,17 +165,30 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
                   children: [
                     Icon(Icons.lock_outline,),
                     const SizedBox(width: 12),
-                    Text(
-                      'Change Password',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
+
+
+              // In your PasswordChangeCard widget
+Text(
+  context.translate('Change Password'), // Clean and simple!
+  style: theme.textTheme.titleMedium?.copyWith(
+    fontWeight: FontWeight.bold, 
+    color: Colors.white
+  ),
+)
+
+
+
+                    
+
+
                   ],
                 ),
                 const SizedBox(height: 16),
                 if (hasPassword)
                   _buildPasswordField(
-                    label: 'Current Password',
+                    label: context.translate('Current Password'),
+
+                      
                     controller: _passwordController,
                     icon: Icons.lock_outline,
                     validator: (value) {
@@ -185,7 +200,7 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
                     },
                   ),
                 _buildPasswordField(
-                  label: 'New Password',
+                  label: context.translate('New Password'),
                   controller: _newPasswordController,
                   icon: Icons.lock_reset_outlined,
                   validator: (value) {
@@ -196,7 +211,7 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
                   },
                 ),
                 _buildPasswordField(
-                  label: 'Confirm New Password',
+                  label: context.translate('Confirm New Password'),
                   controller: _confirmPasswordController,
                   icon: Icons.lock_reset_outlined,
                   validator: (value) {
@@ -211,11 +226,17 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: _saveChanges,
-                    child: Text(
-                      'Change Password',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
+                    child:
+                    
+                   
+Text(
+  context.translate('Change Password'), // Clean and simple!
+  style: theme.textTheme.titleMedium?.copyWith(
+    fontWeight: FontWeight.bold, 
+    color: Colors.white
+  ),
+)
+
                   ),
                 ),
               ],

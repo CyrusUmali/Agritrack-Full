@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/users/settings/sync_service.dart';  
 import 'package:flareline/providers/user_provider.dart';
+import 'package:flareline/services/lanugage_extension.dart'; 
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/services/api_service.dart';
@@ -10,7 +11,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart'; 
 import 'package:flutter/foundation.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Added for Firebase sign out
+import 'package:firebase_auth/firebase_auth.dart'; 
 
 class GoogleAccountCard extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -138,10 +139,10 @@ class _GoogleAccountCardState extends State<GoogleAccountCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Migrate to Google authentication for easier sign-in',
-                    style: TextStyle(color: Colors.grey),
-                  ),
+                Text(
+                  context.translate('MTG-text'),
+                  style: const TextStyle(color: Colors.grey),
+                ),
                   if (_isLoading) 
                     const Padding(
                       padding: EdgeInsets.only(top: 8.0),
@@ -160,7 +161,11 @@ class _GoogleAccountCardState extends State<GoogleAccountCard> {
                   width: 25,
                   height: 25, 
                 ),
-                btnText: isConnected ? 'Disconnect Google' : 'Migrate to Google',
+                btnText: isConnected ?
+                context.translate('Disconnect Google')
+                  :  
+ context.translate( 'Migrate to Google')
+                ,
                 textColor: isConnected ? Colors.red : Colors.black87,
                 onTap: _isLoading ? null : () {
                   if (isConnected) {

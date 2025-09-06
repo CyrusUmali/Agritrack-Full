@@ -1,4 +1,5 @@
 import 'package:flareline/pages/recommendation/recommendation_page.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/recommendation/suitability/suitability_page.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
@@ -85,16 +86,17 @@ class ChatbotContentState extends State<ChatbotWidget> {
           buttonPosition.dy + buttonSize.height + 100,
         ),
         items: [
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'back',
             child: ListTile(
-              title: Text('Crop Recommendations'),
+              title: Text(context.translate('Crop Recommendations')),   
             ),
           ),
-          const PopupMenuItem(
+           PopupMenuItem(
             value: 'suitability',
             child: ListTile(
-              title: Text('Crop Suitability'),
+            
+               title: Text(context.translate('Crop Suitability')),   
             ),
           ),
         ],
@@ -173,7 +175,8 @@ class ChatbotContentState extends State<ChatbotWidget> {
                       ),
                     )),
                 Tooltip(
-                  message: 'Select AI Model',
+                 
+                  message: context.translate('Select AI Model'),
                   child: PopupMenuButton<String>(
                     onSelected: (value) {
                       setState(() {
@@ -231,8 +234,10 @@ class ChatbotContentState extends State<ChatbotWidget> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Agriculture Assistant',
+              Text( 
+            
+context.translate('Agriculture Assistant'),
+
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       fontSize: isMobile ? 24 : 28,
@@ -263,8 +268,8 @@ class ChatbotContentState extends State<ChatbotWidget> {
                       padding: EdgeInsets.zero,
                     ),
                   ),
-                  Tooltip(
-                    message: 'Select AI Model',
+                  Tooltip( 
+                      message: context.translate('Select AI Model'),
                     child: PopupMenuButton<String>(
                       onSelected: (value) {
                         setState(() {

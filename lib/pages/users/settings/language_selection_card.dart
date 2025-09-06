@@ -28,12 +28,23 @@ class LanguageSelectionCard extends StatelessWidget {
               children: [
                 Icon(Icons.language_outlined ),
                 const SizedBox(width: 12),
-                Text(
-                  languageProvider.translate('Crop Suitability Language'), // Simple translation
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+
+
+ 
+
+
+Consumer<LanguageProvider>(
+  builder: (context, languageProvider, child) {
+    return Text(languageProvider.translate('language'), // Simple translation
+      style: theme.textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  },
+)
+
+
+
               ],
             ),
             const SizedBox(height: 16),
@@ -62,22 +73,7 @@ class LanguageSelectionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-
-            // SizedBox(
-            //   width: double.infinity,
-            //   child: FilledButton(
-            //     onPressed: () {
-            //       print('save tap ');
-            //       print(
-            //           'Current language: ${languageProvider.currentLanguageCode}');
-            //     },
-            //     child: Text(
-            //       languageProvider.translate('save'),
-            //       style: theme.textTheme.titleMedium?.copyWith(
-            //           fontWeight: FontWeight.bold, color: Colors.white),
-            //     ),
-            //   ),
-            // ),
+ 
           ],
         ),
       ),

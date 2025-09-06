@@ -35,7 +35,13 @@ class LanguageProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  String translate(String key) {
-    return LanguageService.getTranslation(key, currentLanguageCode);
-  }
+  // String translate(String key) {
+  //   return LanguageService.t(key, );
+  // }
+
+
+  // lib/providers/language_provider.dart
+String translate(String key) {
+  return LanguageService.t(key, languageCode: currentLanguageCode);
+}
 }

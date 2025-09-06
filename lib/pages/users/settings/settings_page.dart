@@ -1,6 +1,7 @@
 import 'package:flareline/pages/users/settings/google_account_card.dart';
 import 'package:flareline/pages/users/settings/language_selection_card.dart';
 import 'package:flareline/pages/users/settings/user_password.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
 
@@ -11,7 +12,7 @@ class SettingsPage extends LayoutWidget {
 
   @override
   String breakTabTitle(BuildContext context) {
-    return 'Settings';
+    return context.translate('Settings'); 
   }
 
   @override
