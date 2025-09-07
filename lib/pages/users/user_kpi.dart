@@ -5,6 +5,7 @@ import 'package:responsive_builder/responsive_builder.dart';
 import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
 import 'package:iconify_flutter_plus/icons/mdi.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class UserKpi extends StatefulWidget {
   const UserKpi({super.key});
@@ -114,7 +115,7 @@ class _UserKpiState extends State<UserKpi> {
                   context,
                   const Iconify(Mdi.account_group, color: Colors.blue),
                   '${_userStats?['totalUsers'] ?? '0'}',
-                  'Total Users',
+                  context.translate('Total Users'),
                   DeviceScreenType.desktop,
                   Colors.blue[50]!,
                 ),
@@ -127,7 +128,8 @@ class _UserKpiState extends State<UserKpi> {
                   context,
                   const Iconify(Mdi.account_check, color: Colors.green),
                   '${_userStats?['inactiveUsers'] ?? '0'}',
-                  'Inactive',
+                  // 'Inactive',
+                  context.translate('Inactive'),
                   DeviceScreenType.desktop,
                   Colors.green[50]!,
                 ),
@@ -140,7 +142,7 @@ class _UserKpiState extends State<UserKpi> {
                   context,
                   const Iconify(Mdi.account_cog, color: Colors.purple),
                   '3',
-                  'Roles',
+                  context.translate('Roles'),
                   DeviceScreenType.desktop,
                   Colors.purple[50]!,
                 ),
@@ -153,7 +155,7 @@ class _UserKpiState extends State<UserKpi> {
                   context,
                   const Iconify(Mdi.account_sync, color: Colors.orange),
                   '${_userStats?['newUsers'] ?? '0'}',
-                  'New Users',
+                  context.translate('New Users'),
                   DeviceScreenType.desktop,
                   Colors.orange[50]!,
                 ),
@@ -177,7 +179,7 @@ class _UserKpiState extends State<UserKpi> {
                 context,
                 const Iconify(Mdi.account_group, color: Colors.blue),
                 '${_userStats?['totalUsers'] ?? '0'}',
-                'Total Users',
+                context.translate('Total Users'),
                 DeviceScreenType.mobile,
                 Colors.blue[50]!,
               ),
@@ -187,7 +189,7 @@ class _UserKpiState extends State<UserKpi> {
                 context,
                 const Iconify(Mdi.account_check, color: Colors.green),
                 '${_userStats?['inactiveUsers'] ?? '0'}',
-                'Inactive',
+                context.translate('Inactive'),
                 DeviceScreenType.mobile,
                 Colors.green[50]!,
               ),
@@ -197,7 +199,7 @@ class _UserKpiState extends State<UserKpi> {
                 context,
                 const Iconify(Mdi.account_cog, color: Colors.purple),
                 '3',
-                'Roles',
+                context.translate('Roles'),
                 DeviceScreenType.mobile,
                 Colors.purple[50]!,
               ),
@@ -207,7 +209,7 @@ class _UserKpiState extends State<UserKpi> {
                 context,
                 const Iconify(Mdi.account_sync, color: Colors.orange),
                 '${_userStats?['newUsers'] ?? '0'}',
-                'New Users',
+                context.translate('New Users'),
                 DeviceScreenType.mobile,
                 Colors.orange[50]!,
               ),

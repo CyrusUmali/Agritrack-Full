@@ -7,6 +7,7 @@ import 'package:responsive_builder/responsive_builder.dart';
 import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
 import 'package:iconify_flutter_plus/icons/mdi.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class AssocKpi extends StatefulWidget {
   const AssocKpi({super.key});
@@ -172,7 +173,7 @@ class _AssocKpiState extends State<AssocKpi> {
                   context,
                   const Iconify(Mdi.account_group, color: Colors.deepPurple),
                   '${kpis['totalMembers']}',
-                  'Total Members',
+                  context.translate('Total Members'),
                   DeviceScreenType.desktop,
                   Colors.deepPurple[50]!,
                 ),
@@ -185,7 +186,7 @@ class _AssocKpiState extends State<AssocKpi> {
                   context,
                   const Iconify(Mdi.office_building, color: Colors.teal),
                   '${kpis['totalAssociations']}',
-                  'Total Associations',
+                  context.translate('Total Associations'),
                   DeviceScreenType.desktop,
                   Colors.teal[50]!,
                 ),
@@ -211,7 +212,7 @@ class _AssocKpiState extends State<AssocKpi> {
                   context,
                   const Iconify(Mdi.check_circle, color: Colors.green),
                   '${kpis['totalAssociations']}',
-                  'Active Associations',
+                  context.translate('Active Associations'),
                   DeviceScreenType.desktop,
                   Colors.green[50]!,
                 ),
@@ -235,7 +236,7 @@ class _AssocKpiState extends State<AssocKpi> {
                 context,
                 const Iconify(Mdi.account_group, color: Colors.deepPurple),
                 '${kpis['totalMembers']}',
-                'Total Members',
+                context.translate('Total Members'),
                 DeviceScreenType.mobile,
                 Colors.deepPurple[50]!,
               ),
@@ -245,7 +246,7 @@ class _AssocKpiState extends State<AssocKpi> {
                 context,
                 const Iconify(Mdi.office_building, color: Colors.teal),
                 '${kpis['totalAssociations']}',
-                'Total Associations',
+                context.translate('Total Associations'),
                 DeviceScreenType.mobile,
                 Colors.teal[50]!,
               ),
@@ -265,7 +266,7 @@ class _AssocKpiState extends State<AssocKpi> {
                 context,
                 const Iconify(Mdi.check_circle, color: Colors.green),
                 '${kpis['totalAssociations']}',
-                'Active',
+                context.translate('Active'),
                 DeviceScreenType.mobile,
                 Colors.green[50]!,
               ),

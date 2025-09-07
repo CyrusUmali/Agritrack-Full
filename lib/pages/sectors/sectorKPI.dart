@@ -7,6 +7,7 @@ import 'package:responsive_builder/responsive_builder.dart';
 import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
 import 'package:iconify_flutter_plus/icons/mdi.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class SectorKpi extends StatefulWidget {
   const SectorKpi({super.key});
@@ -168,7 +169,7 @@ class _SectorKpiState extends State<SectorKpi> {
                   context,
                   const Iconify(Mdi.account_group, color: Colors.deepPurple),
                   '${totals['totalFarmers'] ?? '0'}',
-                  'Farmers',
+                  context.translate('Farmers'),
                   DeviceScreenType.desktop,
                   Colors.deepPurple[50]!,
                 ),
@@ -181,7 +182,7 @@ class _SectorKpiState extends State<SectorKpi> {
                   context,
                   const Iconify(Mdi.domain, color: Colors.teal),
                   '${_sectors.length}',
-                  'Sectors',
+                  context.translate('Sectors'),
                   DeviceScreenType.desktop,
                   Colors.teal[50]!,
                 ),
@@ -194,7 +195,7 @@ class _SectorKpiState extends State<SectorKpi> {
                   context,
                   const Iconify(Mdi.chart_line, color: Colors.orange),
                   '${totals['totalYieldVolume']?.toStringAsFixed(0) ?? '0'} Kg',
-                  'Total Production',
+                  context.translate('Total Production'),
                   DeviceScreenType.desktop,
                   Colors.orange[50]!,
                 ),
@@ -207,7 +208,7 @@ class _SectorKpiState extends State<SectorKpi> {
                   context,
                   const Iconify(Mdi.map, color: Colors.blue),
                   '${totals['totalLandArea']?.toStringAsFixed(2) ?? '0'} Ha',
-                  'Total Area',
+                  context.translate('Total Area'),
                   DeviceScreenType.desktop,
                   Colors.blue[50]!,
                 ),
@@ -231,7 +232,7 @@ class _SectorKpiState extends State<SectorKpi> {
                 context,
                 const Iconify(Mdi.account_group, color: Colors.deepPurple),
                 '${totals['totalFarmers'] ?? '0'}',
-                'Farmers',
+                context.translate('Farmers'),
                 DeviceScreenType.mobile,
                 Colors.deepPurple[50]!,
               ),
@@ -241,7 +242,7 @@ class _SectorKpiState extends State<SectorKpi> {
                 context,
                 const Iconify(Mdi.domain, color: Colors.teal),
                 '${_sectors.length}',
-                'Sectors',
+                context.translate('Sectors'),
                 DeviceScreenType.mobile,
                 Colors.teal[50]!,
               ),
@@ -251,7 +252,7 @@ class _SectorKpiState extends State<SectorKpi> {
                 context,
                 const Iconify(Mdi.chart_line, color: Colors.orange),
                 '${totals['totalYieldVolume']?.toStringAsFixed(0) ?? '0'} Kg',
-                'Total Production',
+                context.translate('Total Production'),
                 DeviceScreenType.mobile,
                 Colors.orange[50]!,
               ),
@@ -261,7 +262,7 @@ class _SectorKpiState extends State<SectorKpi> {
                 context,
                 const Iconify(Mdi.map, color: Colors.blue),
                 '${totals['totalLandArea']?.toStringAsFixed(2) ?? '0'} Ha',
-                'Total Area',
+                context.translate('Total Area'),
                 DeviceScreenType.mobile,
                 Colors.blue[50]!,
               ),

@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
 import 'package:iconify_flutter_plus/icons/mdi.dart';
+import 'package:flareline/services/lanugage_extension.dart'; 
+
 import 'package:flareline/pages/sectors/sector_service.dart';
 
 class YieldKpi extends StatefulWidget {
@@ -124,7 +126,13 @@ class _YieldKpiState extends State<YieldKpi> {
                   context,
                   const Iconify(Mdi.weight, color: Colors.deepPurple),
                   '${_yieldStats?['totalYield'] ?? '0'}kg',
-                  'Total Yield',
+                
+
+                  context.translate('Total Yield'),
+
+                 
+                              
+
                   DeviceScreenType.desktop,
                   Colors.deepPurple[50]!,
                 ),
@@ -137,7 +145,9 @@ class _YieldKpiState extends State<YieldKpi> {
                   context,
                   const Iconify(Mdi.sack, color: Colors.teal),
                   _yieldStats?['averageYieldPerHectare'] ?? '0 t/ha',
-                  'Avg. per Hectare',
+                
+                context.translate('Avg. per Hectare'),
+
                   DeviceScreenType.desktop,
                   Colors.teal[50]!,
                 ),
@@ -150,7 +160,10 @@ class _YieldKpiState extends State<YieldKpi> {
                   context,
                   const Iconify(Mdi.rice, color: Colors.orange),
                   '${_yieldStats?['topCrop']?['volume'] ?? '0'} kg ${_yieldStats?['topCrop']?['product'] ?? '-'}',
-                  'Top Crop',
+
+                  context.translate('Top Crop'),
+
+
                   DeviceScreenType.desktop,
                   Colors.orange[50]!,
                 ),
@@ -163,7 +176,9 @@ class _YieldKpiState extends State<YieldKpi> {
                   context,
                   const Iconify(Mdi.calendar_check, color: Colors.blue),
                   '${_yieldStats?['thisMonthYield'] ?? '0'}kg',
-                  'This Month',
+              
+                context.translate('This Month') ,
+
                   DeviceScreenType.desktop,
                   Colors.blue[50]!,
                 ),
@@ -187,7 +202,9 @@ class _YieldKpiState extends State<YieldKpi> {
                 context,
                 const Iconify(Mdi.weight, color: Colors.deepPurple),
                 '${_yieldStats?['totalYield'] ?? '0'}kg',
-                'Total Yield',
+              
+                                  context.translate('Total Yield'),
+
                 DeviceScreenType.mobile,
                 Colors.deepPurple[50]!,
               ),
@@ -197,7 +214,10 @@ class _YieldKpiState extends State<YieldKpi> {
                 context,
                 const Iconify(Mdi.sack, color: Colors.teal),
                 _yieldStats?['averageYieldPerHectare'] ?? '0 t/ha',
-                'Avg. per Hectare',
+              
+                context.translate('Avg. per Hectare'),
+
+
                 DeviceScreenType.mobile,
                 Colors.teal[50]!,
               ),
@@ -207,7 +227,9 @@ class _YieldKpiState extends State<YieldKpi> {
                 context,
                 const Iconify(Mdi.rice, color: Colors.orange),
                 '${_yieldStats?['topCrop']?['volume'] ?? '0'} kg ${_yieldStats?['topCrop']?['product'] ?? '-'}',
-                'Top Crop',
+              
+                  context.translate('Top Crop'),
+
                 DeviceScreenType.desktop,
                 Colors.orange[50]!,
               ),
@@ -217,7 +239,10 @@ class _YieldKpiState extends State<YieldKpi> {
                 context,
                 const Iconify(Mdi.calendar_check, color: Colors.blue),
                 '${_yieldStats?['thisMonthYield'] ?? '0'}kg',
-                'This Month',
+              
+                context.translate('This Month') 
+                
+                 ,
                 DeviceScreenType.mobile,
                 Colors.blue[50]!,
               ),

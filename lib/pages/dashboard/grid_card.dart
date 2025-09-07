@@ -8,6 +8,7 @@ import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class GridCard extends StatefulWidget {
   final int selectedYear; // Add selectedYear as a required parameter
@@ -227,11 +228,11 @@ class _GridCardState extends State<GridCard> {
           child: _itemCardWidget(
             context,
             Icons.landscape_outlined,
-            'Land Area',
-            'Size:',
+            context.translate('Land Area'),
+            context.translate('Size:'),
             '',
             true,
-            'Plots:',
+            context.translate('Plots:'),
             '${shiValues['totalLandArea']?.toStringAsFixed(2) ?? '0'} ha',
             '${shiValues['numberOfFarms'] ?? '0'}',
             DeviceScreenType.desktop,
@@ -242,8 +243,8 @@ class _GridCardState extends State<GridCard> {
           child: _itemCardWidget(
             context,
             Icons.nature_outlined,
-            'Total Products',
-            'Varieties:',
+            context.translate('Total Products'),
+            context.translate('Varieties:'),
             '',
             true,
             '',
@@ -257,7 +258,7 @@ class _GridCardState extends State<GridCard> {
           child: _itemCardWidget(
             context,
             Icons.group,
-            'Annual Yield',
+            context.translate('Annual Yield'),
             'Volume:',
             '',
             true,
@@ -285,11 +286,11 @@ class _GridCardState extends State<GridCard> {
               : _itemCardWidget(
                   context,
                   Icons.person_2_outlined,
-                  'Total Farmers',
-                  'Active:',
+                  context.translate('Total Farmers'),
+                  context.translate('Active'),
                   '',
                   false,
-                  'Inactive:',
+                  context.translate('Inactive'),
                   '${shiValues['activeFarmers'] ?? '0'}',
                   '${shiValues['inactiveFarmers'] ?? '0'}',
                   DeviceScreenType.desktop,
@@ -314,11 +315,11 @@ class _GridCardState extends State<GridCard> {
             _itemCardWidget(
               context,
               Icons.landscape_outlined,
-              'Land Area',
-              'Size:',
+              context.translate('Land Area'),
+              context.translate('Size:'),
               '',
               true,
-              'Plots:',
+              context.translate('Plots:'),
               '${shiValues['totalLandArea']?.toStringAsFixed(2) ?? '0'} ha',
               '${shiValues['numberOfFarms'] ?? '0'}',
               DeviceScreenType.mobile,
@@ -326,8 +327,8 @@ class _GridCardState extends State<GridCard> {
             _itemCardWidget(
               context,
               Icons.nature_outlined,
-              'Total Products',
-              'Varieties:',
+              context.translate('Total Products'),
+              context.translate('Varieties:'),
               '',
               true,
               '',
@@ -338,7 +339,9 @@ class _GridCardState extends State<GridCard> {
             _itemCardWidget(
               context,
               Icons.view_list_outlined,
-              'Annual Yield',
+              context.translate(
+                'Annual Yield',
+              ),
               'Volume:',
               '',
               true,
@@ -363,11 +366,11 @@ class _GridCardState extends State<GridCard> {
                 : _itemCardWidget(
                     context,
                     Icons.security_rounded,
-                    'Total Farmers',
-                    'Active:',
+                    context.translate('Total Farmers'),
+                    context.translate('Active'),
                     '',
                     false,
-                    'Inactive:',
+                    context.translate('Inactive'),
                     '${shiValues['activeFarmers'] ?? '0'}',
                     '${shiValues['inactiveFarmers'] ?? '0'}',
                     DeviceScreenType.mobile,

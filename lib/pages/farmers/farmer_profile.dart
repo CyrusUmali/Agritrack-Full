@@ -12,6 +12,7 @@ import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flareline/pages/layout.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 import 'package:toastification/toastification.dart';
 import './farmers_widget/household_info_card.dart';
 import './farmers_widget/farm_profile_card.dart';
@@ -21,7 +22,7 @@ import './farmers_widget/emergency_contacts_card.dart';
 class FarmersProfile extends LayoutWidget {
   final int? farmerID;
 
-  const FarmersProfile({super.key,  this.farmerID});
+  const FarmersProfile({super.key, this.farmerID});
 
   @override
   String breakTabTitle(BuildContext context) => 'Farmer Profile';
@@ -195,11 +196,8 @@ abstract class _BaseFarmersProfileState<T extends StatefulWidget>
       return;
     }
 
-
-
     final updatedFarmer = Farmer.fromJson(editedFarmer);
-    
-    print('Saving updated farmer: ${updatedFarmer.toJson()}');
+
     context.read<FarmerBloc>().add(UpdateFarmer(updatedFarmer));
   }
 
@@ -369,7 +367,7 @@ class _ProfileHeader extends StatelessWidget {
       margin: EdgeInsets.zero,
       child: Stack(
         children: [
-         const SizedBox(height: 16),
+          const SizedBox(height: 16),
           SizedBox(
             height: isMobile ? 150 : 240,
             width: double.infinity,
@@ -440,11 +438,13 @@ class _ProfileHeader extends StatelessWidget {
             child: isEditing
                 ? FilledButton.tonal(
                     onPressed: onSave,
-                    child: _buildButtonContent(Icons.save, 'Save Profile'),
+                    child: _buildButtonContent(
+                        Icons.save, context.translate('Save Profile')),
                   )
                 : FilledButton.tonal(
                     onPressed: onEdit,
-                    child: _buildButtonContent(Icons.edit, 'Edit Profile'),
+                    child: _buildButtonContent(
+                        Icons.edit, context.translate('Edit Profile')),
                   ),
           ),
         ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flareline_uikit/components/card/common_card.dart';
+
+import 'package:flareline/services/lanugage_extension.dart';
 
 class SuitabilityResults extends StatelessWidget {
   final Map<String, dynamic> suitabilityResult;
@@ -118,13 +119,17 @@ class SuitabilityResults extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isSuitable ? Icons.verified : Icons.warning_amber_rounded,
+                        isSuitable
+                            ? Icons.verified
+                            : Icons.warning_amber_rounded,
                         size: 16,
                         color: Colors.white,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        isSuitable ? 'SUITABLE' : 'NEEDS IMPROVEMENT',
+                        isSuitable
+                            ? context.translate('SUITABLE')
+                            : context.translate('NOT_SUITABLE'),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: isSmallScreen ? 12 : 14,
@@ -135,7 +140,7 @@ class SuitabilityResults extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                if (!isSuitable) _buildWarningBadge(isSmallScreen),
+                if (!isSuitable) _buildWarningBadge(context, isSmallScreen),
               ],
             ),
 
@@ -201,7 +206,7 @@ class SuitabilityResults extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Confidence Level',
+                  context.translate('Confidence Level'),
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: isSmallScreen ? 14 : 16,
@@ -254,7 +259,7 @@ class SuitabilityResults extends StatelessWidget {
     bool isSmallScreen,
   ) {
     final models = suitabilityResult['model_used'] as List;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -274,7 +279,7 @@ class SuitabilityResults extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'AI Models Used',
+                context.translate('AI Models Used'),
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: isSmallScreen ? 14 : 16,
@@ -434,7 +439,7 @@ class SuitabilityResults extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Parameter Analysis',
+                  context.translate('Parameter Analysis'),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[800],
@@ -444,9 +449,11 @@ class SuitabilityResults extends StatelessWidget {
                 const Spacer(),
                 // Overall score indicator
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _getOverallScoreColor(optimalCount, totalCount).withOpacity(0.1),
+                    color: _getOverallScoreColor(optimalCount, totalCount)
+                        .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: _getOverallScoreColor(optimalCount, totalCount),
@@ -467,7 +474,7 @@ class SuitabilityResults extends StatelessWidget {
             SizedBox(height: isSmallScreen ? 16 : 20),
 
             Text(
-              '$optimalCount of $totalCount parameters optimal',
+              '$optimalCount of $totalCount ${context.translate('parameters optimal')}',
               style: TextStyle(
                 fontSize: isSmallScreen ? 14 : 16,
                 color: Colors.grey[600],
@@ -591,7 +598,7 @@ class SuitabilityResults extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Current: ',
+                context.translate('Current: '),
                 style: TextStyle(
                   fontSize: isSmallScreen ? 13 : 14,
                   color: Colors.grey[600],
@@ -682,7 +689,7 @@ class SuitabilityResults extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Improvement Suggestions',
+                  context.translate('Improvement Suggestions'),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[800],
@@ -692,7 +699,8 @@ class SuitabilityResults extends StatelessWidget {
                 const Spacer(),
                 if (deficientParamsCount > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.orange[50],
                       borderRadius: BorderRadius.circular(12),
@@ -713,7 +721,7 @@ class SuitabilityResults extends StatelessWidget {
             SizedBox(height: isSmallScreen ? 16 : 20),
 
             Text(
-              '$deficientParamsCount parameters need attention',
+              '${deficientParamsCount} ${context.translate('parameters need attention')}',
               style: TextStyle(
                 fontSize: isSmallScreen ? 14 : 16,
                 color: Colors.grey[600],
@@ -733,7 +741,8 @@ class SuitabilityResults extends StatelessWidget {
               ),
               padding: const EdgeInsets.all(16),
               child: suggestions.isNotEmpty
-                  ? _buildSuggestionsContent(suggestions, context, isSmallScreen)
+                  ? _buildSuggestionsContent(
+                      suggestions, context, isSmallScreen)
                   : _buildGetSuggestionsButton(context, isSmallScreen),
             ),
           ],
@@ -742,7 +751,8 @@ class SuitabilityResults extends StatelessWidget {
     );
   }
 
-  Widget _buildDisclaimer(BuildContext context, bool isSmallScreen, double padding) {
+  Widget _buildDisclaimer(
+      BuildContext context, bool isSmallScreen, double padding) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -761,7 +771,7 @@ class SuitabilityResults extends StatelessWidget {
           Expanded(
             child: Text(
               suitabilityResult['disclaimer'] ??
-                  'AI suggestions should be verified with local agricultural experts',
+                  context.translate('disclaimer_ai'),
               style: TextStyle(
                 fontSize: isSmallScreen ? 12 : 13,
                 color: Colors.grey[600],
@@ -775,7 +785,7 @@ class SuitabilityResults extends StatelessWidget {
     );
   }
 
-  Widget _buildWarningBadge(bool isSmallScreen) {
+  Widget _buildWarningBadge(BuildContext context, bool isSmallScreen) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -793,7 +803,7 @@ class SuitabilityResults extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            'Needs Attention',
+            context.translate('Needs Attention'),
             style: TextStyle(
               color: Colors.orange[700],
               fontSize: isSmallScreen ? 11 : 12,
@@ -824,7 +834,8 @@ class SuitabilityResults extends StatelessWidget {
         final lines = section.split('\n');
 
         return Container(
-          margin: EdgeInsets.only(bottom: index < suggestions.length - 1 ? 12 : 0),
+          margin:
+              EdgeInsets.only(bottom: index < suggestions.length - 1 ? 12 : 0),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -886,7 +897,7 @@ class SuitabilityResults extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Get AI Suggestions',
+                    context.translate('Get AI Suggestions'),
                     style: TextStyle(
                       fontSize: isSmallScreen ? 15 : 16,
                       color: Colors.white,
@@ -903,7 +914,8 @@ class SuitabilityResults extends StatelessWidget {
   }
 
   // Helper methods and utilities
-  ({Color color, Color backgroundColor, Color borderColor}) _getStatusInfo(String status) {
+  ({Color color, Color backgroundColor, Color borderColor}) _getStatusInfo(
+      String status) {
     switch (status) {
       case 'low':
         return (

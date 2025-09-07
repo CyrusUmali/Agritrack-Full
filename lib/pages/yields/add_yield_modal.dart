@@ -12,8 +12,10 @@ import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+
+import 'package:flareline/services/lanugage_extension.dart';
 import 'dart:convert';
-import 'package:provider/provider.dart'; 
+import 'package:provider/provider.dart';
 
 class AddYieldModal extends StatefulWidget {
   final Function(
@@ -53,7 +55,7 @@ class AddYieldModal extends StatefulWidget {
 
     await ModalDialog.show(
       context: context,
-      title: 'Add Record',
+      title: context.translate('Add Record'),
       showTitle: true,
       showTitleDivider: true,
       modalType: screenWidth < 600 ? ModalType.large : ModalType.medium,
@@ -128,7 +130,7 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
   final TextEditingController notesController = TextEditingController();
   TextEditingController farmAreaController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
- bool _isMapMinimized = false; // Add this line
+  bool _isMapMinimized = false; // Add this line
   DateTime selectedDate = DateTime.now();
   Product? selectedProduct;
   Farmer? selectedFarmer;
@@ -149,13 +151,11 @@ class _AddYieldModalContentState extends State<_AddYieldModalContent> {
   final GlobalKey farmerFieldKey = GlobalKey();
   final GlobalKey farmAreaFieldKey = GlobalKey();
 
-
-
-void _toggleMapVisibility() {
-  setState(() {
-    _isMapMinimized = !_isMapMinimized;
-  });
-}
+  void _toggleMapVisibility() {
+    setState(() {
+      _isMapMinimized = !_isMapMinimized;
+    });
+  }
 
   @override
   void initState() {
@@ -170,12 +170,12 @@ void _toggleMapVisibility() {
           .toList();
       if (farmsForFarmer.isNotEmpty) {
         selectedFarm = farmsForFarmer.first;
-        farmAreaController.text = selectedFarm!.name; 
+        farmAreaController.text = selectedFarm!.name;
         _setAreaHarvestedFromFarm(selectedFarm!);
       }
     }
   }
- 
+
   void _setAreaHarvestedFromFarm(Farm farm) {
     if (farm.hectare != null && farm.hectare! > 0) {
       areaHaController.text = farm.hectare.toString();
@@ -315,56 +315,51 @@ void _toggleMapVisibility() {
     );
   }
 
+  Widget _buildFarmMapSection() {
+    if (selectedFarm == null) {
+      return const SizedBox.shrink();
+    }
 
-Widget _buildFarmMapSection() {
-  if (selectedFarm == null) {
-    return const SizedBox.shrink();
-  }
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600;
 
-  final screenWidth = MediaQuery.of(context).size.width;
-  final isSmallScreen = screenWidth < 600;
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'Farm Location:',
-            style: TextStyle(fontSize: 13),
-          ),
-          IconButton(
-            icon: Icon(
-              _isMapMinimized ? Icons.expand_more : Icons.expand_less,
-              size: 20,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Farm Location:',
+              style: TextStyle(fontSize: 13),
             ),
-            onPressed: _toggleMapVisibility,
-            tooltip: _isMapMinimized ? 'Show Map' : 'Hide Map',
-          ),
-        ],
-      ),
-      const SizedBox(height: 8),
-      AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        height: _isMapMinimized ? 0 : (isSmallScreen ? 250 : 300),
-        width: double.infinity,
-        child: _isMapMinimized
-            ? null
-            : FarmMapCard(
-                key: ValueKey(selectedFarm!.id), // Add this line
-                farm: _farmToMap(selectedFarm!),
-                isMobile: isSmallScreen,
+            IconButton(
+              icon: Icon(
+                _isMapMinimized ? Icons.expand_more : Icons.expand_less,
+                size: 20,
               ),
-      ),
-      SizedBox(height: isSmallScreen ? 8.0 : 16.0),
-    ],
-  );
-}
-
-
-
-
+              onPressed: _toggleMapVisibility,
+              tooltip: _isMapMinimized ? 'Show Map' : 'Hide Map',
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          height: _isMapMinimized ? 0 : (isSmallScreen ? 250 : 300),
+          width: double.infinity,
+          child: _isMapMinimized
+              ? null
+              : FarmMapCard(
+                  key: ValueKey(selectedFarm!.id), // Add this line
+                  farm: _farmToMap(selectedFarm!),
+                  isMobile: isSmallScreen,
+                ),
+        ),
+        SizedBox(height: isSmallScreen ? 8.0 : 16.0),
+      ],
+    );
+  }
 
   Widget _buildOptionsView<T extends Object>(
     BuildContext context,
@@ -379,14 +374,14 @@ Widget _buildFarmMapSection() {
 
     return SizedBox(
       width: fieldWidth,
-      child: Align( 
+      child: Align(
         alignment: Alignment.topLeft,
         child: Material(
           elevation: 4.0,
           color: Theme.of(context).cardTheme.color,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: fieldWidth, 
+              maxWidth: fieldWidth,
               maxHeight: 200,
             ),
             child: ListView.builder(
@@ -547,9 +542,10 @@ Widget _buildFarmMapSection() {
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 12, horizontal: 12),
                       errorStyle: TextStyle(
-        fontSize: 10,
-        color: Colors.red.shade600, // Add your desired error text color here
-      ),
+                        fontSize: 10,
+                        color: Colors.red
+                            .shade600, // Add your desired error text color here
+                      ),
                       errorBorder: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: Colors.red.shade400,
@@ -611,7 +607,7 @@ Widget _buildFarmMapSection() {
                         setState(() {
                           selectedFarmer = farmer;
                           selectedFarm = null;
-                          farmAreaController.text = ''; 
+                          farmAreaController.text = '';
                           areaHaController.text = '';
                         });
                       },
@@ -638,10 +634,11 @@ Widget _buildFarmMapSection() {
                             suffixIcon: const Icon(Icons.arrow_drop_down),
                             contentPadding: const EdgeInsets.symmetric(
                                 vertical: 12, horizontal: 12),
-                             errorStyle: TextStyle(
-        fontSize: 10,
-        color: Colors.red.shade600, // Add your desired error text color here
-      ),
+                            errorStyle: TextStyle(
+                              fontSize: 10,
+                              color: Colors.red
+                                  .shade600, // Add your desired error text color here
+                            ),
                             errorBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: Colors.red.shade400,
@@ -695,7 +692,7 @@ Widget _buildFarmMapSection() {
                 },
                 onSelected: (Farm farm) {
                   setState(() {
-                    selectedFarm = farm; 
+                    selectedFarm = farm;
                     _setAreaHarvestedFromFarm(farm);
                   });
                 },
@@ -727,9 +724,10 @@ Widget _buildFarmMapSection() {
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 12, horizontal: 12),
                       errorStyle: TextStyle(
-        fontSize: 10,
-        color: Colors.red.shade600, // Add your desired error text color here
-      ),
+                        fontSize: 10,
+                        color: Colors.red
+                            .shade600, // Add your desired error text color here
+                      ),
                       errorBorder: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: Colors.red.shade400,
@@ -778,11 +776,13 @@ Widget _buildFarmMapSection() {
                 decoration: InputDecoration(
                   labelText: 'Area harvested (ha) - Optional',
                   border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                   errorStyle: TextStyle(
-        fontSize: 10,
-        color: Colors.red.shade600, // Add your desired error text color here
-      ),
+                    fontSize: 10,
+                    color: Colors
+                        .red.shade600, // Add your desired error text color here
+                  ),
                   errorBorder: OutlineInputBorder(
                     borderSide: BorderSide(
                       color: Colors.red.shade400,
@@ -800,26 +800,26 @@ Widget _buildFarmMapSection() {
                   if (value == null || value.trim().isEmpty) {
                     return null;
                   }
-                  
+
                   final area = double.tryParse(value.trim());
                   if (area == null) {
                     return 'Please enter a valid number';
                   }
-                  
+
                   if (area <= 0) {
                     return 'Area must be greater than 0';
                   }
-                  
+
                   if (area > 10000) {
                     return 'Area seems too large. Please check your input';
                   }
-                  
+
                   if (selectedFarm != null && selectedFarm!.hectare != null) {
                     if (area > selectedFarm!.hectare!) {
                       return 'Area cannot exceed farm size (${selectedFarm!.hectare} ha)';
                     }
                   }
-                  
+
                   return null;
                 },
                 autovalidateMode: _areaHaValidated
@@ -827,7 +827,7 @@ Widget _buildFarmMapSection() {
                     : AutovalidateMode.disabled,
               ),
             ),
-       
+
             SizedBox(height: isSmallScreen ? 8.0 : 16.0),
 
             // Yield Amount
@@ -842,9 +842,10 @@ Widget _buildFarmMapSection() {
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                   errorStyle: TextStyle(
-        fontSize: 10, 
-        color: Colors.red.shade600, // Add your desired error text color here
-      ),
+                    fontSize: 10,
+                    color: Colors
+                        .red.shade600, // Add your desired error text color here
+                  ),
                   errorBorder: OutlineInputBorder(
                     borderSide: BorderSide(
                       color: Colors.red.shade400,
@@ -984,7 +985,7 @@ class _AddYieldModalFooter extends StatelessWidget {
             SizedBox(
               width: screenWidth < 600 ? 100 : 120,
               child: ButtonWidget(
-                btnText: 'Cancel',
+                btnText: context.translate('Cancel'),
                 textColor: FlarelineColors.darkBlackText,
                 onTap: isLoading ? null : onCancel,
               ),
@@ -993,7 +994,9 @@ class _AddYieldModalFooter extends StatelessWidget {
             SizedBox(
               width: screenWidth < 600 ? 100 : 120,
               child: ButtonWidget(
-                btnText: isLoading ? 'Adding...' : 'Add Record',
+                btnText: isLoading
+                    ? context.translate('Adding...')
+                    : context.translate('Add Record'),
                 onTap: isLoading ? null : onSubmit,
                 type: ButtonType.primary.type,
               ),
@@ -1002,4 +1005,5 @@ class _AddYieldModalFooter extends StatelessWidget {
         ),
       ),
     );
-  }}
+  }
+}

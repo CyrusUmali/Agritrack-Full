@@ -8,6 +8,7 @@ import 'package:flareline_uikit/components/card/common_card.dart';
 import 'recommendation_inputs.dart';
 import 'recommendation_results.dart';
 import 'recommendation_model.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class RecommendationContent extends StatefulWidget {
   const RecommendationContent({super.key});
@@ -94,8 +95,7 @@ class RecommendationContentState extends State<RecommendationContent> {
           buttonPosition.dx + 200,
           buttonPosition.dy + buttonSize.height + 100,
         ),
-  color:  Theme.of(context).cardTheme.color,
-
+        color: Theme.of(context).cardTheme.color,
         items: [
           const PopupMenuItem(
             value: 'back',
@@ -103,10 +103,10 @@ class RecommendationContentState extends State<RecommendationContent> {
               title: Text('Chatbot'),
             ),
           ),
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'suitability',
             child: ListTile(
-              title: Text('Crop Suitability'),
+              title: Text(context.translate('Crop Suitability')),
             ),
           ),
         ],
@@ -141,7 +141,7 @@ class RecommendationContentState extends State<RecommendationContent> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Crop Recommendation',
+                context.translate('Crop Recommendation'),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       fontSize: 32,
@@ -175,7 +175,7 @@ class RecommendationContentState extends State<RecommendationContent> {
 
           // Tooltip with InkWell for better hover effects
           Tooltip(
-            message: 'View Requirements',
+            message: context.translate('View Requirements'),
             child: InkWell(
               onTap: _navigateToRequirements,
               borderRadius: BorderRadius.circular(50),
@@ -213,7 +213,7 @@ class RecommendationContentState extends State<RecommendationContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Crop Recommendation',
+              context.translate('Crop Recommendation'),
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: isMobile ? 24 : 28,
@@ -257,7 +257,7 @@ class RecommendationContentState extends State<RecommendationContent> {
 
                 // Tooltip Circular Button
                 Tooltip(
-                  message: 'View Requirements',
+                  message: context.translate('View Requirements'),
                   child: InkWell(
                     onTap: _navigateToRequirements,
                     borderRadius: BorderRadius.circular(50),
@@ -298,7 +298,7 @@ class RecommendationContentState extends State<RecommendationContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Select Model',
+              context.translate('Select Model'),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 20,
@@ -371,7 +371,7 @@ class RecommendationContentState extends State<RecommendationContent> {
         children: [
           Center(
             child: Text(
-              'Enter Environmental Parameters',
+              context.translate('Enter Environmental Parameters'),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w600,
@@ -427,8 +427,8 @@ class RecommendationContentState extends State<RecommendationContent> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text(
-                      'Predict',
+                  : Text(
+                      context.translate('Predict'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,

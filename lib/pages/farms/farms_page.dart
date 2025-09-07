@@ -8,13 +8,14 @@ import 'package:flareline/pages/farms/farms_table.dart';
 import 'package:flareline/repositories/farm_repository.dart';
 import 'package:flareline/services/api_service.dart';
 import 'package:provider/provider.dart'; // Add this import
+import 'package:flareline/services/lanugage_extension.dart';
 
 class FarmsPage extends LayoutWidget {
   const FarmsPage({super.key});
 
   @override
   String breakTabTitle(BuildContext context) {
-    return 'Farms';
+    return context.translate('Farms');
   }
 
   @override
@@ -51,12 +52,9 @@ class FarmsPage extends LayoutWidget {
 
               return farmBloc;
             },
-            child: Column( 
+            child: Column(
               children: [
-
-                if (!userProvider.isFarmer)
-const FarmKpi(),
-                
+                if (!userProvider.isFarmer) const FarmKpi(),
                 const SizedBox(height: 16),
                 const FarmsTableWidget(),
               ],

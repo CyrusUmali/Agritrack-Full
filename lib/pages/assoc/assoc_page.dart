@@ -10,33 +10,35 @@ import 'package:flareline/pages/layout.dart';
 import 'package:flareline/services/api_service.dart';
 import 'package:provider/provider.dart';
 
+import 'package:flareline/services/lanugage_extension.dart';
+
 class AssocsPage extends LayoutWidget {
   const AssocsPage({super.key});
 
   @override
   String breakTabTitle(BuildContext context) {
-    return 'Associations';
+    return context.translate('Associations');
   }
 
-@override
-Widget contentDesktopWidget(BuildContext context) {
-  return RepositoryProvider(
-    create: (context) => AssociationRepository(apiService: ApiService()),
-    child: Consumer<YearPickerProvider>(
-      builder: (context, yearProvider, child) {
-        return BlocProvider(
-          create: (context) => AssocsBloc(
-            associationRepository:
-                RepositoryProvider.of<AssociationRepository>(context),
-          )..add(LoadAssocs(year: yearProvider.selectedYear)), // Use provider's year
-          child: const _AssocsContent(),
-        );
-      },
-    ),
-  );
+  @override
+  Widget contentDesktopWidget(BuildContext context) {
+    return RepositoryProvider(
+      create: (context) => AssociationRepository(apiService: ApiService()),
+      child: Consumer<YearPickerProvider>(
+        builder: (context, yearProvider, child) {
+          return BlocProvider(
+            create: (context) => AssocsBloc(
+              associationRepository:
+                  RepositoryProvider.of<AssociationRepository>(context),
+            )..add(LoadAssocs(
+                year: yearProvider.selectedYear)), // Use provider's year
+            child: const _AssocsContent(),
+          );
+        },
+      ),
+    );
+  }
 }
-}
-
 
 class _AssocsContent extends StatelessWidget {
   const _AssocsContent();
@@ -44,14 +46,16 @@ class _AssocsContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: [ 
-               AssocKpi(),
+      children: [
+        AssocKpi(),
         const SizedBox(height: 16),
         Consumer<YearPickerProvider>(
           builder: (context, yearProvider, child) {
             // Listen to year changes and trigger Bloc event
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.read<AssocsBloc>().add(LoadAssocs(year: yearProvider.selectedYear));
+              context
+                  .read<AssocsBloc>()
+                  .add(LoadAssocs(year: yearProvider.selectedYear));
             });
             return AssocsWidget(
               key: ValueKey(yearProvider.selectedYear),
@@ -59,9 +63,6 @@ class _AssocsContent extends StatelessWidget {
             );
           },
         ),
-
-
-
         const SizedBox(height: 16),
         AssocsBarChart(),
         const SizedBox(height: 16),

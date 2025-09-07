@@ -1,5 +1,6 @@
 import 'package:flareline/core/models/assocs_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class AssocKpiCards extends StatelessWidget {
   final Association association;
@@ -52,24 +53,23 @@ class AssocKpiCards extends StatelessWidget {
 
   List<Widget> _buildAllCards(BuildContext context) {
     // Access stats from the nested object
-   
 
     return [
       _buildKpiCard(
         context,
-        title: 'Total Farms',
+        title: context.translate('Total Farms'),
         value: association.totalFarms?.toString() ?? 'N/A',
         icon: Icons.agriculture,
       ),
       _buildKpiCard(
         context,
-        title: 'Total Farmers',
+        title: context.translate('Total Farmers'),
         value: association.totalMembers?.toString() ?? 'N/A',
         icon: Icons.people,
       ),
       _buildKpiCard(
         context,
-        title: 'Avg Farm Size',
+        title: context.translate('Avg Farm Size'),
         value: association.avgFarmSize != null
             ? '${association.avgFarmSize} ha'
             : 'N/A',
@@ -77,30 +77,26 @@ class AssocKpiCards extends StatelessWidget {
       ),
       _buildKpiCard(
         context,
-        title: 'Annual Yield',
-        value:
-            association.volume != null ? '${association.volume} kg' : 'N/A',
+        title: context.translate('Annual Yield'),
+        value: association.volume != null ? '${association.volume} kg' : 'N/A',
         icon: Icons.assessment,
       ),
-
-
       _buildKpiCard(
         context,
-        title: 'Area Harvested',
-        value:
-            association.areaHarvested != null ? '${association.areaHarvested} ha' : 'N/A',
+        title: context.translate('Area Harvested'),
+        value: association.areaHarvested != null
+            ? '${association.areaHarvested} ha'
+            : 'N/A',
         icon: Icons.area_chart,
       ),
-
-
-        _buildKpiCard(
+      _buildKpiCard(
         context,
-        title: 'Annual Production',
-        value:
-            association.production != null ? '${association.production} mt' : 'N/A',
+        title: context.translate('Annual Production'),
+        value: association.production != null
+            ? '${association.production} mt'
+            : 'N/A',
         icon: Icons.assessment,
       ),
-      
     ];
   }
 
@@ -141,8 +137,8 @@ class AssocKpiCards extends StatelessWidget {
                     size: 18,
                     color: Colors.black,
                   ),
-                ), 
-             ],
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             Text(

@@ -7,13 +7,14 @@ import 'report_filter_panel.dart';
 import 'report_preview.dart';
 import 'report_export.dart';
 import 'report_generator.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class ReportsPage extends LayoutWidget {
   const ReportsPage({super.key});
 
   @override
   String breakTabTitle(BuildContext context) {
-    return "Reports";
+    return context.translate('Reports');
   }
 
   @override
@@ -51,7 +52,8 @@ class _ReportContentState extends State<ReportContent> {
   List<Map<String, dynamic>> reportData = [];
   List<Map<String, dynamic>> filteredReportData = [];
   String searchQuery = '';
-  bool hasGeneratedReport = false; // Add this to track if a report has been generated
+  bool hasGeneratedReport =
+      false; // Add this to track if a report has been generated
   // Add a key for the ReportPreview to force rebuild
   UniqueKey _previewKey = UniqueKey();
 
@@ -157,18 +159,25 @@ class _ReportContentState extends State<ReportContent> {
             ),
             const SizedBox(height: 24),
             Text(
-              'No Report Generated',
+              context.translate('No Report Generated'),
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                fontWeight: FontWeight.bold,
-              ),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.8),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Configure your filters above and click "Generate Report" to create your first report.',
+              context.translate(
+                  'Configure your filters above and click "Generate Report" to create your first report.'),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -177,13 +186,14 @@ class _ReportContentState extends State<ReportContent> {
                 // You can add any specific action here or just show the message
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Please configure filters and click Generate Report'),
+                    content: Text(
+                        'Please configure filters and click Generate Report'),
                     duration: Duration(seconds: 2),
                   ),
                 );
               },
               icon: const Icon(Icons.lightbulb_outline),
-              label: const Text('Get Started'),
+              label: Text(context.translate('Get Started')),
             ),
           ],
         ),
@@ -208,18 +218,24 @@ class _ReportContentState extends State<ReportContent> {
             ),
             const SizedBox(height: 24),
             Text(
-              'No Data Found',
+              context.translate('No Data Found'),
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                fontWeight: FontWeight.bold,
-              ),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.8),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 12),
             Text(
-              'No records match your current filter criteria. Try adjusting your filters or selecting a different date range.',
+              context.translate('No Record'),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -231,7 +247,8 @@ class _ReportContentState extends State<ReportContent> {
                     setState(() {
                       // Reset filters to default
                       dateRange = DateTimeRange(
-                        start: DateTime.now().subtract(const Duration(days: 30)),
+                        start:
+                            DateTime.now().subtract(const Duration(days: 30)),
                         end: DateTime.now(),
                       );
                       selectedBarangay = '';
@@ -246,13 +263,13 @@ class _ReportContentState extends State<ReportContent> {
                     });
                   },
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Reset Filters'),
+                  label: Text(context.translate('Reset Filters')),
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: generateReport,
                   icon: const Icon(Icons.play_arrow),
-                  label: const Text('Try Again'),
+                  label: Text(context.translate('Try Again')),
                 ),
               ],
             ),
@@ -335,13 +352,13 @@ class _ReportContentState extends State<ReportContent> {
         if (isLoading) ...[
           SizedBox(
             height: availableHeight,
-            child: const Center(
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Generating report...'),
+                  Text(context.translate('Generating report...')),
                 ],
               ),
             ),
@@ -385,7 +402,7 @@ class _ReportContentState extends State<ReportContent> {
                     const SizedBox(height: 16),
                     TextField(
                       decoration: InputDecoration(
-                        hintText: 'Search...',
+                        hintText: context.translate('Search...'),
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),

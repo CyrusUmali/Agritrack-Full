@@ -1,11 +1,10 @@
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/barangay_yield_data_table.dart';
 import 'package:flutter/material.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
-
+import 'package:flareline/services/lanugage_extension.dart';
 import '../polygon_manager.dart';
 import 'barangay_info_card.dart';
 import 'farms_list.dart';
-import 'barangay_stats.dart';
 
 class BarangayModal {
   static Future<void> show({
@@ -33,7 +32,7 @@ class BarangayModal {
         theme: theme,
         polygonManager: polygonManager,
       );
-    } 
+    }
   }
 
   static Future<void> _showSmallScreenModal({
@@ -77,7 +76,7 @@ class BarangayModal {
                 farms: farms,
                 theme: theme,
                 polygonManager: polygonManager,
-                modalContext: modalContext, 
+                modalContext: modalContext,
               ),
             ),
           ),
@@ -88,69 +87,71 @@ class BarangayModal {
     );
   }
 
-static Future<void> _showLargeScreenModal({
-  required BuildContext context,
-  required PolygonData barangay,
-  required List<PolygonData> farms,
-  required ThemeData theme,
-  required PolygonManager polygonManager,
-}) async {
-  return showDialog(
-    context: context,
-    builder: (dialogContext) {
-      final dialogTheme = Theme.of(dialogContext); // Get theme from dialog context
-      
-      return AlertDialog(
-        insetPadding: const EdgeInsets.all(20),
-        contentPadding: EdgeInsets.zero,
-        backgroundColor: dialogTheme.cardTheme.color,
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        content: SizedBox(
-          width: MediaQuery.of(dialogContext).size.width * 0.8,
-          height: MediaQuery.of(dialogContext).size.height * 0.8,
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Barangay Details: ${barangay.name}',
-                      style: dialogTheme.textTheme.titleLarge,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: SingleChildScrollView(
+  static Future<void> _showLargeScreenModal({
+    required BuildContext context,
+    required PolygonData barangay,
+    required List<PolygonData> farms,
+    required ThemeData theme,
+    required PolygonManager polygonManager,
+  }) async {
+    return showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final dialogTheme =
+            Theme.of(dialogContext); // Get theme from dialog context
+
+        return AlertDialog(
+          insetPadding: const EdgeInsets.all(20),
+          contentPadding: EdgeInsets.zero,
+          backgroundColor: dialogTheme.cardTheme.color,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: SizedBox(
+            width: MediaQuery.of(dialogContext).size.width * 0.8,
+            height: MediaQuery.of(dialogContext).size.height * 0.8,
+            child: Column(
+              children: [
+                // Header
+                Padding(
                   padding: const EdgeInsets.all(16),
-                  child: _BarangayContent(
-                    barangay: barangay,
-                    farms: farms,
-                    theme: dialogTheme, // Use dialog theme here
-                    polygonManager: polygonManager,
-                    modalContext: dialogContext,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${context.translate('Barangay Details')}: ${barangay.name}',
+
+                        // 'Barangay Details: ${barangay.name}',
+                        style: dialogTheme.textTheme.titleLarge,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                const Divider(height: 1),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: _BarangayContent(
+                      barangay: barangay,
+                      farms: farms,
+                      theme: dialogTheme, // Use dialog theme here
+                      polygonManager: polygonManager,
+                      modalContext: dialogContext,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
-
+        );
+      },
+    );
+  }
 }
 
 class _BarangayContent extends StatefulWidget {
@@ -177,8 +178,6 @@ class _BarangayContentState extends State<_BarangayContent> {
 
   @override
   Widget build(BuildContext context) {
-
- 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -236,7 +235,7 @@ class _BarangayContentState extends State<_BarangayContent> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Farms List',
+                          context.translate('Farms List'),
                           style: widget.theme.textTheme.titleSmall?.copyWith(
                             color: _showFarmsList
                                 ? Colors.white
@@ -277,7 +276,7 @@ class _BarangayContentState extends State<_BarangayContent> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Yield Data',
+                          context.translate('Yield Data'),
                           style: widget.theme.textTheme.titleSmall?.copyWith(
                             color: !_showFarmsList
                                 ? Colors.white
@@ -321,14 +320,10 @@ class _BarangayContentState extends State<_BarangayContent> {
                   polygonManager: widget.polygonManager,
                   modalContext: widget.modalContext,
                 )
-              : 
-              
-              BarangayYieldDataTable(
+              : BarangayYieldDataTable(
                   key: const ValueKey('yield_data'),
                   barangay: widget.barangay.name,
-                )
-                
-                ,
+                ),
         ),
       ],
     );

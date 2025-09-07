@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:flareline/services/lanugage_extension.dart';
 
 enum BarChartDisplayMode { volume, yieldPerHa }
 
@@ -23,20 +24,19 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
   BarChartDisplayMode _displayMode = BarChartDisplayMode.volume;
 
   bool get _hasAreaData {
-    return widget.monthlyData.values.any((data) => 
-      (data['areaHarvested'] ?? 0) > 0
-    );
+    return widget.monthlyData.values
+        .any((data) => (data['areaHarvested'] ?? 0) > 0);
   }
 
   Map<String, double> _getDisplayData() {
     final displayData = <String, double>{};
-    
+
     for (final entry in widget.monthlyData.entries) {
       final month = entry.key;
       final data = entry.value;
       final volume = data['volume'] ?? 0;
       final areaHarvested = data['areaHarvested'] ?? 0;
-      
+
       if (_displayMode == BarChartDisplayMode.volume) {
         displayData[month] = volume;
         // Print volume values
@@ -49,7 +49,7 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
         print('$month Yield per Hectare: $yieldPerHa kg/ha');
       }
     }
-    
+
     return displayData;
   }
 
@@ -58,8 +58,8 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
   }
 
   String _getTitle() {
-    final modeText = _displayMode == BarChartDisplayMode.volume 
-        ? 'Production' 
+    final modeText = _displayMode == BarChartDisplayMode.volume
+        ? 'Production'
         : 'Yield per Hectare';
     return '${widget.product} - Monthly $modeText (${widget.year})';
   }
@@ -68,7 +68,7 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final displayData = _getDisplayData();
-    
+
     return Container(
       height: 450, // Increased height to accommodate toggle
       padding: const EdgeInsets.all(16),
@@ -95,29 +95,31 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: displayData.isEmpty || displayData.values.every((v) => v == 0)
-                ? Center(
-                    child: Text(
-                      _hasAreaData 
-                          ? 'No data available'
-                          : _displayMode == BarChartDisplayMode.yieldPerHa
-                              ? 'No area data available for yield calculation'
-                              : 'No data available',
-                      style: TextStyle(color: theme.hintColor),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : CustomPaint(
-                    painter: BarChartPainter(
-                      data: displayData,
-                      primaryColor: theme.primaryColor,
-                      textColor: theme.textTheme.bodyMedium?.color ?? Colors.black,
-                      backgroundColor: theme.canvasColor,
-                      isMonthly: true,
-                      unit: _getUnit(),
-                    ),
-                    child: Container(),
-                  ),
+            child:
+                displayData.isEmpty || displayData.values.every((v) => v == 0)
+                    ? Center(
+                        child: Text(
+                          _hasAreaData
+                              ? context.translate('No data available')
+                              : _displayMode == BarChartDisplayMode.yieldPerHa
+                                  ? 'No area data available for yield calculation'
+                                  : context.translate('No data available'),
+                          style: TextStyle(color: theme.hintColor),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : CustomPaint(
+                        painter: BarChartPainter(
+                          data: displayData,
+                          primaryColor: theme.primaryColor,
+                          textColor:
+                              theme.textTheme.bodyMedium?.color ?? Colors.black,
+                          backgroundColor: theme.canvasColor,
+                          isMonthly: true,
+                          unit: _getUnit(),
+                        ),
+                        child: Container(),
+                      ),
           ),
         ],
       ),
@@ -140,7 +142,8 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
             label: 'Volume',
             icon: Icons.inventory,
             isSelected: _displayMode == BarChartDisplayMode.volume,
-            onTap: () => setState(() => _displayMode = BarChartDisplayMode.volume),
+            onTap: () =>
+                setState(() => _displayMode = BarChartDisplayMode.volume),
             theme: theme,
           ),
           Container(
@@ -152,7 +155,8 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
             label: 'Kg/Ha',
             icon: Icons.agriculture,
             isSelected: _displayMode == BarChartDisplayMode.yieldPerHa,
-            onTap: () => setState(() => _displayMode = BarChartDisplayMode.yieldPerHa),
+            onTap: () =>
+                setState(() => _displayMode = BarChartDisplayMode.yieldPerHa),
             theme: theme,
           ),
         ],
@@ -222,20 +226,19 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
   BarChartDisplayMode _displayMode = BarChartDisplayMode.volume;
 
   bool get _hasAreaData {
-    return widget.yearlyData.values.any((data) => 
-      (data['areaHarvested'] ?? 0) > 0
-    );
+    return widget.yearlyData.values
+        .any((data) => (data['areaHarvested'] ?? 0) > 0);
   }
 
   Map<String, double> _getDisplayData() {
     final displayData = <String, double>{};
-    
+
     for (final entry in widget.yearlyData.entries) {
       final year = entry.key;
       final data = entry.value;
       final volume = data['volume'] ?? 0;
       final areaHarvested = data['areaHarvested'] ?? 0;
-      
+
       if (_displayMode == BarChartDisplayMode.volume) {
         displayData[year] = volume;
         // Print volume values
@@ -248,7 +251,7 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
         print('$year Yield per Hectare: $yieldPerHa kg/ha');
       }
     }
-    
+
     return displayData;
   }
 
@@ -257,8 +260,8 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
   }
 
   String _getTitle() {
-    final modeText = _displayMode == BarChartDisplayMode.volume 
-        ? 'Production' 
+    final modeText = _displayMode == BarChartDisplayMode.volume
+        ? 'Production'
         : 'Yield per Hectare';
     return '${widget.product} - Yearly $modeText';
   }
@@ -267,7 +270,7 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final displayData = _getDisplayData();
-    
+
     return Container(
       height: 450, // Increased height to accommodate toggle
       padding: const EdgeInsets.all(16),
@@ -294,29 +297,31 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: displayData.isEmpty || displayData.values.every((v) => v == 0)
-                ? Center(
-                    child: Text(
-                      _hasAreaData 
-                          ? 'No data available'
-                          : _displayMode == BarChartDisplayMode.yieldPerHa
-                              ? 'No area data available for yield calculation'
-                              : 'No data available',
-                      style: TextStyle(color: theme.hintColor),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : CustomPaint(
-                    painter: BarChartPainter(
-                      data: displayData,
-                      primaryColor: theme.primaryColor,
-                      textColor: theme.textTheme.bodyMedium?.color ?? Colors.black,
-                      backgroundColor: theme.canvasColor,
-                      isMonthly: false,
-                      unit: _getUnit(),
-                    ),
-                    child: Container(),
-                  ),
+            child:
+                displayData.isEmpty || displayData.values.every((v) => v == 0)
+                    ? Center(
+                        child: Text(
+                          _hasAreaData
+                              ? context.translate('No data available')
+                              : _displayMode == BarChartDisplayMode.yieldPerHa
+                                  ? 'No area data available for yield calculation'
+                                  : context.translate('No data available'),
+                          style: TextStyle(color: theme.hintColor),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : CustomPaint(
+                        painter: BarChartPainter(
+                          data: displayData,
+                          primaryColor: theme.primaryColor,
+                          textColor:
+                              theme.textTheme.bodyMedium?.color ?? Colors.black,
+                          backgroundColor: theme.canvasColor,
+                          isMonthly: false,
+                          unit: _getUnit(),
+                        ),
+                        child: Container(),
+                      ),
           ),
         ],
       ),
@@ -339,7 +344,8 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
             label: 'Volume',
             icon: Icons.inventory,
             isSelected: _displayMode == BarChartDisplayMode.volume,
-            onTap: () => setState(() => _displayMode = BarChartDisplayMode.volume),
+            onTap: () =>
+                setState(() => _displayMode = BarChartDisplayMode.volume),
             theme: theme,
           ),
           Container(
@@ -351,7 +357,8 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
             label: 'Kg/Ha',
             icon: Icons.agriculture,
             isSelected: _displayMode == BarChartDisplayMode.yieldPerHa,
-            onTap: () => setState(() => _displayMode = BarChartDisplayMode.yieldPerHa),
+            onTap: () =>
+                setState(() => _displayMode = BarChartDisplayMode.yieldPerHa),
             theme: theme,
           ),
         ],
@@ -457,14 +464,27 @@ class BarChartPainter extends CustomPainter {
     final maxValue = data.values.reduce(math.max);
     final minValue = data.values.reduce(math.min);
     final valueRange = maxValue - minValue;
-    final adjustedMax = valueRange > 0 ? maxValue + (valueRange * 0.1) : maxValue + 1;
+    final adjustedMax =
+        valueRange > 0 ? maxValue + (valueRange * 0.1) : maxValue + 1;
 
     // Sort data for consistent display
     final sortedEntries = data.entries.toList();
     if (isMonthly) {
       // Sort months chronologically
-      final monthOrder = ['January', 'February', 'March', 'April', 'May', 'June',
-                         'July', 'August', 'September', 'October', 'November', 'December'];
+      final monthOrder = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+      ];
       sortedEntries.sort((a, b) {
         final aIndex = monthOrder.indexOf(a.key);
         final bIndex = monthOrder.indexOf(b.key);
@@ -492,7 +512,7 @@ class BarChartPainter extends CustomPainter {
     for (int i = 0; i <= gridLineCount; i++) {
       final y = topPadding + (chartHeight * i / gridLineCount);
       final value = adjustedMax * (1 - i / gridLineCount);
-      
+
       // Draw grid line
       canvas.drawLine(
         Offset(leftPadding, y),
@@ -503,8 +523,8 @@ class BarChartPainter extends CustomPainter {
       // Draw Y-axis label
       final textPainter = TextPainter(
         text: TextSpan(
-          text: value >= 1000 
-              ? '${(value / 1000).toStringAsFixed(1)}k' 
+          text: value >= 1000
+              ? '${(value / 1000).toStringAsFixed(1)}k'
               : value.toStringAsFixed(0),
           style: textStyle,
         ),
@@ -523,9 +543,12 @@ class BarChartPainter extends CustomPainter {
 
     for (int i = 0; i < sortedEntries.length; i++) {
       final entry = sortedEntries[i];
-      final barHeight = adjustedMax > 0 ? (entry.value / adjustedMax) * chartHeight : 0;
-      
-      final barX = leftPadding + (i * chartWidth / sortedEntries.length) + barSpacing / 2;
+      final barHeight =
+          adjustedMax > 0 ? (entry.value / adjustedMax) * chartHeight : 0;
+
+      final barX = leftPadding +
+          (i * chartWidth / sortedEntries.length) +
+          barSpacing / 2;
       final barY = topPadding + chartHeight - barHeight;
 
       // Create gradient for bars
@@ -564,7 +587,7 @@ class BarChartPainter extends CustomPainter {
         // Draw value on top of bar
         final valuePainter = TextPainter(
           text: TextSpan(
-            text: entry.value >= 1000 
+            text: entry.value >= 1000
                 ? '${(entry.value / 1000).toStringAsFixed(1)}k'
                 : entry.value.toStringAsFixed(1),
             style: textStyle.copyWith(fontSize: 10),
@@ -582,10 +605,12 @@ class BarChartPainter extends CustomPainter {
       }
 
       // Draw X-axis label (abbreviated for monthly)
-      final displayLabel = isMonthly 
-          ? entry.key.length > 3 ? entry.key.substring(0, 3) : entry.key
+      final displayLabel = isMonthly
+          ? entry.key.length > 3
+              ? entry.key.substring(0, 3)
+              : entry.key
           : entry.key;
-          
+
       final labelPainter = TextPainter(
         text: TextSpan(text: displayLabel, style: labelTextStyle),
         textDirection: TextDirection.ltr,
@@ -628,5 +653,6 @@ class BarChartPainter extends CustomPainter {
   }
 
   @override
-  int get hashCode => Object.hash(data, primaryColor, textColor, isMonthly, unit);
+  int get hashCode =>
+      Object.hash(data, primaryColor, textColor, isMonthly, unit);
 }

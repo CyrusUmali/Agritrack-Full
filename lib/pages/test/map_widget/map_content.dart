@@ -4,7 +4,7 @@ import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
-
+import 'package:flareline/services/lanugage_extension.dart';
 import 'map_layers.dart';
 import 'polygon_manager.dart';
 
@@ -200,8 +200,9 @@ class MapContent extends StatelessWidget {
                         color: Colors.black.withOpacity(0.7),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        "Click the first point to close shape and save it",
+                      child: Text(
+                        context.translate(
+                            "Click  the first point to close shape and save it"),
                         style: TextStyle(color: Colors.white, fontSize: 14),
                       ),
                     ),

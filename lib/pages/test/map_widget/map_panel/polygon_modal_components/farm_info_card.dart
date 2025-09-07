@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flareline/core/models/product_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
-
+import 'package:flareline/services/lanugage_extension.dart';
 import 'farm_info_card_components.dart';
 
 class FarmInfoCard {
@@ -63,7 +64,7 @@ class FarmInfoCard {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Farm Information',
+            Text(context.translate('Farm Information'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Divider(color: colorScheme.outlineVariant, height: 1),

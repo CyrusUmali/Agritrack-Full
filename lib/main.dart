@@ -16,10 +16,12 @@ import 'package:flareline/repositories/product_repository.dart';
 import 'package:flareline/repositories/user_repository.dart';
 import 'package:flareline/repositories/yield_repository.dart';
 import 'package:flareline/services/api_service.dart';
-import 'package:flareline/services/report_service.dart'; 
+import 'package:flareline/services/report_service.dart';
+import 'package:flareline_uikit/service/localization_provider.dart';
 import 'package:flareline/routes.dart';
 import 'package:flareline_uikit/service/theme_provider.dart';
-import 'package:flutter/material.dart'; 
+import 'package:flutter/material.dart';
+import 'package:flareline/flutter_gen/app_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -45,11 +47,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-
-    // Initialize API service and wake up the server (added here)
+  // Initialize API service and wake up the server (added here)
   final apiService = ApiService();
   await apiService.wakeUpServer(); // Add this method to ApiService (see below)
-
 
   if (GetPlatform.isDesktop && !GetPlatform.isWeb) {
     await windowManager.ensureInitialized();
@@ -98,7 +98,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => SidebarProvider()),
         ChangeNotifierProvider(create: (_) => YearPickerProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider(_)), 
+        ChangeNotifierProvider(create: (_) => ThemeProvider(_)),
+        ChangeNotifierProvider(create: (_) => LocalizationProvider(_)),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         Provider<ApiService>(create: (_) => apiService),
         Provider<ProductRepository>(create: (_) => productRepository),
@@ -156,7 +157,9 @@ class MyApp extends StatelessWidget {
           lazy: false, // Load immediately
         ),
       ],
-      child: Builder(builder: (context) { 
+      child: Builder(builder: (context) {
+        context.read<LocalizationProvider>().supportedLocales =
+            AppLocalizations.supportedLocales;
         final RouteObserver<PageRoute> routeObserver =
             RouteObserver<PageRoute>();
 
@@ -173,7 +176,10 @@ class MyApp extends StatelessWidget {
           restorationScopeId: 'rootFlareLine',
           title: 'AgriTrack',
           debugShowCheckedModeBanner: false,
-          initialRoute: initialRoute, 
+          initialRoute: initialRoute,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          locale: context.watch<LocalizationProvider>().locale,
+          supportedLocales: AppLocalizations.supportedLocales,
           onGenerateRoute: (settings) =>
               RouteConfiguration.onGenerateRoute(settings),
           themeMode: context.watch<ThemeProvider>().isDark

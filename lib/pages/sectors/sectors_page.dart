@@ -10,13 +10,14 @@ import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
 import 'package:flareline/repositories/yield_repository.dart';
 import 'package:flareline/services/api_service.dart';
 import 'package:provider/provider.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class SectorsPage extends LayoutWidget {
   const SectorsPage({super.key});
 
   @override
   String breakTabTitle(BuildContext context) {
-    return 'Sectors';
+    return context.translate('Sectors');
   }
 
   @override
@@ -62,18 +63,15 @@ class _SectorsContentState extends State<_SectorsContent> {
     return Column(
       children: [
         const SectorKpi(),
-        const SizedBox(height: 16), 
-
-
-
-Consumer<YearPickerProvider>(
-  builder: (context, yearProvider, child) {
-    return SectorTableWidget(
-      key: ValueKey(yearProvider.selectedYear), // This forces rebuild
-      selectedYear: yearProvider.selectedYear,
-    );
-  },
-),
+        const SizedBox(height: 16),
+        Consumer<YearPickerProvider>(
+          builder: (context, yearProvider, child) {
+            return SectorTableWidget(
+              key: ValueKey(yearProvider.selectedYear), // This forces rebuild
+              selectedYear: yearProvider.selectedYear,
+            );
+          },
+        ),
         const SizedBox(height: 16),
         SectorLineChart(),
         const SizedBox(height: 16),

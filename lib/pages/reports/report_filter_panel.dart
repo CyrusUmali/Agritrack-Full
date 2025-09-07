@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 import 'package:provider/provider.dart';
 import 'date_range_picker.dart';
 import 'filters/segmented_filter.dart';
@@ -91,8 +92,8 @@ class ReportFilterPanel extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Report Filters',
+              Text(
+                context.translate('Report Filters'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
@@ -108,7 +109,7 @@ class ReportFilterPanel extends StatelessWidget {
                 child: Column(
                   children: [
                     SegmentedFilter(
-                      label: 'Report Type',
+                      label: context.translate('Report Type'),
                       options: FilterOptions.getFilteredReportTypes(_isFarmer),
                       selected: reportType,
                       onChanged: onReportTypeChanged,
@@ -192,7 +193,7 @@ class ReportFilterPanel extends StatelessWidget {
                             ),
                           )
                         : Text(
-                            'Generate Report',
+                            context.translate('Generate Report'),
                             style: TextStyle(
                               color:
                                   Theme.of(context).textTheme.bodyMedium?.color,

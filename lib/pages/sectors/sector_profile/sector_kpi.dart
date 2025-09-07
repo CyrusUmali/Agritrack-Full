@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class SectorKpiCards extends StatelessWidget {
   final Map<String, dynamic> sector;
@@ -65,26 +66,26 @@ class SectorKpiCards extends StatelessWidget {
     return [
       _buildKpiCard(
         context,
-        title: 'Total Farms',
+        title: context.translate('Total Farms'),
         value: stats['totalFarms']?.toString() ?? 'N/A',
         icon: Icons.agriculture,
       ),
       _buildKpiCard(
         context,
-        title: 'Total Farmers',
+        title: context.translate('Total Farmers'),
         value: stats['totalFarmers']?.toString() ?? 'N/A',
         icon: Icons.people,
       ),
       _buildKpiCard(
         context,
-        title: 'Avg Farm Size',
+        title: context.translate('Avg Farm Size'),
         value:
             stats['avgFarmSize'] != null ? '${stats['avgFarmSize']} ha' : 'N/A',
         icon: Icons.landscape,
       ),
       _buildKpiCard(
         context,
-        title: 'Annual Yield',
+        title: context.translate('Annual Yield'),
         value: stats['totalYieldVolume'] != null
             ? '${stats['totalYieldVolume']} tons'
             : 'N/A',
@@ -92,7 +93,7 @@ class SectorKpiCards extends StatelessWidget {
       ),
       _buildKpiCard(
         context,
-        title: 'Growth %',
+        title: context.translate('Growth %'),
         value: growthPercent != null
             ? '${growthPercent.toStringAsFixed(1)}%'
             : 'N/A',

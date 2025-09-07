@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Add this import
 import 'suitability_inputs.dart';
 import 'suitability_results.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class SuitabilityContent extends StatefulWidget {
   const SuitabilityContent({super.key});
@@ -116,7 +117,7 @@ class SuitabilityContentState extends State<SuitabilityContent> {
         buttonPosition.dx + 200,
         buttonPosition.dy + buttonSize.height + 100,
       ),
-       color: Theme.of(context).cardTheme.color,
+      color: Theme.of(context).cardTheme.color,
       items: [
         const PopupMenuItem(
           value: 'back',
@@ -124,7 +125,7 @@ class SuitabilityContentState extends State<SuitabilityContent> {
             title: Text('Chatbot'),
           ),
         ),
-        const PopupMenuItem( 
+        const PopupMenuItem(
           value: 'recommendation',
           child: ListTile(
             title: Text('Crop Recommendation'),
@@ -153,9 +154,6 @@ class SuitabilityContentState extends State<SuitabilityContent> {
     // Use Consumer to listen to language changes
     return Consumer<LanguageProvider>(
       builder: (context, languageProvider, child) {
-        print(
-            'Current language in SuitabilityContent: ${languageProvider.currentLanguageCode}');
-
         if (model == null)
           return const Center(child: CircularProgressIndicator());
 
@@ -227,214 +225,210 @@ class SuitabilityContentState extends State<SuitabilityContent> {
     );
   }
 
-
-
-
-
-Widget _buildCropSelectionDropdown() {
-  return Card(
-    child: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Select Crop',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Autocomplete<String>(
-            optionsBuilder: (TextEditingValue textEditingValue) {
-              if (textEditingValue.text.isEmpty) {
-                return availableCrops;
-              }
-              return availableCrops.where((String option) {
-                return option
-                    .toLowerCase()
-                    .contains(textEditingValue.text.toLowerCase());
-              });
-            },
-            onSelected: (String selection) {
-              setState(() {
-                model!.selectedCrop = selection;
-                model!.suitabilityResult = null;
-              });
-            },
-            fieldViewBuilder: (BuildContext context,
-                TextEditingController textEditingController,
-                FocusNode focusNode,
-                VoidCallback onFieldSubmitted) {
-              // Set initial value if a crop is already selected
-              if (model!.selectedCrop != null && textEditingController.text.isEmpty) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  textEditingController.text = model!.selectedCrop!;
+  Widget _buildCropSelectionDropdown() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.translate('Select Crop'),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text.isEmpty) {
+                  return availableCrops;
+                }
+                return availableCrops.where((String option) {
+                  return option
+                      .toLowerCase()
+                      .contains(textEditingValue.text.toLowerCase());
                 });
-              }
-              
-              return TextFormField(
-                controller: textEditingController,
-                focusNode: focusNode,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.blue, width: 1),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).cardTheme.color,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  hintText: 'Type to search crops...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                ),
-              );
-            },
-            optionsViewBuilder: (BuildContext context,
-                AutocompleteOnSelected<String> onSelected,
-                Iterable<String> options) {
-              return Align(
-                alignment: Alignment.topLeft,
-                child: Material(
-                  elevation: 4.0,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      child: ListView.builder(
-                        padding: EdgeInsets.zero,
-                        shrinkWrap: true,
-                        itemCount: options.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          final String option = options.elementAt(index);
-                          return InkWell(
-                            onTap: () {
-                              onSelected(option);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(16.0),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardTheme.color,
-                              ),
-                              child: Text(
-                                option,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    ),
-  );
-}
+              },
+              onSelected: (String selection) {
+                setState(() {
+                  model!.selectedCrop = selection;
+                  model!.suitabilityResult = null;
+                });
+              },
+              fieldViewBuilder: (BuildContext context,
+                  TextEditingController textEditingController,
+                  FocusNode focusNode,
+                  VoidCallback onFieldSubmitted) {
+                // Set initial value if a crop is already selected
+                if (model!.selectedCrop != null &&
+                    textEditingController.text.isEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    textEditingController.text = model!.selectedCrop!;
+                  });
+                }
 
-Widget _buildModelSelectionCard() {
-  return Card(
-    child: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Select Model',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20,
-                ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            value: model!.selectedModel,
-            items: model!.models.keys.map((String modelName) {
-              return DropdownMenuItem<String>(
-                value: modelName,
-                child: Text(
-                  modelName,
+                return TextFormField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
                   style: TextStyle(
                     fontSize: 14,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                ),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              setState(() {
-                model!.selectedModel = newValue!;
-                model!.modelAccuracy = newValue == 'All Models'
-                    ? 'Ensemble average will be calculated'
-                    : 'Accuracy: ${(model!.models[newValue]!['accuracy']! * 100).toStringAsFixed(2)}%';
-              });
-            },
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.blue, width: 1),
+                    ),
+                    filled: true,
+                    fillColor: Theme.of(context).cardTheme.color,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                    hintText: 'Type to search crops...',
+                    hintStyle: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                );
+              },
+              optionsViewBuilder: (BuildContext context,
+                  AutocompleteOnSelected<String> onSelected,
+                  Iterable<String> options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4.0,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            final String option = options.elementAt(index);
+                            return InkWell(
+                              onTap: () {
+                                onSelected(option);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(16.0),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardTheme.color,
+                                ),
+                                child: Text(
+                                  option,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.blue, width: 1),
-              ),
-              filled: true,
-              fillColor: Theme.of(context).cardTheme.color,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 0,
-              ),
-            ),
-            dropdownColor: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(12),
-            elevation: 2,
-            icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
-            iconSize: 24,
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
+  Widget _buildModelSelectionCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              // 'Select Model',
+              context.translate('Select Model'),
 
-
-
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: model!.selectedModel,
+              items: model!.models.keys.map((String modelName) {
+                return DropdownMenuItem<String>(
+                  value: modelName,
+                  child: Text(
+                    modelName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  model!.selectedModel = newValue!;
+                  model!.modelAccuracy = newValue == 'All Models'
+                      ? 'Ensemble average will be calculated'
+                      : 'Accuracy: ${(model!.models[newValue]!['accuracy']! * 100).toStringAsFixed(2)}%';
+                });
+              },
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.blue, width: 1),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).cardTheme.color,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 0,
+                ),
+              ),
+              dropdownColor: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(12),
+              elevation: 2,
+              icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
+              iconSize: 24,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildInputParametersCard(bool isMobile) {
     return Card(
@@ -443,7 +437,9 @@ Widget _buildModelSelectionCard() {
         child: Column(
           children: [
             Text(
-              'Enter Environmental Parameters',
+              // 'Enter Environmental Parameters',
+              context.translate('Enter Environmental Parameters'),
+
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: isMobile ? 20 : 24,
@@ -483,8 +479,8 @@ Widget _buildModelSelectionCard() {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Check Suitability',
+                child: Text(
+                  context.translate('Check Suitability'),
                   style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
@@ -497,7 +493,7 @@ Widget _buildModelSelectionCard() {
                     model!.suitabilityResult = null;
                   });
                 },
-                child: const Text('Check Another Configuration'),
+                child: Text(context.translate('Check Another Configuration')),
               ),
             ],
           ],
@@ -516,10 +512,10 @@ Widget _buildModelSelectionCard() {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Crop Suitability',
+                context.translate('Crop Suitability'),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      fontSize: 32,  
+                      fontSize: 32,
                     ),
               ),
               const SizedBox(height: 4),
@@ -579,7 +575,10 @@ Widget _buildModelSelectionCard() {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Crop Suitability ',
+              // 'Crop Suitability ',
+
+              context.translate('Crop Suitability'),
+
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: isMobile ? 24 : 28,

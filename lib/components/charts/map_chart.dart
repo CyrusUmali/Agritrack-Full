@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_maps/maps.dart';
 import 'dart:convert';
 import 'dart:math';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class MapChartWidget extends StatelessWidget {
   const MapChartWidget({super.key});
@@ -55,7 +56,7 @@ class MapChartWidget extends StatelessWidget {
                     if (provider.data.isEmpty) {
                       return Center(
                         child: Text(
-                          'No data available',
+                          context.translate('No data available'),
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       );

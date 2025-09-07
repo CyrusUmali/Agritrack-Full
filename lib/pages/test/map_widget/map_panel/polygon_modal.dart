@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import '../pin_style.dart';
 import '../polygon_manager.dart';
 
+import 'package:flareline/services/lanugage_extension.dart';
+
 class PolygonModal {
   static Future<void> show({
     required BuildContext context,
@@ -33,8 +35,6 @@ class PolygonModal {
     final isLargeScreen = MediaQuery.of(context).size.width > 600;
 
     final polygonCopy = polygon.copyWith();
-
-    print('modalpolygonid' + polygon.id.toString());
 
     // Local update callbacks
     void updateCopyCenter(LatLng center) => polygonCopy.center = center;
@@ -187,8 +187,8 @@ class PolygonModal {
                       onSave();
                       Navigator.of(modalContext).pop();
                     },
-                    child: const Text(
-                      'Save Changes',
+                    child: Text(
+                      context.translate('Save Changes'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

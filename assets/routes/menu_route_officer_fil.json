@@ -1,5 +1,4 @@
 [
-  
   {
     "groupName": "Widgets",
     "menuList": [
@@ -10,47 +9,50 @@
       },
       {
         "icon": "assets/sidebar/map.svg",
-        "menuName": "Map",
+        "menuName": "Mapa",
         "path": "/map"
       },
       {
         "icon": "assets/sidebar/farm.svg",
-        "menuName": "Farms",
+        "menuName": "Mga Sakahan",
         "path": "/farms"
       },
-
       {
         "icon": "assets/sidebar/assocs.svg",
-        "menuName": "Assocs",
+        "menuName": "Mga Samahan",
         "path": "/assocs"
       },
       
-      
-     
+      {
+        "icon": "assets/sidebar/farmer.svg",
+        "menuName": "Mga Magsasaka",
+        "path": "/farmers"
+      },
       {
         "icon": "assets/sidebar/products.svg",
-        "menuName": "Products",
+        "menuName": "Mga Produkto",
         "path": "/products"
       },
       {
         "icon": "assets/sidebar/yield.svg",
-        "menuName": "Yields",
+        "menuName": "Mga Ani",
         "path": "/yields"
       },
-     
+      {
+        "icon": "assets/sidebar/sector.svg",
+        "menuName": "Mga Sektor",
+        "path": "/sectors"
+      },
       {
         "icon": "assets/sidebar/AI.svg",
-        "menuName": "Recommendation",
+        "menuName": "Rekomendasyon",
         "path": "/recommendation"
       },
       {
         "icon": "assets/sidebar/reports.svg",
-        "menuName": "Reports",
+        "menuName": "Mga Ulat",
         "path": "/reports"
       }
-  
-      
-      
     ]
   }
 ]

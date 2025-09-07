@@ -1,6 +1,8 @@
 import 'package:flareline/pages/yields/yield_profile/yield_profile_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/core/models/yield_model.dart';
+import 'package:flareline/services/lanugage_extension.dart'; 
+
 
 class YieldProfileHeader extends StatelessWidget {
   final Yield yieldData;
@@ -23,11 +25,13 @@ class YieldProfileHeader extends StatelessWidget {
               Icon(Icons.assignment, color: Colors.grey.shade600),
               const SizedBox(width: 12),
               Text(
-                "Record Details",
+        
+
+                context.translate('Record Details'), 
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
-              ),
+              ),                                                                          
             ],
           ),
           

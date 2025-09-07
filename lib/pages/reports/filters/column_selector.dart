@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../filter_configs/column_options.dart';
 
+import 'package:flareline/services/lanugage_extension.dart';
+
 class ColumnSelector extends StatelessWidget {
   final String reportType;
   final Set<String> selectedColumns;
@@ -25,7 +27,7 @@ class ColumnSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Select Columns',
+          context.translate('Select Columns'),
           style: textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),

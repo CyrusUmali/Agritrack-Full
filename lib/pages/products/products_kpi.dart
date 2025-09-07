@@ -4,6 +4,8 @@ import 'package:responsive_builder/responsive_builder.dart';
 import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
 import 'package:iconify_flutter_plus/icons/mdi.dart';
 
+import 'package:flareline/services/lanugage_extension.dart';
+
 class FarmProductsKpi extends StatelessWidget {
   const FarmProductsKpi({super.key});
 
@@ -24,7 +26,7 @@ class FarmProductsKpi extends StatelessWidget {
           context,
           const Iconify(Mdi.sack, color: Colors.orange),
           '12,450 t',
-          'Total Production',
+          context.translate('Total Production'),
           DeviceScreenType.desktop,
           Colors.orange[50]!,
         )),
@@ -75,7 +77,7 @@ class FarmProductsKpi extends StatelessWidget {
           context,
           const Iconify(Mdi.sack, color: Colors.orange),
           '12,450 t',
-          'Total Production',
+          context.translate('Total Production'),
           DeviceScreenType.mobile,
           Colors.orange[50]!,
         ),
@@ -83,7 +85,7 @@ class FarmProductsKpi extends StatelessWidget {
           context,
           const Iconify(Mdi.trending_up, color: Colors.green),
           '+8.2%',
-          'Annual Growth',
+          context.translate('Annual Growth'),
           DeviceScreenType.mobile,
           Colors.green[50]!,
         ),

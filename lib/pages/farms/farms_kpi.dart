@@ -5,11 +5,12 @@ import 'package:responsive_builder/responsive_builder.dart';
 import 'package:iconify_flutter_plus/iconify_flutter_plus.dart';
 import 'package:iconify_flutter_plus/icons/mdi.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class FarmKpi extends StatefulWidget {
   const FarmKpi({super.key});
 
-  @override 
+  @override
   State<FarmKpi> createState() => _FarmKpiState();
 }
 
@@ -114,7 +115,7 @@ class _FarmKpiState extends State<FarmKpi> {
                   context,
                   const Iconify(Mdi.farm_house, color: Colors.purple),
                   '${_farmStats?['totalFarms'] ?? '0'}',
-                  'Total Farms',
+                  context.translate('Total Farms'),
                   DeviceScreenType.desktop,
                   Colors.purple[50]!,
                 ),
@@ -127,7 +128,7 @@ class _FarmKpiState extends State<FarmKpi> {
                   context,
                   const Iconify(Mdi.land_fields, color: Colors.indigo),
                   '${_farmStats?['totalArea'] ?? '0'} ha',
-                  'Total Area',
+                  context.translate('Total Area'),
                   DeviceScreenType.desktop,
                   Colors.indigo[50]!,
                 ),
@@ -140,7 +141,7 @@ class _FarmKpiState extends State<FarmKpi> {
                   context,
                   const Iconify(Mdi.barley, color: Colors.green),
                   '${_farmStats?['averageYield'] ?? '0 kg/ha'}',
-                  'Avg. Yields',
+                  context.translate('Avg. Yields'),
                   DeviceScreenType.desktop,
                   Colors.green[50]!,
                 ),
@@ -153,7 +154,7 @@ class _FarmKpiState extends State<FarmKpi> {
                   context,
                   const Iconify(Mdi.account_group, color: Colors.blue),
                   '${_farmStats?['uniqueOwners'] ?? '0'}',
-                  'Unique Owners',
+                  context.translate('Unique Owners'),
                   DeviceScreenType.desktop,
                   Colors.blue[50]!,
                 ),
@@ -177,7 +178,7 @@ class _FarmKpiState extends State<FarmKpi> {
                 context,
                 const Iconify(Mdi.farm_house, color: Colors.purple),
                 '${_farmStats?['totalFarms'] ?? '0'}',
-                'Total Farms',
+                context.translate('Total Farms'),
                 DeviceScreenType.mobile,
                 Colors.purple[50]!,
               ),
@@ -187,7 +188,7 @@ class _FarmKpiState extends State<FarmKpi> {
                 context,
                 const Iconify(Mdi.land_fields, color: Colors.indigo),
                 '${_farmStats?['totalArea'] ?? '0'} ha',
-                'Total Area',
+                context.translate('Total Area'),
                 DeviceScreenType.mobile,
                 Colors.indigo[50]!,
               ),
@@ -197,7 +198,7 @@ class _FarmKpiState extends State<FarmKpi> {
                 context,
                 const Iconify(Mdi.barley, color: Colors.green),
                 '${_farmStats?['averageYield'] ?? '0 kg/ha'}',
-                'Avg. Yield',
+                context.translate('Avg. Yields'),
                 DeviceScreenType.mobile,
                 Colors.green[50]!,
               ),
@@ -207,7 +208,7 @@ class _FarmKpiState extends State<FarmKpi> {
                 context,
                 const Iconify(Mdi.account_group, color: Colors.blue),
                 '${_farmStats?['uniqueOwners'] ?? '0'}',
-                'Unique Owners',
+                context.translate('Unique Owners'),
                 DeviceScreenType.mobile,
                 Colors.blue[50]!,
               ),

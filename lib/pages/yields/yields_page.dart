@@ -9,13 +9,14 @@ import 'package:flareline/pages/yields/yields_table.dart';
 import 'package:flareline/repositories/yield_repository.dart';
 import 'package:flareline/services/api_service.dart';
 import 'package:provider/provider.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class YieldsPage extends LayoutWidget {
   const YieldsPage({super.key});
 
   @override
   String breakTabTitle(BuildContext context) {
-    return 'Yields';
+    return context.translate('Yields');
   }
 
   @override

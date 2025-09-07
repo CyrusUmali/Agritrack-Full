@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:toastification/toastification.dart';
 import 'package:flareline_uikit/components/charts/circular_chart.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class FarmProfile extends LayoutWidget {
   final int farmId;
@@ -23,7 +24,7 @@ class FarmProfile extends LayoutWidget {
 
   @override
   String breakTabTitle(BuildContext context) {
-    return 'Farm Profile';
+    return context.translate('Farm Profile');
   }
 
   @override
@@ -133,7 +134,6 @@ class _FarmProfileDesktopState extends State<FarmProfileDesktop> {
         (transformedFarm['products'] as List).isNotEmpty;
     final hasYields = yieldState.yields.isNotEmpty;
 
-
 // print("wqeqwe");
 //     print(yieldState.yields.first.farmerId);
 //     print(_farmerId);
@@ -242,13 +242,13 @@ class _FarmProfileDesktopState extends State<FarmProfileDesktop> {
         children: [
           _buildToggleButton(
             context,
-            label: 'Recent Records',
+            label: context.translate('Recent Records'),
             isSelected: _selectedViewIndex == 0,
             onTap: () => setState(() => _selectedViewIndex = 0),
           ),
           _buildToggleButton(
             context,
-            label: 'Products & Distribution',
+            label: context.translate('Products & Distribution'),
             isSelected: _selectedViewIndex == 1,
             onTap: () => setState(() => _selectedViewIndex = 1),
           ),
@@ -445,18 +445,18 @@ class _FarmProfileMobileState extends State<FarmProfileMobile> {
             const SizedBox(height: 16),
             FarmInfoCard(
               farm: transformedFarm,
-               onSave: (updatedData) {
-                          final updatedFarm = Farm(
-                              id: farmState.farm.id,
-                              name: updatedData['farmName'],
-                              sectorId: updatedData['sectorId'],
-                              barangay: updatedData['barangayName'],
-                              farmerId: updatedData['farmerId'],
-                              updatedAt: DateTime.now(),
-                              products: updatedData['products'],
-                              status: updatedData['status']);
-                          context.read<FarmBloc>().add(UpdateFarm(updatedFarm));
-                        },
+              onSave: (updatedData) {
+                final updatedFarm = Farm(
+                    id: farmState.farm.id,
+                    name: updatedData['farmName'],
+                    sectorId: updatedData['sectorId'],
+                    barangay: updatedData['barangayName'],
+                    farmerId: updatedData['farmerId'],
+                    updatedAt: DateTime.now(),
+                    products: updatedData['products'],
+                    status: updatedData['status']);
+                context.read<FarmBloc>().add(UpdateFarm(updatedFarm));
+              },
             ),
             const SizedBox(height: 16),
 
@@ -630,9 +630,6 @@ class _FarmProfileMobileState extends State<FarmProfileMobile> {
   }
 }
 
-
-
-
 Map<String, dynamic> transformFarmData(
     FarmState farmState, YieldState yieldState) {
   // Default/fallback values
@@ -678,7 +675,8 @@ Map<String, dynamic> transformFarmData(
 
   // Transform yield data if loaded
   if (yieldState is YieldsLoaded) {
-    final productMap = <String, Map<int, Map<int, double>>>{}; // product -> year -> month -> sum
+    final productMap = <String,
+        Map<int, Map<int, double>>>{}; // product -> year -> month -> sum
 
     for (var yield in yieldState.yields) {
       final productName = yield.productName ?? 'Unknown Product';
@@ -689,10 +687,10 @@ Map<String, dynamic> transformFarmData(
 
       // Initialize product if not exists
       productMap.putIfAbsent(productName, () => {});
-      
+
       // Initialize year if not exists
       productMap[productName]!.putIfAbsent(year, () => {});
-      
+
       // Sum volumes by month
       productMap[productName]![year]!.update(
         month,
@@ -711,17 +709,18 @@ Map<String, dynamic> transformFarmData(
             monthly[month - 1] = volume;
           }
         });
-        
+
         // Calculate year total
-        final yearTotal = yearEntry.value.values.fold(0.0, (sum, volume) => sum + volume);
-        
+        final yearTotal =
+            yearEntry.value.values.fold(0.0, (sum, volume) => sum + volume);
+
         return {
           'year': yearEntry.key,
           'total': yearTotal,
           'monthly': monthly,
         };
       }).toList();
-      
+
       return {
         'name': productEntry.key,
         'yields': yearlyData,

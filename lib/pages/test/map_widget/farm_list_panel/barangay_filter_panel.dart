@@ -1,7 +1,7 @@
 // ignore_for_file: unnecessary_to_list_in_spreads, avoid_print
 
 import 'dart:convert';
-
+import 'package:flareline/services/lanugage_extension.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 import 'package:flutter/material.dart';
 
@@ -181,12 +181,12 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               TextButton(
-                child: Text('Select All',
+                child: Text(context.translate('Select All'),
                     style: TextStyle(color: theme.colorScheme.primary)),
                 onPressed: () => _toggleAll(true),
               ),
               TextButton(
-                child: Text('Clear All',
+                child: Text(context.translate('Clear All'),
                     style: TextStyle(color: theme.colorScheme.primary)),
                 onPressed: () => _toggleAll(false),
               ),
@@ -215,13 +215,11 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
                   },
                   controlAffinity: ListTileControlAffinity.leading,
                   activeColor: theme.colorScheme.primary,
-                   checkColor: Colors.white,
+                  checkColor: Colors.white,
                 );
               }).toList(),
             ),
           ),
-      
-      
           SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
@@ -229,7 +227,7 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
                   Map.from(_tempFilterOptions));
               widget.onClose();
             },
-            child: Text('Apply Filters'),
+            child: Text(context.translate('Apply Filters')),
             style: ElevatedButton.styleFrom(
               minimumSize: Size(double.infinity, 40),
               backgroundColor: theme.colorScheme.primary,

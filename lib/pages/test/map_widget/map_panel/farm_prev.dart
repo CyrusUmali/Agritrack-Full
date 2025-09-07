@@ -1,5 +1,6 @@
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class InfoCard extends StatelessWidget {
   final PolygonData polygon;
@@ -106,7 +107,7 @@ class InfoCard extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  'Tap to view details',
+                  context.translate('Tap to view details'),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: colorScheme.onSurface,
                   ),

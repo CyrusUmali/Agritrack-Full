@@ -7,18 +7,17 @@ import 'package:flareline/core/models/yield_model.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
-
+import 'package:flareline/services/lanugage_extension.dart';
 import 'yield_profile_utils.dart';
 import 'yield_profile_actions.dart';
 import 'yield_image_handler.dart';
 
 class YieldProfileForm extends StatefulWidget {
   final Yield yieldData;
-    final Function(Yield)? onYieldUpdated; // Add this
+  final Function(Yield)? onYieldUpdated; // Add this
 
-
- const YieldProfileForm({
-    super.key, 
+  const YieldProfileForm({
+    super.key,
     required this.yieldData,
     this.onYieldUpdated, // Add this
   });
@@ -40,7 +39,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
   bool _isAccepting = false;
   bool _isRejecting = false;
 
-  // Add these variables to track the current  
+  // Add these variables to track the current
   String? _currentOperation;
 
   @override
@@ -106,14 +105,14 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
   Future<void> _updateYield(String status) async {
     // Prevent multiple simultaneous operations
     if (_isSaving || _isDeleting || _isAccepting || _isRejecting) {
-      print('Operation already in progress, ignoring...');
+      // print('Operation already in progress, ignoring...');
       return;
     }
 
     try {
       // Set the appropriate loading state and current operation
       setState(() {
-        if (status == 'Accepted') { 
+        if (status == 'Accepted') {
           _isAccepting = true;
           _currentOperation = 'accept';
         } else if (status == 'Rejected') {
@@ -125,7 +124,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
         }
       });
 
-      print('Starting ${_currentOperation} operation...');
+      // print('Starting ${_currentOperation} operation...');
 
       final newImageUrls = await _imageHandler.uploadImagesToCloudinary();
       final allImages = [..._imageHandler.existingImages, ...newImageUrls];
@@ -142,14 +141,14 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
 
       context.read<YieldBloc>().add(UpdateYield(updatedYield));
     } catch (e) {
-      print('Error updating yield: $e');
+      // print('Error updating yield: $e');
       _showToast('Error updating yield: ${e.toString()}', isError: true);
       _resetLoadingStates();
     }
   }
 
   void _resetLoadingStates() {
-    setState(() { 
+    setState(() {
       _isSaving = false;
       _isAccepting = false;
       _isRejecting = false;
@@ -180,14 +179,14 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
 
     return BlocListener<YieldBloc, YieldState>(
       listener: (context, state) {
-        print('BlocListener triggered with state: ${state.runtimeType}');
+        // print('BlocListener triggered with state: ${state.runtimeType}');
 
         if (state is YieldUpdated) {
-          print('YieldUpdated received, resetting loading states');
+          // print('YieldUpdated received, resetting loading states');
           _resetLoadingStates();
           _showToast('Yield updated successfully', isError: false);
 
- // Call the callback with the updated yield data
+          // Call the callback with the updated yield data
           if (widget.onYieldUpdated != null) {
             final updatedYield = widget.yieldData.copyWith(
               images: [..._imageHandler.existingImages],
@@ -196,24 +195,22 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
               value: double.tryParse(_valueController.text),
               notes: _notesController.text,
               harvestDate: _selectedHarvestDate,
-              status: state.yield.status, // Use the status from the updated yield
+              status:
+                  state.yield.status, // Use the status from the updated yield
             );
             widget.onYieldUpdated!(updatedYield);
           }
-
-
-
         } else if (state is YieldsLoaded) {
           if (state.message?.contains('deleted') == true) {
-            print('Yield deleted successfully');
+            // print('Yield deleted successfully');
             setState(() => _isDeleting = false);
             _showToast(state.message!, isError: false);
             Navigator.of(context).pushReplacementNamed('/yields');
           } else {
             // Only reset loading states if this is not a delete operation
             if (!_isDeleting) {
-              print(
-                  'YieldsLoaded received, resetting non-delete loading states');
+              // print(
+              //     'YieldsLoaded received, resetting non-delete loading states');
               setState(() {
                 _isSaving = false;
                 _isAccepting = false;
@@ -223,7 +220,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
             }
           }
         } else if (state is YieldsError) {
-          print('YieldsError received: ${state.message}');
+          // print('YieldsError received: ${state.message}');
           _resetLoadingStates();
           setState(() => _isDeleting = false);
           _showToast(state.message, isError: true);
@@ -243,18 +240,22 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    buildSectionTitle("Product Information", context,
+                    buildSectionTitle(
+                        context.translate('Product Information'), context,
                         icon: Icons.shopping_bag),
                     buildResponsiveRow(
                       children: [
                         buildTextField(
-                          "Product Name",
+                          context.translate('Product Name'),
                           widget.yieldData.productName ?? 'Not specified',
                           isMobile,
                           enabled: false,
                         ),
                         buildTextField(
-                          "Product Sector",
+                          //  "Product Name",
+                          // context.translate('Product Sector').
+
+                          context.translate('Product Sector'),
                           widget.yieldData.sector ?? 'Not specified',
                           isMobile,
                           enabled: false,
@@ -264,18 +265,19 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
                       isMobile: isMobile,
                     ),
                     SizedBox(height: spacing),
-                    buildSectionTitle("Farm Information", context,
+                    buildSectionTitle(
+                        context.translate('Farm Information'), context,
                         icon: Icons.agriculture),
                     buildResponsiveRow(
                       children: [
                         buildTextField(
-                          "Farmer Name",
+                          context.translate('Farmer Name'),
                           widget.yieldData.farmerName ?? 'Not specified',
                           isMobile,
                           enabled: false,
                         ),
                         buildTextField(
-                          "Location",
+                          context.translate('Location'),
                           widget.yieldData.barangay ?? 'Not specified',
                           isMobile,
                           enabled: false,
@@ -288,14 +290,14 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
                     buildResponsiveRow(
                       children: [
                         buildTextField(
-                          "Farm Name",
+                          context.translate('Farm Name'),
                           widget.yieldData.farmName ?? 'Not specified',
                           isMobile,
                           enabled: false,
                         ),
-                        buildEditableTextField( 
+                        buildEditableTextField(
                           controller: _areaHarvestedController,
-                          label: "Area harvested (Ha)",
+                          label: context.translate('Area harvested (Ha)'),
                           isMobile: isMobile,
                           keyboardType:
                               TextInputType.numberWithOptions(decimal: true),
@@ -306,20 +308,21 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
                       isMobile: isMobile,
                     ),
                     SizedBox(height: spacing),
-                    buildSectionTitle("Yield Information", context,
+                    buildSectionTitle(
+                        context.translate('Yield Information'), context,
                         icon: Icons.assessment),
                     buildResponsiveRow(
                       children: [
                         buildEditableTextField(
                           controller: _volumeController,
-                          label: "Yield Amount",
+                          label: context.translate('Yield Amount'),
                           isMobile: isMobile,
                           keyboardType:
                               TextInputType.numberWithOptions(decimal: true),
                           suffixText: 'kg',
                         ),
                         buildDatePickerField(
-                          "Harvest Date",
+                          context.translate('Harvest Date'),
                           isMobile,
                           value: harvestDate,
                           enabled: true,
@@ -334,7 +337,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
                       children: [
                         buildEditableTextField(
                           controller: _valueController,
-                          label: "Value in (Php)",
+                          label: context.translate('Value in (Php)'),
                           isMobile: isMobile,
                           keyboardType:
                               TextInputType.numberWithOptions(decimal: true),
@@ -345,32 +348,30 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
                       isMobile: isMobile,
                     ),
                     SizedBox(height: spacing),
-                    buildSectionTitle("Documentation", context,
+                    buildSectionTitle(
+                        context.translate('Documentation'), context,
                         icon: Icons.attach_file),
                     _buildImageUploadSection(isMobile),
                     SizedBox(height: spacing),
-                    buildSectionTitle("Additional Information", context,
+                    buildSectionTitle(
+                        context.translate('Additional Information'), context,
                         icon: Icons.note),
                     buildEditableTextField(
                       controller: _notesController,
-                      label: "Notes",
+                      label: context.translate('Notes'),
                       isMobile: isMobile,
                       maxLines: 3,
                     ),
                     SizedBox(height: spacing * 1.5),
-          
                     YieldProfileActions(
                       isMobile: isMobile,
                       onAccept: () {
-                        print('Accept action triggered');
                         _updateYield('Accepted');
                       },
-                      onReject: () { 
-                        print('Reject action triggered');
+                      onReject: () {
                         _updateYield('Rejected');
                       },
                       onSave: () {
-                        print('Save action triggered');
                         _updateYield('');
                       },
                       onDelete: _deleteYield,
@@ -392,20 +393,20 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
   Future<void> _deleteYield() async {
     // Prevent multiple simultaneous operations
     if (_isSaving || _isDeleting || _isAccepting || _isRejecting) {
-      print('Operation already in progress, ignoring delete...');
       return;
     }
 
     final confirmed = await ModalDialog.show(
       context: context,
-      title: 'Delete Yield',
+      title: context.translate('Delete Yield'),
       showTitle: true,
       showTitleDivider: true,
       modalType: ModalType.medium,
       onCancelTap: () => Navigator.of(context).pop(false),
       onSaveTap: () => Navigator.of(context).pop(true),
-      child: const Center(
-        child: Text('Are you sure you want to delete this yield record?'),
+      child: Center(
+        child: Text(
+            context.translate('Are you sure you want to delete this record?')),
       ),
       footer: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
@@ -416,7 +417,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
               SizedBox(
                 width: 120,
                 child: ButtonWidget(
-                  btnText: 'Cancel',
+                  btnText: context.translate('Cancel'),
                   textColor: FlarelineColors.darkBlackText,
                   onTap: () => Navigator.of(context).pop(false),
                 ),
@@ -425,7 +426,7 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
               SizedBox(
                 width: 120,
                 child: ButtonWidget(
-                  btnText: 'Delete',
+                  btnText: context.translate('Delete'),
                   onTap: () => Navigator.of(context).pop(true),
                   type: ButtonType.primary.type,
                 ),

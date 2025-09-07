@@ -1,4 +1,3 @@
-
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +5,9 @@ import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flareline_uikit/core/theme/flareline_colors.dart';
-import 'package:flareline/core/models/farmer_model.dart'; 
+import 'package:flareline/core/models/farmer_model.dart';
 import 'package:provider/provider.dart';
+import 'package:flareline/services/lanugage_extension.dart';
 
 class FarmCreationModal {
   static Future<bool> show({
@@ -44,11 +44,6 @@ class FarmCreationModal {
     }
   }
 
-
-
-  
-
-
   static Future<bool> _showLargeScreenModal({
     required BuildContext context,
     required PolygonData polygon,
@@ -61,12 +56,12 @@ class FarmCreationModal {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final nameController = TextEditingController(text: polygon.name);
     PinStyle selectedPinStyle = polygon.pinStyle;
-    
+
     int? selectedFarmerId;
     String? selectedFarmerName;
     bool isFarmerValid = false;
     bool isNameValid = polygon.name.isNotEmpty;
-    
+
     // Auto-select farmer if user is a farmer
     if (userProvider.isFarmer && userProvider.farmer != null) {
       selectedFarmerId = userProvider.farmer!.id;
@@ -75,9 +70,10 @@ class FarmCreationModal {
       onFarmerChanged(selectedFarmerId, selectedFarmerName);
     } else {
       // Use existing polygon owner if available
-      selectedFarmerId = polygon.owner != null ? int.tryParse(polygon.owner!) : null;
+      selectedFarmerId =
+          polygon.owner != null ? int.tryParse(polygon.owner!) : null;
       isFarmerValid = selectedFarmerId != null;
-      
+
       // Find initial farmer name if ID exists
       if (selectedFarmerId != null) {
         final farmer = farmers.firstWhere(
@@ -89,7 +85,8 @@ class FarmCreationModal {
     }
 
     final farmerOptions = farmers.map((farmer) => farmer.name).toList();
-    final farmerTextController = TextEditingController(text: selectedFarmerName);
+    final farmerTextController =
+        TextEditingController(text: selectedFarmerName);
 
     return await showDialog<bool>(
           context: context,
@@ -100,8 +97,7 @@ class FarmCreationModal {
                   insetPadding: const EdgeInsets.all(20),
                   backgroundColor: Theme.of(context).cardTheme.color,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),   
-                 
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Container(
                     width: MediaQuery.of(context).size.width * 0.5,
@@ -114,7 +110,7 @@ class FarmCreationModal {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Create New Farm',
+                              context.translate('Create New Farm'),
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -132,20 +128,22 @@ class FarmCreationModal {
                             labelText: 'Farm Name',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              
                             ),
-                             enabledBorder: OutlineInputBorder( // Border when not focused
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(
-        color: FlarelineColors.border,
-      ),
-    ),
+                            enabledBorder: OutlineInputBorder(
+                              // Border when not focused
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: FlarelineColors.border,
+                              ),
+                            ),
                             filled: true,
                             fillColor:
                                 Theme.of(context).brightness == Brightness.dark
                                     ? GlobalColors.darkerCardColor
                                     : Colors.grey.shade50,
-                            errorText: isNameValid ? null : 'Name is required',
+                            errorText: isNameValid
+                                ? null
+                                : context.translate('Name is required'),
                             errorStyle: const TextStyle(color: Colors.red),
                           ),
                           onChanged: (value) {
@@ -182,7 +180,8 @@ class FarmCreationModal {
                                   });
                                   onFarmerChanged(
                                       selectedFarmerId, selectedFarmerName);
-                                  farmerTextController.text = selectedFarmerName!;
+                                  farmerTextController.text =
+                                      selectedFarmerName!;
                                 },
                                 fieldViewBuilder: (BuildContext context,
                                     TextEditingController textEditingController,
@@ -197,13 +196,13 @@ class FarmCreationModal {
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-
-                                       enabledBorder: OutlineInputBorder( // Border when not focused
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(
-        color: FlarelineColors.border,
-      ),
-    ),
+                                      enabledBorder: OutlineInputBorder(
+                                        // Border when not focused
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: FlarelineColors.border,
+                                        ),
+                                      ),
                                       filled: true,
                                       fillColor: Theme.of(context).brightness ==
                                               Brightness.dark
@@ -211,22 +210,22 @@ class FarmCreationModal {
                                           : Colors.grey.shade50,
                                       errorStyle:
                                           const TextStyle(color: Colors.red),
-                                      suffixIcon:
-                                          textEditingController.text.isNotEmpty
-                                              ? IconButton(
-                                                  icon: const Icon(Icons.clear,
-                                                      size: 20),
-                                                  onPressed: () {
-                                                    textEditingController.clear();
-                                                    setState(() {
-                                                      selectedFarmerId = null;
-                                                      selectedFarmerName = null;
-                                                      isFarmerValid = false;
-                                                    });
-                                                    onFarmerChanged(null, null);
-                                                  },
-                                                )
-                                              : null,
+                                      suffixIcon: textEditingController
+                                              .text.isNotEmpty
+                                          ? IconButton(
+                                              icon: const Icon(Icons.clear,
+                                                  size: 20),
+                                              onPressed: () {
+                                                textEditingController.clear();
+                                                setState(() {
+                                                  selectedFarmerId = null;
+                                                  selectedFarmerName = null;
+                                                  isFarmerValid = false;
+                                                });
+                                                onFarmerChanged(null, null);
+                                              },
+                                            )
+                                          : null,
                                     ),
                                     onChanged: (value) {
                                       if (value.isEmpty) {
@@ -257,17 +256,18 @@ class FarmCreationModal {
                                       child: ConstrainedBox(
                                         constraints: BoxConstraints(
                                           maxHeight: 200,
-                                          maxWidth:
-                                              MediaQuery.of(context).size.width *
-                                                      0.5 -
-                                                  48,
+                                          maxWidth: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.5 -
+                                              48,
                                         ),
                                         child: ListView.builder(
                                           padding: EdgeInsets.zero,
                                           shrinkWrap: true,
                                           itemCount: options.length,
-                                          itemBuilder:
-                                              (BuildContext context, int index) {
+                                          itemBuilder: (BuildContext context,
+                                              int index) {
                                             final String option =
                                                 options.elementAt(index);
                                             return ListTile(
@@ -285,8 +285,8 @@ class FarmCreationModal {
                               ),
                               if (!isFarmerValid)
                                 Padding(
-                                  padding:
-                                      const EdgeInsets.only(top: 4.0, left: 12.0),
+                                  padding: const EdgeInsets.only(
+                                      top: 4.0, left: 12.0),
                                   child: Text(
                                     'Please select a farmer',
                                     style: TextStyle(
@@ -308,9 +308,8 @@ class FarmCreationModal {
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.check_circle, 
-                                     color: Colors.green.shade600, 
-                                     size: 20),
+                                Icon(Icons.check_circle,
+                                    color: Colors.green.shade600, size: 20),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Farmer: ${userProvider.farmer!.name}',
@@ -349,7 +348,7 @@ class FarmCreationModal {
                                       Navigator.of(context).pop(true);
                                     }
                                   : null,
-                              child: const Text('Create Farm'),
+                              child: Text(context.translate('Create Farm')),
                             ),
                           ],
                         ),
@@ -364,7 +363,6 @@ class FarmCreationModal {
         false;
   }
 
-
   static Future<bool> _showSmallScreenModal({
     required BuildContext context,
     required PolygonData polygon,
@@ -372,19 +370,19 @@ class FarmCreationModal {
     required Function(PinStyle) onPinStyleChanged,
     required List<Farmer> farmers,
     required Function(int?, String?) onFarmerChanged,
-    required ThemeData theme, 
+    required ThemeData theme,
   }) async {
     // Move all state variables and controllers outside the modal builder
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final nameController = TextEditingController(text: polygon.name);
     final farmerTextController = TextEditingController();
-    
+
     PinStyle selectedPinStyle = polygon.pinStyle;
     int? selectedFarmerId;
     String? selectedFarmerName;
     bool isFarmerValid = false;
     bool isNameValid = polygon.name.isNotEmpty;
-    
+
     // Auto-select farmer if user is a farmer
     if (userProvider.isFarmer && userProvider.farmer != null) {
       selectedFarmerId = userProvider.farmer!.id;
@@ -393,11 +391,12 @@ class FarmCreationModal {
       onFarmerChanged(selectedFarmerId, selectedFarmerName);
     } else {
       // Use existing polygon owner if available
-      selectedFarmerId = polygon.owner != null ? int.tryParse(polygon.owner!) : null;
+      selectedFarmerId =
+          polygon.owner != null ? int.tryParse(polygon.owner!) : null;
       isFarmerValid = selectedFarmerId != null;
-      
+
       // Find initial farmer name if ID exists
-      if (selectedFarmerId != null) { 
+      if (selectedFarmerId != null) {
         final farmer = farmers.firstWhere(
           (f) => f.id == selectedFarmerId,
           orElse: () => Farmer(id: -1, name: 'Unknown', sector: ''),
@@ -423,7 +422,7 @@ class FarmCreationModal {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Create New Farm',
+                    context.translate('Create New Farm'),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
@@ -531,13 +530,13 @@ class _ModalContentState extends State<_ModalContent> {
                   color: Colors.grey.shade400,
                 ),
               ),
-
-               enabledBorder: OutlineInputBorder( // Border when not focused
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(
-        color: FlarelineColors.border,
-      ),
-    ),
+              enabledBorder: OutlineInputBorder(
+                // Border when not focused
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: FlarelineColors.border,
+                ),
+              ),
               filled: true,
               fillColor: Theme.of(context).brightness == Brightness.dark
                   ? GlobalColors.darkerCardColor
@@ -546,7 +545,8 @@ class _ModalContentState extends State<_ModalContent> {
                 horizontal: 16,
                 vertical: 14,
               ),
-              errorText: isNameValid ? null : 'Name is required',
+              errorText:
+                  isNameValid ? null : context.translate('Name is required'),
               errorStyle: const TextStyle(color: Colors.red),
             ),
             onChanged: (value) {
@@ -568,19 +568,21 @@ class _ModalContentState extends State<_ModalContent> {
                       return const Iterable<String>.empty();
                     }
                     return widget.farmerOptions.where((String option) {
-                      return option.toLowerCase().contains(
-                          textEditingValue.text.toLowerCase());
+                      return option
+                          .toLowerCase()
+                          .contains(textEditingValue.text.toLowerCase());
                     });
                   },
                   onSelected: (String selection) {
-                    final selectedFarmer = widget.farmers.firstWhere(
-                        (farmer) => farmer.name == selection);
+                    final selectedFarmer = widget.farmers
+                        .firstWhere((farmer) => farmer.name == selection);
                     setState(() {
                       selectedFarmerId = selectedFarmer.id;
                       selectedFarmerName = selectedFarmer.name;
                       isFarmerValid = true;
                     });
-                    widget.onFarmerChanged(selectedFarmerId, selectedFarmerName);
+                    widget.onFarmerChanged(
+                        selectedFarmerId, selectedFarmerName);
                     widget.farmerTextController.text = selectedFarmerName!;
                   },
                   fieldViewBuilder: (BuildContext context,
@@ -588,10 +590,12 @@ class _ModalContentState extends State<_ModalContent> {
                       FocusNode focusNode,
                       VoidCallback onFieldSubmitted) {
                     // Use the provided controller instead of creating a new one
-                    if (widget.farmerTextController.text != textEditingController.text) {
-                      textEditingController.text = widget.farmerTextController.text;
+                    if (widget.farmerTextController.text !=
+                        textEditingController.text) {
+                      textEditingController.text =
+                          widget.farmerTextController.text;
                     }
-                    
+
                     return TextField(
                       controller: textEditingController,
                       focusNode: focusNode,
@@ -601,13 +605,13 @@ class _ModalContentState extends State<_ModalContent> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-
-                         enabledBorder: OutlineInputBorder( // Border when not focused
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(
-        color: FlarelineColors.border,
-      ),
-    ),
+                        enabledBorder: OutlineInputBorder(
+                          // Border when not focused
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: FlarelineColors.border,
+                          ),
+                        ),
                         filled: true,
                         fillColor: Colors.grey.shade50,
                         errorStyle: const TextStyle(color: Colors.red),
@@ -701,9 +705,8 @@ class _ModalContentState extends State<_ModalContent> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle, 
-                       color: Colors.green.shade600, 
-                       size: 20),
+                  Icon(Icons.check_circle,
+                      color: Colors.green.shade600, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     'Farmer: ${widget.userProvider.farmer!.name}',
@@ -772,8 +775,8 @@ class _StickyActionBarState extends State<_StickyActionBar> {
                 Navigator.of(widget.modalContext).pop(true);
               }
             : null,
-        child: const Text(
-          'Create Farm',
+        child: Text(
+          context.translate('Create Farm'),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -782,17 +785,6 @@ class _StickyActionBarState extends State<_StickyActionBar> {
       ),
     );
   }
-
-
-
-
-
-
-
-
-
-
-
 }
 
 
