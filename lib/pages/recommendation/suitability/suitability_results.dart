@@ -84,15 +84,20 @@ class SuitabilityResults extends StatelessWidget {
     double padding,
   ) {
     final mainColor = isSuitable ? Colors.green : Colors.orange;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-        border: Border.all(color: Colors.grey[200]!),
+        color: Theme.of(context).cardTheme.color,
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -165,7 +170,7 @@ class SuitabilityResults extends StatelessWidget {
             // Image if available
             if (suitabilityResult['image_url'] != null) ...[
               SizedBox(height: isSmallScreen ? 16 : 20),
-              _buildImageSection(isSmallScreen),
+              _buildImageSection(isSmallScreen, context),
             ],
           ],
         ),
@@ -179,12 +184,16 @@ class SuitabilityResults extends StatelessWidget {
     Color mainColor,
     bool isSmallScreen,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: isDark ? Colors.grey[850] : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        ),
       ),
       child: Row(
         children: [
@@ -210,7 +219,7 @@ class SuitabilityResults extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: isSmallScreen ? 14 : 16,
-                    color: Colors.grey[700],
+                    color: isDark ? Colors.grey[300] : Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -229,7 +238,7 @@ class SuitabilityResults extends StatelessWidget {
                       child: Container(
                         height: 6,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: isDark ? Colors.grey[700] : Colors.grey[300],
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: FractionallySizedBox(
@@ -259,13 +268,16 @@ class SuitabilityResults extends StatelessWidget {
     bool isSmallScreen,
   ) {
     final models = suitabilityResult['model_used'] as List;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: isDark ? Colors.grey[850] : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,7 +286,7 @@ class SuitabilityResults extends StatelessWidget {
             children: [
               Icon(
                 Icons.memory,
-                color: Colors.blue[600],
+                color: isDark ? Colors.blue[300] : Colors.blue[600],
                 size: 18,
               ),
               const SizedBox(width: 8),
@@ -283,7 +295,7 @@ class SuitabilityResults extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: isSmallScreen ? 14 : 16,
-                  color: Colors.grey[700],
+                  color: isDark ? Colors.grey[300] : Colors.grey[700],
                 ),
               ),
             ],
@@ -296,15 +308,19 @@ class SuitabilityResults extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: isDark
+                      ? Colors.blue[900]!.withOpacity(0.3)
+                      : Colors.blue[50],
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.blue[100]!),
+                  border: Border.all(
+                    color: isDark ? Colors.blue[700]! : Colors.blue[100]!,
+                  ),
                 ),
                 child: Text(
                   model.toString(),
                   style: TextStyle(
                     fontSize: isSmallScreen ? 12 : 13,
-                    color: Colors.blue[700],
+                    color: isDark ? Colors.blue[300] : Colors.blue[700],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -316,7 +332,12 @@ class SuitabilityResults extends StatelessWidget {
     );
   }
 
-  Widget _buildImageSection(bool isMobile) {
+  Widget _buildImageSection(
+    bool isMobile,
+    BuildContext context,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       height: isMobile ? 180 : 220,
       width: double.infinity,
@@ -324,7 +345,9 @@ class SuitabilityResults extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -337,16 +360,16 @@ class SuitabilityResults extends StatelessWidget {
             Container(
               width: double.infinity,
               height: double.infinity,
-              color: Colors.grey[200],
+              color: isDark ? Colors.grey[800] : Colors.grey[200],
               child: Image.network(
                 suitabilityResult['image_url'],
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                    color: Colors.grey[200],
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
                     child: Icon(
                       Icons.landscape,
-                      color: Colors.grey[400],
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
                       size: 48,
                     ),
                   );
@@ -354,7 +377,7 @@ class SuitabilityResults extends StatelessWidget {
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return Container(
-                    color: Colors.grey[200],
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
                     child: Center(
                       child: CircularProgressIndicator(
                         value: loadingProgress.expectedTotalBytes != null
@@ -380,7 +403,7 @@ class SuitabilityResults extends StatelessWidget {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [
-                      Colors.black.withOpacity(0.3),
+                      Colors.black.withOpacity(0.4),
                       Colors.transparent,
                     ],
                   ),
@@ -403,15 +426,20 @@ class SuitabilityResults extends StatelessWidget {
         .where((e) => e.value['status'] == 'optimal')
         .length;
     final totalCount = parametersAnalysis.length;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-        border: Border.all(color: Colors.grey[200]!),
+        color: Theme.of(context).cardTheme.color,
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -428,12 +456,14 @@ class SuitabilityResults extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: isDark
+                        ? Colors.blue[900]!.withOpacity(0.3)
+                        : Colors.blue[50],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.analytics,
-                    color: Colors.blue[600],
+                    color: isDark ? Colors.blue[300] : Colors.blue[600],
                     size: isSmallScreen ? 18 : 20,
                   ),
                 ),
@@ -442,7 +472,7 @@ class SuitabilityResults extends StatelessWidget {
                   context.translate('Parameter Analysis'),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                        color: isDark ? Colors.grey[200] : Colors.grey[800],
                         fontSize: isSmallScreen ? 18 : 20,
                       ),
                 ),
@@ -452,11 +482,16 @@ class SuitabilityResults extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _getOverallScoreColor(optimalCount, totalCount)
-                        .withOpacity(0.1),
+                    color: _getOverallScoreColor(
+                      optimalCount,
+                      totalCount,
+                    ).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: _getOverallScoreColor(optimalCount, totalCount),
+                      color: _getOverallScoreColor(
+                        optimalCount,
+                        totalCount,
+                      ),
                     ),
                   ),
                   child: Text(
@@ -477,7 +512,7 @@ class SuitabilityResults extends StatelessWidget {
               '$optimalCount of $totalCount ${context.translate('parameters optimal')}',
               style: TextStyle(
                 fontSize: isSmallScreen ? 14 : 16,
-                color: Colors.grey[600],
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -543,14 +578,21 @@ class SuitabilityResults extends StatelessWidget {
     final statusInfo = _getStatusInfo(status);
     final progressValue = _calculateProgressValue(current, min, max);
     final progressColor = _getProgressBarColor(current, min, max);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: EdgeInsets.only(bottom: isSmallScreen ? 12 : 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: statusInfo.backgroundColor,
+        color: isDark
+            // ? statusInfo.darkBackgroundColor
+            // : statusInfo.backgroundColor,
+            ? statusInfo.backgroundColor
+            : statusInfo.backgroundColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: statusInfo.borderColor),
+        border: Border.all(
+          color: isDark ? statusInfo.backgroundColor : statusInfo.borderColor,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -560,7 +602,8 @@ class SuitabilityResults extends StatelessWidget {
             children: [
               Icon(
                 _getParameterIcon(parameter),
-                color: statusInfo.color,
+                // color: isDark ? statusInfo.darkColor : statusInfo.color,
+                color: isDark ? statusInfo.color : statusInfo.color,
                 size: 18,
               ),
               const SizedBox(width: 8),
@@ -570,20 +613,23 @@ class SuitabilityResults extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: isSmallScreen ? 15 : 16,
-                    color: Colors.grey[800],
+                    color: isDark ? Colors.grey[200] : Colors.grey[800],
                   ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusInfo.color.withOpacity(0.1),
+                  color: (isDark ? statusInfo.color : statusInfo.color)
+                      .withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   status.toUpperCase(),
                   style: TextStyle(
-                    color: statusInfo.color,
+                    // color: isDark ? statusInfo.darkColor : statusInfo.color,
+
+                    color: isDark ? statusInfo.color : statusInfo.color,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -601,7 +647,7 @@ class SuitabilityResults extends StatelessWidget {
                 context.translate('Current: '),
                 style: TextStyle(
                   fontSize: isSmallScreen ? 13 : 14,
-                  color: Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
               Text(
@@ -609,14 +655,14 @@ class SuitabilityResults extends StatelessWidget {
                 style: TextStyle(
                   fontSize: isSmallScreen ? 15 : 16,
                   fontWeight: FontWeight.bold,
-                  color: statusInfo.color,
+                  color: isDark ? statusInfo.color : statusInfo.color,
                 ),
               ),
               Text(
                 ' (${min.toStringAsFixed(1)}-${max.toStringAsFixed(1)})',
                 style: TextStyle(
                   fontSize: isSmallScreen ? 13 : 14,
-                  color: Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ],
@@ -628,7 +674,7 @@ class SuitabilityResults extends StatelessWidget {
           Container(
             height: 6,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: isDark ? Colors.grey[700] : Colors.grey[300],
               borderRadius: BorderRadius.circular(3),
             ),
             child: FractionallySizedBox(
@@ -654,14 +700,20 @@ class SuitabilityResults extends StatelessWidget {
     bool isSmallScreen,
     double padding,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-        border: Border.all(color: Colors.grey[200]!),
+        color: Theme.of(context).cardTheme.color,
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -678,12 +730,14 @@ class SuitabilityResults extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: isDark
+                        ? Colors.blue[900]!.withOpacity(0.3)
+                        : Colors.blue[50],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.auto_awesome,
-                    color: Colors.blue[600],
+                    color: isDark ? Colors.blue[300] : Colors.blue[600],
                     size: isSmallScreen ? 18 : 20,
                   ),
                 ),
@@ -692,7 +746,7 @@ class SuitabilityResults extends StatelessWidget {
                   context.translate('Improvement Suggestions'),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                        color: isDark ? Colors.grey[200] : Colors.grey[800],
                         fontSize: isSmallScreen ? 18 : 20,
                       ),
                 ),
@@ -702,14 +756,19 @@ class SuitabilityResults extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.orange[50],
+                      color: isDark
+                          ? Colors.orange[900]!.withOpacity(0.3)
+                          : Colors.orange[50],
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange[200]!),
+                      border: Border.all(
+                        color:
+                            isDark ? Colors.orange[700]! : Colors.orange[200]!,
+                      ),
                     ),
                     child: Text(
                       '$deficientParamsCount',
                       style: TextStyle(
-                        color: Colors.orange[700],
+                        color: isDark ? Colors.orange[300] : Colors.orange[700],
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
@@ -724,7 +783,7 @@ class SuitabilityResults extends StatelessWidget {
               '${deficientParamsCount} ${context.translate('parameters need attention')}',
               style: TextStyle(
                 fontSize: isSmallScreen ? 14 : 16,
-                color: Colors.grey[600],
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -735,9 +794,11 @@ class SuitabilityResults extends StatelessWidget {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: isDark ? Colors.grey[850] : Colors.grey[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(
+                  color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+                ),
               ),
               padding: const EdgeInsets.all(16),
               child: suggestions.isNotEmpty
@@ -753,19 +814,23 @@ class SuitabilityResults extends StatelessWidget {
 
   Widget _buildDisclaimer(
       BuildContext context, bool isSmallScreen, double padding) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: isDark ? Colors.grey[850] : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        ),
       ),
       child: Row(
         children: [
           Icon(
             Icons.info_outline,
             size: 16,
-            color: Colors.grey[600],
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -774,7 +839,7 @@ class SuitabilityResults extends StatelessWidget {
                   context.translate('disclaimer_ai'),
               style: TextStyle(
                 fontSize: isSmallScreen ? 12 : 13,
-                color: Colors.grey[600],
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
                 fontStyle: FontStyle.italic,
                 height: 1.3,
               ),
@@ -786,12 +851,17 @@ class SuitabilityResults extends StatelessWidget {
   }
 
   Widget _buildWarningBadge(BuildContext context, bool isSmallScreen) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.orange[50],
+        color:
+            isDark ? Colors.orange[900]!.withOpacity(0.3) : Colors.orange[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange[300]!),
+        border: Border.all(
+          color: isDark ? Colors.orange[700]! : Colors.orange[300]!,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -799,13 +869,13 @@ class SuitabilityResults extends StatelessWidget {
           Icon(
             Icons.warning_amber_rounded,
             size: 14,
-            color: Colors.orange[700],
+            color: isDark ? Colors.orange[300] : Colors.orange[700],
           ),
           const SizedBox(width: 4),
           Text(
             context.translate('Needs Attention'),
             style: TextStyle(
-              color: Colors.orange[700],
+              color: isDark ? Colors.orange[300] : Colors.orange[700],
               fontSize: isSmallScreen ? 11 : 12,
               fontWeight: FontWeight.w600,
             ),
@@ -826,21 +896,24 @@ class SuitabilityResults extends StatelessWidget {
   // Build suggestions content
   Widget _buildSuggestionsContent(
       List<String> suggestions, BuildContext context, bool isSmallScreen) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: suggestions.asMap().entries.map((entry) {
         final index = entry.key;
         final section = entry.value;
-        final lines = section.split('\n');
 
         return Container(
           margin:
               EdgeInsets.only(bottom: index < suggestions.length - 1 ? 12 : 0),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? Colors.grey[800] : Colors.white,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[200]!,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -850,7 +923,7 @@ class SuitabilityResults extends StatelessWidget {
                 section,
                 style: TextStyle(
                   fontSize: isSmallScreen ? 14 : 15,
-                  color: Colors.grey[700],
+                  color: isDark ? Colors.grey[300] : Colors.grey[700],
                   height: 1.4,
                 ),
               ),
@@ -940,22 +1013,17 @@ class SuitabilityResults extends StatelessWidget {
 
   IconData _getParameterIcon(String parameter) {
     switch (parameter.toLowerCase()) {
-      case 'n':
-      case 'nitrogen':
+      case 'fertility_ec':
         return Icons.eco;
-      case 'p':
-      case 'phosphorous':
-        return Icons.scatter_plot;
-      case 'k':
-      case 'potassium':
-        return Icons.biotech;
-      case 'temperature':
+      case 'sunlight':
+        return Icons.sunny;
+      case 'soil_temp':
         return Icons.thermostat;
       case 'humidity':
         return Icons.water_drop;
-      case 'ph':
+      case 'soil_ph':
         return Icons.science;
-      case 'rainfall':
+      case 'soil_moisture':
         return Icons.cloud;
       default:
         return Icons.analytics;
@@ -977,13 +1045,12 @@ class SuitabilityResults extends StatelessWidget {
 
   String _formatParameterName(String param) {
     final Map<String, String> paramNames = {
-      'N': 'Nitrogen (N)',
-      'P': 'Phosphorous (P)',
-      'K': 'Potassium (K)',
-      'temperature': 'Temperature',
+      'soil_ph': 'Soil ph ',
+      'fertility_ec': 'Soil Fertility',
+      'sunlight': 'Sunlight',
+      'soil_temp': 'Soil Temperature',
       'humidity': 'Humidity',
-      'ph': 'pH Level',
-      'rainfall': 'Rainfall',
+      'soil_moisture': 'Soil Moisture',
     };
     return paramNames[param] ?? param;
   }

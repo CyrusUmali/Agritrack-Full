@@ -6,15 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:syncfusion_flutter_maps/maps.dart';
 import 'package:provider/provider.dart';
-import 'barangay_data_provider.dart'; 
+import 'barangay_data_provider.dart';
 
 class MapChartWidget extends StatefulWidget {
   final int selectedYear;
   final String? selectedProduct;
-  
+
   const MapChartWidget({
-    super.key, 
-    required this.selectedYear, 
+    super.key,
+    required this.selectedYear,
     this.selectedProduct,
   });
 
@@ -77,8 +77,8 @@ class _MapChartWidgetState extends State<MapChartWidget> {
             return MapChartUIComponents.buildLoadingState();
           } else if (productState is ProductsError) {
             return MapChartUIComponents.buildErrorState(
-              context, 
-              productState.message, 
+              context,
+              productState.message,
               _loadData,
             );
           }
@@ -98,8 +98,8 @@ class _MapChartWidgetState extends State<MapChartWidget> {
                 return MapChartUIComponents.buildLoadingState();
               } else if (yieldState is YieldsError) {
                 return MapChartUIComponents.buildErrorState(
-                  context, 
-                  yieldState.message, 
+                  context,
+                  yieldState.message,
                   _loadData,
                 );
               }
@@ -119,12 +119,14 @@ class _MapChartWidgetState extends State<MapChartWidget> {
     );
   }
 
+// In map_chart_widget.dart - Updated _buildMapsLayout method
+
   Widget _buildMapsLayout(
       BuildContext context, List<String> products, List<Yield> yields) {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -151,20 +153,7 @@ class _MapChartWidgetState extends State<MapChartWidget> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                // color: theme.cardColor,
                 color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: theme.dividerColor,
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.shadowColor.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
@@ -173,8 +162,11 @@ class _MapChartWidgetState extends State<MapChartWidget> {
                     initialProducts: products,
                     yields: yields,
                     selectedYear: widget.selectedYear,
+                    // Pass the selected product to auto-select it
+                    initialSelectedProduct: widget.selectedProduct,
                   ),
-                  key: ValueKey('${widget.selectedYear}_${widget.selectedProduct}'),
+                  key: ValueKey(
+                      '${widget.selectedYear}_${widget.selectedProduct}'),
                   builder: (ctx, child) {
                     final provider = ctx.watch<BarangayDataProvider>();
 
@@ -212,9 +204,6 @@ class _MapChartWidgetState extends State<MapChartWidget> {
                                 child: MapChartUIComponents.buildMap(
                                     provider, zoomPanBehavior, context),
                               ),
-                              const SizedBox(height: 16),
-                              MapChartUIComponents.buildBarangayList(
-                                  provider, context),
                             ],
                           );
                         }

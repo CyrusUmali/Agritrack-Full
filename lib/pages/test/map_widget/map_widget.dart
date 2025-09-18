@@ -47,7 +47,7 @@ class _MapWidgetState extends State<MapWidget>
   bool _isLoading = true;
   String? _loadingError;
 
-    bool get isMobile => MediaQuery.of(context).size.width < 600;
+  bool get isMobile => MediaQuery.of(context).size.width < 600;
 
   late final AnimatedMapController _animatedMapController;
   late PolygonManager polygonManager;
@@ -58,9 +58,8 @@ class _MapWidgetState extends State<MapWidget>
 
   @override
   void initState() {
-    print("Initializing MapWidget with products and farmers"); 
-    print(widget.farmers);
     super.initState();
+
     _loadFarmsFromApi();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _renderBox = context.findRenderObject() as RenderBox;
@@ -91,6 +90,7 @@ class _MapWidgetState extends State<MapWidget>
 
     try {
       final farmsData = await widget.farmService.fetchFarms();
+
       if (!mounted) return; // Check again after async operation
 
       final polygonsToLoad =
@@ -251,6 +251,7 @@ class _MapWidgetState extends State<MapWidget>
               setState: setState,
               barangayFilter: polygonManager.selectedBarangays,
               farmTypeFilters: BarangayFilterPanel.filterOptions,
+              productFilters: polygonManager.selectedProducts, // Add this line
               animatedMapController: _animatedMapController,
               onBarangayFilterChanged: (newFilters) {
                 setState(() {
@@ -272,10 +273,14 @@ class _MapWidgetState extends State<MapWidget>
               polygonManager: polygonManager,
               barangayManager: barangayManager,
               selectedBarangays: polygonManager.selectedBarangays,
+              selectedProducts: polygonManager.selectedProducts,
               onBarangayFilterChanged: (newFilters) {
-                setState(() {
-                  polygonManager.selectedBarangays = newFilters;
-                });
+                polygonManager.updateFilters(barangays: newFilters);
+                setState(() {});
+              },
+              onProductFilterChanged: (newFilters) {
+                polygonManager.updateFilters(products: newFilters);
+                setState(() {});
               },
               onPolygonSelected: (int index) {
                 setState(() {});
@@ -285,7 +290,7 @@ class _MapWidgetState extends State<MapWidget>
               },
             ),
           ),
-  
+
         // Legend Panel
         if (_showLegendPanel)
           Positioned(
@@ -319,7 +324,7 @@ class _MapWidgetState extends State<MapWidget>
                 },
                 backgroundColor: Colors.white,
                 iconSize: 15,
-                 buttonSize:  isMobile ?40.0 : 30,
+                buttonSize: isMobile ? 40.0 : 30,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -337,7 +342,7 @@ class _MapWidgetState extends State<MapWidget>
                 },
                 backgroundColor: Colors.white,
                 iconSize: 15,
-                buttonSize:  isMobile ?40.0 : 30,
+                buttonSize: isMobile ? 40.0 : 30,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -401,7 +406,7 @@ class _MapWidgetState extends State<MapWidget>
             polygonManager.isEditing)
           Positioned(
             bottom: 20,
-            right: 20,
+            right: 10,
             child: ElevatedButton(
               onPressed: () {
                 setState(() {
@@ -420,15 +425,21 @@ class _MapWidgetState extends State<MapWidget>
               ),
             ),
           ),
-        if (polygonManager.selectedBarangays.isNotEmpty && !_showFarmListPanel ||
-            BarangayFilterPanel.filterOptions.values 
-                .any((isChecked) => !isChecked)  && !_showFarmListPanel   )
+
+        if (polygonManager.selectedBarangays.isNotEmpty &&
+                !_showFarmListPanel ||
+            BarangayFilterPanel.filterOptions.values
+                    .any((isChecked) => !isChecked) &&
+                !_showFarmListPanel)
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
               padding: EdgeInsets.only(top: 20),
               child: ElevatedButton(
-                onPressed: polygonManager.clearFilters,
+                onPressed: () {
+                  polygonManager.clearFilters();
+                  setState(() {});
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey,
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -444,194 +455,235 @@ class _MapWidgetState extends State<MapWidget>
     );
   }
 
-Widget _buildLegendPanel() {
-  return Container(
-    width: 200,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration( 
-      color:Theme.of(context).cardTheme.color ?? Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: Theme.of(context).shadowColor.withOpacity(0.1),
-          blurRadius: 16,
-          offset: const Offset(0, 4),
-          spreadRadius: 0,
-        ),
-      ],
-      border: Border.all(
-        color: Theme.of(context).dividerColor.withOpacity(0.1),
-        width: 1,
-      ),
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Legend',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.titleMedium?.color,
-              ),
-        ),
-        const SizedBox(height: 16),
-        ...PinStyle.values.map((style) => _buildLegendItem(style)),
-        const SizedBox(height: 8),
-        _buildBarangayLegendItem(),
-      ],
-    ),
-  );
-}
-
-Widget _buildLegendItem(PinStyle pinStyle) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6),
-    child: Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: getPinColor(pinStyle),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: getPinColor(pinStyle).withOpacity(0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: getPinIcon(pinStyle),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            _formatPinStyleName(pinStyle),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildBarangayLegendItem() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6),
-    child: Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: Colors.redAccent,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.redAccent.withOpacity(0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.account_balance,
-            color: Colors.white,
-            size: 16,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            'Barangay',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildStyledIconButton({
-  required IconData icon,
-  required VoidCallback onPressed,
-  Color? backgroundColor,
-  Color? iconColor,
-  double iconSize = 24.0,
-  double buttonSize = 48.0,
-  ShapeBorder? shape,
-  bool elevated = false,
-}) {
-  final defaultBackgroundColor = Theme.of(context).cardColor;
-  final defaultIconColor = Theme.of(context).iconTheme.color;
-
-      final cardColor = Theme.of(context).cardTheme.color ?? Colors.white;
-  
-  return Material(
-    color: Colors.transparent,
-    child: Container(
-      width: buttonSize,
-      height: buttonSize,
+  Widget _buildLegendPanel() {
+    return Container(
+      width: 200,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardColor,
-        shape: shape is CircleBorder ? BoxShape.circle : BoxShape.rectangle,
-        borderRadius: shape is RoundedRectangleBorder
-            ? (shape.borderRadius as BorderRadius?)
-            : shape == null
-                ? BorderRadius.circular(8)
-                : null,
-        boxShadow: elevated
-            ? [
-                BoxShadow(
-                  color: Theme.of(context).shadowColor.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
+        color: Theme.of(context).cardTheme.color ?? Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
         border: Border.all(
           color: Theme.of(context).dividerColor.withOpacity(0.1),
           width: 1,
         ),
       ),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: shape is CircleBorder
-            ? BorderRadius.circular(buttonSize / 2)
-            : shape is RoundedRectangleBorder
-                ? (shape.borderRadius as BorderRadius?)
-                : BorderRadius.circular(8),
-        child: Icon(
-          icon,
-          size: iconSize,
-          color: iconColor ?? defaultIconColor,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Legend',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.titleMedium?.color,
+                ),
+          ),
+          const SizedBox(height: 16),
+          ...PinStyle.values.map((style) => _buildLegendItem(style)),
+          const SizedBox(height: 8),
+          _buildBarangayLegendItem(),
+          const SizedBox(height: 8),
+          _buildWarningItem()
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(PinStyle pinStyle) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: getPinColor(pinStyle),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: getPinColor(pinStyle).withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Center(
+              child: getPinIcon(pinStyle),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _formatPinStyleName(pinStyle),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBarangayLegendItem() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 74, 72, 72),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.account_balance,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Barangay',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWarningItem() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 255, 17, 0),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color.fromARGB(255, 255, 17, 0).withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.warning_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Warning',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStyledIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    Color? backgroundColor,
+    Color? iconColor,
+    double iconSize = 24.0,
+    double buttonSize = 48.0,
+    ShapeBorder? shape,
+    bool elevated = false,
+  }) {
+    final defaultBackgroundColor = Theme.of(context).cardColor;
+    final defaultIconColor = Theme.of(context).iconTheme.color;
+
+    final cardColor = Theme.of(context).cardTheme.color ?? Colors.white;
+
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: buttonSize,
+        height: buttonSize,
+        decoration: BoxDecoration(
+          color: cardColor,
+          shape: shape is CircleBorder ? BoxShape.circle : BoxShape.rectangle,
+          borderRadius: shape is RoundedRectangleBorder
+              ? (shape.borderRadius as BorderRadius?)
+              : shape == null
+                  ? BorderRadius.circular(8)
+                  : null,
+          boxShadow: elevated
+              ? [
+                  BoxShadow(
+                    color: Theme.of(context).shadowColor.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: shape is CircleBorder
+              ? BorderRadius.circular(buttonSize / 2)
+              : shape is RoundedRectangleBorder
+                  ? (shape.borderRadius as BorderRadius?)
+                  : BorderRadius.circular(8),
+          child: Icon(
+            icon,
+            size: iconSize,
+            color: iconColor ?? defaultIconColor,
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
 // Helper method to format pin style names
-String _formatPinStyleName(PinStyle pinStyle) {
-  String name = pinStyle.toString().split('.').last;
-  
-  // Handle special cases for better readability
-  switch (name.toLowerCase()) {
-    case 'hvc':
-      return 'High Value Crops';
-    default:
-      return name;
-  }
-}
+  String _formatPinStyleName(PinStyle pinStyle) {
+    String name = pinStyle.toString().split('.').last;
 
+    // Handle special cases for better readability
+    switch (name.toLowerCase()) {
+      case 'hvc':
+        return 'High Value Crops';
+      default:
+        return name;
+    }
+  }
 }

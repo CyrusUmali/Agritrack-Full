@@ -75,9 +75,10 @@ class SegmentedFilter extends StatelessWidget {
                               width: 1.0,
                             );
                           }
-                          return const BorderSide(
-                            color: Color.fromARGB(
-                                255, 211, 208, 208), // Default border color
+                          return BorderSide(
+                            color:
+                                Theme.of(context).cardTheme.surfaceTintColor ??
+                                    Colors.grey[300]!,
                             width: 1.0,
                           );
                         },

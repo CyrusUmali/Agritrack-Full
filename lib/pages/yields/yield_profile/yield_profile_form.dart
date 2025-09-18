@@ -44,6 +44,11 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
 
   @override
   void initState() {
+
+    print(widget.yieldData);
+
+
+    
     super.initState();
     _imageHandler.existingImages = widget.yieldData.images
             ?.where((img) => img != null)
@@ -243,7 +248,10 @@ class _YieldProfileFormState extends State<YieldProfileForm> {
                     buildSectionTitle(
                         context.translate('Product Information'), context,
                         icon: Icons.shopping_bag),
-                    buildResponsiveRow(
+
+   
+                    
+                    buildResponsiveRow( 
                       children: [
                         buildTextField(
                           context.translate('Product Name'),

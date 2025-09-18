@@ -16,7 +16,7 @@ Widget buildComboBox({
     width: width,
     child: Container(
       decoration: BoxDecoration(
-        color: color ?? Theme.of(context).cardTheme.color ?? Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color:

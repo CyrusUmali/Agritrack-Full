@@ -33,9 +33,7 @@ class _FarmMapCardState extends State<FarmMapCard> {
   }
 
   double _calculateZoomLevel(double hectare) {
-    print(
-        'Calculating zoom level for hectare '
-    );
+    print('Calculating zoom level for hectare ');
     print(hectare);
     if (hectare < 0.5) return 20.0;
     if (hectare < 0.6) return 19.0;

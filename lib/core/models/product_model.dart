@@ -49,7 +49,7 @@ class Product extends Equatable {
       sector: json['sector'] as String,
       description: json['description'] as String,
       imageUrl: json['imageUrl'] as String? ??
-          'https://example.com/default-product.jpg',
+          'https://res.cloudinary.com/dk41ykxsq/image/upload/v1757557833/OIP-removebg-preview_r0qvt1.png',
       createdAt:
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt:

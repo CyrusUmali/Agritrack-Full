@@ -1,17 +1,17 @@
 import 'dart:async';
 
 import 'package:flareline/core/theme/global_colors.dart';
-import 'package:flareline/pages/users/settings/sync_service.dart';  
+import 'package:flareline/pages/users/settings/sync_service.dart';
 import 'package:flareline/providers/user_provider.dart';
-import 'package:flareline/services/lanugage_extension.dart'; 
+import 'package:flareline/services/lanugage_extension.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/services/api_service.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
-import 'package:toastification/toastification.dart'; 
+import 'package:toastification/toastification.dart';
 import 'package:flutter/foundation.dart';
-import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:firebase_auth/firebase_auth.dart';
 
 class GoogleAccountCard extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -28,10 +28,10 @@ class _GoogleAccountCardState extends State<GoogleAccountCard> {
   Future<void> _migrateToGoogle(BuildContext context) async {
     try {
       setState(() => _isLoading = true);
-      
+
       final apiService = Provider.of<ApiService>(context, listen: false);
       final googleUserData = await SyncService.getGoogleUserIsolated();
-      
+
       if (googleUserData == null) {
         setState(() => _isLoading = false);
         return;
@@ -39,7 +39,7 @@ class _GoogleAccountCardState extends State<GoogleAccountCard> {
 
       final response = await apiService.post(
         '/auth/migrate-to-google',
-        data: {'accessToken': googleUserData['accessToken']},  
+        data: {'accessToken': googleUserData['accessToken']},
       ).timeout(const Duration(seconds: 30));
 
       if (response.data['success'] == false) {
@@ -49,7 +49,7 @@ class _GoogleAccountCardState extends State<GoogleAccountCard> {
 
       // Success handling
       await FirebaseAuth.instance.signOut();
-      
+
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.clearUser();
 
@@ -57,7 +57,8 @@ class _GoogleAccountCardState extends State<GoogleAccountCard> {
         context: context,
         type: ToastificationType.success,
         title: const Text('Success'),
-        description: const Text('Successfully migrated to Google authentication'),
+        description:
+            const Text('Successfully migrated to Google authentication'),
         autoCloseDuration: const Duration(seconds: 5),
       );
 
@@ -68,7 +69,6 @@ class _GoogleAccountCardState extends State<GoogleAccountCard> {
           (Route<dynamic> route) => false,
         );
       }
-      
     } on TimeoutException {
       toastification.show(
         context: context,
@@ -82,7 +82,7 @@ class _GoogleAccountCardState extends State<GoogleAccountCard> {
       if (kDebugMode) {
         print('Migration error: $e. Error message: $errorMessage');
       }
-      
+
       toastification.show(
         context: context,
         type: ToastificationType.error,
@@ -139,11 +139,11 @@ class _GoogleAccountCardState extends State<GoogleAccountCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                Text(
-                  context.translate('MTG-text'),
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                  if (_isLoading) 
+                  Text(
+                    context.translate('MTG-text'),
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  if (_isLoading)
                     const Padding(
                       padding: EdgeInsets.only(top: 8.0),
                       child: LinearProgressIndicator(),
@@ -154,26 +154,28 @@ class _GoogleAccountCardState extends State<GoogleAccountCard> {
             SizedBox(
               width: double.infinity,
               child: ButtonWidget(
-                color: isConnected ? Colors.grey[200]! : Colors.white,
-                borderColor: GlobalColors.border,
+                color: isConnected
+                    ? Theme.of(context).cardTheme.color
+                    : Theme.of(context).cardTheme.color,
+                borderColor: Theme.of(context).cardTheme.surfaceTintColor,
                 iconWidget: SvgPicture.asset(
                   'assets/brand/brand-01.svg',
                   width: 25,
-                  height: 25, 
+                  height: 25,
                 ),
-                btnText: isConnected ?
-                context.translate('Disconnect Google')
-                  :  
- context.translate( 'Migrate to Google')
-                ,
-                textColor: isConnected ? Colors.red : Colors.black87,
-                onTap: _isLoading ? null : () {
-                  if (isConnected) {
-                    // Handle disconnect if needed
-                  } else {
-                    _migrateToGoogle(context);
-                  }
-                },
+                btnText: isConnected
+                    ? context.translate('Disconnect Google')
+                    : context.translate('Migrate to Google'),
+                textColor: isConnected ? Colors.red : null,
+                onTap: _isLoading
+                    ? null
+                    : () {
+                        if (isConnected) {
+                          // Handle disconnect if needed
+                        } else {
+                          _migrateToGoogle(context);
+                        }
+                      },
               ),
             ),
           ],

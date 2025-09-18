@@ -1,5 +1,6 @@
 import 'package:flareline/pages/recommendation/recommendation_page.dart';
 import 'package:flareline/services/lanugage_extension.dart';
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/recommendation/suitability/suitability_page.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
@@ -25,6 +26,58 @@ class ChatbotContentState extends State<ChatbotWidget> {
     'Llama'
   ]; // Add more models as needed
 
+  // Quick response options
+  final List<Map<String, dynamic>> _quickOptions = [
+    {
+      'icon': Icons.eco,
+      'title': 'Soil Health',
+      'message': 'Tell me about soil health and pH levels',
+      'color': Colors.brown,
+    },
+    {
+      'icon': Icons.agriculture,
+      'title': 'Crop Selection',
+      'message': 'What crops should I grow in my region?',
+      'color': Colors.green,
+    },
+    {
+      'icon': Icons.bug_report,
+      'title': 'Pest Control',
+      'message': 'How do I control pests organically?',
+      'color': Colors.red,
+    },
+    {
+      'icon': Icons.water_drop,
+      'title': 'Irrigation',
+      'message': 'What are the best irrigation practices?',
+      'color': Colors.blue,
+    },
+    {
+      'icon': Icons.scatter_plot,
+      'title': 'Fertilizers',
+      'message': 'Which fertilizers should I use for my crops?',
+      'color': Colors.orange,
+    },
+    {
+      'icon': Icons.calendar_today,
+      'title': 'Planting Season',
+      'message': 'When is the best time to plant crops?',
+      'color': Colors.purple,
+    },
+    {
+      'icon': Icons.healing,
+      'title': 'Plant Disease',
+      'message': 'How do I identify and treat plant diseases?',
+      'color': Colors.teal,
+    },
+    {
+      'icon': Icons.wb_sunny,
+      'title': 'Weather Impact',
+      'message': 'How does weather affect crop growth?',
+      'color': Colors.amber,
+    },
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +89,7 @@ class ChatbotContentState extends State<ChatbotWidget> {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
     final bool isTablet = MediaQuery.of(context).size.width < 900;
     final double screenHeight = MediaQuery.of(context).size.height;
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return ChangeNotifierProvider.value(
       value: _chatbotModel,
@@ -53,11 +107,13 @@ class ChatbotContentState extends State<ChatbotWidget> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildResponsiveHeader(isMobile, isTablet),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    height: screenHeight - 250, // Fixed height for chat area
-                    child: _buildChatInterfaceCard(isMobile),
+                  _buildResponsiveHeader(isMobile, isTablet, isDarkMode),
+                  const SizedBox(height: 16),
+                  // Quick options section
+                  _buildQuickOptionsSection(isMobile, isDarkMode),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: _buildChatInterfaceCard(isMobile, isDarkMode),
                   ),
                 ],
               ),
@@ -68,7 +124,110 @@ class ChatbotContentState extends State<ChatbotWidget> {
     );
   }
 
-  Widget _buildResponsiveHeader(bool isMobile, bool isTablet) {
+  Widget _buildQuickOptionsSection(bool isMobile, bool isDarkMode) {
+    return Consumer<ChatbotModel>(
+      builder: (context, model, child) {
+        // Only show quick options when there are no messages (except welcome)
+        if (model.messages.length > 1) {
+          return const SizedBox.shrink();
+        }
+
+        return Card(
+          elevation: 2,
+          color: isDarkMode ? FlarelineColors.darkerBackground : Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.flash_on, color: Colors.amber[700], size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Quick Topics',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: isDarkMode
+                                ? Colors.grey[300]
+                                : Theme.of(context).cardTheme.color,
+                          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: isMobile ? 2 : 4,
+                    childAspectRatio: isMobile ? 2.5 : 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: _quickOptions.length,
+                  itemBuilder: (context, index) {
+                    final option = _quickOptions[index];
+                    return _buildQuickOptionCard(option, isMobile, isDarkMode);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickOptionCard(
+      Map<String, dynamic> option, bool isMobile, bool isDarkMode) {
+    return InkWell(
+      onTap: () => _handleQuickOption(option['message']),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.all(isMobile ? 8 : 12),
+        decoration: BoxDecoration(
+          border: Border.all(
+              color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(12),
+          color:
+              isDarkMode ? Theme.of(context).cardTheme.color : Colors.grey[50],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              option['icon'],
+              color: option['color'],
+              size: isMobile ? 20 : 24,
+            ),
+            SizedBox(height: isMobile ? 4 : 6),
+            Flexible(
+              child: Text(
+                option['title'],
+                style: TextStyle(
+                  fontSize: isMobile ? 11 : 12,
+                  fontWeight: FontWeight.w500,
+                  color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleQuickOption(String message) {
+    _chatbotModel.addUserMessage(message);
+    _chatbotModel.getBotResponse(message,
+        useStreaming: _chatbotModel.useStreaming);
+  }
+
+  Widget _buildResponsiveHeader(bool isMobile, bool isTablet, bool isDarkMode) {
     void _showNavigationMenu() async {
       final RenderBox? renderBox =
           _navigationMenuKey.currentContext?.findRenderObject() as RenderBox?;
@@ -85,18 +244,18 @@ class ChatbotContentState extends State<ChatbotWidget> {
           buttonPosition.dx + 200,
           buttonPosition.dy + buttonSize.height + 100,
         ),
+        color: Theme.of(context).cardTheme.color,
         items: [
           PopupMenuItem(
             value: 'back',
             child: ListTile(
-              title: Text(context.translate('Crop Recommendations')),   
+              title: Text(context.translate('Crop Recommendations')),
             ),
           ),
-           PopupMenuItem(
+          PopupMenuItem(
             value: 'suitability',
             child: ListTile(
-            
-               title: Text(context.translate('Crop Suitability')),   
+              title: Text(context.translate('Crop Suitability')),
             ),
           ),
         ],
@@ -144,7 +303,8 @@ class ChatbotContentState extends State<ChatbotWidget> {
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 32,
-                                  color: const Color.fromARGB(255, 1, 1, 1),
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
                                 ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -159,10 +319,12 @@ class ChatbotContentState extends State<ChatbotWidget> {
                                   alignment: Alignment.center,
                                   transform: Matrix4.identity()
                                     ..scale(-1.0, 1.0),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.keyboard_return,
                                     size: 16,
-                                    color: Colors.grey,
+                                    color: isDarkMode
+                                        ? Colors.grey[400]
+                                        : Colors.grey,
                                   ),
                                 ),
                                 onPressed: _showNavigationMenu,
@@ -174,50 +336,73 @@ class ChatbotContentState extends State<ChatbotWidget> {
                         ],
                       ),
                     )),
-                Tooltip(
-                 
-                  message: context.translate('Select AI Model'),
-                  child: PopupMenuButton<String>(
-                    onSelected: (value) {
-                      setState(() {
-                        _selectedModel = value;
-                        _chatbotModel.setModel(value);
-                      });
-                    },
-                    itemBuilder: (BuildContext context) {
-                      return _availableModels.map((String model) {
-                        return PopupMenuItem<String>(
-                          value: model,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(model),
-                              if (_selectedModel == model)
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 8.0),
-                                  child: Icon(Icons.check, size: 16),
-                                ),
-                            ],
-                          ),
-                        );
-                      }).toList();
-                    },
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.grey[500]!, width: 2),
-                        color: Colors.white,
-                      ),
-                      child: Icon(
-                        Icons.memory,
-                        size: 30,
-                        color: Colors.grey[700],
+                Row(
+                  children: [
+                    // Clear chat button
+                    Tooltip(
+                      message: 'Clear Chat',
+                      child: IconButton(
+                        onPressed: () => _showClearChatDialog(),
+                        icon: Icon(Icons.refresh,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey),
+                        splashRadius: 20,
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    // Model selector
+                    Tooltip(
+                      message: context.translate('Select AI Model'),
+                      child: PopupMenuButton<String>(
+                        onSelected: (value) {
+                          setState(() {
+                            _selectedModel = value;
+                            _chatbotModel.setModel(value);
+                          });
+                        },
+                        itemBuilder: (BuildContext context) {
+                          return _availableModels.map((String model) {
+                            return PopupMenuItem<String>(
+                              value: model,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(model),
+                                  if (_selectedModel == model)
+                                    const Padding(
+                                      padding: EdgeInsets.only(left: 8.0),
+                                      child: Icon(Icons.check, size: 16),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }).toList();
+                        },
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: isDarkMode
+                                    ? Colors.grey[600]!
+                                    : Colors.grey[500]!,
+                                width: 2),
+                            color: isDarkMode
+                                ? Theme.of(context).cardTheme.color
+                                : Colors.white,
+                          ),
+                          child: Icon(
+                            Icons.memory,
+                            size: 30,
+                            color: isDarkMode
+                                ? Colors.grey[400]
+                                : Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -234,14 +419,12 @@ class ChatbotContentState extends State<ChatbotWidget> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text( 
-            
-context.translate('Agriculture Assistant'),
-
+              Text(
+                context.translate('Agriculture Assistant'),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       fontSize: isMobile ? 24 : 28,
-                      color: const Color.fromARGB(255, 1, 1, 1),
+                      color: isDarkMode ? Colors.white : Colors.black,
                     ),
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
@@ -257,10 +440,10 @@ context.translate('Agriculture Assistant'),
                       icon: Transform(
                         alignment: Alignment.center,
                         transform: Matrix4.identity()..scale(-1.0, 1.0),
-                        child: const Icon(
+                        child: Icon(
                           Icons.keyboard_return,
                           size: 20,
-                          color: Colors.grey,
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey,
                         ),
                       ),
                       onPressed: _showNavigationMenu,
@@ -268,50 +451,76 @@ context.translate('Agriculture Assistant'),
                       padding: EdgeInsets.zero,
                     ),
                   ),
-                  Tooltip( 
-                      message: context.translate('Select AI Model'),
-                    child: PopupMenuButton<String>(
-                      onSelected: (value) {
-                        setState(() {
-                          _selectedModel = value;
-                          _chatbotModel.setModel(value);
-                        });
-                      },
-                      itemBuilder: (BuildContext context) {
-                        return _availableModels.map((String model) {
-                          return PopupMenuItem<String>(
-                            value: model,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(model),
-                                if (_selectedModel == model)
-                                  const Padding(
-                                    padding: EdgeInsets.only(left: 8.0),
-                                    child: Icon(Icons.check, size: 16),
-                                  ),
-                              ],
-                            ),
-                          );
-                        }).toList();
-                      },
-                      child: Container(
-                        width: 25,
-                        height: 25,
-                        padding: const EdgeInsets.all(0),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border:
-                              Border.all(color: Colors.grey[500]!, width: 1),
-                          color: Colors.white,
-                        ),
-                        child: Icon(
-                          Icons.memory,
-                          size: 15,
-                          color: Colors.grey[700],
+                  Row(
+                    children: [
+                      // Clear chat button
+                      Tooltip(
+                        message: 'Clear Chat',
+                        child: IconButton(
+                          onPressed: () => _showClearChatDialog(),
+                          icon: Icon(Icons.refresh,
+                              color:
+                                  isDarkMode ? Colors.grey[400] : Colors.grey,
+                              size: 18),
+                          splashRadius: 16,
+                          padding: EdgeInsets.zero,
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      // Model selector
+                      Tooltip(
+                        message: context.translate('Select AI Model'),
+                        child: PopupMenuButton<String>(
+                          onSelected: (value) {
+                            setState(() {
+                              _selectedModel = value;
+                              _chatbotModel.setModel(value);
+                            });
+                          },
+                          itemBuilder: (BuildContext context) {
+                            return _availableModels.map((String model) {
+                              return PopupMenuItem<String>(
+                                value: model,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(model),
+                                    if (_selectedModel == model)
+                                      const Padding(
+                                        padding: EdgeInsets.only(left: 8.0),
+                                        child: Icon(Icons.check, size: 16),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            }).toList();
+                          },
+                          child: Container(
+                            width: 25,
+                            height: 25,
+                            padding: const EdgeInsets.all(0),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: isDarkMode
+                                      ? Colors.grey[600]!
+                                      : Colors.grey[500]!,
+                                  width: 1),
+                              color: isDarkMode
+                                  ? Theme.of(context).cardTheme.color
+                                  : Colors.white,
+                            ),
+                            child: Icon(
+                              Icons.memory,
+                              size: 15,
+                              color: isDarkMode
+                                  ? Colors.grey[400]
+                                  : Colors.grey[700],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -322,10 +531,46 @@ context.translate('Agriculture Assistant'),
     );
   }
 
-  Widget _buildChatInterfaceCard(bool isMobile) {
+  void _showClearChatDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+        return AlertDialog(
+          backgroundColor:
+              isDarkMode ? FlarelineColors.darkerBackground : Colors.white,
+          title: Text('Clear Chat',
+              style:
+                  TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
+          content: Text('Are you sure you want to clear all messages?',
+              style: TextStyle(
+                  color: isDarkMode ? Colors.grey[300] : Colors.black)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel',
+                  style: TextStyle(
+                      color: isDarkMode ? Colors.grey[300] : Colors.black)),
+            ),
+            TextButton(
+              onPressed: () {
+                _chatbotModel.clearChat();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Clear', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildChatInterfaceCard(bool isMobile, bool isDarkMode) {
     return Consumer<ChatbotModel>(
       builder: (context, model, child) {
         return Card(
+          color: isDarkMode ? FlarelineColors.darkerBackground : Colors.white,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -342,15 +587,19 @@ context.translate('Agriculture Assistant'),
                           height: 48,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
+                            color: isDarkMode
+                                ? Theme.of(context).cardTheme.color
+                                : Colors.grey[50],
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                Icons.lightbulb_outline,
-                                color: Colors.grey[600],
+                                Icons.memory,
+                                color: isDarkMode
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                                 size: 16,
                               ),
                               const SizedBox(width: 8),
@@ -358,7 +607,9 @@ context.translate('Agriculture Assistant'),
                                 child: Text(
                                   'Model: ${model.currentModel}',
                                   style: TextStyle(
-                                    color: Colors.grey[600],
+                                    color: isDarkMode
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
                                     fontSize: 12,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -376,7 +627,9 @@ context.translate('Agriculture Assistant'),
                             height: 48,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.grey[50],
+                              color: isDarkMode
+                                  ? Theme.of(context).cardTheme.color
+                                  : Colors.grey[50],
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -384,15 +637,19 @@ context.translate('Agriculture Assistant'),
                               children: [
                                 Icon(
                                   Icons.lightbulb_outline,
-                                  color: Colors.grey[600],
+                                  color: isDarkMode
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
                                   size: 16,
                                 ),
                                 const SizedBox(width: 8),
                                 Flexible(
                                   child: Text(
-                                    'Try asking about soil, crops, pests, etc.',
+                                    'Try the quick topics above or ask anything!',
                                     style: TextStyle(
-                                      color: Colors.grey[600],
+                                      color: isDarkMode
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
                                       fontSize: 12,
                                     ),
                                     overflow: TextOverflow.ellipsis,
@@ -415,29 +672,44 @@ context.translate('Agriculture Assistant'),
                     showUserAvatars: true,
                     showUserNames: true,
                     theme: DefaultChatTheme(
-                      primaryColor: Colors.grey.shade200,
-                      secondaryColor: Colors.grey.shade200,
-                      inputBackgroundColor: Colors.grey.shade200,
-                      inputTextColor: Colors.black87,
+                      backgroundColor: isDarkMode
+                          ? FlarelineColors.darkerBackground
+                          : Colors.white,
+                      primaryColor: isDarkMode
+                          ? Theme.of(context).cardTheme.color!
+                          : Colors.grey.shade200,
+                      secondaryColor: isDarkMode
+                          ? Theme.of(context).cardTheme.color!
+                          : Colors.grey.shade200,
+                      inputBackgroundColor: isDarkMode
+                          ? Theme.of(context).cardTheme.color!
+                          : Colors.grey.shade200,
+                      inputTextColor:
+                          isDarkMode ? Colors.white : Colors.black87,
                       inputBorderRadius: BorderRadius.circular(24),
                       inputMargin: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       userAvatarNameColors: [
-                        const Color.fromARGB(255, 7, 7, 7)!
+                        isDarkMode ? Colors.grey[300]! : Colors.black
                       ],
                       receivedMessageBodyTextStyle: TextStyle(
-                        color: Colors.grey[800],
+                        color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
                         fontSize: isMobile ? 14 : 16,
                         height: 1.4,
                       ),
                       sentMessageBodyTextStyle: TextStyle(
-                        color: Colors.grey[800],
+                        color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
                         fontSize: 14,
                         height: 1.4,
                       ),
-                      sendButtonIcon: const Icon(
+                      receivedMessageBodyLinkTextStyle: TextStyle(
+                        color: isDarkMode ? Colors.blue[200]! : Colors.blue,
+                        fontSize: isMobile ? 14 : 16,
+                        height: 1.4,
+                      ),
+                      sendButtonIcon: Icon(
                         Icons.send,
-                        color: Colors.grey,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey,
                         size: 22,
                       ),
                     ),
@@ -449,19 +721,30 @@ context.translate('Agriculture Assistant'),
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: CircleAvatar(
-                          backgroundColor:
-                              isBot ? Colors.green[100] : Colors.blue[100],
+                          backgroundColor: isBot
+                              ? (isDarkMode
+                                  ? Colors.green[800]!
+                                  : Colors.green[100]!)
+                              : (isDarkMode
+                                  ? Colors.blue[800]!
+                                  : Colors.blue[100]!),
                           child: Icon(
                             isBot ? Icons.agriculture : Icons.person,
-                            color: isBot ? Colors.green[800] : Colors.blue[800],
+                            color: isBot
+                                ? (isDarkMode
+                                    ? Colors.green[100]!
+                                    : Colors.green[800]!)
+                                : (isDarkMode
+                                    ? Colors.blue[100]!
+                                    : Colors.blue[800]!),
                             size: 20,
                           ),
                           radius: 18,
                         ),
                       );
                     },
-                    l10n: const ChatL10nEn(
-                      inputPlaceholder: '...',
+                    l10n: ChatL10nEn(
+                      inputPlaceholder: 'Type your agriculture question...',
                     ),
                   ),
                 ),

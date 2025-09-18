@@ -8,7 +8,8 @@ class BarangayDataProvider extends ChangeNotifier {
   bool _isLoading = true;
   String _selectedProduct = '';
   List<String> _availableProducts = [];
-  List<Yield> _yields = [];  bool _disposed = false;
+  List<Yield> _yields = [];
+  bool _disposed = false;
 
   List<BarangayModel> get data => _data;
   bool get isLoading => _isLoading;
@@ -25,11 +26,19 @@ class BarangayDataProvider extends ChangeNotifier {
     List<String>? initialProducts,
     List<Yield> yields = const [],
     required int selectedYear,
+    String? initialSelectedProduct, // Add this parameter
   }) : _selectedYear = selectedYear {
     if (initialProducts != null) {
       _availableProducts = initialProducts;
     }
     _yields = yields;
+
+    // Set initial selected product if provided and valid
+    if (initialSelectedProduct != null &&
+        initialSelectedProduct.isNotEmpty &&
+        (initialProducts?.contains(initialSelectedProduct) ?? false)) {
+      _selectedProduct = initialSelectedProduct;
+    }
 
     // Print raw yield data before processing
     // print('Raw yield data before processing:');
@@ -173,6 +182,10 @@ class BarangayDataProvider extends ChangeNotifier {
       debugPrint('Error loading barangay data: $e');
     } finally {
       _isLoading = false;
+      // Update colors based on initially selected product if any
+      if (_selectedProduct.isNotEmpty) {
+        updateColorsBasedOnYield();
+      }
       notifyListeners();
     }
   }

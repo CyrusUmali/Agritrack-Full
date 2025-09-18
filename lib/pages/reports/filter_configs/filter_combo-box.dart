@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 Widget buildComboBox({
+  required BuildContext context,
   required String hint,
   required List<String> options,
   required String selectedValue,
@@ -14,8 +15,13 @@ Widget buildComboBox({
 
   return Container(
     decoration: BoxDecoration(
-      border: Border.all(color: Colors.grey[300]!),
+      color: Theme.of(context).cardTheme.color,
+      // border: Border.all(color: Colors.grey[300]!),
       borderRadius: BorderRadius.circular(8),
+      border: Border.all(
+        color:
+            Theme.of(context).cardTheme.surfaceTintColor ?? Colors.grey[300]!,
+      ),
     ),
     child: SizedBox(
       height: 35,
@@ -69,6 +75,7 @@ Widget buildComboBox({
             alignment: Alignment.topLeft,
             child: Material(
               elevation: 4,
+              color: Theme.of(context).cardTheme.color,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(
                   maxHeight: 200,

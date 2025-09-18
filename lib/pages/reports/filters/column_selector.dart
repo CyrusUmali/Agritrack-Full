@@ -65,7 +65,9 @@ class ColumnSelector extends StatelessWidget {
                 side: BorderSide(
                   color: isSelected
                       ? colorScheme.primary
-                      : theme.dividerColor.withOpacity(0.5),
+                      // : theme.dividerColor.withOpacity(0.5),
+                      : Theme.of(context).cardTheme.surfaceTintColor ??
+                          Colors.grey[300]!,
                   width: 1,
                 ),
               ),

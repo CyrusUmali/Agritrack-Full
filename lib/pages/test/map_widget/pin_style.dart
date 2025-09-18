@@ -23,25 +23,6 @@ int pinStyleToNumber(PinStyle pinStyle) {
   }
 }
 
-Color getPolygonColor(PinStyle pinStyle) {
-  switch (pinStyle) {
-    case PinStyle.Rice:
-      return Colors.green.withOpacity(0.5);
-    case PinStyle.Corn:
-      return Colors.yellow.withOpacity(0.5);
-    case PinStyle.HVC:
-      return Colors.purple.withOpacity(0.5);
-    case PinStyle.Livestock:
-      return Colors.deepOrange.withOpacity(0.5);
-    case PinStyle.Fishery:
-      return Colors.blue.withOpacity(0.5);
-    case PinStyle.Organic:
-      return Colors.grey.withOpacity(0.5);
-    // case PinStyle.Barangay:
-    //   return Colors.redAccent.withOpacity(0.5);
-  }
-}
-
 Widget getPinIcon(PinStyle pinStyle) {
   switch (pinStyle) {
     case PinStyle.Rice:
@@ -76,13 +57,34 @@ Color getPinColor(PinStyle pinStyle) {
     case PinStyle.HVC:
       return Colors.purple;
     case PinStyle.Livestock:
-      return Colors.deepOrange;
+      return Colors.brown;
     case PinStyle.Fishery:
       return Colors.blue;
     case PinStyle.Organic:
       return Colors.grey;
     // case PinStyle.Barangay:
-    //   return Colors.redAccent;
+    //   return Colors. Accent;
+  }
+}
+
+Color getPolygonColor(PinStyle pinStyle, {bool isWarning = false}) {
+  if (isWarning) {
+    return Colors.red.withOpacity(0.7); // Red warning color
+  }
+
+  switch (pinStyle) {
+    case PinStyle.Rice:
+      return Colors.green.withOpacity(0.5);
+    case PinStyle.Corn:
+      return Colors.yellow.withOpacity(0.5);
+    case PinStyle.HVC:
+      return Colors.purple.withOpacity(0.5);
+    case PinStyle.Livestock:
+      return Colors.brown.withOpacity(0.5);
+    case PinStyle.Fishery:
+      return Colors.blue.withOpacity(0.5);
+    case PinStyle.Organic:
+      return Colors.grey.withOpacity(0.5);
   }
 }
 

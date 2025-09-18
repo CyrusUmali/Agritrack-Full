@@ -19,15 +19,16 @@ class Dashboard extends LayoutWidget {
     return 'Home';
   }
 
-  // Helper method to check if user has a specific role
-  bool _hasRole(UserModel? user, String role) {
-    return user?.role?.toLowerCase() == role.toLowerCase();
+  // Helper method to check if user is a farmer
+  bool _isFarmer(UserModel? user) {
+    return user?.role?.toLowerCase() == 'farmer';
   }
 
   @override
   Widget contentDesktopWidget(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
+    final isFarmer = _isFarmer(user);
 
     return Column(
       children: [
@@ -37,43 +38,39 @@ class Dashboard extends LayoutWidget {
           },
         ),
 
-        const SizedBox(height: 16), 
+        const SizedBox(height: 16),
 
-        // Show AnalyticsWidget only for admin and manager
+        // Show AnalyticsWidget for all roles including farmers
         Consumer<YearPickerProvider>(
           builder: (context, yearProvider, child) {
             return AnalyticsWidget(selectedYear: yearProvider.selectedYear);
           },
         ),
-        if (_hasRole(user, 'admin')) const SizedBox(height: 30),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 30),
 
-        if (_hasRole(user, 'admin') || _hasRole(user, 'officer'))
-          const RevenueWidget(),
+        // Show RevenueWidget for all roles except farmers
+        if (!isFarmer) const RevenueWidget(),
+        if (!isFarmer) const SizedBox(height: 20),
 
-        const SizedBox(height: 16),
+        // Show ChannelWidget for all roles except farmers
+        if (!isFarmer) ChannelWidget(),
+        if (!isFarmer) const SizedBox(height: 30),
 
-        // Show ChannelWidget only for admin and analyst
-        if (_hasRole(user, 'admin')) ChannelWidget(),
-        if (_hasRole(user, 'admin')) const SizedBox(height: 30),
-
-        // Only show MapChartWidget on desktop for admin
-        if (MediaQuery.of(context).size.width > 600 && _hasRole(user, 'admin'))
-          Consumer<YearPickerProvider>(
-            builder: (context, yearProvider, child) {
-              return SizedBox(
-                height: 700,
-                child: CommonCard(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints.expand(),
-                    child:
-                        MapChartWidget(selectedYear: yearProvider.selectedYear),
-                  ),
+        Consumer<YearPickerProvider>(
+          builder: (context, yearProvider, child) {
+            return SizedBox(
+              height: 700,
+              child: CommonCard(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints.expand(),
+                  child:
+                      MapChartWidget(selectedYear: yearProvider.selectedYear),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -82,6 +79,7 @@ class Dashboard extends LayoutWidget {
   Widget contentMobileWidget(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
+    final isFarmer = _isFarmer(user);
 
     return Column(
       children: [
@@ -90,19 +88,36 @@ class Dashboard extends LayoutWidget {
             return GridCard(selectedYear: yearProvider.selectedYear);
           },
         ),
-        const SizedBox(height: 16), 
+        const SizedBox(height: 16),
         Consumer<YearPickerProvider>(
           builder: (context, yearProvider, child) {
             return AnalyticsWidget(selectedYear: yearProvider.selectedYear);
           },
         ),
-        if (_hasRole(user, 'admin')) const SizedBox(height: 30),
-        const SizedBox(height: 20),
-        if (_hasRole(user, 'admin') || _hasRole(user, 'officer'))
-          const RevenueWidget(),
-        const SizedBox(height: 16),
-        if (_hasRole(user, 'admin')) ChannelWidget(),
-        if (_hasRole(user, 'admin')) const SizedBox(height: 30),
+        const SizedBox(height: 30),
+
+        // Show RevenueWidget for all roles except farmers
+        if (!isFarmer) const RevenueWidget(),
+        if (!isFarmer) const SizedBox(height: 20),
+
+        // Show ChannelWidget for all roles except farmers
+        if (!isFarmer) ChannelWidget(),
+        if (!isFarmer) const SizedBox(height: 30),
+
+        Consumer<YearPickerProvider>(
+          builder: (context, yearProvider, child) {
+            return SizedBox(
+              height: 700,
+              child: CommonCard(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints.expand(),
+                  child:
+                      MapChartWidget(selectedYear: yearProvider.selectedYear),
+                ),
+              ),
+            );
+          },
+        ),
       ],
     );
   }

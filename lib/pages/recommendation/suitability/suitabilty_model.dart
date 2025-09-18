@@ -16,13 +16,13 @@ class SuitabilityModel extends ChangeNotifier {
 
   bool get isStreamingSuggestions => _isStreamingSuggestions;
   // Input parameters
-  double nitrogen = 50.6;
-  double phosphorous = 53.4;
-  double potassium = 48.1;
-  double temperature = 25.6;
-  double humidity = 71.5;
-  double ph = 6.5;
-  double rainfall = 103.5;
+
+  double soil_ph = 6.2;
+  double fertility_ec = 1443;
+  double sunlight = 44844;
+  double soil_temp = 25.8;
+  double humidity = 68;
+  double soil_moisture = 63;
 
   // Results
   bool isLoading = false;
@@ -61,13 +61,12 @@ class SuitabilityModel extends ChangeNotifier {
         uri,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          "N": nitrogen,
-          "P": phosphorous,
-          "K": potassium,
-          "temperature": temperature,
+          "soil_ph": soil_ph,
+          "fertility_ec": fertility_ec,
           "humidity": humidity,
-          "ph": ph,
-          "rainfall": rainfall,
+          "sunlight": sunlight,
+          "soil_temp": soil_temp,
+          "soil_moisture": soil_moisture,
           "crop": selectedCrop,
           "selected_models": selectedModels.isEmpty ? null : selectedModels
         }),
@@ -115,13 +114,12 @@ class SuitabilityModel extends ChangeNotifier {
         ..headers['Content-Type'] = 'application/json'
         ..body = jsonEncode({
           "parameters": {
-            "N": nitrogen,
-            "P": phosphorous,
-            "K": potassium,
-            "temperature": temperature,
+            "soil_ph": soil_ph,
+            "fertility_ec": fertility_ec,
             "humidity": humidity,
-            "ph": ph,
-            "rainfall": rainfall,
+            "sunlight": sunlight,
+            "soil_temp": soil_temp,
+            "soil_moisture": soil_moisture,
             "crop": selectedCrop,
           },
           "deficient_params": deficientParams,

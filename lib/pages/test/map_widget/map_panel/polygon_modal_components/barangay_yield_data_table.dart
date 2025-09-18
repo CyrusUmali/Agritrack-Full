@@ -1,11 +1,12 @@
 import 'package:flareline/core/models/yield_model.dart';
-import 'package:flareline/core/theme/global_colors.dart';  
+import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/pages/reports/export_utils.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/barangay_bar_chart.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/barangay_yield_line_chart.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/barangay_yield_pie_chart.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/monthly_data_table.dart';
-import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/yearly_data_table.dart'; 
- 
+import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/yearly_data_table.dart';
+
 import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,6 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'product_selection_card.dart';
 
 enum DataViewType { table, barchart, linechart, piechart }
-
 
 class BarangayYieldDataTable extends StatefulWidget {
   final String barangay;
@@ -35,16 +35,66 @@ class _BarangayYieldDataTableState extends State<BarangayYieldDataTable> {
   bool _showPieByVolume = true; // true = by volume, false = by records
   bool _showPieChartToggle = true; // Controls visibility of toggle buttons
 
-
-
-
-
+  bool _isExporting = false;
+  OverlayEntry? _loadingOverlay;
 
   @override
   void initState() {
     super.initState();
     _selectedProduct = _getInitialProduct();
     _loadYieldData();
+  }
+
+  void _showLoadingDialog(String message) {
+    setState(() {
+      _isExporting = true;
+    });
+
+    _loadingOverlay = OverlayEntry(
+      builder: (context) => Container(
+        color: Colors.black54,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(message),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_loadingOverlay!);
+  }
+
+  void _closeLoadingDialog() {
+    _loadingOverlay?.remove();
+    _loadingOverlay = null;
+    setState(() {
+      _isExporting = false;
+    });
+  }
+
+  Future<void> _exportData() async {
+    await YieldExportUtils.exportYieldDataToExcel(
+      context: context,
+      yields: _yields,
+      polygonName: widget.barangay ?? 'Unknown',
+      selectedProduct: _selectedProduct,
+      isMonthlyView: _showMonthlyData,
+      selectedYear: selectedYear,
+      showLoadingDialog: _showLoadingDialog,
+      closeLoadingDialog: _closeLoadingDialog,
+    );
   }
 
   String _getInitialProduct() {
@@ -90,80 +140,89 @@ class _BarangayYieldDataTableState extends State<BarangayYieldDataTable> {
     });
   }
 
-Map<String, Map<String, Map<String, double>>> _getYieldData() {
-  final data = <String, Map<String, Map<String, double>>>{};
-  final products = _getUniqueProducts();
+  Map<String, Map<String, Map<String, double>>> _getYieldData() {
+    final data = <String, Map<String, Map<String, double>>>{};
+    final products = _getUniqueProducts();
 
-  for (final product in products) {
-    final productData = <String, Map<String, double>>{};
-    final yearGroups = <int, List<Yield>>{};
+    for (final product in products) {
+      final productData = <String, Map<String, double>>{};
+      final yearGroups = <int, List<Yield>>{};
 
-    // Filter out yields where sectorId is 4 (Livestock)
-    final filteredYields = _yields.where((y) => 
-        y.productName == product && 
-        (y.sectorId == null || y.sectorId != 4)
-    );
+      for (final yield in _yields.where((y) => y.productName == product)) {
+        final year = yield.harvestDate?.year ?? DateTime.now().year;
+        yearGroups.putIfAbsent(year, () => []).add(yield);
+      }
 
-    for (final yield in filteredYields) {
-      final year = yield.harvestDate?.year ?? DateTime.now().year;
-      yearGroups.putIfAbsent(year, () => []).add(yield);
+      for (final entry in yearGroups.entries) {
+        final totalVolume = entry.value
+            .fold<double>(0, (sum, yield) => sum + (yield.volume ?? 0));
+
+        final totalAreaHarvested = entry.value
+            .where((yield) => yield.sectorId != 4) // Exclude livestock
+            .fold<double>(0, (sum, yield) => sum + (yield.areaHarvested ?? 0));
+
+        productData[entry.key.toString()] = {
+          'volume': totalVolume,
+          'areaHarvested': totalAreaHarvested,
+        };
+      }
+
+      data[product] = productData;
     }
 
-    for (final entry in yearGroups.entries) {
-      final totalVolume = entry.value
-          .fold<double>(0, (sum, yield) => sum + (yield.volume ?? 0));
-      final totalAreaHarvested = entry.value
-          .fold<double>(0, (sum, yield) => sum + (yield.areaHarvested ?? 0));
-      
-      productData[entry.key.toString()] = {
-        'volume': totalVolume,
-        'areaHarvested': totalAreaHarvested,
+    return data;
+  }
+
+  Map<String, Map<String, double>> _getMonthlyYieldData(
+      String product, int year) {
+    final monthlyData = <String, Map<String, double>>{};
+    final monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+
+    // Initialize all months with zero values
+    for (final month in monthNames) {
+      monthlyData[month] = {
+        'volume': 0.0,
+        'areaHarvested': 0.0,
       };
     }
 
-    data[product] = productData;
+    // Filter out yields where sectorId is 4 (Livestock)
+    final relevantYields = _yields.where((yield) {
+      final yieldYear = yield.harvestDate?.year ?? DateTime.now().year;
+      return yield.productName == product &&
+          yieldYear == year &&
+          (yield.sectorId == null || yield.sectorId != 4);
+    });
+
+    for (final yield in relevantYields) {
+      final month = yield.harvestDate?.month ?? 1;
+      final monthName = monthNames[month - 1];
+
+      monthlyData[monthName]!['volume'] =
+          (monthlyData[monthName]!['volume'] ?? 0) + (yield.volume ?? 0);
+
+      if (yield.sectorId != 4) {
+        monthlyData[monthName]!['areaHarvested'] =
+            (monthlyData[monthName]!['areaHarvested'] ?? 0) +
+                (yield.areaHarvested ?? 0);
+      }
+    }
+
+    return monthlyData;
   }
-
-  return data;
-}
-
-
-Map<String, Map<String, double>> _getMonthlyYieldData(String product, int year) {
-  final monthlyData = <String, Map<String, double>>{};
-  final monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  // Initialize all months with zero values
-  for (final month in monthNames) {
-    monthlyData[month] = {
-      'volume': 0.0,
-      'areaHarvested': 0.0,
-    };
-  }
-
-  // Filter out yields where sectorId is 4 (Livestock)
-  final relevantYields = _yields.where((yield) {
-    final yieldYear = yield.harvestDate?.year ?? DateTime.now().year;
-    return yield.productName == product && 
-           yieldYear == year &&
-           (yield.sectorId == null || yield.sectorId != 4);
-  });
-
-  for (final yield in relevantYields) {
-    final month = yield.harvestDate?.month ?? 1;
-    final monthName = monthNames[month - 1];
-    
-    monthlyData[monthName]!['volume'] = 
-        (monthlyData[monthName]!['volume'] ?? 0) + (yield.volume ?? 0);
-    monthlyData[monthName]!['areaHarvested'] = 
-        (monthlyData[monthName]!['areaHarvested'] ?? 0) + (yield.areaHarvested ?? 0);
-  }
-
-  return monthlyData;
-}
-
 
   Future<void> _showYearPicker(BuildContext context) async {
     final int? pickedYear = await showDialog<int>(
@@ -243,18 +302,19 @@ Map<String, Map<String, double>> _getMonthlyYieldData(String product, int year) 
 
     return BlocBuilder<YieldBloc, YieldState>(
       builder: (context, state) {
-      // Handle loading state
-if (state is YieldsLoading) {
-  return SizedBox(
-    height: MediaQuery.of(context).size.height * 0.5, // 50% of screen height
-    child: Center(
-      child: LoadingAnimationWidget.inkDrop(
-        color: Theme.of(context).primaryColor,
-        size: 50,
-      ),
-    ),
-  );
-}
+        // Handle loading state
+        if (state is YieldsLoading) {
+          return SizedBox(
+            height: MediaQuery.of(context).size.height *
+                0.5, // 50% of screen height
+            child: Center(
+              child: LoadingAnimationWidget.inkDrop(
+                color: Theme.of(context).primaryColor,
+                size: 50,
+              ),
+            ),
+          );
+        }
 
         if (state is YieldsError) {
           return Center(
@@ -321,8 +381,10 @@ if (state is YieldsLoading) {
         : _buildMobileLayout(theme, yieldData, products);
   }
 
-Widget _buildWideScreenLayout(ThemeData theme,
-    Map<String, Map<String, Map<String, double>>> yieldData, List<String> products) {
+  Widget _buildWideScreenLayout(
+      ThemeData theme,
+      Map<String, Map<String, Map<String, double>>> yieldData,
+      List<String> products) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -347,11 +409,11 @@ Widget _buildWideScreenLayout(ThemeData theme,
               const SizedBox(height: 20),
               _buildControlPanel(theme),
             ],
-          ), 
+          ),
         ),
         const SizedBox(width: 24),
         Expanded(
-          child: _buildDataDisplayCard(theme, yieldData ),
+          child: _buildDataDisplayCard(theme, yieldData),
         ),
       ],
     );
@@ -368,8 +430,7 @@ Widget _buildWideScreenLayout(ThemeData theme,
           children: [
             Row(
               children: [
-                Icon(Icons.location_on,
-                    size: 24, color: theme.primaryColor),
+                Icon(Icons.location_on, size: 24, color: theme.primaryColor),
                 const SizedBox(width: 12),
                 Text(
                   widget.barangay,
@@ -392,11 +453,8 @@ Widget _buildWideScreenLayout(ThemeData theme,
     );
   }
 
-
-
-   
-  Widget _buildDataDisplayCard(
-    ThemeData theme, Map<String, Map<String, Map<String, double>>> yieldData) {
+  Widget _buildDataDisplayCard(ThemeData theme,
+      Map<String, Map<String, Map<String, double>>> yieldData) {
     final productImage = _getProductImage(_selectedProduct);
 
     return Card(
@@ -410,124 +468,129 @@ Widget _buildWideScreenLayout(ThemeData theme,
             LayoutBuilder(
               builder: (context, constraints) {
                 final isMobile = constraints.maxWidth < 600;
-                
-                return isMobile 
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            if (productImage != null && _viewType != DataViewType.piechart)
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundImage: NetworkImage(productImage),
-                              )
-                            else if (_viewType != DataViewType.piechart)
-                              Icon(Icons.analytics, color: theme.primaryColor, size: 24),
-                            
-                            if (_viewType == DataViewType.piechart)
-                              Icon(Icons.pie_chart, color: theme.primaryColor, size: 24)
-                            else
-                              const SizedBox.shrink(),
-                              
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _viewType == DataViewType.piechart 
-                                    ? 'Yield Distribution - ${widget.barangay}'
-                                    : 'Production Data - $_selectedProduct',
-                                style: TextStyle(
-                                  fontSize: 14, 
-                                  fontWeight: FontWeight.normal
+
+                return isMobile
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              if (productImage != null &&
+                                  _viewType != DataViewType.piechart)
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundImage: NetworkImage(productImage),
+                                )
+                              else if (_viewType != DataViewType.piechart)
+                                Icon(Icons.analytics,
+                                    color: theme.primaryColor, size: 24),
+                              if (_viewType == DataViewType.piechart)
+                                Icon(Icons.pie_chart,
+                                    color: theme.primaryColor, size: 24)
+                              else
+                                const SizedBox.shrink(),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _viewType == DataViewType.piechart
+                                      ? 'Yield Distribution - ${widget.barangay}'
+                                      : 'Production Data - $_selectedProduct',
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.normal),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Center(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _buildViewTypeToggle(theme),
+                                  const SizedBox(width: 12),
+                                  if (_viewType == DataViewType.piechart)
+                                    _buildPieChartModeToggle(theme),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          theme.primaryColor.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      _showMonthlyData
+                                          ? 'Monthly View'
+                                          : 'Yearly View',
+                                      style: TextStyle(
+                                        color: theme.primaryColor,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                 Center(
-  child: SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildViewTypeToggle(theme),
-        const SizedBox(width: 12),
-        if (_viewType == DataViewType.piechart)
-          _buildPieChartModeToggle(theme),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: theme.primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            _showMonthlyData ? 'Monthly View' : 'Yearly View',
-            style: TextStyle(
-              color: theme.primaryColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-          ),
-        ),
-      ],
-    ),
-  ),
-),
-                    
-                      ],
-                    )
-                  : Row(
-                      children: [
-                        if (productImage != null && _viewType != DataViewType.piechart)
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundImage: NetworkImage(productImage),
-                          )
-                        else if (_viewType != DataViewType.piechart)
-                          Icon(Icons.analytics, color: theme.primaryColor, size: 24),
-                        
-                        if (_viewType == DataViewType.piechart)
-                          Icon(Icons.pie_chart, color: theme.primaryColor, size: 24)
-                        else
-                          const SizedBox.shrink(),
-                          
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _viewType == DataViewType.piechart 
-                                ? 'Yield Distribution - ${widget.barangay}'
-                                : 'Production Data - $_selectedProduct',
-                            style: TextStyle(
-                              fontSize: 14, 
-                              fontWeight: FontWeight.normal
-                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        _buildViewTypeToggle(theme),
-                        const SizedBox(width: 12),
-                        if (_viewType == DataViewType.piechart)
-                          _buildPieChartModeToggle(theme)
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: theme.primaryColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          if (productImage != null &&
+                              _viewType != DataViewType.piechart)
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundImage: NetworkImage(productImage),
+                            )
+                          else if (_viewType != DataViewType.piechart)
+                            Icon(Icons.analytics,
+                                color: theme.primaryColor, size: 24),
+                          if (_viewType == DataViewType.piechart)
+                            Icon(Icons.pie_chart,
+                                color: theme.primaryColor, size: 24)
+                          else
+                            const SizedBox.shrink(),
+                          const SizedBox(width: 8),
+                          Expanded(
                             child: Text(
-                              _showMonthlyData ? 'Monthly View' : 'Yearly View',
+                              _viewType == DataViewType.piechart
+                                  ? 'Yield Distribution - ${widget.barangay}'
+                                  : 'Production Data - $_selectedProduct',
                               style: TextStyle(
-                                color: theme.primaryColor,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
+                                  fontSize: 14, fontWeight: FontWeight.normal),
                             ),
                           ),
-                      ],
-                    );
+                          const Spacer(),
+                          _buildViewTypeToggle(theme),
+                          const SizedBox(width: 12),
+                          if (_viewType == DataViewType.piechart)
+                            _buildPieChartModeToggle(theme)
+                          else
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: theme.primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                _showMonthlyData
+                                    ? 'Monthly View'
+                                    : 'Yearly View',
+                                style: TextStyle(
+                                  color: theme.primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
               },
             ),
             const SizedBox(height: 20),
@@ -538,7 +601,7 @@ Widget _buildWideScreenLayout(ThemeData theme,
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: _buildDataDisplay(yieldData ),
+                child: _buildDataDisplay(yieldData),
               ),
             ),
           ],
@@ -547,7 +610,6 @@ Widget _buildWideScreenLayout(ThemeData theme,
     );
   }
 
-
   // New method: Pie chart mode toggle (Volume vs Records)
   Widget _buildPieChartModeToggle(ThemeData theme) {
     return Container(
@@ -555,7 +617,7 @@ Widget _buildWideScreenLayout(ThemeData theme,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: theme.dividerColor),
         color: theme.brightness == Brightness.dark
-            ?  theme.primaryColor.withOpacity(0.1)
+            ? theme.primaryColor.withOpacity(0.1)
             : Colors.grey.shade50,
       ),
       child: Row(
@@ -584,8 +646,6 @@ Widget _buildWideScreenLayout(ThemeData theme,
       ),
     );
   }
-
-
 
   // New method: Individual pie toggle button
   Widget _buildPieToggleButton({
@@ -630,69 +690,67 @@ Widget _buildWideScreenLayout(ThemeData theme,
       ),
     );
   }
- 
 
+  Widget _buildViewTypeToggle(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.dividerColor),
+        color: theme.brightness == Brightness.dark
+            ? theme.primaryColor.withOpacity(0.1)
+            : Colors.grey.shade50,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildViewToggleButton(
+            icon: Icons.table_chart,
+            isSelected: _viewType == DataViewType.table,
+            onTap: () => setState(() => _viewType = DataViewType.table),
+            theme: theme,
+            tooltip: 'Table View',
+          ),
+          Container(
+            width: 1,
+            height: 32,
+            color: theme.dividerColor,
+          ),
+          _buildViewToggleButton(
+            icon: Icons.bar_chart,
+            isSelected: _viewType == DataViewType.barchart,
+            onTap: () => setState(() => _viewType = DataViewType.barchart),
+            theme: theme,
+            tooltip: 'Bar Chart View',
+          ),
+          Container(
+            width: 1,
+            height: 32,
+            color: theme.dividerColor,
+          ),
+          _buildViewToggleButton(
+            icon: Icons.stacked_line_chart,
+            isSelected: _viewType == DataViewType.linechart,
+            onTap: () => setState(() => _viewType = DataViewType.linechart),
+            theme: theme,
+            tooltip: 'Line Chart View',
+          ),
+          Container(
+            width: 1,
+            height: 32,
+            color: theme.dividerColor,
+          ),
+          _buildViewToggleButton(
+            icon: Icons.pie_chart,
+            isSelected: _viewType == DataViewType.piechart,
+            onTap: () => setState(() => _viewType = DataViewType.piechart),
+            theme: theme,
+            tooltip: 'Pie Chart View',
+          ),
+        ],
+      ),
+    );
+  }
 
-
-Widget _buildViewTypeToggle(ThemeData theme) {
-  return Container(
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: theme.dividerColor),
-      color: theme.brightness == Brightness.dark
-          ?  theme.primaryColor.withOpacity(0.1)
-          : Colors.grey.shade50,
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildViewToggleButton(
-          icon: Icons.table_chart,
-          isSelected: _viewType == DataViewType.table,
-          onTap: () => setState(() => _viewType = DataViewType.table),
-          theme: theme,
-          tooltip: 'Table View',
-        ),
-        Container(
-          width: 1,
-          height: 32,
-          color: theme.dividerColor,
-        ),
-        _buildViewToggleButton(
-          icon: Icons.bar_chart,
-          isSelected: _viewType == DataViewType.barchart,
-          onTap: () => setState(() => _viewType = DataViewType.barchart),
-          theme: theme,
-          tooltip: 'Bar Chart View',
-        ),
-        Container(
-          width: 1,
-          height: 32,
-          color: theme.dividerColor,
-        ),
-        _buildViewToggleButton(
-          icon: Icons.stacked_line_chart,
-          isSelected: _viewType == DataViewType.linechart,
-          onTap: () => setState(() => _viewType = DataViewType.linechart),
-          theme: theme,
-          tooltip: 'Line Chart View',
-        ),
-        Container(
-          width: 1,
-          height: 32,
-          color: theme.dividerColor,
-        ),
-        _buildViewToggleButton(
-          icon: Icons.pie_chart,
-          isSelected: _viewType == DataViewType.piechart,
-          onTap: () => setState(() => _viewType = DataViewType.piechart),
-          theme: theme,
-          tooltip: 'Pie Chart View',
-        ),
-      ],
-    ),
-  );
-}
   Widget _buildViewToggleButton({
     required IconData icon,
     required bool isSelected,
@@ -725,88 +783,77 @@ Widget _buildViewTypeToggle(ThemeData theme) {
     );
   }
 
+  Widget _buildDataDisplay(
+      Map<String, Map<String, Map<String, double>>> yieldData) {
+    final ScrollController scrollController = ScrollController();
+    Widget chartWidget;
 
+    if (_viewType == DataViewType.table) {
+      chartWidget = _showMonthlyData
+          ? MonthlyDataTable(
+              product: _selectedProduct,
+              year: selectedYear,
+              monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
+            )
+          : YearlyDataTable(
+              product: _selectedProduct,
+              yearlyData: yieldData[_selectedProduct] ?? {});
+    } else if (_viewType == DataViewType.barchart) {
+      chartWidget = _showMonthlyData
+          ? MonthlyBarChart(
+              product: _selectedProduct,
+              year: selectedYear,
+              monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
+            )
+          : YearlyBarChart(
+              product: _selectedProduct,
+              yearlyData: yieldData[_selectedProduct] ?? {});
+    } else if (_viewType == DataViewType.linechart) {
+      chartWidget = _showMonthlyData
+          ? MonthlyLineChart(
+              product: _selectedProduct,
+              year: selectedYear,
+              monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
+            )
+          : YearlyLineChart(
+              product: _selectedProduct,
+              yearlyData: yieldData[_selectedProduct] ?? {});
+    } else {
+      // Filter yields for pie chart (exclude sectorId 4)
 
+      chartWidget = BarangayYieldPieChart(
+        yields: _yields,
+        showByVolume: _showPieByVolume,
+        selectedYear: _showMonthlyData ? selectedYear.toString() : null,
+      );
+    }
 
- 
+    final isChart = _viewType == DataViewType.barchart ||
+        _viewType == DataViewType.linechart ||
+        _viewType == DataViewType.piechart;
 
-Widget _buildDataDisplay(Map<String, Map<String, Map<String, double>>> yieldData) {
-  final ScrollController scrollController = ScrollController();
-  Widget chartWidget;
-  
-  if (_viewType == DataViewType.table) {
-    chartWidget = _showMonthlyData
-        ? MonthlyDataTable(
-            product: _selectedProduct, 
-            year: selectedYear,
-            monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
-          )
-        : YearlyDataTable(
-            product: _selectedProduct,
-            yearlyData: yieldData[_selectedProduct] ?? {});
-  } else if (_viewType == DataViewType.barchart) {
-    chartWidget = _showMonthlyData
-        ? MonthlyBarChart(
-            product: _selectedProduct,
-            year: selectedYear,
-            monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
-          )
-        : YearlyBarChart(
-            product: _selectedProduct,
-            yearlyData: yieldData[_selectedProduct] ?? {});
-  } else if (_viewType == DataViewType.linechart) {
-    chartWidget = _showMonthlyData
-        ? MonthlyLineChart(
-            product: _selectedProduct,
-            year: selectedYear,
-            monthlyData: _getMonthlyYieldData(_selectedProduct, selectedYear),
-          )
-        : YearlyLineChart(
-            product: _selectedProduct,
-            yearlyData: yieldData[_selectedProduct] ?? {});
-  } else {
-    // Filter yields for pie chart (exclude sectorId 4)
-    final filteredYields = _yields.where((y) => y.sectorId == null || y.sectorId != 4).toList();
-    
-    chartWidget = BarangayYieldPieChart(
-      yields: filteredYields,
-      showByVolume: _showPieByVolume,
-      selectedYear: _showMonthlyData ? selectedYear.toString() : null,
-    );
-  }
-
-  final isChart = _viewType == DataViewType.barchart || 
-                  _viewType == DataViewType.linechart || 
-                  _viewType == DataViewType.piechart;
-  
-  if (isChart) {
-    return Scrollbar(
-      controller: scrollController,
-      thumbVisibility: true,
-      trackVisibility: true,
-      thickness: 8.0,
-      radius: const Radius.circular(4.0),
-      interactive: true,
-      child: SingleChildScrollView(
+    if (isChart) {
+      return Scrollbar(
         controller: scrollController,
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        child: Container(
-          width: _showMonthlyData ? 800 : 600,
-          child: chartWidget,
+        thumbVisibility: true,
+        trackVisibility: true,
+        thickness: 8.0,
+        radius: const Radius.circular(4.0),
+        interactive: true,
+        child: SingleChildScrollView(
+          controller: scrollController,
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Container(
+            width: _showMonthlyData ? 800 : 600,
+            child: chartWidget,
+          ),
         ),
-      ),
-    );
+      );
+    }
+
+    return chartWidget;
   }
-  
-  return chartWidget;
-}
-
-
-
-
-
- 
 
   Widget _buildControlPanel(ThemeData theme) {
     final colorScheme = theme.colorScheme;
@@ -896,7 +943,34 @@ Widget _buildDataDisplay(Map<String, Map<String, Map<String, double>>> yieldData
                 ],
               ),
             ],
+            const SizedBox(height: 20),
+            _buildExportButton(theme),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExportButton(ThemeData theme) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _isExporting ? null : _exportData,
+        icon: _isExporting
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.download, size: 18),
+        label: Text(_isExporting ? 'Exporting...' : 'Export to Excel'),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          backgroundColor: theme.primaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );
@@ -944,8 +1018,10 @@ Widget _buildDataDisplay(Map<String, Map<String, Map<String, double>>> yieldData
     );
   }
 
-  Widget _buildMobileLayout(ThemeData theme,
-    Map<String, Map<String, Map<String, double>>> yieldData, List<String> products) {
+  Widget _buildMobileLayout(
+      ThemeData theme,
+      Map<String, Map<String, Map<String, double>>> yieldData,
+      List<String> products) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -965,7 +1041,7 @@ Widget _buildDataDisplay(Map<String, Map<String, Map<String, double>>> yieldData
         const SizedBox(height: 16),
         _buildControlPanel(theme),
         const SizedBox(height: 16),
-        _buildDataDisplayCard(theme, yieldData ),
+        _buildDataDisplayCard(theme, yieldData),
       ],
     );
   }

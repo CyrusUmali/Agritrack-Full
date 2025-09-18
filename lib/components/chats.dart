@@ -19,7 +19,7 @@ class TopContributorsWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text( 
+              const Text(
                 'Top Contributors',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
@@ -157,47 +157,44 @@ class _ContributorItem extends StatelessWidget {
               children: [
                 Text(contributor['farmerName']),
                 const SizedBox(height: 4),
-                Text(
-                  '${contributor['totalValue'].toStringAsFixed(2)} ',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
+                // Text(
+                //   '${contributor['totalValue'].toStringAsFixed(2)} ',
+                //   style: const TextStyle(
+                //     fontSize: 12,
+                //     color: Colors.grey,
+                //   ),
+                // ),
               ],
             ),
           ),
-  
-  
-  
-  InkWell(
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            FarmersProfile(farmerID: contributor['farmerID']),
-      ),
-    );
-  },
-  child: Container(
-    height: 30,
-    width: 30,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: Colors.transparent,
-      shape: BoxShape.circle,
-      border: Border.all(color: Colors.grey, width: 1),
-    ),
-    child: const Icon(
-      Icons.more_horiz,
-      color: Colors.grey,
-      size: 16,
-    ),
-  ),
-)
-  
-        ], 
+          InkWell(
+            onTap: () {
+              print('qwe');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      FarmersProfile(farmerID: contributor['farmerID']),
+                ),
+              );
+            },
+            child: Container(
+              height: 30,
+              width: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey, width: 1),
+              ),
+              child: const Icon(
+                Icons.more_horiz,
+                color: Colors.grey,
+                size: 16,
+              ),
+            ),
+          )
+        ],
       ),
     );
   }

@@ -14,13 +14,15 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
+        Icon(icon, size: 20, color: Colors.grey.shade600
+            // color: Theme.of(context).colorScheme.primary
+            ),
         const SizedBox(width: 12),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+                color: Colors.grey.shade800,
               ),
         ),
       ],

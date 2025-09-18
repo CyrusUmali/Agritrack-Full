@@ -90,7 +90,7 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colors.surfaceVariant,
+              color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.circular(8),
             ),
             child: value,
@@ -113,7 +113,8 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
       value: TextFormField(
         controller: controller,
         obscureText: true,
-        decoration: const InputDecoration(
+        // backgroundCursorColor: Colors.transparent,
+        decoration: InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.zero,
           isDense: true,
@@ -163,32 +164,23 @@ class _PasswordChangeCardState extends State<PasswordChangeCard> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.lock_outline,),
+                    Icon(
+                      Icons.lock_outline,
+                    ),
                     const SizedBox(width: 12),
 
-
-              // In your PasswordChangeCard widget
-Text(
-  context.translate('Change Password'), // Clean and simple!
-  style: theme.textTheme.titleMedium?.copyWith(
-    fontWeight: FontWeight.bold, 
-    color: Colors.white
-  ),
-)
-
-
-
-                    
-
-
+                    // In your PasswordChangeCard widget
+                    Text(
+                      context.translate('Change Password'), // Clean and simple!
+                      style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold, color: Colors.white),
+                    )
                   ],
                 ),
                 const SizedBox(height: 16),
                 if (hasPassword)
                   _buildPasswordField(
                     label: context.translate('Current Password'),
-
-                      
                     controller: _passwordController,
                     icon: Icons.lock_outline,
                     validator: (value) {
@@ -225,19 +217,13 @@ Text(
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: _saveChanges,
-                    child:
-                    
-                   
-Text(
-  context.translate('Change Password'), // Clean and simple!
-  style: theme.textTheme.titleMedium?.copyWith(
-    fontWeight: FontWeight.bold, 
-    color: Colors.white
-  ),
-)
-
-                  ),
+                      onPressed: _saveChanges,
+                      child: Text(
+                        context
+                            .translate('Change Password'), // Clean and simple!
+                        style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold, color: Colors.white),
+                      )),
                 ),
               ],
             ),

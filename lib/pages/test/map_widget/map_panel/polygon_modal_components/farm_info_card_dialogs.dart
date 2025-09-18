@@ -1,4 +1,5 @@
 import 'package:flareline/core/models/farmer_model.dart';
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flutter/material.dart';
 
 class FarmInfoCardDialogs {
@@ -52,6 +53,15 @@ class FarmInfoCardDialogs {
         );
       },
     );
+  }
+
+  // Helper function to extract display name from "id: name" format
+  static String _getDisplayName(String value) {
+    final colonIndex = value.indexOf(':');
+    if (colonIndex != -1) {
+      return value.substring(colonIndex + 1).trim();
+    }
+    return value;
   }
 
   static void showFarmOwnerSelectionDialog({
@@ -115,7 +125,7 @@ class FarmInfoCardDialogs {
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
-                      height: isDesktop ? 400 : 200,
+                      height: isDesktop ? 400 : 300,
                       child: Material(
                         borderRadius: BorderRadius.circular(8),
                         color: colorScheme.surfaceVariant.withOpacity(0.3),
@@ -134,7 +144,8 @@ class FarmInfoCardDialogs {
                             final ownerString = _ownerDisplayString(owner);
 
                             return ListTile(
-                              title: Text(ownerString),
+                              title: Text(_getDisplayName(
+                                  ownerString)), // Show only display name
                               leading: Radio<String>(
                                 value: ownerString,
                                 groupValue: selectedOwner,
@@ -175,6 +186,12 @@ class FarmInfoCardDialogs {
                     }
                     Navigator.pop(context);
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlarelineColors
+                        .primary, // Change this to your desired background color
+                    foregroundColor:
+                        Colors.white, // This sets the text color to white
+                  ),
                   child: Text('Select'),
                 ),
               ],
@@ -251,7 +268,8 @@ class FarmInfoCardDialogs {
                                 .elementAt(index);
 
                             return ListTile(
-                              title: Text(barangay),
+                              title: Text(_getDisplayName(
+                                  barangay)), // Show only display name
                               leading: Radio<String>(
                                 value: barangay,
                                 groupValue: selectedBarangay,
@@ -293,6 +311,12 @@ class FarmInfoCardDialogs {
                     }
                     Navigator.pop(context);
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlarelineColors
+                        .primary, // Change this to your desired background color
+                    foregroundColor:
+                        Colors.white, // This sets the text color to white
+                  ),
                   child: Text('Select'),
                 ),
               ],

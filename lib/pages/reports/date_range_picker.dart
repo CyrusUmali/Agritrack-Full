@@ -47,7 +47,8 @@ class DateRangePickerWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           side: BorderSide(
-            color: Colors.grey[300]!,
+            color: Theme.of(context).cardTheme.surfaceTintColor ??
+                Colors.grey[300]!,
           ),
           backgroundColor: Theme.of(context).cardTheme.color ?? Colors.white,
           foregroundColor: Theme.of(context).textTheme.bodyMedium?.color,

@@ -1,13 +1,16 @@
 import 'package:flareline/core/models/yield_model.dart';
 import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/pages/reports/export_utils.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/barangay_bar_chart.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/barangay_yield_line_chart.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/barangay_yield_pie_chart.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/monthly_data_table.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/product_selection_card.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/yearly_data_table.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
 import 'package:flareline/providers/user_provider.dart';
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -36,6 +39,9 @@ class _YieldDataTableState extends State<YieldDataTable> {
   bool _showPieByVolume = true; // true = by volume, false = by records
   bool _showPieChartToggle = true; // Controls visibility of toggle buttons
 
+  bool _isExporting = false;
+  OverlayEntry? _loadingOverlay;
+
   bool get _isOwnerOrAdmin {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final _isFarmer = userProvider.isFarmer;
@@ -60,6 +66,58 @@ class _YieldDataTableState extends State<YieldDataTable> {
       return widget.polygon.products!.first;
     }
     return 'Mixed Crops';
+  }
+
+  void _showLoadingDialog(String message) {
+    setState(() {
+      _isExporting = true;
+    });
+
+    _loadingOverlay = OverlayEntry(
+      builder: (context) => Container(
+        color: Colors.black54,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(message),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_loadingOverlay!);
+  }
+
+  void _closeLoadingDialog() {
+    _loadingOverlay?.remove();
+    _loadingOverlay = null;
+    setState(() {
+      _isExporting = false;
+    });
+  }
+
+  Future<void> _exportData() async {
+    await YieldExportUtils.exportYieldDataToExcel(
+      context: context,
+      yields: _yields,
+      polygonName: widget.polygon.name ?? 'Unknown',
+      selectedProduct: _selectedProduct,
+      isMonthlyView: _showMonthlyData,
+      selectedYear: selectedYear,
+      showLoadingDialog: _showLoadingDialog,
+      closeLoadingDialog: _closeLoadingDialog,
+    );
   }
 
 // 3. Keep the _getUniqueProducts method as original (include all products)
@@ -426,7 +484,17 @@ class _YieldDataTableState extends State<YieldDataTable> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProductSelectionCard(theme, products, isVertical: true),
+              ProductSelectionCard(
+                products: products,
+                selectedProduct: _selectedProduct,
+                onProductSelected: (product) {
+                  setState(() {
+                    _selectedProduct = product;
+                  });
+                },
+                isVertical: true,
+                getProductImage: _getProductImage,
+              ),
               const SizedBox(height: 20),
               _buildControlPanel(theme),
             ],
@@ -509,72 +577,6 @@ class _YieldDataTableState extends State<YieldDataTable> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVerticalProductList(List<String> products, ThemeData theme) {
-    return SizedBox(
-      height: 200,
-      child: SingleChildScrollView(
-        child: Column(
-          children: products.map((product) {
-            final isSelected = _selectedProduct == product;
-            final productImage = _getProductImage(product);
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedProduct = product;
-                  });
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: isSelected
-                        ? theme.primaryColor.withOpacity(0.1)
-                        : Colors.transparent,
-                    border: Border.all(
-                      color:
-                          isSelected ? theme.primaryColor : theme.dividerColor,
-                      width: isSelected ? 2 : 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundImage: productImage != null
-                            ? NetworkImage(productImage)
-                            : null,
-                        child: productImage == null
-                            ? const Icon(Icons.eco, size: 20)
-                            : null,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          product,
-                          style: TextStyle(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isSelected ? theme.primaryColor : null,
-                          ),
-                        ),
-                      ),
-                      if (isSelected)
-                        Icon(Icons.check_circle, color: theme.primaryColor),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
         ),
       ),
     );
@@ -915,38 +917,6 @@ class _YieldDataTableState extends State<YieldDataTable> {
     );
   }
 
-  Widget _buildHorizontalProductList(List<String> products, ThemeData theme) {
-    return ListView.separated(
-      scrollDirection: Axis.horizontal,
-      itemCount: products.length,
-      separatorBuilder: (context, index) => const SizedBox(width: 8),
-      itemBuilder: (context, index) {
-        final product = products[index];
-        final productImage = _getProductImage(product);
-        return ChoiceChip(
-          label: Text(product),
-          selected: _selectedProduct == product,
-          onSelected: (selected) {
-            setState(() {
-              _selectedProduct = product;
-            });
-          },
-          avatar: CircleAvatar(
-            backgroundImage:
-                productImage != null ? NetworkImage(productImage) : null,
-            child:
-                productImage == null ? const Icon(Icons.eco, size: 16) : null,
-          ),
-          labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          selectedColor: theme.primaryColor.withOpacity(0.2),
-        );
-      },
-    );
-  }
-
   Widget _buildControlPanel(ThemeData theme) {
     final colorScheme = theme.colorScheme;
 
@@ -1035,44 +1005,34 @@ class _YieldDataTableState extends State<YieldDataTable> {
                 ],
               ),
             ],
+            const SizedBox(height: 20),
+            _buildExportButton(theme),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProductSelectionCard(ThemeData theme, List<String> products,
-      {required bool isVertical}) {
-    final colorScheme = theme.colorScheme;
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.agriculture_outlined,
-                    size: 20, color: colorScheme.onSurface.withOpacity(0.6)),
-                const SizedBox(width: 8),
-                Text(
-                  'Select Product',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: isVertical ? null : 100,
-              child: products.isEmpty
-                  ? const Center(child: Text('No products available'))
-                  : isVertical
-                      ? _buildVerticalProductList(products, theme)
-                      : _buildHorizontalProductList(products, theme),
-            ),
-          ],
+  Widget _buildExportButton(ThemeData theme) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _isExporting ? null : _exportData,
+        icon: _isExporting
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.download, size: 18),
+        label: Text(_isExporting ? 'Exporting...' : 'Export to Excel'),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          backgroundColor: theme.primaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );
@@ -1127,9 +1087,21 @@ class _YieldDataTableState extends State<YieldDataTable> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildProductSelectionCard(theme, products, isVertical: false),
+        ProductSelectionCard(
+          products: products,
+          selectedProduct: _selectedProduct,
+          onProductSelected: (product) {
+            setState(() {
+              _selectedProduct = product;
+            });
+          },
+          isVertical: false,
+          getProductImage: _getProductImage,
+        ),
         const SizedBox(height: 16),
         _buildControlPanel(theme),
+        // const SizedBox(height: 16),
+        // _buildExportButton(theme),
         const SizedBox(height: 16),
         _buildDataDisplayCard(theme, yieldData),
       ],

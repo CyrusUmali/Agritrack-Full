@@ -26,30 +26,25 @@ class LanguageSelectionCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.language_outlined ),
+                Icon(Icons.language_outlined),
                 const SizedBox(width: 12),
-
-
- 
-
-
-Consumer<LanguageProvider>(
-  builder: (context, languageProvider, child) {
-    return Text(languageProvider.translate('language'), // Simple translation
-      style: theme.textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  },
-)
-
-
-
+                Consumer<LanguageProvider>(
+                  builder: (context, languageProvider, child) {
+                    return Text(
+                      languageProvider
+                          .translate('language'), // Simple translation
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  },
+                )
               ],
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<Locale>(
               value: languageProvider.locale,
+              dropdownColor: Theme.of(context).cardTheme.color,
               items: LanguageService.supportedLocales.map((locale) {
                 return DropdownMenuItem(
                   value: locale,
@@ -73,7 +68,6 @@ Consumer<LanguageProvider>(
               ),
             ),
             const SizedBox(height: 16),
- 
           ],
         ),
       ),

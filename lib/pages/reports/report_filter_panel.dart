@@ -101,7 +101,8 @@ class ReportFilterPanel extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.grey.shade300,
+                      color: Theme.of(context).cardTheme.surfaceTintColor ??
+                          Colors.grey[300]!,
                       width: 1.0,
                     ),
                   ),
@@ -149,7 +150,8 @@ class ReportFilterPanel extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.grey.shade300,
+                      color: Theme.of(context).cardTheme.surfaceTintColor ??
+                          Colors.grey[300]!,
                       width: 1.0,
                     ),
                   ),
@@ -174,7 +176,8 @@ class ReportFilterPanel extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                         side: BorderSide(
-                          color: Colors.grey[300]!,
+                          color: Theme.of(context).cardTheme.surfaceTintColor ??
+                              Colors.grey[300]!,
                           width: 1.0,
                         ),
                       ),
@@ -351,6 +354,7 @@ class _FiltersSection extends StatelessWidget {
 
     // Common filter widgets that can be reused
     Widget barangayFilter = buildComboBox(
+      context: context,
       hint: 'Barangay',
       options: FilterOptions.barangays,
       selectedValue: selectedBarangay,
@@ -360,6 +364,7 @@ class _FiltersSection extends StatelessWidget {
 
     Widget sectorFilter = buildComboBox(
       hint: 'Sector',
+      context: context,
       options: FilterOptions.sectors,
       selectedValue: selectedSector,
       onSelected: onSectorChanged,
@@ -369,6 +374,7 @@ class _FiltersSection extends StatelessWidget {
     Widget assocFilter = BlocBuilder<AssocsBloc, AssocsState>(
       builder: (context, state) {
         return buildComboBox(
+          context: context,
           hint: 'Association',
           options: FilterOptions.getAssocs(context),
           selectedValue: selectedAssoc,
@@ -379,6 +385,7 @@ class _FiltersSection extends StatelessWidget {
     );
 
     Widget countFilter = buildComboBox(
+      context: context,
       hint: 'Count',
       options: FilterOptions.Count,
       selectedValue: selectedCount,
@@ -387,6 +394,7 @@ class _FiltersSection extends StatelessWidget {
     );
 
     Widget viewByFilter = buildComboBox(
+      context: context,
       hint: 'View By',
       options: FilterOptions.viewBy,
       selectedValue: selectedView,
@@ -397,6 +405,7 @@ class _FiltersSection extends StatelessWidget {
     Widget farmerFilter = BlocBuilder<FarmerBloc, FarmerState>(
       builder: (context, state) {
         return buildComboBox(
+          context: context,
           hint: 'Farmer',
           options: FilterOptions.getFarmers(context),
           selectedValue: selectedFarmer,
@@ -409,6 +418,7 @@ class _FiltersSection extends StatelessWidget {
     Widget productFilter = BlocBuilder<ProductBloc, ProductState>(
       builder: (context, state) {
         return buildComboBox(
+          context: context,
           hint: 'Product',
           options: FilterOptions.getProducts(context),
           selectedValue: selectedProduct,
@@ -421,6 +431,7 @@ class _FiltersSection extends StatelessWidget {
     Widget farmFilter = BlocBuilder<FarmBloc, FarmState>(
       builder: (context, state) {
         return buildComboBox(
+          context: context,
           hint: 'Farm',
           options: FilterOptions.getFarms(context, _farmerId),
           selectedValue: selectedFarm,

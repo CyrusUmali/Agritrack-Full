@@ -11,11 +11,10 @@ class ApiService {
     _dio.options.connectTimeout = const Duration(seconds: 10);
     _dio.options.receiveTimeout = const Duration(seconds: 10);
 
- _dio.interceptors.add(InterceptorsWrapper(
+    _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-       
         final token = await FirebaseAuth.instance.currentUser?.getIdToken();
-        if (token != null) { 
+        if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         return handler.next(options);
@@ -23,9 +22,7 @@ class ApiService {
     ));
   }
 
-
-
-   // Ping the server to wake it up (retry if needed)
+  // Ping the server to wake it up (retry if needed)
   Future<void> wakeUpServer() async {
     const maxRetries = 3;
     const retryDelay = Duration(seconds: 2);

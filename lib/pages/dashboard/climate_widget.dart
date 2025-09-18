@@ -14,7 +14,8 @@ class _ClimateInfoWidgetState extends State<ClimateInfoWidget> {
   WeatherData? _weatherData;
   bool _isLoading = true;
   String _errorMessage = '';
-  bool _usingDummyData = false; // Track if we're showing dummy data
+  bool _usingDummyData = false;
+  bool _isDisposed = false;
 
   // Add dummy weather data
   final WeatherData _dummyWeatherData = WeatherData(
@@ -35,8 +36,20 @@ class _ClimateInfoWidgetState extends State<ClimateInfoWidget> {
     _fetchWeatherData();
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
+  void _safeSetState(VoidCallback fn) {
+    if (!_isDisposed && mounted) {
+      setState(fn);
+    }
+  }
+
   Future<void> _fetchWeatherData() async {
-    setState(() {
+    _safeSetState(() {
       _isLoading = true;
       _usingDummyData = false;
     });
@@ -49,21 +62,25 @@ class _ClimateInfoWidgetState extends State<ClimateInfoWidget> {
 
     try {
       final response = await http.get(url);
+
+      if (_isDisposed) return;
+
       if (response.statusCode == 200) {
-        setState(() {
+        _safeSetState(() {
           _weatherData = WeatherData.fromJson(json.decode(response.body));
           _isLoading = false;
         });
       } else {
-        // Show error with option to use dummy data
-        setState(() {
+        _safeSetState(() {
           _errorMessage =
               'Failed to load weather data (Error ${response.statusCode})';
           _isLoading = false;
         });
       }
     } catch (e) {
-      setState(() {
+      if (_isDisposed) return;
+
+      _safeSetState(() {
         _errorMessage = 'Connection error: ${e.toString()}';
         _isLoading = false;
       });
@@ -71,7 +88,7 @@ class _ClimateInfoWidgetState extends State<ClimateInfoWidget> {
   }
 
   void _loadDummyData() {
-    setState(() {
+    _safeSetState(() {
       _weatherData = _dummyWeatherData;
       _usingDummyData = true;
       _errorMessage = '';
@@ -86,7 +103,6 @@ class _ClimateInfoWidgetState extends State<ClimateInfoWidget> {
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 16 : 16),
       decoration: BoxDecoration(
-        // color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

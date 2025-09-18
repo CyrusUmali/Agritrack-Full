@@ -15,7 +15,7 @@ class ChatbotModel extends ChangeNotifier {
   bool _useStreaming = true; // Add streaming toggle
 
   // Streaming-related properties
-  StreamSubscription? _streamSubscription;  
+  StreamSubscription? _streamSubscription;
   String _currentStreamingMessageId = '';
   String _currentStreamingText = '';
 
@@ -64,6 +64,17 @@ class ChatbotModel extends ChangeNotifier {
       _messages.insert(0, modelMessage);
       notifyListeners();
     }
+  }
+
+  void clearChat() {
+    _messages.clear();
+    _isTyping = false;
+    _streamSubscription?.cancel();
+    _currentStreamingMessageId = '';
+    _currentStreamingText = '';
+
+    // Add welcome message back
+    _addBotWelcomeMessage();
   }
 
   void _addBotWelcomeMessage() {
@@ -343,22 +354,24 @@ class ChatbotModel extends ChangeNotifier {
     if (message.contains('hello') || message.contains('hi')) {
       return "Hello! What agricultural topic can I help with today? I'm currently using the $_currentModel model.";
     } else if (message.contains('soil') || message.contains('ph')) {
-      return "[$_currentModel] Soil quality is crucial for crops. Most prefer pH 6.0-7.0. Need specific soil advice?";
+      return "[$_currentModel] Soil quality is crucial for crops. Most prefer pH 6.0-7.0. Test your soil regularly and consider:\n\n• Adding organic matter like compost\n• Adjusting pH with lime (for acidic soil) or sulfur (for alkaline soil)\n• Testing nutrient levels (N-P-K)\n• Checking soil drainage\n\nWhat specific soil concerns do you have?";
     } else if (message.contains('crop') && message.contains('recommend')) {
-      return "[$_currentModel] For crop recommendations, consider:\n- Your region\n- Soil type\n- Current season\n\nTry our Recommendation tool for precise suggestions!";
+      return "[$_currentModel] For crop recommendations, I need to consider:\n\n• Your climate zone/region\n• Soil type and quality\n• Available water resources\n• Market demand\n• Your experience level\n\nCould you share your location and what you're hoping to grow? Also check our Recommendation tool for personalized suggestions!";
     } else if (message.contains('pest') || message.contains('insect')) {
-      return "[$_currentModel] Common organic pest control methods:\n- Neem oil\n- Companion planting\n- Beneficial insects";
+      return "[$_currentModel] Organic pest control strategies:\n\n🐛 **Prevention:**\n• Crop rotation\n• Companion planting (marigolds, basil)\n• Healthy soil = stronger plants\n\n🌿 **Natural treatments:**\n• Neem oil for aphids, whiteflies\n• Diatomaceous earth for crawling insects\n• Beneficial insects (ladybugs, lacewings)\n• Soap spray for soft-bodied pests\n\nWhat specific pests are you dealing with?";
     } else if (message.contains('fertilizer') ||
         message.contains('nutrients')) {
-      return "[$_currentModel] Essential nutrients for plants:\n- Nitrogen (N) - leaf growth\n- Phosphorus (P) - root development\n- Potassium (K) - disease resistance\n\nAlways test soil before applying fertilizers!";
+      return "[$_currentModel] Essential plant nutrients:\n\n**Primary (N-P-K):**\n• Nitrogen (N) - Leaf growth, green color\n• Phosphorus (P) - Root development, flowering\n• Potassium (K) - Disease resistance, fruit quality\n\n**Secondary:** Calcium, Magnesium, Sulfur\n**Micronutrients:** Iron, Zinc, Boron, etc.\n\n💡 **Tips:**\n• Always soil test first\n• Organic options: compost, manure, bone meal\n• Follow application rates carefully\n• Time applications with plant growth stages";
     } else if (message.contains('water') || message.contains('irrigation')) {
-      return "[$_currentModel] Proper watering tips:\n- Water deeply but less frequently\n- Morning watering is best\n- Check soil moisture before watering\n- Consider drip irrigation for efficiency";
+      return "[$_currentModel] Smart watering practices:\n\n💧 **Timing:**\n• Early morning (6-8 AM) is ideal\n• Avoid evening watering (disease risk)\n\n🎯 **Technique:**\n• Deep, infrequent watering\n• Water soil, not leaves\n• Mulch to retain moisture\n\n📊 **Systems:**\n• Drip irrigation (90% efficiency)\n• Soaker hoses for gardens\n• Smart controllers with weather sensors\n\n**Check soil moisture:** Stick finger 2 inches deep - if dry, time to water!";
     } else if (message.contains('season') || message.contains('planting')) {
-      return "[$_currentModel] Planting seasons vary by region and crop. Generally:\n- Spring: warm-season crops\n- Fall: cool-season crops\n- Consider your local frost dates!";
+      return "[$_currentModel] Planting timing guide:\n\n🌱 **Cool Season Crops** (Spring/Fall):\n• Lettuce, spinach, peas, carrots\n• Plant 2-4 weeks before last frost\n\n☀️ **Warm Season Crops** (Summer):\n• Tomatoes, peppers, cucumbers, corn\n• Plant after soil warms to 60°F+\n\n📅 **Key dates to know:**\n• Last spring frost\n• First fall frost\n• Soil temperature\n\nWhat's your growing zone? I can give more specific timing!";
     } else if (message.contains('disease') || message.contains('fungus')) {
-      return "[$_currentModel] Common plant diseases:\n- Fungal infections (treat with fungicides)\n- Bacterial diseases (improve air circulation)\n- Viral diseases (remove affected plants)\n\nPrevention is key - ensure good plant spacing and hygiene!";
+      return "[$_currentModel] Plant disease management:\n\n🍄 **Fungal diseases** (most common):\n• Symptoms: Spots, wilting, moldy growth\n• Prevention: Good air circulation, avoid overhead watering\n• Treatment: Fungicides, remove affected parts\n\n🦠 **Bacterial diseases:**\n• Symptoms: Water-soaked spots, oozing\n• Prevention: Clean tools, avoid working wet plants\n• Treatment: Copper-based sprays, remove infected plants\n\n🔬 **Viral diseases:**\n• Symptoms: Mosaic patterns, stunted growth\n• Prevention: Control insect vectors\n• Treatment: Remove infected plants (no cure)\n\nDescribe the symptoms you're seeing for specific advice!";
+    } else if (message.contains('weather') || message.contains('climate')) {
+      return "[$_currentModel] Weather impacts on agriculture:\n\n🌡️ **Temperature effects:**\n• Frost damage to tender plants\n• Heat stress reduces yields\n• Growing degree days affect timing\n\n🌧️ **Precipitation:**\n• Too little = drought stress\n• Too much = root rot, fungal diseases\n• Timing matters for planting/harvesting\n\n💨 **Wind & storms:**\n• Physical damage to crops\n• Increased evaporation\n• Disease spread\n\n**Adaptation strategies:** Season extension, variety selection, protective structures. What weather challenges are you facing?";
     } else {
-      return "[$_currentModel] I can help with crop selection, soil health, pest management, fertilizers, irrigation, and plant diseases. Could you clarify your question?";
+      return "[$_currentModel] I'm here to help with all aspects of agriculture! I can assist with:\n\n🌱 **Crop Selection & Planning**\n🌾 **Soil Health & Testing**\n🐛 **Pest & Disease Management**\n💧 **Irrigation & Water Management**\n🌿 **Fertilizers & Nutrition**\n📅 **Seasonal Planning**\n🌤️ **Weather & Climate Adaptation**\n\nWhat specific agricultural topic would you like to explore? Feel free to use the quick topic buttons above or ask me anything!";
     }
   }
 }

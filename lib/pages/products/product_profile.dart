@@ -175,13 +175,13 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
             onTap: () => setState(() => _selectedViewIndex = 1),
           ),
           // Only show Map toggle on desktop
-          if (!widget.isMobile)
-            _buildToggleButton(
-              context,
-              label: 'Map',
-              isSelected: _selectedViewIndex == 2,
-              onTap: () => setState(() => _selectedViewIndex = 2),
-            ),
+          // if (!widget.isMobile)
+          _buildToggleButton(
+            context,
+            label: 'Map',
+            isSelected: _selectedViewIndex == 2,
+            onTap: () => setState(() => _selectedViewIndex = 2),
+          ),
         ],
       ),
     );
@@ -290,12 +290,15 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                   return const SizedBox();
                 },
               ),
-            ] else if (_selectedViewIndex == 2 && !widget.isMobile) ...[
+            ] else if (_selectedViewIndex == 2
+                // && !widget.isMobile
+
+                ) ...[
               // Map view - only show on desktop
               Consumer<YearPickerProvider>(
                 builder: (context, yearProvider, child) {
                   return SizedBox(
-                    height: 700,
+                    height: 800,
                     child: CommonCard(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints.expand(),

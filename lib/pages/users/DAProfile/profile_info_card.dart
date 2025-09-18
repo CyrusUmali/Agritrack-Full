@@ -47,7 +47,7 @@ class _UserInfoCardState extends State<UserInfoCard> {
         _contactController.text = widget.user['phone'] ?? '';
       }
     });
-  } 
+  }
 
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
@@ -57,15 +57,13 @@ class _UserInfoCardState extends State<UserInfoCard> {
       // Update with new values
       updatedUser['name'] = _nameController.text;
       updatedUser['phone'] = _contactController.text;
- 
+
       print(updatedUser);
 
       // Dispatch the UpdateUser event
       context.read<UserBloc>().add(UpdateUser(
             UserModel.fromJson(updatedUser),
           ));
-
-      
 
       // _toggleEdit();
     }
@@ -106,9 +104,7 @@ class _UserInfoCardState extends State<UserInfoCard> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isHighlighted
-                  ? colors.primaryContainer
-                  : colors.surfaceVariant,
+              color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.circular(8),
               border: isHighlighted
                   ? Border.all(color: colors.primary.withOpacity(0.2))
@@ -183,26 +179,17 @@ class _UserInfoCardState extends State<UserInfoCard> {
               context,
             );
           } else if (state is UserUpdated) {
-
-
-        final currentUser = userProvider.user;
-        if (currentUser != null) {
-          final updatedUser = currentUser.copyWith(
-            name: _nameController.text,
-            phone: _contactController.text,
-          );
-          userProvider.setUser(updatedUser);
-        }
-
-
+            final currentUser = userProvider.user;
+            if (currentUser != null) {
+              final updatedUser = currentUser.copyWith(
+                name: _nameController.text,
+                phone: _contactController.text,
+              );
+              userProvider.setUser(updatedUser);
+            }
 
             ToastHelper.showSuccessToast(
                 'Profile updated successfully', context);
-
-    
-
-
-                
           }
         },
         child: Card(
@@ -229,7 +216,7 @@ class _UserInfoCardState extends State<UserInfoCard> {
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
-                          ), 
+                          ),
                         ],
                       ),
                       if (isCurrentUser)
@@ -265,19 +252,19 @@ class _UserInfoCardState extends State<UserInfoCard> {
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 16),
-                   SizedBox(
-  width: double.infinity,
-  child: FilledButton(
-    onPressed: _saveChanges,
-    style: FilledButton.styleFrom(
-      textStyle: TextStyle(color: Colors.white),
-    ),
-    child: const Text(
-      'Save Changes',
-      style: TextStyle(color: Colors.white),
-    ),
-  ),
-),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _saveChanges,
+                        style: FilledButton.styleFrom(
+                          textStyle: TextStyle(color: Colors.white),
+                        ),
+                        child: const Text(
+                          'Save Changes',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
                   ] else ...[
                     _buildReadOnlyField(
                       label: 'Full Name',

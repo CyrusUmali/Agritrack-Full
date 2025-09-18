@@ -8,7 +8,7 @@ class YieldHistory extends StatefulWidget {
   final bool isMobile;
 
   const YieldHistory({
-    super.key, 
+    super.key,
     required this.product,
     this.isMobile = false,
   });
@@ -95,7 +95,7 @@ class YieldHistoryState extends State<YieldHistory> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -342,20 +342,37 @@ class YieldHistoryState extends State<YieldHistory> {
       },
     );
 
-    final monthlyVolume = selectedYield['monthlyVolume'] as List<dynamic>? ?? List.filled(12, 0);
-    final monthlyArea = selectedYield['monthlyArea'] as List<dynamic>? ?? List.filled(12, 0);
-    final monthlyYieldPerHectare = selectedYield['monthlyYieldPerHectare'] as List<dynamic>? ?? List.filled(12, 0);
-    final monthlyMetricTons = selectedYield['monthlyMetricTons'] as List<dynamic>? ?? List.filled(12, 0);
-    
+    final monthlyVolume =
+        selectedYield['monthlyVolume'] as List<dynamic>? ?? List.filled(12, 0);
+    final monthlyArea =
+        selectedYield['monthlyArea'] as List<dynamic>? ?? List.filled(12, 0);
+    final monthlyYieldPerHectare =
+        selectedYield['monthlyYieldPerHectare'] as List<dynamic>? ??
+            List.filled(12, 0);
+    final monthlyMetricTons =
+        selectedYield['monthlyMetricTons'] as List<dynamic>? ??
+            List.filled(12, 0);
+
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
 
     final chartData = List.generate(12, (index) {
-      final kgPerHaValue = (monthlyYieldPerHectare[index] as num?)?.toDouble() ?? 0;
+      final kgPerHaValue =
+          (monthlyYieldPerHectare[index] as num?)?.toDouble() ?? 0;
       final mtValue = (monthlyMetricTons[index] as num?)?.toDouble() ?? 0;
-      
+
       return _ChartData(
         months[index],
         kgPerHaValue,
@@ -385,30 +402,32 @@ class YieldHistoryState extends State<YieldHistory> {
 
     final chartData = filteredYields.map((yieldData) {
       final year = yieldData['year']?.toString() ?? 'Unknown';
-      
+
       // Calculate average yield per hectare for the year
-      final monthlyYieldPerHectare = yieldData['monthlyYieldPerHectare'] as List<dynamic>? ?? [];
-      final monthlyMetricTons = yieldData['monthlyMetricTons'] as List<dynamic>? ?? [];
-      
+      final monthlyYieldPerHectare =
+          yieldData['monthlyYieldPerHectare'] as List<dynamic>? ?? [];
+      final monthlyMetricTons =
+          yieldData['monthlyMetricTons'] as List<dynamic>? ?? [];
+
       // Calculate yearly averages
       double totalKgPerHa = 0;
       int count = 0;
       double totalMetricTons = 0;
-      
+
       for (int i = 0; i < monthlyYieldPerHectare.length; i++) {
         final kgPerHa = (monthlyYieldPerHectare[i] as num?)?.toDouble() ?? 0;
         final mt = (monthlyMetricTons[i] as num?)?.toDouble() ?? 0;
-        
+
         if (kgPerHa > 0) {
           totalKgPerHa += kgPerHa;
           count++;
         }
-        
+
         totalMetricTons += mt;
       }
-      
+
       final avgKgPerHa = count > 0 ? totalKgPerHa / count : 0;
-      
+
       return _ChartData(
         year,
         avgKgPerHa.toDouble(),
@@ -427,7 +446,8 @@ class YieldHistoryState extends State<YieldHistory> {
     );
   }
 
-  Widget _buildBarChart(List<_ChartData> chartData, {
+  Widget _buildBarChart(
+    List<_ChartData> chartData, {
     String title = '',
     bool isMonthly = true,
   }) {
@@ -454,7 +474,7 @@ class YieldHistoryState extends State<YieldHistory> {
           dataSource: chartData,
           xValueMapper: (_ChartData data, _) => data.x,
           yValueMapper: (_ChartData data, _) => data.yieldKgPerHa,
-           color: Color(0xFF12E3D7),
+          color: Color(0xFF12E3D7),
           // pointColorMapper: (_ChartData data, _) => data.color,
           name: 'Yield (t/ha)',
           width: 0.4,
@@ -469,25 +489,7 @@ class YieldHistoryState extends State<YieldHistory> {
           xValueMapper: (_ChartData data, _) => data.x,
           yValueMapper: (_ChartData data, _) => data.yieldMetricTons,
           // pointColorMapper: (_ChartData data, _) => data.color.withOpacity(0.7),
-                 color: Color(0xFFFE8111),
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          color: Color(0xFFFE8111),
 
           name: 'Yield (Metric Tons)',
           width: 0.4,
@@ -502,7 +504,8 @@ class YieldHistoryState extends State<YieldHistory> {
         enable: true,
         header: '',
         canShowMarker: false,
-        builder: (dynamic data, dynamic point, dynamic series, int pointIndex, int seriesIndex) {
+        builder: (dynamic data, dynamic point, dynamic series, int pointIndex,
+            int seriesIndex) {
           final chartData = data as _ChartData;
           return Container(
             padding: EdgeInsets.all(8),
@@ -510,11 +513,12 @@ class YieldHistoryState extends State<YieldHistory> {
               color: isDark ? Colors.grey[800] : Colors.white,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Column( 
+            child: Column(
               children: [
                 Text('${chartData.x}'),
                 Text('t/ha: ${chartData.yieldKgPerHa.toStringAsFixed(2)}'),
-                Text('Metric Tons: ${chartData.yieldMetricTons.toStringAsFixed(2)}'),
+                Text(
+                    'Metric Tons: ${chartData.yieldMetricTons.toStringAsFixed(2)}'),
               ],
             ),
           );

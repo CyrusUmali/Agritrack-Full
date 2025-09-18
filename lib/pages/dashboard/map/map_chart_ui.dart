@@ -4,14 +4,14 @@ import 'package:syncfusion_flutter_maps/maps.dart';
 import 'barangay_data_provider.dart';
 
 class MapChartUIComponents {
-  
   static Widget buildLoadingState() {
     return const Center(
       child: CircularProgressIndicator(),
     );
   }
 
-  static Widget buildErrorState(BuildContext context, String errorMessage, VoidCallback onRetry) {
+  static Widget buildErrorState(
+      BuildContext context, String errorMessage, VoidCallback onRetry) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -28,6 +28,8 @@ class MapChartUIComponents {
       ),
     );
   }
+
+// In map_chart_ui.dart - Updated buildProductSelector method
 
   static Widget buildProductSelector(
       BarangayDataProvider provider, BuildContext context) {
@@ -52,8 +54,18 @@ class MapChartUIComponents {
           const SizedBox(width: 8),
           Expanded(
             child: Autocomplete<String>(
+              // Set the initial value based on the selected product
+              initialValue: provider.selectedProduct.isNotEmpty
+                  ? TextEditingValue(text: provider.selectedProduct)
+                  : null,
               fieldViewBuilder: (context, textEditingController, focusNode,
                   onFieldSubmitted) {
+                // Set the controller's text if there's a selected product
+                if (provider.selectedProduct.isNotEmpty &&
+                    textEditingController.text != provider.selectedProduct) {
+                  textEditingController.text = provider.selectedProduct;
+                }
+
                 return TextField(
                   controller: textEditingController,
                   focusNode: focusNode,
@@ -157,9 +169,6 @@ class MapChartUIComponents {
                 );
               },
               displayStringForOption: (option) => option,
-              initialValue: provider.selectedProduct.isNotEmpty
-                  ? TextEditingValue(text: provider.selectedProduct)
-                  : null,
             ),
           ),
         ],
@@ -199,8 +208,8 @@ class MapChartUIComponents {
     );
   }
 
-  static Widget buildMap(
-      BarangayDataProvider provider, MapZoomPanBehavior zoomPanBehavior, BuildContext context) {
+  static Widget buildMap(BarangayDataProvider provider,
+      MapZoomPanBehavior zoomPanBehavior, BuildContext context) {
     final theme = Theme.of(context);
 
     return ClipRRect(
@@ -221,13 +230,13 @@ class MapChartUIComponents {
                       provider.data[index].color,
                 ),
                 showDataLabels: true,
+
+                // SOLUTION 1: Enhanced tooltip settings for mobile
                 shapeTooltipBuilder: (BuildContext context, int index) {
                   final barangay = provider.data[index];
                   final colorLightness = barangay.color.computeLuminance();
                   final textColor =
                       colorLightness > 0.5 ? Colors.black : Colors.white;
-
-                      
 
                   double? yieldPercentage;
                   if (provider.selectedProduct.isNotEmpty) {
@@ -245,17 +254,21 @@ class MapChartUIComponents {
                     width: 220,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: barangay.color.withOpacity(0.9),
+                      color:
+                          barangay.color.withOpacity(0.95), // Increased opacity
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.5),
-                        width: 1,
+                        color:
+                            Colors.white.withOpacity(0.8), // Increased opacity
+                        width: 2, // Increased width
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: theme.shadowColor.withOpacity(0.3),
-                          blurRadius: 8,
-                          spreadRadius: 1,
+                          color:
+                              Colors.black.withOpacity(0.3), // Stronger shadow
+                          blurRadius: 12, // Increased blur
+                          spreadRadius: 2, // Added spread
+                          offset: const Offset(0, 4), // Increased offset
                         ),
                       ],
                     ),
@@ -267,12 +280,15 @@ class MapChartUIComponents {
                           children: [
                             Icon(Icons.location_on, size: 16, color: textColor),
                             const SizedBox(width: 4),
-                            Text(
-                              barangay.name,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
+                            Expanded(
+                              child: Text(
+                                barangay.name,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -335,25 +351,152 @@ class MapChartUIComponents {
                     ),
                   );
                 },
-                tooltipSettings: const MapTooltipSettings(
-                  hideDelay: 0,
+
+                // SOLUTION 2: Enhanced tooltip settings for mobile compatibility
+                tooltipSettings: MapTooltipSettings(
+                  hideDelay: 2000, // Increased delay to 2 seconds
+                  color: Colors.transparent, // Let custom tooltip handle color
                 ),
+
+                // SOLUTION 3: Add onSelectionChanged callback for mobile tap handling
+                onSelectionChanged: (int index) {
+                  // This will trigger on mobile tap
+                  // You can add haptic feedback here
+                  // HapticFeedback.lightImpact();
+                },
+
                 strokeColor: Colors.white,
                 strokeWidth: 0.8,
                 dataLabelSettings: MapDataLabelSettings(
                   textStyle: TextStyle(
-                    // color: Colors.black, 
-                    color:Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            :GlobalColors.darkerCardColor,
-                    
-                    // fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : GlobalColors.darkerCardColor,
                     fontSize: 10,
                   ),
+                ),
+
+                // SOLUTION 4: Enable selection to make shapes tappable on mobile
+                selectionSettings: const MapSelectionSettings(
+                  strokeColor: Colors.blue,
+                  strokeWidth: 3,
                 ),
               ),
             ],
           ),
+
+          // Zoom Controls
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Column(
+              children: [
+                // Zoom In Button
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color?.withOpacity(0.95),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      topRight: Radius.circular(8),
+                    ),
+                    border: Border.all(
+                      color: theme.dividerColor,
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.shadowColor.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        // Zoom in
+                        final currentZoom = zoomPanBehavior.zoomLevel;
+                        final newZoom = (currentZoom + 1).clamp(
+                          zoomPanBehavior.minZoomLevel,
+                          zoomPanBehavior.maxZoomLevel,
+                        );
+                        zoomPanBehavior.zoomLevel = newZoom;
+                      },
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(8),
+                        topRight: Radius.circular(8),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        child: Icon(
+                          Icons.add,
+                          size: 20,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Divider line
+                Container(
+                  height: 1,
+                  width: 44,
+                  color: theme.dividerColor,
+                ),
+
+                // Zoom Out Button
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color?.withOpacity(0.95),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(8),
+                      bottomRight: Radius.circular(8),
+                    ),
+                    border: Border.all(
+                      color: theme.dividerColor,
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.shadowColor.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        // Zoom out
+                        final currentZoom = zoomPanBehavior.zoomLevel;
+                        final newZoom = (currentZoom - 1).clamp(
+                          zoomPanBehavior.minZoomLevel,
+                          zoomPanBehavior.maxZoomLevel,
+                        );
+                        zoomPanBehavior.zoomLevel = newZoom;
+                      },
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(8),
+                        bottomRight: Radius.circular(8),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        child: Icon(
+                          Icons.remove,
+                          size: 20,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           if (provider.selectedProduct.isNotEmpty)
             Positioned(
               bottom: 16,
@@ -365,7 +508,8 @@ class MapChartUIComponents {
     );
   }
 
-  static Widget buildLegend(BarangayDataProvider provider, BuildContext context) {
+  static Widget buildLegend(
+      BarangayDataProvider provider, BuildContext context) {
     final theme = Theme.of(context);
     final yields = provider.data
         .map((b) => b.yieldData[provider.selectedProduct] ?? 0)
@@ -396,7 +540,7 @@ class MapChartUIComponents {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${provider.selectedProduct} Yield (tons)',
+            '${provider.selectedProduct} Yield (kg)',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -428,7 +572,8 @@ class MapChartUIComponents {
     );
   }
 
-  static Widget buildLegendItem(Color color, String text, BuildContext context) {
+  static Widget buildLegendItem(
+      Color color, String text, BuildContext context) {
     final theme = Theme.of(context);
 
     return Row(
@@ -452,9 +597,17 @@ class MapChartUIComponents {
       BarangayDataProvider provider, BuildContext context) {
     final theme = Theme.of(context);
 
+    // Create a dedicated ScrollController for this widget
+    final ScrollController scrollController = ScrollController();
+
     return Container(
       width: 200,
-      constraints: const BoxConstraints(maxWidth: 250),
+      height: 400, // Add explicit height constraint
+      constraints: const BoxConstraints(
+        maxWidth: 250,
+        maxHeight: 600, // Add max height constraint
+        minHeight: 200, // Add min height constraint
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         border: Border.all(
@@ -490,19 +643,19 @@ class MapChartUIComponents {
             child: Theme(
               data: theme.copyWith(
                 scrollbarTheme: theme.scrollbarTheme.copyWith(
-                  thumbColor: MaterialStateProperty.all(
+                  thumbColor: WidgetStateProperty.all(
                     theme.colorScheme.outline.withOpacity(0.5),
                   ),
-                  trackColor: MaterialStateProperty.all(
+                  trackColor: WidgetStateProperty.all(
                     theme.colorScheme.outline.withOpacity(0.1),
                   ),
                 ),
               ),
               child: Scrollbar(
-                controller: PrimaryScrollController.of(context),
+                controller: scrollController,
                 thumbVisibility: true,
                 child: ListView.builder(
-                  primary: true,
+                  controller: scrollController,
                   padding: EdgeInsets.zero,
                   itemCount: provider.data.length,
                   itemBuilder: (context, index) {
@@ -536,7 +689,11 @@ class MapChartUIComponents {
                               ),
                             )
                           : null,
-                      onTap: () {},
+                      onTap: () {
+                        // SOLUTION 6: Show bottom sheet with barangay details on mobile
+                        _showBarangayDetailsBottomSheet(
+                            context, barangay, provider);
+                      },
                     );
                   },
                 ),
@@ -547,4 +704,149 @@ class MapChartUIComponents {
       ),
     );
   }
-} 
+
+  // SOLUTION 7: Alternative mobile-friendly detail view
+  static void _showBarangayDetailsBottomSheet(
+      BuildContext context, dynamic barangay, BarangayDataProvider provider) {
+    final theme = Theme.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: theme.dividerColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
+            // Barangay name
+            Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: barangay.color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: theme.dividerColor,
+                      width: 1,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    barangay.name,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Details
+            if (provider.selectedProduct.isNotEmpty) ...[
+              _buildDetailRow(
+                context,
+                Icons.agriculture,
+                '${provider.selectedProduct} Yield',
+                '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(1) ?? 'N/A'} kg',
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            _buildDetailRow(
+              context,
+              Icons.landscape,
+              'Area',
+              '${barangay.area.toStringAsFixed(2)} km²',
+            ),
+            const SizedBox(height: 12),
+
+            _buildDetailRow(
+              context,
+              Icons.people,
+              'Farmers',
+              barangay.farmer?.toStringAsFixed(0) ?? 'N/A',
+            ),
+
+            if (barangay.topProducts.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text(
+                'Top Products:',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...barangay.topProducts.take(5).map<Widget>(
+                    (product) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.circle, size: 6),
+                          const SizedBox(width: 8),
+                          Text(product, style: theme.textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                  ),
+            ],
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildDetailRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            '$label:',
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+}

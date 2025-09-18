@@ -9,6 +9,16 @@ import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 
 /// Helper class for working with map layers
 class MapLayersHelper {
+  // Define maximum area limits for each pin style in HECTARES
+  static final Map<PinStyle, double> maxAreaLimitsHectares = {
+    PinStyle.Fishery: 5,
+    PinStyle.Rice: 5,
+    PinStyle.HVC: 5,
+    PinStyle.Organic: 5,
+    PinStyle.Corn: 5,
+    PinStyle.Livestock: 5,
+  };
+
   static PolygonLayer createBarangayLayer(List<PolygonData> barangays) {
     return PolygonLayer(
       polygons: barangays
@@ -155,8 +165,9 @@ class MapLayersHelper {
     Function(int, int) onMarkerTap,
     Function(int) onCurrentPolygonMarkerTap,
     List<PinStyle> pinStyles,
-    PolygonManager polygonManager, // Add this parameter
+    PolygonManager polygonManager,
     BuildContext context,
+    bool isFarmer,
   ) {
     return MarkerLayer(
       markers: [
@@ -213,13 +224,72 @@ class MapLayersHelper {
                   ],
                 ),
                 child: Center(
-                  child: getPinIcon(pinStyles[i]),
+                  child: _getExceedanceIcon(polygonManager.polygons[i],
+                      pinStyles[i], isFarmer), // Pass the isFarmer flag
                 ),
               ),
             ),
           ),
       ],
     );
+  }
+
+  static Widget _getExceedanceIcon(
+      PolygonData polygon, PinStyle pinStyle, bool isFarmer) {
+    // If user is a farmer, don't show the warning icon
+
+    final maxArea = maxAreaLimitsHectares[pinStyle] ?? double.infinity;
+    final exceedsLimit = polygon.area != null && polygon.area! > maxArea;
+
+    if (exceedsLimit) {
+      print(maxAreaLimitsHectares);
+
+      // print('wqqew');
+
+      // print(maxArea);
+      // print(polygon.name);
+      // print(polygon.area);
+      // Option 1: Animated pulsing warning badge (recommended)
+      return Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          getPinIcon(pinStyle),
+          Positioned(
+            top: -8,
+            right: -8,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withOpacity(0.4),
+                      blurRadius: 4,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.warning_rounded,
+                  color: Colors.white,
+                  size: 12,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      // Return normal pin icon
+      return getPinIcon(pinStyle);
+    }
   }
 
   /// Helper method to calculate the center of a polygon
@@ -328,10 +398,3 @@ class MapLayersHelper {
     "Humanitarian": "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
   };
 }
-
-// Example colors for polygons
-List<Color> polygonColors = [
-  Colors.green, // Color for the first polygon
-  Colors.orange, // Color for the second polygon
-  Colors.blue,
-];

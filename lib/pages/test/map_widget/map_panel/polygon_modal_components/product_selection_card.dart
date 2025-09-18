@@ -1,3 +1,4 @@
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/core/theme/global_colors.dart';
 
@@ -16,6 +17,9 @@ class ProductSelectionCard extends StatelessWidget {
     required this.isVertical,
     required this.getProductImage,
   });
+
+  bool isDarkTheme(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
 
   @override
   Widget build(BuildContext context) {
@@ -56,78 +60,73 @@ class ProductSelectionCard extends StatelessWidget {
     );
   }
 
-
 //  return SizedBox(
 //       height: 200,
 //       child: SingleChildScrollView(
 //         child: Column(
-          // children: products.map((product) {
-          //   final isSelected = _se
-
+  // children: products.map((product) {
+  //   final isSelected = _se
 
   Widget _buildVerticalProductList(ThemeData theme) {
-    
-    
-    
-     return SizedBox(
-      height: 200,
-      child:  SingleChildScrollView( 
-      child: Column(
-        children: products.map((product) {
-          final isSelected = selectedProduct == product;
-          final productImage = getProductImage(product);
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: InkWell(
-              onTap: () => onProductSelected(product),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
+    return SizedBox(
+        height: 200,
+        child: SingleChildScrollView(
+          child: Column(
+            children: products.map((product) {
+              final isSelected = selectedProduct == product;
+              final productImage = getProductImage(product);
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: InkWell(
+                  onTap: () => onProductSelected(product),
                   borderRadius: BorderRadius.circular(12),
-                  color: isSelected
-                      ? theme.primaryColor.withOpacity(0.1)
-                      : Colors.transparent,
-                  border: Border.all(
-                    color: isSelected ? theme.primaryColor : theme.dividerColor,
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage: productImage != null
-                          ? NetworkImage(productImage)
-                          : null,
-                      child: productImage == null
-                          ? const Icon(Icons.eco, size: 20)
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        product,
-                        style: TextStyle(
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? theme.primaryColor : null,
-                        ),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: isSelected
+                          ? theme.primaryColor.withOpacity(0.1)
+                          : Colors.transparent,
+                      border: Border.all(
+                        color: isSelected
+                            ? theme.primaryColor
+                            : theme.dividerColor,
+                        width: isSelected ? 2 : 1,
                       ),
                     ),
-                    if (isSelected)
-                      Icon(Icons.check_circle, color: theme.primaryColor),
-                  ],
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundImage: productImage != null
+                              ? NetworkImage(productImage)
+                              : null,
+                          child: productImage == null
+                              ? const Icon(Icons.eco, size: 20)
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            product,
+                            style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isSelected ? theme.primaryColor : null,
+                            ),
+                          ),
+                        ),
+                        if (isSelected)
+                          Icon(Icons.check_circle, color: theme.primaryColor),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          );
-        }).toList(),
-        ),
-     )
-
-
-    );
+              );
+            }).toList(),
+          ),
+        ));
   }
 
   Widget _buildHorizontalProductList(ThemeData theme) {
@@ -152,7 +151,12 @@ class ProductSelectionCard extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          selectedColor: theme.primaryColor.withOpacity(0.2),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? const Color.fromARGB(255, 74, 76, 80)
+              : Colors.grey.shade100,
+          selectedColor: Theme.of(context).brightness == Brightness.dark
+              ? FlarelineColors.darkerBackground
+              : theme.primaryColor.withOpacity(0.2),
         );
       },
     );

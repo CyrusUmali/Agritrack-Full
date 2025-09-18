@@ -103,7 +103,7 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
   final TextEditingController farmerSearchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isSubmitting = false;
-  bool _obscurePassword = true; // Add this line for password visibility
+  bool _obscurePassword = true;
   Farmer? selectedFarmer;
 
   // Track which fields have been validated
@@ -111,6 +111,8 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
   bool _emailValidated = false;
   bool _passwordValidated = false;
   bool _farmerValidated = false;
+
+  final GlobalKey farmerFieldKey = GlobalKey();
 
   @override
   void initState() {
@@ -128,17 +130,6 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
       if (widget.googleEmail == null) _passwordValidated = true;
       if (widget.farmers.isNotEmpty) _farmerValidated = true;
     });
-
-    // Debug print before validation
-    // print('Starting validation...');
-    // print('Name: ${nameController.text.isEmpty ? "EMPTY" : "OK"}');
-    // print('Email: ${emailController.text.isEmpty ? "EMPTY" : "OK"}');
-    if (widget.googleEmail == null) {
-      // print('Password: ${passwordController.text.isEmpty ? "EMPTY" : "OK"}');
-    }
-    if (widget.farmers.isNotEmpty) {
-      // print('Farmer: ${selectedFarmer == null ? "NOT SELECTED" : "SELECTED"}');
-    }
 
     if (!_formKey.currentState!.validate()) {
       // Validation failed, don't proceed
@@ -163,8 +154,6 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
 
       return;
     }
-
-    // print('All validations passed! Proceeding with submission...');
 
     setState(() {
       _isSubmitting = true;
@@ -202,7 +191,7 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
     }
   }
 
-// Helper validation methods for debugging
+  // Helper validation methods for debugging
   String? _validateName(String value) {
     if (value.trim().isEmpty) {
       return 'Please enter the user\'s name';
@@ -271,42 +260,53 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
     );
   }
 
-  Widget _buildOptionsView<T>(
+  // Using the EXACT same pattern from your working AddYieldModal
+  Widget _buildOptionsView<T extends Object>(
     BuildContext context,
-    void Function(T) onSelected,
+    AutocompleteOnSelected<T> onSelected,
     Iterable<T> options,
-    GlobalKey key,
+    GlobalKey fieldKey,
     String Function(T) displayString,
   ) {
-    return Align( 
-      alignment: Alignment.topLeft,
-      child: Material(
-        elevation: 4.0,
-         color: Theme.of(context).cardTheme.color,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: 200,
-            maxWidth: (key.currentContext?.findRenderObject() as RenderBox?)
-                    ?.size
-                    .width ??
-                250,
-          ),
-          child: ListView.builder(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            itemCount: options.length,
-            itemBuilder: (BuildContext context, int index) {
-              final option = options.elementAt(index);
-              return InkWell(
-                onTap: () {
-                  onSelected(option);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Text(displayString(option)),
-                ),
-              );
-            },
+    final RenderBox? fieldRenderBox =
+        fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    final double fieldWidth = fieldRenderBox?.size.width ?? 250;
+
+    return SizedBox(
+      width: fieldWidth,
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: Material(
+          elevation: 4.0,
+          color: Theme.of(context).cardTheme.color,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: fieldWidth,
+              maxHeight: 200,
+            ),
+            child: ListView.builder(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              itemCount: options.length,
+              itemBuilder: (BuildContext context, int index) {
+                final T option = options.elementAt(index);
+                return InkWell(
+                  onTap: () {
+                    onSelected(option);
+                  },
+                  child: Container(
+                    width: fieldWidth,
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      displayString(option),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -317,7 +317,6 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final fieldHeight = screenWidth < 600 ? 48.0 : 56.0;
-    final farmerFieldKey = GlobalKey();
 
     return Form(
       key: _formKey,
@@ -474,95 +473,91 @@ class _LinkUserModalContentState extends State<_LinkUserModalContent> {
               SizedBox(height: screenWidth < 600 ? 8.0 : 16.0),
             ],
 
-            // Farmer Autocomplete
-            SizedBox(
-              height: fieldHeight,
-              child: Autocomplete<Farmer>(
-                key: farmerFieldKey,
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return widget.farmers;
-                  }
-                  return widget.farmers.where((farmer) => farmer.name
-                      .toLowerCase()
-                      .contains(textEditingValue.text.toLowerCase()));
-                },
-                onSelected: (Farmer farmer) {
-                  setState(() {
-                    selectedFarmer = farmer;
-                    farmerSearchController.text = farmer.name;
-                  });
-                  // Keep focus on the field after selection
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    FocusScope.of(context).requestFocus(FocusNode());
-                  });
-                },
-                displayStringForOption: (farmer) => farmer.name,
-                optionsViewBuilder: (context, onSelected, options) {
-                  return _buildOptionsView<Farmer>(
-                    context,
-                    (farmer) {
-                      onSelected(farmer);
-                      // Prevent keyboard from closing by not changing focus
-                    },
-                    options,
-                    farmerFieldKey,
-                    (farmer) => farmer.name,
-                  );
-                },
-                fieldViewBuilder: (BuildContext context,
-                    TextEditingController textEditingController,
-                    FocusNode focusNode,
-                    VoidCallback onFieldSubmitted) {
-                  // Keep the text controllers in sync
-                  textEditingController.text = farmerSearchController.text;
+            // Farmer Autocomplete - Using the EXACT same pattern as your working AddYieldModal
+            if (widget.farmers.isNotEmpty) ...[
+              SizedBox(
+                height: fieldHeight,
+                child: Autocomplete<Farmer>(
+                  key: farmerFieldKey,
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text.isEmpty) {
+                      return widget.farmers;
+                    }
+                    return widget.farmers.where((farmer) => farmer.name
+                        .toLowerCase()
+                        .contains(textEditingValue.text.toLowerCase()));
+                  },
+                  onSelected: (Farmer farmer) {
+                    setState(() {
+                      selectedFarmer = farmer;
+                      farmerSearchController.text = farmer.name;
+                    });
+                  },
+                  displayStringForOption: (farmer) => farmer.name,
+                  optionsViewBuilder: (context, onSelected, options) {
+                    return _buildOptionsView<Farmer>(
+                      context,
+                      onSelected,
+                      options,
+                      farmerFieldKey,
+                      (farmer) => farmer.name,
+                    );
+                  },
+                  fieldViewBuilder: (BuildContext context,
+                      TextEditingController textEditingController,
+                      FocusNode focusNode,
+                      VoidCallback onFieldSubmitted) {
+                    // Keep the text controllers in sync
+                    textEditingController.text = farmerSearchController.text;
 
-                  return TextFormField(
-                    controller: textEditingController,
-                    focusNode: focusNode,
-                    decoration: InputDecoration(
-                      labelText: 'Farmer *',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: const Icon(Icons.arrow_drop_down),
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 12),
-                      errorStyle: const TextStyle(fontSize: 12),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.red.shade400,
-                          width: 1.5,
+                    return TextFormField(
+                      controller: textEditingController,
+                      focusNode: focusNode,
+                      decoration: InputDecoration(
+                        labelText: 'Farmer *',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: const Icon(Icons.arrow_drop_down),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 12),
+                        errorStyle: const TextStyle(fontSize: 12),
+                        errorBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.red.shade400,
+                            width: 1.5,
+                          ),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.red.shade400,
+                            width: 1.5,
+                          ),
                         ),
                       ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.red.shade400,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      farmerSearchController.text = value;
-                      if (_farmerValidated) {
-                        _formKey.currentState!.validate();
-                      }
-                    },
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please select a farmer';
-                      }
-                      if (!widget.farmers.any((f) => f.name == value.trim())) {
-                        return 'Please select a valid farmer';
-                      }
-                      return null;
-                    },
-                    autovalidateMode: _farmerValidated
-                        ? AutovalidateMode.onUserInteraction
-                        : AutovalidateMode.disabled,
-                  );
-                },
+                      onChanged: (value) {
+                        farmerSearchController.text = value;
+                        if (_farmerValidated) {
+                          _formKey.currentState!.validate();
+                        }
+                      },
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please select a farmer';
+                        }
+                        if (!widget.farmers
+                            .any((f) => f.name == value.trim())) {
+                          return 'Please select a valid farmer';
+                        }
+                        return null;
+                      },
+                      autovalidateMode: _farmerValidated
+                          ? AutovalidateMode.onUserInteraction
+                          : AutovalidateMode.disabled,
+                    );
+                  },
+                ),
               ),
-            ),
-            _buildFarmerDetails(),
+              _buildFarmerDetails(),
+            ],
           ],
         ),
       ),

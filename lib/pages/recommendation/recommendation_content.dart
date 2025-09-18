@@ -217,7 +217,6 @@ class RecommendationContentState extends State<RecommendationContent> {
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: isMobile ? 24 : 28,
-                    color: const Color.fromARGB(255, 1, 1, 1),
                   ),
               textAlign: TextAlign.center,
             ),
@@ -333,11 +332,15 @@ class RecommendationContentState extends State<RecommendationContent> {
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(
+                      color: Theme.of(context).cardTheme.surfaceTintColor ??
+                          Colors.grey[300]!),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(
+                      color: Theme.of(context).cardTheme.surfaceTintColor ??
+                          Colors.grey[300]!),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -376,7 +379,6 @@ class RecommendationContentState extends State<RecommendationContent> {
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: isMobile ? 20 : 24,
-                    color: Colors.grey[800],
                   ),
             ),
           ),

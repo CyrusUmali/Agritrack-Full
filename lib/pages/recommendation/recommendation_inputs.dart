@@ -27,29 +27,22 @@ class RecommendationInputs extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              _buildSlider(context, 'Nitrogen (N)', model.nitrogen, 0, 450,
-                  (value) {
-                model.nitrogen = value;
+              _buildSlider(context, 'Soil Ph ', model.soil_ph, 0, 10, (value) {
+                model.soil_ph = value;
                 onChanged(); // Trigger rebuild
               }),
               const SizedBox(height: 16),
               _buildSlider(
-                  context, 'Phosphorous (P)', model.phosphorous, 0, 450,
+                  context, 'Soil Fertility us/cm', model.fertility_ec, 0, 3000,
                   (value) {
-                model.phosphorous = value;
-                onChanged(); // Trigger rebuild
-              }),
-              const SizedBox(height: 16),
-              _buildSlider(context, 'Potassium (K)', model.potassium, 0, 450,
-                  (value) {
-                model.potassium = value;
+                model.fertility_ec = value;
                 onChanged(); // Trigger rebuild
               }),
               const SizedBox(height: 16),
               _buildSlider(
-                  context, 'Temperature (°C)', model.temperature, 0, 50,
+                  context, 'Soil Moisture (%)', model.soil_moisture, 0, 99,
                   (value) {
-                model.temperature = value;
+                model.soil_moisture = value;
                 onChanged(); // Trigger rebuild
               }),
             ],
@@ -59,20 +52,21 @@ class RecommendationInputs extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              _buildSlider(context, 'Humidity (%)', model.humidity, 0, 100,
+              _buildSlider(context, 'Humidity (%)', model.humidity, 0, 99,
                   (value) {
                 model.humidity = value;
                 onChanged(); // Trigger rebuild
               }),
               const SizedBox(height: 16),
-              _buildSlider(context, 'pH Level', model.ph, 3, 10, (value) {
-                model.ph = value;
+              _buildSlider(context, 'Soil Temp (°C)', model.soil_temp, -10, 50,
+                  (value) {
+                model.soil_temp = value;
                 onChanged(); // Trigger rebuild
               }),
               const SizedBox(height: 16),
-              _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 2000,
+              _buildSlider(context, 'Sunlight (lux)', model.sunlight, 0, 100000,
                   (value) {
-                model.rainfall = value;
+                model.sunlight = value;
                 onChanged(); // Trigger rebuild
               }),
             ],
@@ -85,41 +79,37 @@ class RecommendationInputs extends StatelessWidget {
   Widget _buildMobileInputs(BuildContext context) {
     return Column(
       children: [
-        _buildSlider(context, 'Nitrogen (N)', model.nitrogen, 0, 450, (value) {
-          model.nitrogen = value;
+        _buildSlider(context, 'Soil Ph', model.soil_ph, 0, 10, (value) {
+          model.soil_ph = value;
           onChanged(); // Add this
         }),
         const SizedBox(height: 16),
-        _buildSlider(context, 'Phosphorous (P)', model.phosphorous, 0, 450,
+        _buildSlider(context, 'Soil Fertility (%)', model.fertility_ec, 0, 3000,
             (value) {
-          model.phosphorous = value;
+          model.fertility_ec = value;
           onChanged(); // Add this
         }),
         const SizedBox(height: 16),
-        _buildSlider(context, 'Potassium (K)', model.potassium, 0, 450,
+        _buildSlider(context, 'Soil Moisture (%)', model.soil_moisture, 0, 99,
             (value) {
-          model.potassium = value;
+          model.soil_moisture = value;
           onChanged(); // Add this
         }),
         const SizedBox(height: 16),
-        _buildSlider(context, 'Temperature (°C)', model.temperature, 0, 50,
+        _buildSlider(context, 'Soil Temp (°C)', model.soil_temp, -10, 50,
             (value) {
-          model.temperature = value;
+          model.soil_temp = value;
           onChanged(); // Add this
         }),
         const SizedBox(height: 16),
-        _buildSlider(context, 'Humidity (%)', model.humidity, 0, 100, (value) {
+        _buildSlider(context, 'Humidity (%)', model.humidity, 0, 99, (value) {
           model.humidity = value;
           onChanged(); // Add this
         }),
         const SizedBox(height: 16),
-        _buildSlider(context, 'pH Level', model.ph, 3, 10, (value) {
-          model.ph = value;
-          onChanged(); // Add this
-        }),
-        const SizedBox(height: 16),
-        _buildSlider(context, 'Rainfall (mm)', model.rainfall, 0, 2000, (value) {
-          model.rainfall = value;
+        _buildSlider(context, 'Sunlight (lux)', model.sunlight, 0, 100000,
+            (value) {
+          model.sunlight = value;
           onChanged(); // Add this
         }),
       ],

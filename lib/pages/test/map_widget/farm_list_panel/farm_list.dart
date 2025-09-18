@@ -6,7 +6,9 @@ class FarmListPanel extends StatefulWidget {
   final PolygonManager polygonManager;
   final BarangayManager barangayManager;
   final List<String> selectedBarangays;
+  final List<String> selectedProducts;
   final Function(List<String>) onBarangayFilterChanged;
+  final Function(List<String>) onProductFilterChanged;
   final Function(int) onPolygonSelected;
   final Function() onFiltersChanged;
 
@@ -15,7 +17,9 @@ class FarmListPanel extends StatefulWidget {
     required this.polygonManager,
     required this.barangayManager,
     required this.selectedBarangays,
+    required this.selectedProducts,
     required this.onBarangayFilterChanged,
+    required this.onProductFilterChanged,
     required this.onPolygonSelected,
     required this.onFiltersChanged,
   }) : super(key: key);
@@ -24,17 +28,18 @@ class FarmListPanel extends StatefulWidget {
   _FarmListPanelState createState() => _FarmListPanelState();
 }
 
-class _FarmListPanelState extends State<FarmListPanel> with AutomaticKeepAliveClientMixin {
+class _FarmListPanelState extends State<FarmListPanel>
+    with AutomaticKeepAliveClientMixin {
   String searchQuery = '';
   bool showBarangayFilter = false;
 
-    @override
+  @override
   bool get wantKeepAlive => true; // This preserves the state
-
 
   // Cache variables
   List<PolygonData>? _cachedFilteredPolygons;
   List<String>? _lastSelectedBarangays;
+  List<String>? _lastSelectedProducts;
   String? _lastSearchQuery;
   Map<String, bool>? _lastFilterOptions;
   List<PolygonData>? _lastPolygons;
@@ -44,7 +49,8 @@ class _FarmListPanelState extends State<FarmListPanel> with AutomaticKeepAliveCl
     super.didUpdateWidget(oldWidget);
     // Invalidate cache if any dependencies changed
     if (widget.polygonManager.polygons != _lastPolygons ||
-        widget.selectedBarangays != _lastSelectedBarangays) {
+        widget.selectedBarangays != _lastSelectedBarangays ||
+        widget.selectedProducts != _lastSelectedProducts) {
       _cachedFilteredPolygons = null;
     }
   }
@@ -53,6 +59,7 @@ class _FarmListPanelState extends State<FarmListPanel> with AutomaticKeepAliveCl
     // Return cached result if nothing relevant changed
     if (_cachedFilteredPolygons != null &&
         _lastSelectedBarangays == widget.selectedBarangays &&
+        _lastSelectedProducts == widget.selectedProducts &&
         _lastSearchQuery == searchQuery &&
         _lastFilterOptions == BarangayFilterPanel.filterOptions &&
         _lastPolygons == widget.polygonManager.polygons) {
@@ -61,6 +68,7 @@ class _FarmListPanelState extends State<FarmListPanel> with AutomaticKeepAliveCl
 
     // Store current values for next comparison
     _lastSelectedBarangays = widget.selectedBarangays;
+    _lastSelectedProducts = widget.selectedProducts;
     _lastSearchQuery = searchQuery;
     _lastFilterOptions = Map.from(BarangayFilterPanel.filterOptions);
     _lastPolygons = widget.polygonManager.polygons;
@@ -89,6 +97,14 @@ class _FarmListPanelState extends State<FarmListPanel> with AutomaticKeepAliveCl
           .toList();
     }
 
+    // Apply product filter
+    if (widget.selectedProducts.isNotEmpty) {
+      result = result
+          .where((p) => widget.selectedProducts
+              .any((product) => p.products?.contains(product) ?? false))
+          .toList();
+    }
+
     // Cache the result
     _cachedFilteredPolygons = result;
     return result;
@@ -101,10 +117,13 @@ class _FarmListPanelState extends State<FarmListPanel> with AutomaticKeepAliveCl
     if (showBarangayFilter) {
       return BarangayFilterPanel(
         barangayManager: widget.barangayManager,
+        polygonManager: widget.polygonManager,
         selectedBarangays: widget.selectedBarangays,
-        onFiltersChanged: (barangays, farmFilters) {
+        selectedProducts: widget.selectedProducts,
+        onFiltersChanged: (barangays, products, farmFilters) {
           setState(() {
             widget.onBarangayFilterChanged(barangays);
+            widget.onProductFilterChanged(products);
             BarangayFilterPanel.filterOptions = farmFilters;
           });
           widget.onFiltersChanged();
@@ -127,7 +146,7 @@ class _FarmListPanelState extends State<FarmListPanel> with AutomaticKeepAliveCl
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row( 
+          Row(
             children: [
               Expanded(
                 child: TextField(
@@ -144,7 +163,8 @@ class _FarmListPanelState extends State<FarmListPanel> with AutomaticKeepAliveCl
               SizedBox(width: 8),
               IconButton(
                 icon: Icon(Icons.tune_sharp,
-                    color: widget.selectedBarangays.isNotEmpty
+                    color: (widget.selectedBarangays.isNotEmpty ||
+                            widget.selectedProducts.isNotEmpty)
                         ? theme.colorScheme.primary
                         : theme.disabledColor),
                 onPressed: () {
@@ -173,12 +193,16 @@ class _FarmListPanelState extends State<FarmListPanel> with AutomaticKeepAliveCl
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  subtitle: polygon.parentBarangay != null
-                      ? Text(
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (polygon.parentBarangay != null)
+                        Text(
                           'Barangay: ${polygon.parentBarangay}',
                           style: TextStyle(fontSize: 12),
-                        )
-                      : null,
+                        ),
+                    ],
+                  ),
                   tileColor: widget.polygonManager.selectedPolygonIndex ==
                           originalIndex
                       ? theme.colorScheme.primary.withOpacity(0.3)

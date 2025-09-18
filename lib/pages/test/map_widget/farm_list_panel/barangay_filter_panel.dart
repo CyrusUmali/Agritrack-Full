@@ -7,9 +7,12 @@ import 'package:flutter/material.dart';
 
 class BarangayFilterPanel extends StatefulWidget {
   final BarangayManager barangayManager;
+  final PolygonManager polygonManager;
   final List<String> selectedBarangays;
+  final List<String> selectedProducts;
   final VoidCallback onClose;
-  final Function(List<String>, Map<String, bool>) onFiltersChanged;
+  final Function(List<String>, List<String>, Map<String, bool>)
+      onFiltersChanged;
 
   static Map<String, bool> filterOptions = {
     'Rice': true,
@@ -23,7 +26,9 @@ class BarangayFilterPanel extends StatefulWidget {
   const BarangayFilterPanel({
     Key? key,
     required this.barangayManager,
+    required this.polygonManager,
     required this.selectedBarangays,
+    required this.selectedProducts,
     required this.onFiltersChanged,
     required this.onClose,
   }) : super(key: key);
@@ -34,13 +39,16 @@ class BarangayFilterPanel extends StatefulWidget {
 
 class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
   late List<String> _tempSelectedBarangays;
+  late List<String> _tempSelectedProducts;
   late Map<String, bool> _tempFilterOptions;
   String searchQuery = '';
+  bool showProductFilter = false; // Toggle between barangay and product filters
 
   @override
   void initState() {
     super.initState();
     _tempSelectedBarangays = List.from(widget.selectedBarangays);
+    _tempSelectedProducts = List.from(widget.selectedProducts);
     _tempFilterOptions = Map.from(BarangayFilterPanel.filterOptions);
     _logBarangays();
   }
@@ -55,7 +63,7 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
     // print(jsonEncode(barangayJson));
   }
 
-  void _toggleAll(bool selectAll) {
+  void _toggleAllBarangays(bool selectAll) {
     setState(() {
       _tempSelectedBarangays = selectAll
           ? widget.barangayManager.barangays.map((b) => b.name).toList()
@@ -63,11 +71,48 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
     });
   }
 
+  void _toggleAllProducts(bool selectAll) {
+    setState(() {
+      _tempSelectedProducts = selectAll ? _getAllAvailableProducts() : [];
+    });
+  }
+
+  List<String> _getAllAvailableProducts() {
+    final allProducts = <String>{};
+    for (final polygon in widget.polygonManager.polygons) {
+      if (polygon.products != null) {
+        allProducts.addAll(polygon.products!);
+      }
+    }
+    return allProducts.toList()..sort();
+  }
+
+  // Helper method to extract display name from product string
+  String _getProductDisplayName(String product) {
+    final colonIndex = product.indexOf(':');
+    if (colonIndex != -1) {
+      return product.substring(colonIndex + 1).trim();
+    }
+    return product;
+  }
+
+  List<String> _getFilteredProducts() {
+    final allProducts = _getAllAvailableProducts();
+    if (searchQuery.isEmpty) return allProducts;
+
+    return allProducts
+        .where((product) => _getProductDisplayName(product)
+            .toLowerCase()
+            .contains(searchQuery.toLowerCase()))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final sortedBarangays = List.from(widget.barangayManager.barangays)
       ..sort((a, b) => a.name.compareTo(b.name));
+    final filteredProducts = _getFilteredProducts();
 
     return Container(
       width: 250,
@@ -159,8 +204,74 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
             ],
           ),
           SizedBox(height: 16),
+
+          // Toggle buttons for Barangay/Product filters
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: theme.colorScheme.surface.withOpacity(0.1),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => showProductFilter = false),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: !showProductFilter
+                            ? theme.colorScheme.primary
+                            : Colors.transparent,
+                      ),
+                      child: Text(
+                        'Barangays',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: !showProductFilter
+                              ? Colors.white
+                              : theme.textTheme.bodyMedium?.color,
+                          fontWeight: !showProductFilter
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => showProductFilter = true),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: showProductFilter
+                            ? theme.colorScheme.primary
+                            : Colors.transparent,
+                      ),
+                      child: Text(
+                        'Products',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: showProductFilter
+                              ? Colors.white
+                              : theme.textTheme.bodyMedium?.color,
+                          fontWeight: showProductFilter
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 16),
           Text(
-            'Barangays',
+            showProductFilter ? 'Products' : 'Barangays',
             style: theme.textTheme.bodyLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -168,7 +279,9 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
           SizedBox(height: 8),
           TextField(
             decoration: InputDecoration(
-              hintText: 'Search barangays...',
+              hintText: showProductFilter
+                  ? 'Search products...'
+                  : 'Search barangays...',
               prefixIcon: Icon(Icons.search, color: theme.iconTheme.color),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -183,47 +296,79 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
               TextButton(
                 child: Text(context.translate('Select All'),
                     style: TextStyle(color: theme.colorScheme.primary)),
-                onPressed: () => _toggleAll(true),
+                onPressed: () => showProductFilter
+                    ? _toggleAllProducts(true)
+                    : _toggleAllBarangays(true),
               ),
               TextButton(
                 child: Text(context.translate('Clear All'),
                     style: TextStyle(color: theme.colorScheme.primary)),
-                onPressed: () => _toggleAll(false),
+                onPressed: () => showProductFilter
+                    ? _toggleAllProducts(false)
+                    : _toggleAllBarangays(false),
               ),
             ],
           ),
           Expanded(
             child: ListView(
-              children: sortedBarangays
-                  .where((barangay) => barangay.name
-                      .toLowerCase()
-                      .contains(searchQuery.toLowerCase()))
-                  .map((barangay) {
-                return CheckboxListTile(
-                  title: Text(barangay.name, style: theme.textTheme.bodyMedium),
-                  value: _tempSelectedBarangays.contains(barangay.name),
-                  onChanged: (bool? value) {
-                    setState(() {
-                      if (value == true) {
-                        if (!_tempSelectedBarangays.contains(barangay.name)) {
-                          _tempSelectedBarangays.add(barangay.name);
-                        }
-                      } else {
-                        _tempSelectedBarangays.remove(barangay.name);
-                      }
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                  activeColor: theme.colorScheme.primary,
-                  checkColor: Colors.white,
-                );
-              }).toList(),
+              children: showProductFilter
+                  ? filteredProducts.map((product) {
+                      return CheckboxListTile(
+                        title: Text(
+                            _getProductDisplayName(
+                                product), // Show only display name
+                            style: theme.textTheme.bodyMedium),
+                        value: _tempSelectedProducts.contains(product),
+                        onChanged: (bool? value) {
+                          setState(() {
+                            if (value == true) {
+                              if (!_tempSelectedProducts.contains(product)) {
+                                _tempSelectedProducts.add(product);
+                              }
+                            } else {
+                              _tempSelectedProducts.remove(product);
+                            }
+                          });
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                        activeColor: theme.colorScheme.primary,
+                        checkColor: Colors.white,
+                      );
+                    }).toList()
+                  : sortedBarangays
+                      .where((barangay) => barangay.name
+                          .toLowerCase()
+                          .contains(searchQuery.toLowerCase()))
+                      .map((barangay) {
+                      return CheckboxListTile(
+                        title: Text(barangay.name,
+                            style: theme.textTheme.bodyMedium),
+                        value: _tempSelectedBarangays.contains(barangay.name),
+                        onChanged: (bool? value) {
+                          setState(() {
+                            if (value == true) {
+                              if (!_tempSelectedBarangays
+                                  .contains(barangay.name)) {
+                                _tempSelectedBarangays.add(barangay.name);
+                              }
+                            } else {
+                              _tempSelectedBarangays.remove(barangay.name);
+                            }
+                          });
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                        activeColor: theme.colorScheme.primary,
+                        checkColor: Colors.white,
+                      );
+                    }).toList(),
             ),
           ),
           SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              widget.onFiltersChanged(List.from(_tempSelectedBarangays),
+              widget.onFiltersChanged(
+                  List.from(_tempSelectedBarangays),
+                  List.from(_tempSelectedProducts),
                   Map.from(_tempFilterOptions));
               widget.onClose();
             },

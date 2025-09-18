@@ -1,4 +1,5 @@
 import 'package:flareline/pages/products/product_profile.dart';
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flareline/services/lanugage_extension.dart';
@@ -63,15 +64,20 @@ class RecommendationResults extends StatelessWidget {
   ) {
     final hasWarning = recommendation['warning'] == 'low_confidence';
     final confidence = recommendation['confidence'] as double;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: Theme.of(context).cardTheme.color,
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -99,7 +105,7 @@ class RecommendationResults extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.eco,
                             size: 16,
                             color: Colors.white,
@@ -133,7 +139,7 @@ class RecommendationResults extends StatelessWidget {
                         style: TextStyle(
                           fontSize: isSmallScreen ? 28 : 36,
                           fontWeight: FontWeight.w800,
-                          color: Colors.green[800],
+                          color: isDark ? Colors.green[400] : Colors.green[800],
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -144,10 +150,11 @@ class RecommendationResults extends StatelessWidget {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: _getConfidenceColor(confidence).withOpacity(0.1),
+                        color: _getConfidenceColor(confidence, isDark)
+                            .withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _getConfidenceColor(confidence),
+                          color: _getConfidenceColor(confidence, isDark),
                           width: 1,
                         ),
                       ),
@@ -156,7 +163,7 @@ class RecommendationResults extends StatelessWidget {
                         style: TextStyle(
                           fontSize: isSmallScreen ? 16 : 18,
                           fontWeight: FontWeight.bold,
-                          color: _getConfidenceColor(confidence),
+                          color: _getConfidenceColor(confidence, isDark),
                         ),
                       ),
                     ),
@@ -170,6 +177,7 @@ class RecommendationResults extends StatelessWidget {
                   recommendation,
                   true, // isPrimary
                   isSmallScreen,
+                  isDark,
                 ),
 
                 SizedBox(height: isSmallScreen ? 16 : 20),
@@ -184,41 +192,6 @@ class RecommendationResults extends StatelessWidget {
               ],
             ),
           ),
-          // Floating action button
-          // Positioned(
-          //   top: 12,
-          //   right: 12,
-          //   child: Container(
-          //     decoration: BoxDecoration(
-          //       color: Colors.white,
-          //       borderRadius: BorderRadius.circular(25),
-          //       boxShadow: [
-          //         BoxShadow(
-          //           color: Colors.black.withOpacity(0.1),
-          //           blurRadius: 8,
-          //           offset: const Offset(0, 2),
-          //         ),
-          //       ],
-          //     ),
-          //     child: IconButton(
-          //       icon: Icon(
-          //         Icons.arrow_forward_rounded,
-          //         color: Colors.green[700],
-          //         size: 20,
-          //       ),
-          //       tooltip: 'View Details',
-          //       onPressed: () {
-          //         Navigator.push(
-          //           context,
-          //           MaterialPageRoute(
-          //             builder: (context) =>
-          //                 ProductProfile(product: recommendation),
-          //           ),
-          //         );
-          //       },
-          //     ),
-          //   ),
-          // ),
         ],
       ),
     );
@@ -230,6 +203,8 @@ class RecommendationResults extends StatelessWidget {
     bool isSmallScreen,
     double padding,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -240,12 +215,14 @@ class RecommendationResults extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: isDark
+                      ? Colors.blue[900]!.withOpacity(0.3)
+                      : Colors.blue[50],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.compare_arrows,
-                  color: Colors.blue[600],
+                  color: isDark ? Colors.blue[300] : Colors.blue[600],
                   size: isSmallScreen ? 18 : 20,
                 ),
               ),
@@ -254,7 +231,7 @@ class RecommendationResults extends StatelessWidget {
                 context.translate('Alternative Options'),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      color: isDark ? Colors.grey[200] : Colors.grey[800],
                       fontSize: isSmallScreen ? 18 : 20,
                     ),
               ),
@@ -331,15 +308,20 @@ class RecommendationResults extends StatelessWidget {
   ) {
     final hasWarning = recommendation['warning'] == 'low_confidence';
     final confidence = recommendation['confidence'] as double;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: Theme.of(context).cardTheme.color,
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -357,13 +339,15 @@ class RecommendationResults extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.blue[100],
+                    color: isDark
+                        ? Colors.blue[900]!.withOpacity(0.3)
+                        : Colors.blue[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '#${index + 2}',
                     style: TextStyle(
-                      color: Colors.blue[700],
+                      color: isDark ? Colors.blue[300] : Colors.blue[700],
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -387,7 +371,7 @@ class RecommendationResults extends StatelessWidget {
                         style: TextStyle(
                           fontSize: isSmallScreen ? 16 : 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue[800],
+                          color: isDark ? Colors.blue[300] : Colors.blue[800],
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -399,8 +383,8 @@ class RecommendationResults extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color:
-                              _getConfidenceColor(confidence).withOpacity(0.1),
+                          color: _getConfidenceColor(confidence, isDark)
+                              .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -408,7 +392,7 @@ class RecommendationResults extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: _getConfidenceColor(confidence),
+                            color: _getConfidenceColor(confidence, isDark),
                           ),
                         ),
                       ),
@@ -423,6 +407,7 @@ class RecommendationResults extends StatelessWidget {
                   recommendation,
                   false, // isPrimary
                   isSmallScreen,
+                  isDark,
                 ),
 
                 const SizedBox(height: 12),
@@ -444,11 +429,16 @@ class RecommendationResults extends StatelessWidget {
             right: 8,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: isDark
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.black.withOpacity(0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 1),
                   ),
@@ -457,7 +447,7 @@ class RecommendationResults extends StatelessWidget {
               child: IconButton(
                 icon: Icon(
                   Icons.info_outline,
-                  color: Colors.blue[600],
+                  color: isDark ? Colors.blue[300] : Colors.blue[600],
                   size: 18,
                 ),
                 tooltip: context.translate('View Details'),
@@ -482,6 +472,7 @@ class RecommendationResults extends StatelessWidget {
     dynamic recommendation,
     bool isPrimary,
     bool isSmallScreen,
+    bool isDark,
   ) {
     final height =
         isPrimary ? (isSmallScreen ? 180 : 220) : (isSmallScreen ? 100 : 120);
@@ -493,7 +484,9 @@ class RecommendationResults extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -506,17 +499,17 @@ class RecommendationResults extends StatelessWidget {
             Container(
               width: double.infinity,
               height: double.infinity,
-              color: Colors.grey[200],
+              color: isDark ? Colors.grey[800] : Colors.grey[200],
               child: Image.network(
                 recommendation['image_url'] ??
                     'https://via.placeholder.com/400',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                    color: Colors.grey[200],
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
                     child: Icon(
                       Icons.image_not_supported,
-                      color: Colors.grey[400],
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
                       size: isPrimary ? 48 : 32,
                     ),
                   );
@@ -524,7 +517,7 @@ class RecommendationResults extends StatelessWidget {
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return Container(
-                    color: Colors.grey[200],
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
                     child: Center(
                       child: CircularProgressIndicator(
                         value: loadingProgress.expectedTotalBytes != null
@@ -550,7 +543,7 @@ class RecommendationResults extends StatelessWidget {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [
-                      Colors.black.withOpacity(0.3),
+                      Colors.black.withOpacity(0.4),
                       Colors.transparent,
                     ],
                   ),
@@ -570,6 +563,7 @@ class RecommendationResults extends StatelessWidget {
     bool isPrimary,
   ) {
     final models = recommendation['supporting_models'] as List;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,13 +573,15 @@ class RecommendationResults extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: isDark ? Colors.grey[800] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
                 Icons.how_to_vote,
                 size: isSmallScreen ? 14 : 16,
-                color: isPrimary ? Colors.green[600] : Colors.blue[600],
+                color: isPrimary
+                    ? (isDark ? Colors.green[400] : Colors.green[600])
+                    : (isDark ? Colors.blue[400] : Colors.blue[600]),
               ),
             ),
             const SizedBox(width: 8),
@@ -593,7 +589,7 @@ class RecommendationResults extends StatelessWidget {
               context.translate('Model Consensus'),
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+                color: isDark ? Colors.grey[300] : Colors.grey[700],
                 fontSize: isSmallScreen ? 14 : 15,
               ),
             ),
@@ -612,9 +608,11 @@ class RecommendationResults extends StatelessWidget {
               margin: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: isDark ? Colors.grey[850] : Colors.grey[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(
+                  color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+                ),
               ),
               child: Row(
                 children: [
@@ -623,7 +621,7 @@ class RecommendationResults extends StatelessWidget {
                     child: Text(
                       model['model'],
                       style: TextStyle(
-                        color: Colors.grey[800],
+                        color: isDark ? Colors.grey[300] : Colors.grey[800],
                         fontSize: isSmallScreen ? 13 : 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -637,7 +635,7 @@ class RecommendationResults extends StatelessWidget {
                     child: Container(
                       height: 6,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: isDark ? Colors.grey[700] : Colors.grey[300],
                         borderRadius: BorderRadius.circular(3),
                       ),
                       child: FractionallySizedBox(
@@ -645,7 +643,7 @@ class RecommendationResults extends StatelessWidget {
                         widthFactor: probability,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: _getConfidenceColor(probability),
+                            color: _getConfidenceColor(probability, isDark),
                             borderRadius: BorderRadius.circular(3),
                           ),
                         ),
@@ -657,7 +655,7 @@ class RecommendationResults extends StatelessWidget {
                     '${(probability * 100).toStringAsFixed(1)}%',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      color: isDark ? Colors.grey[300] : Colors.grey[800],
                       fontSize: isSmallScreen ? 12 : 13,
                     ),
                   ),
@@ -675,14 +673,20 @@ class RecommendationResults extends StatelessWidget {
     bool isSmallScreen,
     double padding,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: Theme.of(context).cardTheme.color,
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -698,13 +702,15 @@ class RecommendationResults extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.amber[50],
+                    color: isDark
+                        ? Colors.amber[900]!.withOpacity(0.3)
+                        : Colors.amber[50],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.info,
                     size: isSmallScreen ? 16 : 18,
-                    color: Colors.amber[700],
+                    color: isDark ? Colors.amber[300] : Colors.amber[700],
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -713,7 +719,7 @@ class RecommendationResults extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: isSmallScreen ? 16 : 18,
-                        color: Colors.grey[800],
+                        color: isDark ? Colors.grey[200] : Colors.grey[800],
                       ),
                 ),
               ],
@@ -722,12 +728,13 @@ class RecommendationResults extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: isDark ? Colors.grey[850] : Colors.grey[50],
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
                 children: [
                   _buildInfoRow(
+                    context,
                     context.translate('Crops Analyzed'),
                     predictionResult['total_crops_considered'].toString(),
                     Icons.analytics,
@@ -736,6 +743,7 @@ class RecommendationResults extends StatelessWidget {
                   if (predictionResult['confidence_threshold'] != null) ...[
                     const SizedBox(height: 12),
                     _buildInfoRow(
+                      context,
                       context.translate('Confidence Threshold'),
                       '${(predictionResult['confidence_threshold'] * 100).toStringAsFixed(0)}%',
                       Icons.speed,
@@ -750,9 +758,13 @@ class RecommendationResults extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: isDark
+                      ? Colors.blue[900]!.withOpacity(0.3)
+                      : Colors.blue[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!),
+                  border: Border.all(
+                    color: isDark ? Colors.blue[700]! : Colors.blue[200]!,
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -760,14 +772,14 @@ class RecommendationResults extends StatelessWidget {
                     Icon(
                       Icons.lightbulb_outline,
                       size: 18,
-                      color: Colors.blue[600],
+                      color: isDark ? Colors.blue[300] : Colors.blue[600],
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         predictionResult['note'],
                         style: TextStyle(
-                          color: Colors.blue[800],
+                          color: isDark ? Colors.blue[200] : Colors.blue[800],
                           fontSize: isSmallScreen ? 14 : 15,
                           fontStyle: FontStyle.italic,
                           height: 1.4,
@@ -785,24 +797,26 @@ class RecommendationResults extends StatelessWidget {
   }
 
   Widget _buildInfoRow(
+    BuildContext context,
     String label,
     String value,
     IconData icon, {
     required bool isSmallScreen,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Icon(
           icon,
           size: isSmallScreen ? 16 : 18,
-          color: Colors.grey[600],
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
         ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             label,
             style: TextStyle(
-              color: Colors.grey[700],
+              color: isDark ? Colors.grey[300] : Colors.grey[700],
               fontSize: isSmallScreen ? 14 : 15,
               fontWeight: FontWeight.w500,
             ),
@@ -811,14 +825,16 @@ class RecommendationResults extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? Colors.grey[800] : Colors.white,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            ),
           ),
           child: Text(
             value,
             style: TextStyle(
-              color: Colors.grey[800],
+              color: isDark ? Colors.grey[200] : Colors.grey[800],
               fontWeight: FontWeight.w600,
               fontSize: isSmallScreen ? 14 : 15,
             ),
@@ -829,12 +845,17 @@ class RecommendationResults extends StatelessWidget {
   }
 
   Widget _buildWarningBadge(BuildContext context, bool isSmallScreen) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.orange[50],
+        color:
+            isDark ? Colors.orange[900]!.withOpacity(0.3) : Colors.orange[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange[300]!),
+        border: Border.all(
+          color: isDark ? Colors.orange[700]! : Colors.orange[300]!,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -842,13 +863,13 @@ class RecommendationResults extends StatelessWidget {
           Icon(
             Icons.warning_amber_rounded,
             size: 14,
-            color: Colors.orange[700],
+            color: isDark ? Colors.orange[300] : Colors.orange[700],
           ),
           const SizedBox(width: 4),
           Text(
             context.translate('Low Confidence'),
             style: TextStyle(
-              color: Colors.orange[700],
+              color: isDark ? Colors.orange[300] : Colors.orange[700],
               fontSize: isSmallScreen ? 11 : 12,
               fontWeight: FontWeight.w600,
             ),
@@ -858,9 +879,13 @@ class RecommendationResults extends StatelessWidget {
     );
   }
 
-  Color _getConfidenceColor(double confidence) {
-    if (confidence >= 0.8) return Colors.green[600]!;
-    if (confidence >= 0.6) return Colors.orange[600]!;
-    return Colors.red[600]!;
+  Color _getConfidenceColor(double confidence, bool isDark) {
+    if (confidence >= 0.8) {
+      return isDark ? Colors.green[400]! : Colors.green[600]!;
+    }
+    if (confidence >= 0.6) {
+      return isDark ? Colors.orange[400]! : Colors.orange[600]!;
+    }
+    return isDark ? Colors.red[400]! : Colors.red[600]!;
   }
 }

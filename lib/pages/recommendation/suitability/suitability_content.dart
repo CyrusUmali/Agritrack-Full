@@ -279,11 +279,15 @@ class SuitabilityContentState extends State<SuitabilityContent> {
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(
+                          color: Theme.of(context).cardTheme.surfaceTintColor ??
+                              Colors.grey[300]!),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(
+                          color: Theme.of(context).cardTheme.surfaceTintColor ??
+                              Colors.grey[300]!),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -363,9 +367,7 @@ class SuitabilityContentState extends State<SuitabilityContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              // 'Select Model',
               context.translate('Select Model'),
-
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 20,
@@ -401,11 +403,15 @@ class SuitabilityContentState extends State<SuitabilityContent> {
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(
+                      color: Theme.of(context).cardTheme.surfaceTintColor ??
+                          Colors.grey[300]!),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(
+                      color: Theme.of(context).cardTheme.surfaceTintColor ??
+                          Colors.grey[300]!),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -582,7 +588,6 @@ class SuitabilityContentState extends State<SuitabilityContent> {
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: isMobile ? 24 : 28,
-                    color: const Color.fromARGB(255, 1, 1, 1),
                   ),
               textAlign: TextAlign.center,
             ),
