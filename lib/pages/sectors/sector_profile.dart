@@ -1,5 +1,6 @@
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/lake_yield_data_table.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flareline_uikit/components/charts/circular_chart.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +8,7 @@ import 'package:flareline/pages/layout.dart';
 import 'package:flareline/pages/sectors/sector_profile/sector_header.dart';
 import 'package:flareline/pages/sectors/sector_profile/sector_kpi.dart';
 import 'package:flareline/pages/sectors/sector_profile/sector_overview.dart';
-import 'package:flareline/pages/sectors/sector_profile/sector_yield_data.dart'; // Import the new component
+import 'package:flareline/pages/sectors/sector_profile/sector_yield_data.dart';
 import 'package:provider/provider.dart';
 
 class SectorProfile extends LayoutWidget {
@@ -52,6 +53,17 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
   bool _isLoadingYield = false;
   String? _error;
   String? _yieldError;
+  String _selectedLake = 'Sampaloc Lake'; // Default selected lake
+
+  static const List<String> _lakes = [
+    'Sampaloc Lake',
+    'Bunot Lake',
+    'Kalibato Lake',
+    'Pandin Lake',
+    'Yambo Lake',
+    'Mojicap Lake',
+    'Palakpakin Lake'
+  ];
 
   @override
   void initState() {
@@ -111,6 +123,73 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
     }
   }
 
+  Widget _buildYieldDataSection() {
+    final currentSector = _updatedSector ?? widget.sector;
+    final sectorId = currentSector['id'];
+
+    // Check if sector ID is 5 to show lake-specific data
+    if (sectorId == 5) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Lake Selection Dropdown
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Row(
+              children: [
+                const Text(
+                  'Select Lake: ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButton<String>(
+                    value: _selectedLake,
+                    underline: const SizedBox(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedLake = newValue;
+                        });
+                      }
+                    },
+                    dropdownColor: Theme.of(context).cardTheme.color,
+                    items: _lakes.map<DropdownMenuItem<String>>((String lake) {
+                      return DropdownMenuItem<String>(
+                        value: lake,
+                        child: Text(lake),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Lake Yield Data Table with ValueKey to force rebuild
+          LakeYieldDataTable(
+            key: ValueKey(_selectedLake), // Add this line
+            lake: _selectedLake,
+          ),
+        ],
+      );
+    } else {
+      // Regular Sector Yield Data Table
+      return SectorYieldDataTable(
+        sectorId: sectorId.toString(),
+        sectorName: widget.sector['name'] ?? 'Unknown',
+      );
+    }
+  }
+
   Widget _buildContent() {
     // Use updated sector data if available, otherwise use initial data
     final currentSector = _updatedSector ?? widget.sector;
@@ -144,7 +223,7 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
                 SectorKpiCards(
                     sector: currentSector, isMobile: widget.isMobile),
                 const SizedBox(height: 24),
-                
+
                 // Overview Panel and Chart
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -164,7 +243,6 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
                                 isMobile: widget.isMobile,
                               ),
                             ),
-                         
                           ],
                         ),
                       ),
@@ -172,11 +250,11 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
-                // Yield Data Table
-                SectorYieldDataTable(sectorId: currentSector['id'].toString()),
+
+                // Yield Data Section - Either Lake or Sector based on ID
+                _buildYieldDataSection(),
               ],
             ),
           ),
@@ -185,7 +263,6 @@ class _SectorProfileContentState extends State<_SectorProfileContent> {
     );
   }
 
- 
   @override
   Widget build(BuildContext context) {
     return _buildContent();

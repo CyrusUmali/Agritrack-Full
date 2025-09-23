@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:flareline/services/lanugage_extension.dart';
 
 enum BarChartDisplayMode { volume, yieldPerHa }
 
@@ -20,8 +19,53 @@ class MonthlyBarChart extends StatefulWidget {
   State<MonthlyBarChart> createState() => _MonthlyBarChartState();
 }
 
-class _MonthlyBarChartState extends State<MonthlyBarChart> {
+class _MonthlyBarChartState extends State<MonthlyBarChart>
+    with TickerProviderStateMixin {
   BarChartDisplayMode _displayMode = BarChartDisplayMode.volume;
+  late AnimationController _barAnimationController;
+  late AnimationController _switchAnimationController;
+  late Animation<double> _barAnimation;
+  late Animation<double> _switchAnimation;
+
+  Map<String, double> _previousData = {};
+  Map<String, double> _currentData = {};
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Animation controller for initial bar growth
+    _barAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    // Animation controller for switching between modes
+    _switchAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _barAnimation = CurvedAnimation(
+      parent: _barAnimationController,
+      curve: Curves.elasticOut,
+    );
+
+    _switchAnimation = CurvedAnimation(
+      parent: _switchAnimationController,
+      curve: Curves.easeInOut,
+    );
+
+    _currentData = _getDisplayData();
+    _barAnimationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _barAnimationController.dispose();
+    _switchAnimationController.dispose();
+    super.dispose();
+  }
 
   bool get _hasAreaData {
     return widget.monthlyData.values
@@ -39,18 +83,26 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
 
       if (_displayMode == BarChartDisplayMode.volume) {
         displayData[month] = volume;
-        // Print volume values
-        print('$month Volume: $volume kg');
       } else {
-        // Calculate yield per hectare (kg/ha)
         final yieldPerHa = areaHarvested > 0 ? volume / areaHarvested : 0;
         displayData[month] = yieldPerHa.toDouble();
-        // Print yield per hectare values
-        print('$month Yield per Hectare: $yieldPerHa kg/ha');
       }
     }
 
     return displayData;
+  }
+
+  void _switchDisplayMode(BarChartDisplayMode newMode) {
+    if (newMode == _displayMode) return;
+
+    setState(() {
+      _previousData = Map.from(_currentData);
+      _displayMode = newMode;
+      _currentData = _getDisplayData();
+    });
+
+    _switchAnimationController.reset();
+    _switchAnimationController.forward();
   }
 
   String _getUnit() {
@@ -67,10 +119,9 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final displayData = _getDisplayData();
 
     return Container(
-      height: 450, // Increased height to accommodate toggle
+      height: 450,
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -83,10 +134,14 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  _getTitle(),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Text(
+                    _getTitle(),
+                    key: ValueKey(_displayMode),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -95,31 +150,44 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child:
-                displayData.isEmpty || displayData.values.every((v) => v == 0)
-                    ? Center(
-                        child: Text(
-                          _hasAreaData
-                              ? context.translate('No data available')
-                              : _displayMode == BarChartDisplayMode.yieldPerHa
-                                  ? 'No area data available for yield calculation'
-                                  : context.translate('No data available'),
-                          style: TextStyle(color: theme.hintColor),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : CustomPaint(
+            child: _currentData.isEmpty ||
+                    _currentData.values.every((v) => v == 0)
+                ? Center(
+                    child: AnimatedOpacity(
+                      opacity: 1.0,
+                      duration: const Duration(milliseconds: 500),
+                      child: Text(
+                        _hasAreaData
+                            ? 'No data available'
+                            : _displayMode == BarChartDisplayMode.yieldPerHa
+                                ? 'No area data available for yield calculation'
+                                : 'No data available',
+                        style: TextStyle(color: theme.hintColor),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                : AnimatedBuilder(
+                    animation:
+                        Listenable.merge([_barAnimation, _switchAnimation]),
+                    builder: (context, child) {
+                      return CustomPaint(
                         painter: BarChartPainter(
-                          data: displayData,
+                          currentData: _currentData,
+                          previousData: _previousData,
                           primaryColor: theme.primaryColor,
                           textColor:
                               theme.textTheme.bodyMedium?.color ?? Colors.black,
                           backgroundColor: theme.canvasColor,
                           isMonthly: true,
                           unit: _getUnit(),
+                          barAnimation: _barAnimation.value,
+                          switchAnimation: _switchAnimation.value,
                         ),
                         child: Container(),
-                      ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -142,8 +210,7 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
             label: 'Volume',
             icon: Icons.inventory,
             isSelected: _displayMode == BarChartDisplayMode.volume,
-            onTap: () =>
-                setState(() => _displayMode = BarChartDisplayMode.volume),
+            onTap: () => _switchDisplayMode(BarChartDisplayMode.volume),
             theme: theme,
           ),
           Container(
@@ -155,8 +222,7 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
             label: 'Kg/Ha',
             icon: Icons.agriculture,
             isSelected: _displayMode == BarChartDisplayMode.yieldPerHa,
-            onTap: () =>
-                setState(() => _displayMode = BarChartDisplayMode.yieldPerHa),
+            onTap: () => _switchDisplayMode(BarChartDisplayMode.yieldPerHa),
             theme: theme,
           ),
         ],
@@ -171,37 +237,44 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
     required VoidCallback onTap,
     required ThemeData theme,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: isSelected
-              ? theme.primaryColor.withOpacity(0.1)
-              : Colors.transparent,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: isSelected
-                  ? theme.primaryColor
-                  : theme.iconTheme.color?.withOpacity(0.6),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? theme.primaryColor : null,
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: isSelected
+                ? theme.primaryColor.withOpacity(0.1)
+                : Colors.transparent,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  icon,
+                  size: 14,
+                  color: isSelected
+                      ? theme.primaryColor
+                      : theme.iconTheme.color?.withOpacity(0.6),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 4),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(
+                  color: isSelected ? theme.primaryColor : null,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+                child: Text(label),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -222,8 +295,53 @@ class YearlyBarChart extends StatefulWidget {
   State<YearlyBarChart> createState() => _YearlyBarChartState();
 }
 
-class _YearlyBarChartState extends State<YearlyBarChart> {
+class _YearlyBarChartState extends State<YearlyBarChart>
+    with TickerProviderStateMixin {
   BarChartDisplayMode _displayMode = BarChartDisplayMode.volume;
+  late AnimationController _barAnimationController;
+  late AnimationController _switchAnimationController;
+  late Animation<double> _barAnimation;
+  late Animation<double> _switchAnimation;
+
+  Map<String, double> _previousData = {};
+  Map<String, double> _currentData = {};
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Animation controller for initial bar growth
+    _barAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    // Animation controller for switching between modes
+    _switchAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _barAnimation = CurvedAnimation(
+      parent: _barAnimationController,
+      curve: Curves.elasticOut,
+    );
+
+    _switchAnimation = CurvedAnimation(
+      parent: _switchAnimationController,
+      curve: Curves.easeInOut,
+    );
+
+    _currentData = _getDisplayData();
+    _barAnimationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _barAnimationController.dispose();
+    _switchAnimationController.dispose();
+    super.dispose();
+  }
 
   bool get _hasAreaData {
     return widget.yearlyData.values
@@ -241,18 +359,26 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
 
       if (_displayMode == BarChartDisplayMode.volume) {
         displayData[year] = volume;
-        // Print volume values
-        print('$year Volume: $volume kg');
       } else {
-        // Calculate yield per hectare (kg/ha)
         final yieldPerHa = areaHarvested > 0 ? volume / areaHarvested : 0;
         displayData[year] = yieldPerHa.toDouble();
-        // Print yield per hectare values
-        print('$year Yield per Hectare: $yieldPerHa kg/ha');
       }
     }
 
     return displayData;
+  }
+
+  void _switchDisplayMode(BarChartDisplayMode newMode) {
+    if (newMode == _displayMode) return;
+
+    setState(() {
+      _previousData = Map.from(_currentData);
+      _displayMode = newMode;
+      _currentData = _getDisplayData();
+    });
+
+    _switchAnimationController.reset();
+    _switchAnimationController.forward();
   }
 
   String _getUnit() {
@@ -269,10 +395,9 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final displayData = _getDisplayData();
 
     return Container(
-      height: 450, // Increased height to accommodate toggle
+      height: 450,
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -285,10 +410,14 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  _getTitle(),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Text(
+                    _getTitle(),
+                    key: ValueKey(_displayMode),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -297,31 +426,44 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child:
-                displayData.isEmpty || displayData.values.every((v) => v == 0)
-                    ? Center(
-                        child: Text(
-                          _hasAreaData
-                              ? context.translate('No data available')
-                              : _displayMode == BarChartDisplayMode.yieldPerHa
-                                  ? 'No area data available for yield calculation'
-                                  : context.translate('No data available'),
-                          style: TextStyle(color: theme.hintColor),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : CustomPaint(
+            child: _currentData.isEmpty ||
+                    _currentData.values.every((v) => v == 0)
+                ? Center(
+                    child: AnimatedOpacity(
+                      opacity: 1.0,
+                      duration: const Duration(milliseconds: 500),
+                      child: Text(
+                        _hasAreaData
+                            ? 'No data available'
+                            : _displayMode == BarChartDisplayMode.yieldPerHa
+                                ? 'No area data available for yield calculation'
+                                : 'No data available',
+                        style: TextStyle(color: theme.hintColor),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                : AnimatedBuilder(
+                    animation:
+                        Listenable.merge([_barAnimation, _switchAnimation]),
+                    builder: (context, child) {
+                      return CustomPaint(
                         painter: BarChartPainter(
-                          data: displayData,
+                          currentData: _currentData,
+                          previousData: _previousData,
                           primaryColor: theme.primaryColor,
                           textColor:
                               theme.textTheme.bodyMedium?.color ?? Colors.black,
                           backgroundColor: theme.canvasColor,
                           isMonthly: false,
                           unit: _getUnit(),
+                          barAnimation: _barAnimation.value,
+                          switchAnimation: _switchAnimation.value,
                         ),
                         child: Container(),
-                      ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -344,8 +486,7 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
             label: 'Volume',
             icon: Icons.inventory,
             isSelected: _displayMode == BarChartDisplayMode.volume,
-            onTap: () =>
-                setState(() => _displayMode = BarChartDisplayMode.volume),
+            onTap: () => _switchDisplayMode(BarChartDisplayMode.volume),
             theme: theme,
           ),
           Container(
@@ -357,8 +498,7 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
             label: 'Kg/Ha',
             icon: Icons.agriculture,
             isSelected: _displayMode == BarChartDisplayMode.yieldPerHa,
-            onTap: () =>
-                setState(() => _displayMode = BarChartDisplayMode.yieldPerHa),
+            onTap: () => _switchDisplayMode(BarChartDisplayMode.yieldPerHa),
             theme: theme,
           ),
         ],
@@ -373,37 +513,44 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
     required VoidCallback onTap,
     required ThemeData theme,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: isSelected
-              ? theme.primaryColor.withOpacity(0.1)
-              : Colors.transparent,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: isSelected
-                  ? theme.primaryColor
-                  : theme.iconTheme.color?.withOpacity(0.6),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? theme.primaryColor : null,
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: isSelected
+                ? theme.primaryColor.withOpacity(0.1)
+                : Colors.transparent,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  icon,
+                  size: 14,
+                  color: isSelected
+                      ? theme.primaryColor
+                      : theme.iconTheme.color?.withOpacity(0.6),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 4),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(
+                  color: isSelected ? theme.primaryColor : null,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+                child: Text(label),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -411,25 +558,44 @@ class _YearlyBarChartState extends State<YearlyBarChart> {
 }
 
 class BarChartPainter extends CustomPainter {
-  final Map<String, double> data;
+  final Map<String, double> currentData;
+  final Map<String, double> previousData;
   final Color primaryColor;
   final Color textColor;
   final Color backgroundColor;
   final bool isMonthly;
   final String unit;
+  final double barAnimation;
+  final double switchAnimation;
 
   BarChartPainter({
-    required this.data,
+    required this.currentData,
+    required this.previousData,
     required this.primaryColor,
     required this.textColor,
     required this.backgroundColor,
     required this.isMonthly,
     required this.unit,
+    required this.barAnimation,
+    required this.switchAnimation,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (data.isEmpty) return;
+    if (currentData.isEmpty) return;
+
+    // Interpolate between previous and current data for smooth transitions
+    final Map<String, double> displayData = {};
+    for (final key in currentData.keys) {
+      final currentValue = currentData[key] ?? 0;
+      final previousValue = previousData[key] ?? currentValue;
+
+      // Use switchAnimation if we're transitioning between modes, otherwise use barAnimation
+      final animationValue =
+          switchAnimation > 0 ? switchAnimation : barAnimation;
+      displayData[key] =
+          previousValue + (currentValue - previousValue) * animationValue;
+    }
 
     final paint = Paint()
       ..color = primaryColor
@@ -452,25 +618,28 @@ class BarChartPainter extends CustomPainter {
     );
 
     // Chart dimensions
-    const leftPadding = 70.0; // Increased for unit display
+    const leftPadding = 70.0;
     const rightPadding = 20.0;
-    const topPadding = 30.0; // Increased for value labels
+    const topPadding = 30.0;
     const bottomPadding = 40.0;
 
     final chartWidth = size.width - leftPadding - rightPadding;
     final chartHeight = size.height - topPadding - bottomPadding;
 
     // Find max value for scaling
-    final maxValue = data.values.reduce(math.max);
-    final minValue = data.values.reduce(math.min);
+    final maxValue = displayData.values.isNotEmpty
+        ? displayData.values.reduce(math.max)
+        : 1.0;
+    final minValue = displayData.values.isNotEmpty
+        ? displayData.values.reduce(math.min)
+        : 0.0;
     final valueRange = maxValue - minValue;
     final adjustedMax =
         valueRange > 0 ? maxValue + (valueRange * 0.1) : maxValue + 1;
 
-    // Sort data for consistent display
-    final sortedEntries = data.entries.toList();
+    // Sort data
+    final sortedEntries = displayData.entries.toList();
     if (isMonthly) {
-      // Sort months chronologically
       final monthOrder = [
         'January',
         'February',
@@ -491,13 +660,18 @@ class BarChartPainter extends CustomPainter {
         return aIndex.compareTo(bIndex);
       });
     } else {
-      // Sort years numerically
       sortedEntries.sort((a, b) => a.key.compareTo(b.key));
     }
 
-    // Draw Y-axis unit label
+    // Draw Y-axis unit label with fade animation
+    final unitOpacity = barAnimation.clamp(0.0, 1.0);
     final unitPainter = TextPainter(
-      text: TextSpan(text: '($unit)', style: textStyle.copyWith(fontSize: 10)),
+      text: TextSpan(
+          text: '($unit)',
+          style: textStyle.copyWith(
+            fontSize: 10,
+            color: textColor.withOpacity(unitOpacity),
+          )),
       textDirection: TextDirection.ltr,
     );
     unitPainter.layout();
@@ -507,26 +681,33 @@ class BarChartPainter extends CustomPainter {
     unitPainter.paint(canvas, Offset(-unitPainter.width / 2, 0));
     canvas.restore();
 
-    // Draw grid lines and Y-axis labels
+    // Draw grid lines and Y-axis labels with animation
     final gridLineCount = 5;
     for (int i = 0; i <= gridLineCount; i++) {
       final y = topPadding + (chartHeight * i / gridLineCount);
       final value = adjustedMax * (1 - i / gridLineCount);
 
-      // Draw grid line
+      // Animate grid line opacity
+      final gridOpacity = (barAnimation * 2).clamp(0.0, 1.0);
+      final animatedGridPaint = Paint()
+        ..color = textColor.withOpacity(0.2 * gridOpacity)
+        ..strokeWidth = 1;
+
       canvas.drawLine(
         Offset(leftPadding, y),
         Offset(leftPadding + chartWidth, y),
-        gridPaint,
+        animatedGridPaint,
       );
 
-      // Draw Y-axis label
+      // Draw Y-axis label with fade in
       final textPainter = TextPainter(
         text: TextSpan(
           text: value >= 1000
               ? '${(value / 1000).toStringAsFixed(1)}k'
               : value.toStringAsFixed(0),
-          style: textStyle,
+          style: textStyle.copyWith(
+            color: textColor.withOpacity(gridOpacity),
+          ),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -537,27 +718,35 @@ class BarChartPainter extends CustomPainter {
       );
     }
 
-    // Draw bars and X-axis labels
+    // Draw bars with staggered animation
     final barWidth = chartWidth / sortedEntries.length * 0.7;
     final barSpacing = chartWidth / sortedEntries.length * 0.3;
 
     for (int i = 0; i < sortedEntries.length; i++) {
       final entry = sortedEntries[i];
+
+      // Stagger bar animations
+      final staggerDelay = i * 0.1;
+      final adjustedAnimation =
+          ((barAnimation - staggerDelay) / (1 - staggerDelay)).clamp(0.0, 1.0);
+
+      final animatedValue = entry.value * adjustedAnimation;
       final barHeight =
-          adjustedMax > 0 ? (entry.value / adjustedMax) * chartHeight : 0;
+          adjustedMax > 0 ? (animatedValue / adjustedMax) * chartHeight : 0;
 
       final barX = leftPadding +
           (i * chartWidth / sortedEntries.length) +
           barSpacing / 2;
       final barY = topPadding + chartHeight - barHeight;
 
-      // Create gradient for bars
+      // Create animated gradient
+      final animationIntensity = adjustedAnimation;
       final gradient = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          primaryColor.withOpacity(0.8),
-          primaryColor,
+          primaryColor.withOpacity(0.6 * animationIntensity),
+          primaryColor.withOpacity(animationIntensity),
         ],
       );
 
@@ -571,7 +760,7 @@ class BarChartPainter extends CustomPainter {
           ),
         );
 
-      // Draw bar with rounded corners
+      // Draw bar with rounded corners and animation
       if (barHeight > 0) {
         final barRect = RRect.fromRectAndRadius(
           Rect.fromLTWH(
@@ -584,27 +773,35 @@ class BarChartPainter extends CustomPainter {
         );
         canvas.drawRRect(barRect, gradientPaint);
 
-        // Draw value on top of bar
-        final valuePainter = TextPainter(
-          text: TextSpan(
-            text: entry.value >= 1000
-                ? '${(entry.value / 1000).toStringAsFixed(1)}k'
-                : entry.value.toStringAsFixed(1),
-            style: textStyle.copyWith(fontSize: 10),
-          ),
-          textDirection: TextDirection.ltr,
-        );
-        valuePainter.layout();
-        valuePainter.paint(
-          canvas,
-          Offset(
-            barX + barWidth / 2 - valuePainter.width / 2,
-            barY - valuePainter.height - 4,
-          ),
-        );
+        // Animate value labels
+        if (adjustedAnimation > 0.7) {
+          final labelOpacity =
+              ((adjustedAnimation - 0.7) / 0.3).clamp(0.0, 1.0);
+          final valuePainter = TextPainter(
+            text: TextSpan(
+              text: animatedValue >= 1000
+                  ? '${(animatedValue / 1000).toStringAsFixed(1)}k'
+                  : animatedValue.toStringAsFixed(1),
+              style: textStyle.copyWith(
+                fontSize: 10,
+                color: textColor.withOpacity(labelOpacity),
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+          );
+          valuePainter.layout();
+          valuePainter.paint(
+            canvas,
+            Offset(
+              barX + barWidth / 2 - valuePainter.width / 2,
+              barY - valuePainter.height - 4,
+            ),
+          );
+        }
       }
 
-      // Draw X-axis label (abbreviated for monthly)
+      // Draw X-axis labels with fade in
+      final labelOpacity = (barAnimation * 1.5).clamp(0.0, 1.0);
       final displayLabel = isMonthly
           ? entry.key.length > 3
               ? entry.key.substring(0, 3)
@@ -612,7 +809,11 @@ class BarChartPainter extends CustomPainter {
           : entry.key;
 
       final labelPainter = TextPainter(
-        text: TextSpan(text: displayLabel, style: labelTextStyle),
+        text: TextSpan(
+            text: displayLabel,
+            style: labelTextStyle.copyWith(
+              color: textColor.withOpacity(labelOpacity),
+            )),
         textDirection: TextDirection.ltr,
       );
       labelPainter.layout();
@@ -625,9 +826,10 @@ class BarChartPainter extends CustomPainter {
       );
     }
 
-    // Draw chart border
+    // Draw animated chart border
+    final borderOpacity = barAnimation.clamp(0.0, 1.0);
     final borderPaint = Paint()
-      ..color = textColor.withOpacity(0.3)
+      ..color = textColor.withOpacity(0.3 * borderOpacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
@@ -639,20 +841,6 @@ class BarChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return oldDelegate != this;
+    return true; // Always repaint for smooth animation
   }
-
-  @override
-  bool operator ==(Object other) {
-    return other is BarChartPainter &&
-        other.data == data &&
-        other.primaryColor == primaryColor &&
-        other.textColor == textColor &&
-        other.isMonthly == isMonthly &&
-        other.unit == unit;
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(data, primaryColor, textColor, isMonthly, unit);
 }

@@ -16,11 +16,13 @@ class ModalContent extends StatefulWidget {
   final PolygonData polygon;
   final Function(LatLng) onUpdateCenter;
   final Function(PinStyle) onUpdatePinStyle;
+  final Function(String) onUpdateStatus;
   final Function(Color) onUpdateColor;
   final Function(List<String>) onUpdateProducts;
   final Function(String) onUpdateFarmName;
   final Function(String) onUpdateFarmOwner;
   final Function(String) onUpdateBarangay;
+  final Function(String) onUpdateLake;
   final Function(int) onDeletePolygon; // Add this
   final String selectedYear;
   final ThemeData theme;
@@ -33,11 +35,13 @@ class ModalContent extends StatefulWidget {
     required this.polygon,
     required this.onUpdateCenter,
     required this.onUpdatePinStyle,
+    required this.onUpdateStatus,
     required this.onUpdateColor,
     required this.onUpdateProducts,
     required this.onUpdateFarmName,
     required this.onUpdateFarmOwner,
     required this.onUpdateBarangay,
+    required this.onUpdateLake,
     required this.onDeletePolygon, // Add this
     required this.selectedYear,
     required this.theme,
@@ -58,10 +62,12 @@ class ModalContentState extends State<ModalContent> {
   late TextEditingController farmNameController; // Add this
   late Color selectedColor;
   late PinStyle selectedPinStyle;
+  late String selectedStatus;
   late List<String> selectedProducts;
   late String farmName;
   late String farmOwner;
   late String barangay;
+  late String lake;
 
   @override
   void initState() {
@@ -81,10 +87,12 @@ class ModalContentState extends State<ModalContent> {
 
     selectedColor = widget.polygon.color;
     selectedPinStyle = widget.polygon.pinStyle;
+    selectedStatus = widget.polygon.status!;
     selectedProducts = widget.polygon.products?.toList() ?? [];
     farmName = widget.polygon.name ?? '';
     farmOwner = widget.polygon.owner ?? '';
     barangay = widget.polygon.parentBarangay ?? '';
+    lake = widget.polygon.lake ?? '';
   }
 
   @override
@@ -96,6 +104,7 @@ class ModalContentState extends State<ModalContent> {
       lngController.text = center?.longitude.toStringAsFixed(6) ?? '0.0';
       selectedColor = widget.polygon.color;
       selectedPinStyle = widget.polygon.pinStyle;
+      selectedStatus = widget.polygon.status!;
       selectedProducts = widget.polygon.products?.toList() ?? [];
       // farmName = widget.polygon.name ?? '';
       // Update farm name controller
@@ -104,6 +113,7 @@ class ModalContentState extends State<ModalContent> {
       }
       farmOwner = widget.polygon.owner ?? '';
       barangay = widget.polygon.parentBarangay ?? '';
+      lake = widget.polygon.lake ?? '';
     }
   }
 
@@ -163,12 +173,19 @@ class ModalContentState extends State<ModalContent> {
                             name: farmName,
                             owner: farmOwner,
                             parentBarangay: barangay,
+                            lake: lake,
                           ),
                           theme: widget.theme,
                           onBarangayChanged: (newBarangay) {
                             setState(() => barangay = newBarangay);
                             widget.onUpdateBarangay(newBarangay);
                           },
+
+                          onLakeChanged: (newLake) {
+                            setState(() => lake = newLake);
+                            widget.onUpdateLake(newLake);
+                          },
+
                           onFarmOwnerChanged: (newOwner) {
                             setState(() => farmOwner = newOwner);
                             widget.onUpdateFarmOwner(newOwner);
@@ -183,11 +200,13 @@ class ModalContentState extends State<ModalContent> {
                               farmName = updatedPolygon.name ?? '';
                               farmOwner = updatedPolygon.owner ?? '';
                               barangay = updatedPolygon.parentBarangay ?? '';
+                              lake = updatedPolygon.lake ?? '';
                             });
                             widget.onUpdateProducts(selectedProducts);
                             widget.onUpdateFarmName(farmName);
                             widget.onUpdateFarmOwner(farmOwner);
                             widget.onUpdateBarangay(barangay);
+                            widget.onUpdateLake(lake);
                           },
                           farmNameController:
                               farmNameController, // Pass the controller
@@ -197,6 +216,7 @@ class ModalContentState extends State<ModalContent> {
                           context: context,
                           polygon: widget.polygon,
                           selectedPinStyle: selectedPinStyle,
+                          selectedStatus: selectedStatus,
                           selectedColor: selectedColor,
                           onColorChanged: (color) {
                             setState(() => selectedColor = color);
@@ -205,6 +225,10 @@ class ModalContentState extends State<ModalContent> {
                           onPinStyleChanged: (style) {
                             setState(() => selectedPinStyle = style);
                             widget.onUpdatePinStyle(style);
+                          },
+                          onStatusChanged: (status) {
+                            setState(() => selectedStatus = status);
+                            widget.onUpdateStatus(status);
                           },
                           onDelete: () {
                             // Add this new callback
@@ -273,12 +297,18 @@ class ModalContentState extends State<ModalContent> {
                 name: farmName,
                 owner: farmOwner,
                 parentBarangay: barangay,
+                lake: lake,
               ),
               theme: widget.theme,
               onBarangayChanged: (newBarangay) {
                 setState(() => barangay = newBarangay);
                 widget.onUpdateBarangay(newBarangay);
               },
+              onLakeChanged: (newLake) {
+                setState(() => lake = newLake);
+                widget.onUpdateLake(newLake);
+              },
+
               onFarmOwnerChanged: (newOwner) {
                 setState(() => farmOwner = newOwner);
                 widget.onUpdateFarmOwner(newOwner);
@@ -293,11 +323,13 @@ class ModalContentState extends State<ModalContent> {
                   farmName = updatedPolygon.name ?? '';
                   farmOwner = updatedPolygon.owner ?? '';
                   barangay = updatedPolygon.parentBarangay ?? '';
+                  lake = updatedPolygon.lake ?? '';
                 });
                 widget.onUpdateProducts(selectedProducts);
                 widget.onUpdateFarmName(farmName);
                 widget.onUpdateFarmOwner(farmOwner);
                 widget.onUpdateBarangay(barangay);
+                widget.onUpdateLake(lake);
               },
               farmNameController: farmNameController, // Pass the controller
             ),
@@ -306,6 +338,7 @@ class ModalContentState extends State<ModalContent> {
               context: context,
               polygon: widget.polygon,
               selectedPinStyle: selectedPinStyle,
+              selectedStatus: selectedStatus,
               selectedColor: selectedColor,
               onColorChanged: (color) {
                 setState(() => selectedColor = color);
@@ -314,6 +347,10 @@ class ModalContentState extends State<ModalContent> {
               onPinStyleChanged: (style) {
                 setState(() => selectedPinStyle = style);
                 widget.onUpdatePinStyle(style);
+              },
+              onStatusChanged: (status) {
+                setState(() => selectedStatus = status);
+                widget.onUpdateStatus(status);
               },
               onDelete: () {
                 // Add this new callback

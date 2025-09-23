@@ -18,9 +18,10 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
     on<DeleteYield>(_onDeleteYield);
     on<FilterYields>(_onFilterYields);
     on<SearchYields>(_onSearchYields);
-    on<SortYields>(_onSortYields); 
+    on<SortYields>(_onSortYields);
     on<GetYieldByFarmId>(_onGetYieldByFarmId);
     on<GetYieldByBarangay>(_onGetYieldBybarangay);
+    on<GetYieldByLake>(_onGetYieldByLake);
     on<UpdateYield>(_onUpdateYield);
     on<LoadYieldsByFarmer>(_onLoadYieldsByFarmer);
     on<LoadYieldsByProduct>(_onLoadYieldsByProduct);
@@ -49,41 +50,40 @@ class YieldBloc extends Bloc<YieldEvent, YieldState> {
   String? get sortColumn => _sortColumn;
   bool get sortAscending => _sortAscending;
 
+  Future<void> _onAddYield(
+    AddYield event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
+    try {
+      final newYield = Yield(
+        id: 0, // Will be assigned by server
+        farmerId: event.farmerId,
+        productId: event.productId,
+        harvestDate: event.harvestDate,
+        areaHarvested: event.areaHarvested,
+        farmId: event.farmId,
+        volume: event.volume,
+        notes: event.notes,
+        value: event.value,
+        images: event.images,
+      );
 
-Future<void> _onAddYield(
-  AddYield event,
-  Emitter<YieldState> emit,
-) async {
-  emit(YieldsLoading());
-  try {
-    final newYield = Yield(
-      id: 0, // Will be assigned by server
-      farmerId: event.farmerId,
-      productId: event.productId,
-      harvestDate: event.harvestDate,
-      areaHarvested: event.areaHarvested,
-      farmId: event.farmId,
-      volume: event.volume,
-      notes: event.notes,
-      value: event.value,
-      images: event.images,
-    ); 
+      await yieldRepository.addYield(newYield);
 
-    await yieldRepository.addYield(newYield);
-    
-    // Refresh based on current context
+      // Refresh based on current context
       if (_currentFarmerId != null) {
         _yields = await yieldRepository.fetchYieldsByFarmer(_currentFarmerId!);
       } else {
         _yields = await yieldRepository.fetchYields();
       }
-    
-    emit(YieldsLoaded(_applyFilters(),
-        message: 'Yield record added successfully!'));
-  } catch (e) {
-    emit(YieldsError('Failed to add yield record: ${e.toString()}'));
+
+      emit(YieldsLoaded(_applyFilters(),
+          message: 'Yield record added successfully!'));
+    } catch (e) {
+      emit(YieldsError('Failed to add yield record: ${e.toString()}'));
+    }
   }
-}
 
   Future<void> _onDeleteYield(
     DeleteYield event,
@@ -142,7 +142,6 @@ Future<void> _onAddYield(
     }
   }
 
- 
   Future<void> _onGetYieldByFarmId(
     GetYieldByFarmId event,
     Emitter<YieldState> emit,
@@ -152,7 +151,7 @@ Future<void> _onAddYield(
     try {
       _yields =
           (await yieldRepository.getYieldByFarmId(event.farmId)) as List<Yield>;
- 
+
       // emit(YieldsLoaded(yieldRecord as List<Yield>));
       emit(YieldsLoaded(_applyFilters()));
     } catch (e) {
@@ -162,10 +161,6 @@ Future<void> _onAddYield(
     }
   }
 
-
-
-
-
   Future<void> _onGetYieldBybarangay(
     GetYieldByBarangay event,
     Emitter<YieldState> emit,
@@ -173,9 +168,9 @@ Future<void> _onAddYield(
     emit(YieldsLoading());
 
     try {
-      _yields =
-          (await yieldRepository.getYieldByBarangay(event.barangay)) as List<Yield>;
- 
+      _yields = (await yieldRepository.getYieldByBarangay(event.barangay))
+          as List<Yield>;
+
       // emit(YieldsLoaded(yieldRecord as List<Yield>));
       emit(YieldsLoaded(_applyFilters()));
     } catch (e) {
@@ -185,7 +180,21 @@ Future<void> _onAddYield(
     }
   }
 
+  Future<void> _onGetYieldByLake(
+    GetYieldByLake event,
+    Emitter<YieldState> emit,
+  ) async {
+    emit(YieldsLoading());
 
+    try {
+      _yields = await yieldRepository.getYieldByLake(event.lake);
+      emit(YieldsLoaded(_applyFilters()));
+    } catch (e) {
+      print('[_onGetYieldByLake] Error occurred: $e');
+      emit(YieldsError(e.toString()));
+      print('[_onGetYieldByLake] Emitted YieldsError state');
+    }
+  }
 
 // Update the LoadYieldsByFarmer handler to store the farmer ID
   Future<void> _onLoadYieldsByFarmer(
@@ -216,7 +225,6 @@ Future<void> _onAddYield(
     }
   }
 
- 
   Future<void> _onFilterYields(
     FilterYields event,
     Emitter<YieldState> emit,

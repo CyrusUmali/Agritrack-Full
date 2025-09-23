@@ -17,7 +17,7 @@ class AssocProfile extends LayoutWidget {
 
   @override
   String breakTabTitle(BuildContext context) {
-    return 'Association Profile'; 
+    return 'Association Profile';
   }
 
   @override
@@ -45,7 +45,6 @@ class _AssocProfileContent extends StatefulWidget {
 }
 
 class _AssocProfileContentState extends State<_AssocProfileContent> {
-
   late Association _currentAssociation;
   late SectorService _sectorService;
 
@@ -70,9 +69,7 @@ class _AssocProfileContentState extends State<_AssocProfileContent> {
         child: Column(
           children: [
             AssociationHeader(
-              association: _currentAssociation, 
-              isMobile: widget.isMobile
-            ),
+                association: _currentAssociation, isMobile: widget.isMobile),
             const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -80,23 +77,23 @@ class _AssocProfileContentState extends State<_AssocProfileContent> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AssocKpiCards(
-                    association: _currentAssociation, 
-                    isMobile: widget.isMobile
-                  ),
+                      association: _currentAssociation,
+                      isMobile: widget.isMobile),
                   const SizedBox(height: 24),
-                  
+
                   // Overview Panel
                   AssociationOverviewPanel(
                     association: _currentAssociation,
                     isMobile: widget.isMobile,
                     onUpdateSuccess: () {},
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Yield Data Table
                   AssociationYieldDataTable(
-                    associationId: _currentAssociation.id.toString(),  
+                    associationId: _currentAssociation.id.toString(),
+                    associationName: _currentAssociation.name,
                   ),
                 ],
               ),
@@ -106,7 +103,7 @@ class _AssocProfileContentState extends State<_AssocProfileContent> {
       ),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return _buildContent();

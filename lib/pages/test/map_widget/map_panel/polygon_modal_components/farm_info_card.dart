@@ -12,6 +12,16 @@ import 'farm_info_card_components.dart';
 class FarmInfoCard {
   static List<String> _barangays = [];
 
+  static List<String> _lakes = [
+    'Sampaloc Lake',
+    'Bunot Lake',
+    'Kalibato Lake',
+    'Pandin Lake',
+    'Yambo Lake',
+    'Mojicap Lake',
+    'Palakpakin Lake'
+  ];
+
   static Future<void> loadBarangays() async {
     try {
       final jsonString = await rootBundle.loadString('assets/barangays.json');
@@ -30,10 +40,11 @@ class FarmInfoCard {
     required List<Product> products,
     required List<Farmer> farmers,
     required Function(String) onBarangayChanged,
+    required Function(String) onLakeChanged,
     required Function(String) onFarmOwnerChanged,
     required Function(String) onFarmNameChanged,
     required Function(PolygonData) onFarmUpdated,
-    required TextEditingController farmNameController, // Add this parameter
+    required TextEditingController farmNameController,
   }) {
     final colorScheme = theme.colorScheme;
 
@@ -44,7 +55,13 @@ class FarmInfoCard {
         ? 'Lat: ${polygon.center!.latitude.toStringAsFixed(4)}, Lng: ${polygon.center!.longitude.toStringAsFixed(4)}'
         : 'Location not set';
     final barangay = polygon.parentBarangay ?? 'Select barangay';
+    final lake = polygon.lake ?? 'Select lake';
     final products = polygon.products ?? [];
+
+    print('selected sector: ${polygon.pinStyle}');
+    print('pinStyle type: ${polygon.pinStyle.runtimeType}');
+    print('pinStyle toString: ${polygon.pinStyle.toString()}');
+    print('Comparison result: ${polygon.pinStyle.toString() == 'Fishery'}');
 
     // Get farm owner names from the passed farmers list
     final farmOwnerNames = farmers.map((farmer) => farmer.name).toList();
@@ -71,7 +88,7 @@ class FarmInfoCard {
             const SizedBox(height: 12),
             FarmInfoCardComponents.buildEditableFarmNameRow(
               context: context,
-              controller: farmNameController, // Pass the controller
+              controller: farmNameController,
               onNameChanged: onFarmNameChanged,
               theme: theme,
             ),
@@ -89,6 +106,15 @@ class FarmInfoCard {
               onBarangayChanged: onBarangayChanged,
               theme: theme,
             ),
+            // Conditionally render lake section based on pinStyle
+            if (polygon.pinStyle?.toString() == 'PinStyle.Fishery')
+              FarmInfoCardComponents.buildEditableLakeRow(
+                context: context,
+                currentLake: lake,
+                lakeOptions: _lakes,
+                onLakeChanged: onLakeChanged,
+                theme: theme,
+              ),
             FarmInfoCardComponents.buildInfoRow(
               icon: Icons.area_chart,
               label: 'Area',

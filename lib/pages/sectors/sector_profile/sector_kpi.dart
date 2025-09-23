@@ -87,7 +87,7 @@ class SectorKpiCards extends StatelessWidget {
         context,
         title: context.translate('Annual Yield'),
         value: stats['totalYieldVolume'] != null
-            ? '${stats['totalYieldVolume']} tons'
+            ? '${stats['totalYieldVolume']} kg'
             : 'N/A',
         icon: Icons.assessment,
       ),
@@ -140,7 +140,7 @@ class SectorKpiCards extends StatelessWidget {
                   child: Icon(
                     icon,
                     size: 18,
-                    color: colorScheme.onPrimaryContainer,
+                    color: Colors.grey.shade600,
                   ),
                 ),
                 const Spacer(),

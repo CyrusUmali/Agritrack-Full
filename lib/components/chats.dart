@@ -2,6 +2,7 @@ import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/flutter_gen/app_localizations.dart';
 import 'package:flareline/pages/dashboard/yield_service.dart';
 import 'package:flareline/pages/farmers/farmer_profile.dart';
+import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -48,6 +49,10 @@ class _TopContributorsListState extends State<_TopContributorsList> {
   @override
   void initState() {
     super.initState();
+    _loadContributors();
+  }
+
+  void _loadContributors() {
     final yieldService = context.read<YieldService>();
     _contributorsFuture = yieldService.getTopContributors();
   }
@@ -62,20 +67,13 @@ class _TopContributorsListState extends State<_TopContributorsList> {
         }
 
         if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, color: GlobalColors.danger, size: 48),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load contributors\n${snapshot.error}',
-                  style: TextStyle(color: GlobalColors.danger),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
+          return NetworkErrorWidget(
+            error: snapshot.error.toString(),
+            onRetry: () {
+              setState(() {
+                _loadContributors();
+              });
+            },
           );
         }
 
@@ -173,8 +171,10 @@ class _ContributorItem extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      FarmersProfile(farmerID: contributor['farmerID']),
+                  builder: (context) => FarmersProfile(
+                    // farmerID: contributor['farmerID']
+                    farmerID: int.parse(contributor['farmerID'].toString()),
+                  ),
                 ),
               );
             },

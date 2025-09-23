@@ -7,6 +7,28 @@ import 'package:flareline/repositories/base_repository.dart'; // Import the base
 class YieldRepository extends BaseRepository {
   YieldRepository({required super.apiService});
 
+  Future<List<Yield>> getYieldByLake(String lake) async {
+    try {
+      checkAuthentication(); // Use inherited method
+
+      final response = await apiService.get('/yields/lake/$lake');
+
+      if (response.data == null || response.data['yields'] == null) {
+        throw Exception('Invalid yield data format');
+      }
+
+      final yieldsData = response.data['yields'] as List;
+
+      print('lake:');
+      print('lake: $lake');
+      print('yieldsData: $yieldsData');
+      return yieldsData.map((json) => Yield.fromJson(json)).toList();
+    } catch (e) {
+      handleError(e,
+          operation: 'load yields for lake $lake'); // Use inherited method
+    }
+  }
+
   Future<List<Yield>> getYieldByBarangay(String barangay) async {
     try {
       checkAuthentication(); // Use inherited method
@@ -19,9 +41,10 @@ class YieldRepository extends BaseRepository {
 
       final yieldsData = response.data['yields'] as List;
       return yieldsData.map((json) => Yield.fromJson(json)).toList();
-      
     } catch (e) {
-      handleError(e, operation: 'load yields for barangay $barangay'); // Use inherited method
+      handleError(e,
+          operation:
+              'load yields for barangay $barangay'); // Use inherited method
     }
   }
 
@@ -38,7 +61,8 @@ class YieldRepository extends BaseRepository {
       final yieldsData = response.data['yields'] as List;
       return yieldsData.map((json) => Yield.fromJson(json)).toList();
     } catch (e) {
-      handleError(e, operation: 'load yields for farm $farmId'); // Use inherited method
+      handleError(e,
+          operation: 'load yields for farm $farmId'); // Use inherited method
     }
   }
 
@@ -92,7 +116,9 @@ class YieldRepository extends BaseRepository {
       final yieldsData = response.data['yields'] as List;
       return yieldsData.map((json) => Yield.fromJson(json)).toList();
     } catch (e) {
-      handleError(e, operation: 'load yields for farmer $farmerId'); // Use inherited method
+      handleError(e,
+          operation:
+              'load yields for farmer $farmerId'); // Use inherited method
     }
   }
 
@@ -100,7 +126,8 @@ class YieldRepository extends BaseRepository {
     try {
       checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/yields/yields/product/$productId');
+      final response =
+          await apiService.get('/yields/yields/product/$productId');
 
       if (response.data == null || response.data['yields'] == null) {
         throw Exception('Invalid yields data format');
@@ -109,7 +136,9 @@ class YieldRepository extends BaseRepository {
       final yieldsData = response.data['yields'] as List;
       return yieldsData.map((json) => Yield.fromJson(json)).toList();
     } catch (e) {
-      handleError(e, operation: 'load yields for product $productId'); // Use inherited method
+      handleError(e,
+          operation:
+              'load yields for product $productId'); // Use inherited method
     }
   }
 

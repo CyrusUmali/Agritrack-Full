@@ -962,11 +962,15 @@ class _BarangayYieldDataTableState extends State<BarangayYieldDataTable> {
                 height: 16,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Icon(Icons.download, size: 18),
+            : const Icon(
+                Icons.download,
+                size: 18,
+                color: GlobalColors.primary,
+              ),
         label: Text(_isExporting ? 'Exporting...' : 'Export to Excel'),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          backgroundColor: theme.primaryColor,
+          backgroundColor: GlobalColors.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

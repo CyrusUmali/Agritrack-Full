@@ -372,41 +372,8 @@ class FarmCreationModal {
     required Function(int?, String?) onFarmerChanged,
     required ThemeData theme,
   }) async {
-    // Move all state variables and controllers outside the modal builder
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final nameController = TextEditingController(text: polygon.name);
-    final farmerTextController = TextEditingController();
-
-    PinStyle selectedPinStyle = polygon.pinStyle;
-    int? selectedFarmerId;
-    String? selectedFarmerName;
-    bool isFarmerValid = false;
-    bool isNameValid = polygon.name.isNotEmpty;
-
-    // Auto-select farmer if user is a farmer
-    if (userProvider.isFarmer && userProvider.farmer != null) {
-      selectedFarmerId = userProvider.farmer!.id;
-      selectedFarmerName = userProvider.farmer!.name;
-      isFarmerValid = true;
-      onFarmerChanged(selectedFarmerId, selectedFarmerName);
-    } else {
-      // Use existing polygon owner if available
-      selectedFarmerId =
-          polygon.owner != null ? int.tryParse(polygon.owner!) : null;
-      isFarmerValid = selectedFarmerId != null;
-
-      // Find initial farmer name if ID exists
-      if (selectedFarmerId != null) {
-        final farmer = farmers.firstWhere(
-          (f) => f.id == selectedFarmerId,
-          orElse: () => Farmer(id: -1, name: 'Unknown', sector: ''),
-        );
-        selectedFarmerName = farmer.name;
-        farmerTextController.text = selectedFarmerName ?? '';
-      }
-    }
-
-    final farmerOptions = farmers.map((farmer) => farmer.name).toList();
+    // Create a ValueNotifier to share validation state between widgets
+    final validationNotifier = ValueNotifier<bool>(false);
 
     return await WoltModalSheet.show(
       context: context,
@@ -438,22 +405,16 @@ class FarmCreationModal {
             ),
             isTopBarLayerAlwaysVisible: true,
             child: _ModalContent(
-              nameController: nameController,
-              farmerTextController: farmerTextController,
-              userProvider: userProvider,
+              polygon: polygon,
               farmers: farmers,
-              farmerOptions: farmerOptions,
               onNameChanged: onNameChanged,
               onFarmerChanged: onFarmerChanged,
-              initialSelectedFarmerId: selectedFarmerId,
-              initialSelectedFarmerName: selectedFarmerName,
-              initialIsFarmerValid: isFarmerValid,
-              initialIsNameValid: isNameValid,
+              validationNotifier: validationNotifier,
             ),
             stickyActionBar: _StickyActionBar(
               modalContext: modalContext,
-              nameController: nameController,
               onNameChanged: onNameChanged,
+              validationNotifier: validationNotifier,
             ),
           )
         ];
@@ -466,30 +427,18 @@ class FarmCreationModal {
 
 // Separate stateful widget for the modal content
 class _ModalContent extends StatefulWidget {
-  final TextEditingController nameController;
-  final TextEditingController farmerTextController;
-  final UserProvider userProvider;
+  final PolygonData polygon;
   final List<Farmer> farmers;
-  final List<String> farmerOptions;
   final Function(String) onNameChanged;
   final Function(int?, String?) onFarmerChanged;
-  final int? initialSelectedFarmerId;
-  final String? initialSelectedFarmerName;
-  final bool initialIsFarmerValid;
-  final bool initialIsNameValid;
+  final ValueNotifier<bool> validationNotifier;
 
   const _ModalContent({
-    required this.nameController,
-    required this.farmerTextController,
-    required this.userProvider,
+    required this.polygon,
     required this.farmers,
-    required this.farmerOptions,
     required this.onNameChanged,
     required this.onFarmerChanged,
-    required this.initialSelectedFarmerId,
-    required this.initialSelectedFarmerName,
-    required this.initialIsFarmerValid,
-    required this.initialIsNameValid,
+    required this.validationNotifier,
   });
 
   @override
@@ -497,18 +446,65 @@ class _ModalContent extends StatefulWidget {
 }
 
 class _ModalContentState extends State<_ModalContent> {
-  late int? selectedFarmerId;
-  late String? selectedFarmerName;
-  late bool isFarmerValid;
-  late bool isNameValid;
+  late TextEditingController nameController;
+  late TextEditingController farmerTextController;
+  late UserProvider userProvider;
+  late List<String> farmerOptions;
+
+  int? selectedFarmerId;
+  String? selectedFarmerName;
+  bool isFarmerValid = false;
+  bool isNameValid = false;
 
   @override
   void initState() {
     super.initState();
-    selectedFarmerId = widget.initialSelectedFarmerId;
-    selectedFarmerName = widget.initialSelectedFarmerName;
-    isFarmerValid = widget.initialIsFarmerValid;
-    isNameValid = widget.initialIsNameValid;
+    userProvider = Provider.of<UserProvider>(context, listen: false);
+    nameController = TextEditingController(text: widget.polygon.name);
+    farmerTextController = TextEditingController();
+
+    isNameValid = widget.polygon.name.isNotEmpty;
+
+    // Auto-select farmer if user is a farmer
+    if (userProvider.isFarmer && userProvider.farmer != null) {
+      selectedFarmerId = userProvider.farmer!.id;
+      selectedFarmerName = userProvider.farmer!.name;
+      isFarmerValid = true;
+      widget.onFarmerChanged(selectedFarmerId, selectedFarmerName);
+    } else {
+      // Use existing polygon owner if available
+      selectedFarmerId = widget.polygon.owner != null
+          ? int.tryParse(widget.polygon.owner!)
+          : null;
+      isFarmerValid = selectedFarmerId != null;
+
+      // Find initial farmer name if ID exists
+      if (selectedFarmerId != null) {
+        final farmer = widget.farmers.firstWhere(
+          (f) => f.id == selectedFarmerId,
+          orElse: () => Farmer(id: -1, name: 'Unknown', sector: ''),
+        );
+        selectedFarmerName = farmer.name;
+        farmerTextController.text = selectedFarmerName ?? '';
+      }
+    }
+
+    farmerOptions = widget.farmers.map((farmer) => farmer.name).toList();
+
+    // Update validation state initially
+    _updateValidationState();
+  }
+
+  void _updateValidationState() {
+    final isValid = isNameValid && isFarmerValid;
+    widget.validationNotifier.value = isValid;
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    farmerTextController.dispose();
+    super.dispose();
   }
 
   @override
@@ -521,7 +517,7 @@ class _ModalContentState extends State<_ModalContent> {
         children: [
           const SizedBox(height: 16),
           TextField(
-            controller: widget.nameController,
+            controller: nameController,
             decoration: InputDecoration(
               labelText: 'Farm Name',
               border: OutlineInputBorder(
@@ -554,11 +550,12 @@ class _ModalContentState extends State<_ModalContent> {
                 isNameValid = value.isNotEmpty;
               });
               widget.onNameChanged(value);
+              _updateValidationState();
             },
           ),
           const SizedBox(height: 16),
           // Only show farmer selection if user is not a farmer
-          if (!widget.userProvider.isFarmer)
+          if (!userProvider.isFarmer)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -567,7 +564,7 @@ class _ModalContentState extends State<_ModalContent> {
                     if (textEditingValue.text == '') {
                       return const Iterable<String>.empty();
                     }
-                    return widget.farmerOptions.where((String option) {
+                    return farmerOptions.where((String option) {
                       return option
                           .toLowerCase()
                           .contains(textEditingValue.text.toLowerCase());
@@ -583,17 +580,17 @@ class _ModalContentState extends State<_ModalContent> {
                     });
                     widget.onFarmerChanged(
                         selectedFarmerId, selectedFarmerName);
-                    widget.farmerTextController.text = selectedFarmerName!;
+                    farmerTextController.text = selectedFarmerName!;
+                    _updateValidationState();
                   },
                   fieldViewBuilder: (BuildContext context,
                       TextEditingController textEditingController,
                       FocusNode focusNode,
                       VoidCallback onFieldSubmitted) {
                     // Use the provided controller instead of creating a new one
-                    if (widget.farmerTextController.text !=
+                    if (farmerTextController.text !=
                         textEditingController.text) {
-                      textEditingController.text =
-                          widget.farmerTextController.text;
+                      textEditingController.text = farmerTextController.text;
                     }
 
                     return TextField(
@@ -620,19 +617,20 @@ class _ModalContentState extends State<_ModalContent> {
                                 icon: const Icon(Icons.clear, size: 20),
                                 onPressed: () {
                                   textEditingController.clear();
-                                  widget.farmerTextController.clear();
+                                  farmerTextController.clear();
                                   setState(() {
                                     selectedFarmerId = null;
                                     selectedFarmerName = null;
                                     isFarmerValid = false;
                                   });
                                   widget.onFarmerChanged(null, null);
+                                  _updateValidationState();
                                 },
                               )
                             : null,
                       ),
                       onChanged: (value) {
-                        widget.farmerTextController.text = value;
+                        farmerTextController.text = value;
                         if (value.isEmpty) {
                           setState(() {
                             selectedFarmerId = null;
@@ -640,6 +638,7 @@ class _ModalContentState extends State<_ModalContent> {
                             isFarmerValid = false;
                           });
                           widget.onFarmerChanged(null, null);
+                          _updateValidationState();
                         }
                       },
                     );
@@ -709,7 +708,7 @@ class _ModalContentState extends State<_ModalContent> {
                       color: Colors.green.shade600, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'Farmer: ${widget.userProvider.farmer!.name}',
+                    'Farmer: ${userProvider.farmer!.name}',
                     style: TextStyle(
                       color: Colors.green.shade800,
                       fontWeight: FontWeight.w500,
@@ -728,13 +727,13 @@ class _ModalContentState extends State<_ModalContent> {
 // Separate stateful widget for the sticky action bar
 class _StickyActionBar extends StatefulWidget {
   final BuildContext modalContext;
-  final TextEditingController nameController;
   final Function(String) onNameChanged;
+  final ValueNotifier<bool> validationNotifier;
 
   const _StickyActionBar({
     required this.modalContext,
-    required this.nameController,
     required this.onNameChanged,
+    required this.validationNotifier,
   });
 
   @override
@@ -756,44 +755,36 @@ class _StickyActionBarState extends State<_StickyActionBar> {
         ],
       ),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: widget.nameController.text.isNotEmpty
-              ? FlarelineColors.primary
-              : Colors.grey.shade300,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          minimumSize: const Size(double.infinity, 52),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-        ),
-        onPressed: widget.nameController.text.isNotEmpty
-            ? () {
-                widget.onNameChanged(widget.nameController.text);
-                Navigator.of(widget.modalContext).pop(true);
-              }
-            : null,
-        child: Text(
-          context.translate('Create Farm'),
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: widget.validationNotifier,
+        builder: (context, isValid, child) {
+          return ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  isValid ? FlarelineColors.primary : Colors.grey.shade300,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              minimumSize: const Size(double.infinity, 52),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            onPressed: isValid
+                ? () {
+                    Navigator.of(widget.modalContext).pop(true);
+                  }
+                : null,
+            child: Text(
+              context.translate('Create Farm'),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 }
-
-
-
-
-
-
-
-////
-
-
-

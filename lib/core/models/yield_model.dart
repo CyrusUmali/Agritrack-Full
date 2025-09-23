@@ -20,6 +20,7 @@ class Yield extends Equatable {
   final double? value;
   final List<String?> images;
   final String? status;
+  final String? lake;
   final double? hectare;
     final double? areaHarvested;
 
@@ -38,6 +39,7 @@ class Yield extends Equatable {
       this.notes,
       this.value,
       this.status,
+      this.lake,
       this.barangay,
       this.images = const [],
       this.sector,
@@ -97,6 +99,7 @@ class Yield extends Equatable {
       productName:
           _parseField('productName', json['productName'], expectString: true),
       status: _parseField('status', json['status'], expectString: true),
+            lake: _parseField('lake', json['lake'], expectString: true),
       hectare: json['farmArea'] != null
           ? (json['farmArea'] as num).toDouble()
           : null,
@@ -129,6 +132,7 @@ class Yield extends Equatable {
     double? value,
     List<String?>? images,
     String? status,
+    String? lake , 
     double? hectare,
     double? areaHarvested,
   }) {
@@ -152,6 +156,7 @@ class Yield extends Equatable {
       value: value ?? this.value,
       images: images ?? this.images,
       status: status ?? this.status,
+      lake: lake ?? this.lake,
       hectare: hectare ?? this.hectare,
       areaHarvested: areaHarvested ?? this.areaHarvested,
     );
@@ -180,7 +185,8 @@ class Yield extends Equatable {
       'farmName': farmName,
       'productName': productName,
       'productImage': productImage,
-      'status': status
+      'status': status ,
+      'lake': lake ,
     };
   }
 
@@ -207,6 +213,7 @@ class Yield extends Equatable {
         farmName,
         hectare,
         status,
+        lake , 
         barangay
       ];
 }

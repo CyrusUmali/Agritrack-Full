@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class NetworkErrorWidget extends StatelessWidget {
   final String error;
-  final VoidCallback onRetry;
+  final VoidCallback onRetry; 
   final IconData? errorIcon;
   final Color? errorColor;
   final double? iconSize;

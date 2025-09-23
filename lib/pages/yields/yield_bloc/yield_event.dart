@@ -31,7 +31,7 @@ class AddYield extends YieldEvent {
   final int farmerId;
   final int productId;
   final DateTime harvestDate;
-  final double? areaHarvested; 
+  final double? areaHarvested;
   final int farmId;
   final double volume;
   final String? notes;
@@ -105,8 +105,7 @@ class SearchYields extends YieldEvent {
   List<Object> get props => [query];
 }
 
-
-class GetYieldByBarangay  extends YieldEvent {
+class GetYieldByBarangay extends YieldEvent {
   final String barangay;
 
   const GetYieldByBarangay(this.barangay);
@@ -115,7 +114,14 @@ class GetYieldByBarangay  extends YieldEvent {
   List<Object> get props => [barangay];
 }
 
+class GetYieldByLake extends YieldEvent {
+  final String lake;
 
+  const GetYieldByLake(this.lake);
+
+  @override
+  List<Object> get props => [lake];
+}
 
 class GetYieldByFarmId extends YieldEvent {
   final int farmId;

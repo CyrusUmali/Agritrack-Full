@@ -1,5 +1,6 @@
 import 'package:flareline/core/models/yield_model.dart';
 import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/pages/reports/export_utils.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/barangay_bar_chart.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/barangay_yield_line_chart.dart';
@@ -16,8 +17,10 @@ enum DataViewType { table, barchart, linechart, piechart }
 
 class AssociationYieldDataTable extends StatefulWidget {
   final String associationId;
+  final String associationName;
 
-  const AssociationYieldDataTable({super.key, required this.associationId});
+  const AssociationYieldDataTable(
+      {super.key, required this.associationId, required this.associationName});
 
   @override
   State<AssociationYieldDataTable> createState() =>
@@ -36,11 +39,66 @@ class _AssociationYieldDataTableState extends State<AssociationYieldDataTable> {
   bool _showPieByVolume = true;
   bool _showPieChartToggle = true;
 
+  bool _isExporting = false;
+  OverlayEntry? _loadingOverlay;
+
   @override
   void initState() {
     super.initState();
     _selectedProduct = 'Mixed Crops';
     _loadYieldData();
+  }
+
+  void _showLoadingDialog(String message) {
+    setState(() {
+      _isExporting = true;
+    });
+
+    _loadingOverlay = OverlayEntry(
+      builder: (context) => Container(
+        color: Colors.black54,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(message),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_loadingOverlay!);
+  }
+
+  void _closeLoadingDialog() {
+    _loadingOverlay?.remove();
+    _loadingOverlay = null;
+    setState(() {
+      _isExporting = false;
+    });
+  }
+
+  Future<void> _exportData() async {
+    await YieldExportUtils.exportYieldDataToExcel(
+      context: context,
+      yields: _yields,
+      polygonName: widget.associationName ?? 'Unknown',
+      selectedProduct: _selectedProduct,
+      isMonthlyView: _showMonthlyData,
+      selectedYear: selectedYear,
+      showLoadingDialog: _showLoadingDialog,
+      closeLoadingDialog: _closeLoadingDialog,
+    );
   }
 
   String _getInitialProduct() {
@@ -876,7 +934,34 @@ class _AssociationYieldDataTableState extends State<AssociationYieldDataTable> {
                 ],
               ),
             ],
+            const SizedBox(height: 20),
+            _buildExportButton(theme),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExportButton(ThemeData theme) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _isExporting ? null : _exportData,
+        icon: _isExporting
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.download, size: 18, color: GlobalColors.primary),
+        label: Text(_isExporting ? 'Exporting...' : 'Export to Excel'),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          backgroundColor: GlobalColors.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

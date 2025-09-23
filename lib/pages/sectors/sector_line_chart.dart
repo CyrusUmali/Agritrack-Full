@@ -5,10 +5,11 @@ import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:flareline/pages/widget/network_error.dart';
 import 'package:syncfusion_flutter_charts/charts.dart' as chart;
 import 'components/sector_line_chart_widget.dart';
 import './components/sector_data_model.dart';
-import 'package:shimmer/shimmer.dart';
 
 class SectorLineChart extends StatefulWidget {
   const SectorLineChart({super.key});
@@ -23,6 +24,8 @@ class _SectorLineChartState extends State<SectorLineChart> {
   int selectedToYear = 2025;
   List<Yield> yieldData = [];
   bool isLoading = true;
+  bool hasError = false;
+  String errorMessage = '';
   final Map<String, List<String>> _sectorProductSelections = {};
 
   // Chart and annotation state
@@ -46,17 +49,33 @@ class _SectorLineChartState extends State<SectorLineChart> {
       if (state is YieldsLoaded) {
         setState(() {
           isLoading = false;
+          hasError = false;
           yieldData = state.yields;
           sectorData = buildSectorDataFromYields(yieldData);
-
-          // print('a');
-          // _printYieldData();
         });
         await _annotationManager.loadAnnotations();
       } else if (state is YieldsLoading) {
-        setState(() => isLoading = true);
+        setState(() {
+          isLoading = true;
+          hasError = false;
+        });
+      } else if (state is YieldsError) {
+        setState(() {
+          isLoading = false;
+          hasError = true;
+          errorMessage = state.message;
+          //  error: state.message,
+        });
       }
     });
+  }
+
+  void _retryLoading() {
+    setState(() {
+      isLoading = true;
+      hasError = false;
+    });
+    context.read<YieldBloc>().add(LoadYields());
   }
 
   void _printYieldData() {
@@ -86,55 +105,41 @@ class _SectorLineChartState extends State<SectorLineChart> {
     print('===== END OF YIELD DATA =====\n');
   }
 
-  Widget _buildShimmerContent() {
+  Widget _buildLoadingContent() {
     return CommonCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Container(
-                  width: 180,
-                  height: 24,
-                  color: Colors.white,
-                  margin: const EdgeInsets.only(bottom: 16),
+      child: SizedBox(
+        height: 500, // Adjust height as needed
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.primary,
+                  ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      width: 120,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Loading agricultural data...',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
           ),
-          Container(
-            height: 380,
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorContent() {
+    return CommonCard(
+      child: NetworkErrorWidget(
+        error: errorMessage,
+        onRetry: _retryLoading,
       ),
     );
   }
@@ -155,7 +160,6 @@ class _SectorLineChartState extends State<SectorLineChart> {
                   primary: Theme.of(context)
                       .colorScheme
                       .primary, // Selected year background color
-                  // onSurface: Colors.white, // Unselected years text color
                 ),
               ),
               child: AlertDialog(
@@ -237,17 +241,16 @@ class _SectorLineChartState extends State<SectorLineChart> {
     final filteredData = _getFilteredData();
     _annotationManager.handleChartTap(details, _chartKey, selectedFromYear,
         selectedToYear, filteredData, context);
-    // Added context as the last parameter
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return Shimmer.fromColors(
-        baseColor: Colors.grey.shade200,
-        highlightColor: Colors.grey.shade100,
-        child: _buildShimmerContent(),
-      );
+      return _buildLoadingContent();
+    }
+
+    if (hasError) {
+      return _buildErrorContent();
     }
 
     final scrollBreakpoint = 600.0;

@@ -169,6 +169,62 @@ class FarmInfoCardComponents {
     );
   }
 
+  static Widget buildEditableLakeRow({
+    required BuildContext context,
+    required String currentLake,
+    required List<String> lakeOptions,
+    required Function(String) onLakeChanged,
+    required ThemeData theme,
+  }) {
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.location_city,
+              size: 20, color: colorScheme.onSurface.withOpacity(0.6)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Lake', style: _buildLabelStyle(theme)),
+                const SizedBox(height: 2),
+                InkWell(
+                  onTap: () {
+                    FarmInfoCardDialogs.showLakeSelectionDialog(
+                      context: context,
+                      currentLake: currentLake,
+                      lakeOptions: lakeOptions,
+                      onLakeChanged: onLakeChanged,
+                      theme: theme,
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      Text(
+                        currentLake,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.arrow_drop_down,
+                          size: 20, color: colorScheme.onSurface),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   static Widget buildInfoRow({
     required IconData icon,
     required String label,

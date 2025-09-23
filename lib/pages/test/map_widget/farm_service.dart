@@ -88,6 +88,8 @@ class FarmService {
         'farmId': polygon.id,
         'sectorId': pinStyleToNumber(polygon.pinStyle),
         'description': polygon.description,
+        'lake': polygon.lake,
+        'status': polygon.status
         // 'products': polygon.products,
       },
     );

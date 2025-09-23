@@ -7,9 +7,11 @@ import 'package:flareline/core/models/product_model.dart';
 import 'package:flareline/pages/test/map_widget/farm_list_panel/barangay_filter_panel.dart';
 import 'package:flareline/pages/test/map_widget/farm_service.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/barangay_modal.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/lake_modal.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/brgy_prev.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/farm_creation/farm_creation_modal.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/farm_prev.dart';
+import 'package:flareline/pages/test/map_widget/map_panel/lake_prev.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal.dart';
 import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -42,6 +44,7 @@ class PolygonManager with RouteAware {
   bool _isModalShowing = false;
   PolygonData? _lastShownPolygon;
   List<String> selectedBarangays = [];
+  List<String> selectedLakes = [];
   List<String> selectedProducts = [];
 
   OverlayEntry? _infoCardOverlay;
@@ -61,6 +64,369 @@ class PolygonManager with RouteAware {
     required this.products, // Add this
     required this.farmers, // Add this
   });
+
+  bool polygonExceedsAreaLimit(PolygonData polygon) {
+    if (polygon.area == null) return false;
+
+    final maxAreaHectares =
+        maxAreaLimitsHectares[polygon.pinStyle] ?? double.infinity;
+    return polygon.area! > maxAreaHectares;
+  }
+
+  /// Updated getFilteredPolygons method to include exceeding area filter
+  List<PolygonData> getFilteredPolygons(
+    Map<String, bool> farmTypeFilters, {
+    bool showExceedingAreaOnly = false,
+  }) {
+    return polygons.where((polygon) {
+      // Check barangay filter
+      final barangayMatch = selectedBarangays.isEmpty ||
+          selectedBarangays.contains(polygon.parentBarangay);
+
+      final lakeMatch =
+          selectedLakes.isEmpty || selectedLakes.contains(polygon.lake);
+
+      // Check farm type filter
+      final pinStyle = polygon.pinStyle.toString().split('.').last;
+      final filterKey = pinStyle[0].toUpperCase() + pinStyle.substring(1);
+      final typeMatch = farmTypeFilters[filterKey] ?? true;
+
+      // Check product filter
+      final productMatch = selectedProducts.isEmpty ||
+          polygon.products.any((product) => selectedProducts.contains(product));
+
+      // Check exceeding area filter
+      final exceedingAreaMatch =
+          !showExceedingAreaOnly || polygonExceedsAreaLimit(polygon);
+
+      return lakeMatch &&
+          barangayMatch &&
+          typeMatch &&
+          productMatch &&
+          exceedingAreaMatch;
+    }).toList();
+  }
+
+  void selectPolygon(int index, {BuildContext? context}) async {
+    print("select polygon" + index.toString());
+
+    if (index >= 0 && index < polygons.length) {
+      selectedPolygonIndex = index;
+      selectedPolygon = polygons[index];
+      selectedPolygonNotifier.value = selectedPolygon;
+
+      _zoomToPolygon(polygons[index]); // Make sure this is awaited
+      onPolygonSelected?.call();
+      // debugPrint(
+      //     'Zoom animation started (but not awaited), onPolygonSelected called');
+
+      if (context != null) {
+        if (context.mounted) {
+          // debugPrint('Context is mounted - scheduling post-frame callback');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // debugPrint(
+            //     'Post-frame callback executing - checking mounted status again');
+            if (context.mounted) {
+              _showInfoCard(context, polygons[index]);
+            } else {
+              // debugPrint('Context no longer mounted - cannot show info card');
+            }
+          });
+        } else {
+          // debugPrint('Context not mounted when checked initially');
+        }
+      } else {
+        // debugPrint('No context provided - cannot show info card');
+      }
+    } else {
+      // debugPrint('Invalid index: $index (polygons length: ${polygons.length})');
+    }
+  }
+
+  bool get hasFiltersApplied {
+    return selectedBarangays.isNotEmpty ||
+        selectedLakes.isNotEmpty ||
+        selectedProducts.isNotEmpty ||
+        BarangayFilterPanel.filterOptions.values.any((isChecked) => !isChecked);
+  }
+
+  int getCurrentFilteredIndex(
+    Map<String, bool> farmTypeFilters, {
+    bool showExceedingAreaOnly = false,
+  }) {
+    if (selectedPolygon == null) return -1;
+
+    final filteredPolygons = getFilteredPolygons(
+      farmTypeFilters,
+      showExceedingAreaOnly: showExceedingAreaOnly,
+    );
+    return filteredPolygons.indexWhere((p) => p == selectedPolygon);
+  }
+
+// Update navigation methods to accept the exceeding area filter parameter
+  void navigateToPreviousPolygon(
+    Map<String, bool> farmTypeFilters,
+    BuildContext context, {
+    bool showExceedingAreaOnly = false,
+  }) {
+    final filteredPolygons = getFilteredPolygons(
+      farmTypeFilters,
+      showExceedingAreaOnly: showExceedingAreaOnly,
+    );
+    if (filteredPolygons.isEmpty) return;
+
+    final currentIndex = getCurrentFilteredIndex(
+      farmTypeFilters,
+      showExceedingAreaOnly: showExceedingAreaOnly,
+    );
+    if (currentIndex <= 0) return;
+
+    final previousIndex = currentIndex - 1;
+    final previousPolygon = filteredPolygons[previousIndex];
+
+    final originalIndex = polygons.indexOf(previousPolygon);
+    if (originalIndex != -1) {
+      selectPolygon(originalIndex, context: context);
+    }
+  }
+
+  void navigateToNextPolygon(
+    Map<String, bool> farmTypeFilters,
+    BuildContext context, {
+    bool showExceedingAreaOnly = false,
+  }) {
+    final filteredPolygons = getFilteredPolygons(
+      farmTypeFilters,
+      showExceedingAreaOnly: showExceedingAreaOnly,
+    );
+    if (filteredPolygons.isEmpty) return;
+
+    final currentIndex = getCurrentFilteredIndex(
+      farmTypeFilters,
+      showExceedingAreaOnly: showExceedingAreaOnly,
+    );
+    if (currentIndex >= filteredPolygons.length - 1 || currentIndex == -1)
+      return;
+
+    final nextIndex = currentIndex + 1;
+    final nextPolygon = filteredPolygons[nextIndex];
+
+    final originalIndex = polygons.indexOf(nextPolygon);
+    if (originalIndex != -1) {
+      selectPolygon(originalIndex, context: context);
+    }
+  }
+
+  void _showInfoCard(
+    BuildContext context,
+    PolygonData polygon, {
+    bool showExceedingAreaOnly = false,
+  }) {
+    // Ensure any existing overlay is removed first
+    removeInfoCardOverlay();
+
+    // debugPrint('[InfoCard] Attempting to show info card for: ${polygon.name}');
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) {
+        // debugPrint('[InfoCard] Context not mounted');
+        return;
+      }
+
+      try {
+        final overlayState = Overlay.of(context, rootOverlay: true);
+        if (overlayState == null) {
+          // debugPrint('[InfoCard] No root overlay available');
+          return;
+        }
+
+        final renderBox = context.findRenderObject() as RenderBox?;
+        if (renderBox == null || !renderBox.hasSize) {
+          // debugPrint('[InfoCard] No valid render box found');
+          return;
+        }
+
+        final mapWidgetSize = renderBox.size;
+        final mapWidgetPosition = renderBox.localToGlobal(Offset.zero);
+
+        final farmTypeFilters =
+            Map<String, bool>.from(BarangayFilterPanel.filterOptions);
+        final filteredPolygons = getFilteredPolygons(
+          farmTypeFilters,
+          showExceedingAreaOnly: showExceedingAreaOnly,
+        );
+        final currentIndex = getCurrentFilteredIndex(
+          farmTypeFilters,
+          showExceedingAreaOnly: showExceedingAreaOnly,
+        );
+        final showNavigation = filteredPolygons.length > 1;
+
+        // debugPrint(
+        //     '[InfoCard] Creating overlay - Navigation: $showNavigation, Index: $currentIndex/${filteredPolygons.length}');
+
+        _infoCardOverlay = OverlayEntry(
+          builder: (overlayContext) => Positioned(
+            left: mapWidgetPosition.dx,
+            width: mapWidgetSize.width,
+            bottom: 20,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: InfoCard(
+                polygon: polygon,
+                onTap: () {
+                  removeInfoCardOverlay();
+                  if (context.mounted) {
+                    showPolygonModal(context, polygon);
+                  }
+                },
+                showNavigation: showNavigation,
+                currentIndex: currentIndex >= 0 ? currentIndex : 0,
+                totalCount: filteredPolygons.length,
+                onPrevious: showNavigation && currentIndex > 0
+                    ? () {
+                        // debugPrint('[InfoCard] Previous button tapped');
+                        navigateToPreviousPolygon(
+                          farmTypeFilters,
+                          context,
+                          showExceedingAreaOnly: showExceedingAreaOnly,
+                        );
+                      }
+                    : null,
+                onNext:
+                    showNavigation && currentIndex < filteredPolygons.length - 1
+                        ? () {
+                            // debugPrint('[InfoCard] Next button tapped');
+                            navigateToNextPolygon(
+                              farmTypeFilters,
+                              context,
+                              showExceedingAreaOnly: showExceedingAreaOnly,
+                            );
+                          }
+                        : null,
+              ),
+            ),
+          ),
+        );
+
+        overlayState.insert(_infoCardOverlay!);
+        // debugPrint('[InfoCard] Overlay inserted successfully');
+      } catch (e) {
+        debugPrint('[InfoCard] Error showing info card: $e');
+        _showInfoCardFallback(context, polygon,
+            showExceedingAreaOnly: showExceedingAreaOnly);
+      }
+    });
+  }
+
+// Update fallback method
+  void _showInfoCardFallback(
+    BuildContext context,
+    PolygonData polygon, {
+    bool showExceedingAreaOnly = false,
+  }) {
+    try {
+      final navigator = Navigator.of(context, rootNavigator: true);
+      final overlay = navigator.overlay;
+      if (overlay != null) {
+        final farmTypeFilters =
+            Map<String, bool>.from(BarangayFilterPanel.filterOptions);
+        final filteredPolygons = getFilteredPolygons(
+          farmTypeFilters,
+          showExceedingAreaOnly: showExceedingAreaOnly,
+        );
+        final currentIndex = getCurrentFilteredIndex(
+          farmTypeFilters,
+          showExceedingAreaOnly: showExceedingAreaOnly,
+        );
+        final showNavigation = filteredPolygons.length > 1;
+
+        _infoCardOverlay = OverlayEntry(
+          builder: (context) => Positioned(
+            left: 0,
+            right: 0,
+            bottom: 20,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Material(
+                elevation: 4,
+                color: Colors.transparent,
+                child: InfoCard(
+                  polygon: polygon,
+                  onTap: () {
+                    removeInfoCardOverlay();
+                    if (context.mounted) {
+                      showPolygonModal(context, polygon);
+                    }
+                  },
+                  showNavigation: showNavigation,
+                  currentIndex: currentIndex,
+                  totalCount: filteredPolygons.length,
+                  onPrevious: showNavigation && currentIndex > 0
+                      ? () => navigateToPreviousPolygon(
+                            farmTypeFilters,
+                            context,
+                            showExceedingAreaOnly: showExceedingAreaOnly,
+                          )
+                      : null,
+                  onNext: showNavigation &&
+                          currentIndex < filteredPolygons.length - 1
+                      ? () => navigateToNextPolygon(
+                            farmTypeFilters,
+                            context,
+                            showExceedingAreaOnly: showExceedingAreaOnly,
+                          )
+                      : null,
+                ),
+              ),
+            ),
+          ),
+        );
+        overlay.insert(_infoCardOverlay!);
+        debugPrint(
+            '[InfoCard] Used fallback overlay successfully with navigation: $showNavigation');
+      }
+    } catch (e) {
+      debugPrint('[InfoCard] Fallback also failed: $e');
+    }
+  }
+
+// Add method to get count of exceeding polygons
+  int getExceedingAreaPolygonsCount() {
+    return polygons.where((polygon) => polygonExceedsAreaLimit(polygon)).length;
+  }
+
+// Add method to get area limit text for display
+  String getAreaLimitText(PinStyle pinStyle) {
+    final limit = maxAreaLimitsHectares[pinStyle];
+    if (limit == null || limit == double.infinity) {
+      return 'No limit';
+    }
+    return '${limit.toStringAsFixed(1)} hectares';
+  }
+
+  void updateFilters({
+    List<String>? lakes,
+    List<String>? barangays,
+    List<String>? products,
+    Map<String, bool>? farmTypes,
+  }) {
+    if (lakes != null) selectedLakes = lakes;
+    if (barangays != null) selectedBarangays = barangays;
+    if (products != null) selectedProducts = products;
+
+    // Notify listeners if needed
+    onFiltersChanged?.call();
+  }
+
+  void clearFilters() {
+    selectedLakes.clear();
+    selectedBarangays.clear();
+    selectedProducts.clear();
+    BarangayFilterPanel.filterOptions.forEach((key, value) {
+      BarangayFilterPanel.filterOptions[key] = true;
+    });
+    onFiltersChanged?.call();
+  }
 
   void initializePolyEditor(PolygonData polygon) {
     polyEditor = PolyEditor(
@@ -184,278 +550,6 @@ class PolygonManager with RouteAware {
     _updateCounter++;
   }
 
-// Update the filteredPolygons getter to accept farmTypeFilters as parameter
-  List<PolygonData> getFilteredPolygons(Map<String, bool> farmTypeFilters) {
-    return polygons.where((polygon) {
-      // Check barangay filter
-      final barangayMatch = selectedBarangays.isEmpty ||
-          selectedBarangays.contains(polygon.parentBarangay);
-
-      // Check farm type filter
-      final pinStyle = polygon.pinStyle.toString().split('.').last;
-      final filterKey = pinStyle[0].toUpperCase() + pinStyle.substring(1);
-      final typeMatch = farmTypeFilters[filterKey] ?? true;
-
-      // Check product filter
-      final productMatch = selectedProducts.isEmpty ||
-          polygon.products.any((product) => selectedProducts.contains(product));
-
-      return barangayMatch && typeMatch && productMatch;
-    }).toList();
-  }
-
-  void selectPolygon(int index, {BuildContext? context}) async {
-    print("select polygon" + index.toString());
-
-    if (index >= 0 && index < polygons.length) {
-      selectedPolygonIndex = index;
-      selectedPolygon = polygons[index];
-      selectedPolygonNotifier.value = selectedPolygon;
-
-      _zoomToPolygon(polygons[index]); // Make sure this is awaited
-      onPolygonSelected?.call();
-      // debugPrint(
-      //     'Zoom animation started (but not awaited), onPolygonSelected called');
-
-      if (context != null) {
-        if (context.mounted) {
-          // debugPrint('Context is mounted - scheduling post-frame callback');
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            // debugPrint(
-            //     'Post-frame callback executing - checking mounted status again');
-            if (context.mounted) {
-              _showInfoCard(context, polygons[index]);
-            } else {
-              // debugPrint('Context no longer mounted - cannot show info card');
-            }
-          });
-        } else {
-          // debugPrint('Context not mounted when checked initially');
-        }
-      } else {
-        // debugPrint('No context provided - cannot show info card');
-      }
-    } else {
-      // debugPrint('Invalid index: $index (polygons length: ${polygons.length})');
-    }
-  }
-
-  bool get hasFiltersApplied {
-    return selectedBarangays.isNotEmpty ||
-        selectedProducts.isNotEmpty ||
-        BarangayFilterPanel.filterOptions.values.any((isChecked) => !isChecked);
-  }
-
-  // Method to get current filtered polygon index in the filtered list
-  int getCurrentFilteredIndex(Map<String, bool> farmTypeFilters) {
-    if (selectedPolygon == null) return -1;
-
-    final filteredPolygons = getFilteredPolygons(farmTypeFilters);
-    return filteredPolygons.indexWhere((p) => p == selectedPolygon);
-  }
-
-  // Method to navigate to previous filtered polygon
-  void navigateToPreviousPolygon(
-      Map<String, bool> farmTypeFilters, BuildContext context) {
-    final filteredPolygons = getFilteredPolygons(farmTypeFilters);
-    if (filteredPolygons.isEmpty) return;
-
-    final currentIndex = getCurrentFilteredIndex(farmTypeFilters);
-    if (currentIndex <= 0) return; // Already at first or not found
-
-    final previousIndex = currentIndex - 1;
-    final previousPolygon = filteredPolygons[previousIndex];
-
-    // Find the original index in the main polygons list
-    final originalIndex = polygons.indexOf(previousPolygon);
-    if (originalIndex != -1) {
-      selectPolygon(originalIndex, context: context);
-    }
-  }
-
-  // Method to navigate to next filtered polygon
-  void navigateToNextPolygon(
-      Map<String, bool> farmTypeFilters, BuildContext context) {
-    final filteredPolygons = getFilteredPolygons(farmTypeFilters);
-    if (filteredPolygons.isEmpty) return;
-
-    final currentIndex = getCurrentFilteredIndex(farmTypeFilters);
-    if (currentIndex >= filteredPolygons.length - 1 || currentIndex == -1)
-      return; // Already at last or not found
-
-    final nextIndex = currentIndex + 1;
-    final nextPolygon = filteredPolygons[nextIndex];
-
-    // Find the original index in the main polygons list
-    final originalIndex = polygons.indexOf(nextPolygon);
-    if (originalIndex != -1) {
-      selectPolygon(originalIndex, context: context);
-    }
-  }
-
-  // Updated _showInfoCard method to include navigation
-  void _showInfoCard(BuildContext context, PolygonData polygon) {
-    // Ensure any existing overlay is removed first
-    removeInfoCardOverlay();
-
-    debugPrint('[InfoCard] Attempting to show info card for: ${polygon.name}');
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) {
-        debugPrint('[InfoCard] Context not mounted');
-        return;
-      }
-
-      try {
-        // Try to get the root overlay
-        final overlayState = Overlay.of(context, rootOverlay: true);
-        if (overlayState == null) {
-          debugPrint('[InfoCard] No root overlay available');
-          return;
-        }
-
-        final renderBox = context.findRenderObject() as RenderBox?;
-        if (renderBox == null || !renderBox.hasSize) {
-          debugPrint('[InfoCard] No valid render box found');
-          return;
-        }
-
-        final mapWidgetSize = renderBox.size;
-        final mapWidgetPosition = renderBox.localToGlobal(Offset.zero);
-
-        // Get current farm type filters from BarangayFilterPanel
-        final farmTypeFilters =
-            Map<String, bool>.from(BarangayFilterPanel.filterOptions);
-        final filteredPolygons = getFilteredPolygons(farmTypeFilters);
-        final currentIndex = getCurrentFilteredIndex(farmTypeFilters);
-        final showNavigation = filteredPolygons.length > 1;
-
-        debugPrint(
-            '[InfoCard] Creating overlay - Navigation: $showNavigation, Index: $currentIndex/${filteredPolygons.length}');
-
-        _infoCardOverlay = OverlayEntry(
-          builder: (overlayContext) => Positioned(
-            left: mapWidgetPosition.dx,
-            width: mapWidgetSize.width,
-            bottom: 20,
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: InfoCard(
-                polygon: polygon,
-                onTap: () {
-                  removeInfoCardOverlay();
-                  if (context.mounted) {
-                    showPolygonModal(context, polygon);
-                  }
-                },
-                showNavigation: showNavigation,
-                currentIndex: currentIndex >= 0 ? currentIndex : 0,
-                totalCount: filteredPolygons.length,
-                onPrevious: showNavigation && currentIndex > 0
-                    ? () {
-                        debugPrint('[InfoCard] Previous button tapped');
-                        navigateToPreviousPolygon(farmTypeFilters, context);
-                      }
-                    : null,
-                onNext:
-                    showNavigation && currentIndex < filteredPolygons.length - 1
-                        ? () {
-                            debugPrint('[InfoCard] Next button tapped');
-                            navigateToNextPolygon(farmTypeFilters, context);
-                          }
-                        : null,
-              ),
-            ),
-          ),
-        );
-
-        overlayState.insert(_infoCardOverlay!);
-        debugPrint('[InfoCard] Overlay inserted successfully');
-      } catch (e) {
-        debugPrint('[InfoCard] Error showing info card: $e');
-        // Fallback: try using Navigator overlay if root overlay fails
-        _showInfoCardFallback(context, polygon);
-      }
-    });
-  }
-
-  // Updated fallback method
-  void _showInfoCardFallback(BuildContext context, PolygonData polygon) {
-    try {
-      final navigator = Navigator.of(context, rootNavigator: true);
-      final overlay = navigator.overlay;
-      if (overlay != null) {
-        // Get current farm type filters from BarangayFilterPanel
-        final farmTypeFilters =
-            Map<String, bool>.from(BarangayFilterPanel.filterOptions);
-        final filteredPolygons = getFilteredPolygons(farmTypeFilters);
-        final currentIndex = getCurrentFilteredIndex(farmTypeFilters);
-        final showNavigation = filteredPolygons.length > 1;
-
-        _infoCardOverlay = OverlayEntry(
-          builder: (context) => Positioned(
-            left: 0,
-            right: 0,
-            bottom: 20,
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Material(
-                elevation: 4,
-                color: Colors.transparent,
-                child: InfoCard(
-                  polygon: polygon,
-                  onTap: () {
-                    removeInfoCardOverlay();
-                    if (context.mounted) {
-                      showPolygonModal(context, polygon);
-                    }
-                  },
-                  showNavigation: showNavigation,
-                  currentIndex: currentIndex,
-                  totalCount: filteredPolygons.length,
-                  onPrevious: showNavigation && currentIndex > 0
-                      ? () =>
-                          navigateToPreviousPolygon(farmTypeFilters, context)
-                      : null,
-                  onNext: showNavigation &&
-                          currentIndex < filteredPolygons.length - 1
-                      ? () => navigateToNextPolygon(farmTypeFilters, context)
-                      : null,
-                ),
-              ),
-            ),
-          ),
-        );
-        overlay.insert(_infoCardOverlay!);
-        debugPrint(
-            '[InfoCard] Used fallback overlay successfully with navigation: $showNavigation');
-      }
-    } catch (e) {
-      debugPrint('[InfoCard] Fallback also failed: $e');
-    }
-  }
-
-  void updateFilters({
-    List<String>? barangays,
-    List<String>? products,
-    Map<String, bool>? farmTypes,
-  }) {
-    if (barangays != null) selectedBarangays = barangays;
-    if (products != null) selectedProducts = products;
-
-    // Notify listeners if needed
-    onFiltersChanged?.call();
-  }
-
-  void clearFilters() {
-    selectedBarangays.clear();
-    selectedProducts.clear();
-    BarangayFilterPanel.filterOptions.forEach((key, value) {
-      BarangayFilterPanel.filterOptions[key] = true;
-    });
-    onFiltersChanged?.call();
-  }
-
   void handleSelectionTap(LatLng tapPoint, BuildContext context) {
     // print(polygons);
     if (polyEditor != null) {
@@ -514,81 +608,6 @@ class PolygonManager with RouteAware {
       polyEditor = null;
       // currentPolygon.clear();
       // undoLastPoint();
-    }
-  }
-
-  Future<void> completeCurrentPolygon(BuildContext context) async {
-    _saveState();
-    if (currentPolygon.length > 2) {
-      final tempPolygon = PolygonData(
-        vertices: List.from(currentPolygon),
-        name: 'New Farm ${polygons.length + 1}',
-        color: Colors.blue,
-      );
-
-      tempPolygon.area = calculateAreaInHectares(tempPolygon.vertices);
-
-      final shouldSave = await FarmCreationModal.show(
-        context: context,
-        polygon: tempPolygon,
-        onNameChanged: (name) => tempPolygon.name = name,
-        onPinStyleChanged: (style) => tempPolygon.pinStyle = style,
-        farmers: farmers, // Pass the farmers list
-        onFarmerChanged: (id, name) {
-          // print('id' + id! as int);
-          // Format as "id: name" directly in parent
-          tempPolygon.owner = id != null ? "$id: $name" : null;
-          tempPolygon.farmerId = id;
-          // print('tempPolygon.farmerId');
-          // print(tempPolygon.farmerId);
-          // If you also want to store the name somewhere, you can do that here
-        },
-      );
-
-      if (shouldSave) {
-        try {
-          final response = await farmService.createFarm(tempPolygon);
-          // Update tempPolygon with the ID from response
-          tempPolygon.id = response['id'];
-          polygons.add(tempPolygon);
-          currentPolygon.clear();
-          isDrawing = false;
-          clearFilters();
-          selectedPolygonNotifier.value = tempPolygon;
-
-          toastification.show(
-            context: context,
-            type: ToastificationType.success,
-            style: ToastificationStyle.flat,
-            title: const Text('Farm created successfully!'),
-            autoCloseDuration: const Duration(seconds: 4),
-          );
-        } catch (e) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.error,
-            style: ToastificationStyle.flat,
-            title: Text('Failed to create farm: ${e.toString()}'),
-            alignment: Alignment.topRight,
-            autoCloseDuration: const Duration(seconds: 4),
-          );
-          debugPrint('Failed to create farm: ${e.toString()}');
-          currentPolygon.clear();
-          isDrawing = false;
-        }
-      } else {
-        currentPolygon.clear();
-        isDrawing = false;
-        isEditing = false;
-        selectedPolygon = null;
-        selectedPolygonIndex = null;
-        polyEditor = null;
-        selectedPolygonNotifier.value = null;
-
-        if (onFiltersChanged != null) {
-          onFiltersChanged!();
-        }
-      }
     }
   }
 
@@ -694,7 +713,7 @@ class PolygonManager with RouteAware {
   }
 
   void undoLastPoint() {
-    print('undoohereee');
+    // print('undoohereee');a
     undo();
   }
 
@@ -828,6 +847,61 @@ class PolygonManager with RouteAware {
     });
   }
 
+  void showLakenInfo(
+      BuildContext context, PolygonData lake, List<PolygonData> allPolygons) {
+    removeInfoCardOverlay();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+
+      final renderBox = context.findRenderObject() as RenderBox?;
+      if (renderBox == null || !renderBox.hasSize) return;
+
+      final mapWidgetSize = renderBox.size;
+      final mapWidgetPosition = renderBox.localToGlobal(Offset.zero);
+
+      _infoCardOverlay = OverlayEntry(
+        builder: (context) => Positioned(
+          bottom: 20,
+          left: mapWidgetPosition.dx,
+          width: mapWidgetSize.width,
+          child: Center(
+            child: LakeInfoCard(
+              lake: lake,
+              farmsInLake:
+                  allPolygons.where((p) => p.lake == lake.name).toList(),
+              onTap: () {
+                removeInfoCardOverlay();
+                if (context.mounted) {
+                  _showLakeDetailsModal(context, lake,
+                      allPolygons.where((p) => p.lake == lake.name).toList());
+                }
+              },
+            ),
+          ),
+        ),
+      );
+
+      if (context.mounted) {
+        Overlay.of(context).insert(_infoCardOverlay!);
+      }
+    });
+  }
+
+  void _showLakeDetailsModal(
+      BuildContext context, PolygonData lake, List<PolygonData> farms) {
+    LakeModal.show(
+      context: context,
+      lake: lake,
+      farms: farms,
+      polygonManager: this,
+    ).then((_) {
+      // Modal closed callback
+      _isModalShowing = false;
+      _lastShownPolygon = null;
+    });
+  }
+
   // Method to remove the info card overlay
   void removeInfoCardOverlay() {
     if (_infoCardOverlay != null && _infoCardOverlay!.mounted) {
@@ -868,10 +942,13 @@ class PolygonManager with RouteAware {
         selectedPolygon?.center = newCenter;
         selectedPolygonNotifier.value = selectedPolygon;
       },
+      onUpdateStatus: (status) {
+        selectedPolygon?.status = status;
+        selectedPolygonNotifier.value = selectedPolygon;
+      },
       onUpdatePinStyle: (newStyle) {
         selectedPolygon?.pinStyle = newStyle;
         selectedPolygonNotifier.value = selectedPolygon;
-        debugPrint('Products update triggered');
       },
       onUpdateColor: (color) {
         selectedPolygon?.color = color;
@@ -909,21 +986,17 @@ class PolygonManager with RouteAware {
       },
       onSave: () {
         saveEditedPolygon();
-        debugPrint('Updsaddwqeducts: ');
       },
       selectedYear: DateTime.now().year.toString(),
-      onYearChanged: (newYear) {
-        // Store year in polygon data when implemented
-        print('Year changed to: $newYear');
-      },
+      onYearChanged: (newYear) {},
       onDeletePolygon: (id) {
         deletePolygon(context, id);
-        debugPrint('qewsaasqe');
         // Add any additional UI updates or navigation here
       },
       onUpdateFarmName: (String) {},
       onUpdateFarmOwner: (String) {},
       onUpdateBarangay: (String) {},
+      onUpdateLake: (String) {},
     );
 
     _isModalShowing = false;
@@ -985,18 +1058,93 @@ class PolygonManager with RouteAware {
     }
   }
 
+  Future<void> completeCurrentPolygon(BuildContext context) async {
+    _saveState();
+    if (currentPolygon.length > 2) {
+      final tempPolygon = PolygonData(
+        vertices: List.from(currentPolygon),
+        name: 'New Farm ${polygons.length + 1}',
+        color: Colors.blue, // will be updated below
+      );
+
+      // Calculate area first
+      tempPolygon.area = calculateAreaInHectares(tempPolygon.vertices);
+
+      // Set color based on area
+      tempPolygon.color = tempPolygon.area! > 5 ? Colors.red : Colors.blue;
+
+      final shouldSave = await FarmCreationModal.show(
+        context: context,
+        polygon: tempPolygon,
+        onNameChanged: (name) => tempPolygon.name = name,
+        onPinStyleChanged: (style) => tempPolygon.pinStyle = style,
+        farmers: farmers, // Pass the farmers list
+        onFarmerChanged: (id, name) {
+          tempPolygon.owner = id != null ? "$id: $name" : null;
+          tempPolygon.farmerId = id;
+        },
+      );
+
+      if (shouldSave) {
+        try {
+          final response = await farmService.createFarm(tempPolygon);
+          // Update tempPolygon with the ID from response
+          tempPolygon.id = response['id'];
+          polygons.add(tempPolygon);
+          currentPolygon.clear();
+          isDrawing = false;
+          clearFilters();
+          selectedPolygonNotifier.value = tempPolygon;
+
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.flat,
+            title: const Text('Farm created successfully!'),
+            autoCloseDuration: const Duration(seconds: 4),
+          );
+        } catch (e) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.error,
+            style: ToastificationStyle.flat,
+            title: Text('Failed to create farm: ${e.toString()}'),
+            alignment: Alignment.topRight,
+            autoCloseDuration: const Duration(seconds: 4),
+          );
+          debugPrint('Failed to create farm: ${e.toString()}');
+          currentPolygon.clear();
+          isDrawing = false;
+        }
+      } else {
+        currentPolygon.clear();
+        isDrawing = false;
+        isEditing = false;
+        selectedPolygon = null;
+        selectedPolygonIndex = null;
+        polyEditor = null;
+        selectedPolygonNotifier.value = null;
+
+        if (onFiltersChanged != null) {
+          onFiltersChanged!();
+        }
+      }
+    }
+  }
+
+  final Map<PinStyle, double> maxAreaLimitsHectares = {
+    PinStyle.Fishery: 1,
+    PinStyle.Rice: 5,
+    PinStyle.HVC: 5,
+    PinStyle.Organic: 5,
+    PinStyle.Corn: 5,
+    PinStyle.Livestock: 5,
+    // Add other pin styles as needed
+  };
+
   /// Loads a list of polygons into the manager
   void loadPolygons(List<PolygonData> polygonsToLoad) {
     // Define maximum area limits for each pin style in HECTARES
-    final Map<PinStyle, double> maxAreaLimitsHectares = {
-      PinStyle.Fishery: 1,
-      PinStyle.Rice: 5,
-      PinStyle.HVC: 5,
-      PinStyle.Organic: 5,
-      PinStyle.Corn: 5,
-      PinStyle.Livestock: 5,
-      // Add other pin styles as needed
-    };
 
     final processedPolygons = polygonsToLoad.map((polygon) {
       final maxAreaHectares =
@@ -1153,7 +1301,7 @@ class PolygonHistoryEntry {
       this.polygons, this.currentPolygon, this.selectedPolygonIndex);
 }
 
-enum PolygonType { farm, barangay }
+enum PolygonType { farm, barangay, lake }
 
 class PolygonData {
   int? id; // Changed to int type
@@ -1167,6 +1315,8 @@ class PolygonData {
   PinStyle pinStyle;
   PolygonType type;
   String? barangay;
+  String? lake;
+  String? status;
   String? parentBarangay;
   List<String> products;
   double? area;
@@ -1183,6 +1333,8 @@ class PolygonData {
     this.pinStyle = PinStyle.Fishery,
     this.type = PolygonType.farm,
     this.barangay,
+    this.lake,
+    this.status,
     this.parentBarangay,
     List<String>? products,
     this.area,
@@ -1239,6 +1391,8 @@ class PolygonData {
       'barangay': barangay,
       'parentBarangay': parentBarangay,
       'products': products,
+      'lake': lake,
+      'status': status,
       'area': area,
     };
   }
@@ -1260,8 +1414,15 @@ class PolygonData {
       color: Color(map['color']),
       description: map['description'],
       pinStyle: parsePinStyle(map['pinStyle']),
-      type: map['type'] == 'barangay' ? PolygonType.barangay : PolygonType.farm,
+      type: map['type'] == 'barangay'
+          ? PolygonType.barangay
+          : map['type'] == 'lake'
+              ? PolygonType.lake
+              : PolygonType.farm,
+
       barangay: map['barangay'],
+      lake: map['lake'],
+      status: map['status'],
       parentBarangay: map['parentBarangay'],
       products:
           map['products'] != null ? List<String>.from(map['products']) : [],
@@ -1280,6 +1441,8 @@ class PolygonData {
     String? description,
     PinStyle? pinStyle,
     String? parentBarangay,
+    String? lake,
+    String? status,
     List<String>? products,
     double? area,
   }) {
@@ -1293,6 +1456,8 @@ class PolygonData {
       color: color ?? this.color,
       description: description ?? this.description,
       pinStyle: pinStyle ?? this.pinStyle,
+      lake: lake ?? this.lake,
+      status: status ?? this.status,
       parentBarangay: parentBarangay ?? this.parentBarangay,
       products:
           products ?? (this.products ?? []).toList(), // Better null handling
@@ -1310,6 +1475,8 @@ class PolygonData {
     color = other.color;
     pinStyle = other.pinStyle;
     description = other.description;
+    lake = other.lake;
+    status = other.status;
     parentBarangay = other.parentBarangay;
     products = other.products.toList();
     area = other.area;
@@ -1328,6 +1495,18 @@ class BarangayManager {
     barangays = barangayMaps.map((map) {
       final polygon = PolygonData.fromMap(map);
       polygon.type = PolygonType.barangay;
+      return polygon;
+    }).toList();
+  }
+}
+
+class LakeManager {
+  List<PolygonData> lakes = [];
+
+  void loadLakes(List<Map<String, dynamic>> lakeMaps) {
+    lakes = lakeMaps.map((map) {
+      final polygon = PolygonData.fromMap(map);
+      polygon.type = PolygonType.lake;
       return polygon;
     }).toList();
   }

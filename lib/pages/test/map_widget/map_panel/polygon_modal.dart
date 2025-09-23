@@ -19,11 +19,13 @@ class PolygonModal {
     required PolygonData polygon,
     required Function(LatLng) onUpdateCenter,
     required Function(PinStyle) onUpdatePinStyle,
+    required Function(String) onUpdateStatus,
     required Function(Color) onUpdateColor,
     required Function(List<String>) onUpdateProducts,
     required Function(String) onUpdateFarmName,
     required Function(String) onUpdateFarmOwner,
     required Function(String) onUpdateBarangay,
+    required Function(String) onUpdateLake,
     required VoidCallback onSave,
     required Function(int) onDeletePolygon,
     String selectedYear = '2024',
@@ -39,6 +41,7 @@ class PolygonModal {
     // Local update callbacks
     void updateCopyCenter(LatLng center) => polygonCopy.center = center;
     void updateCopyPinStyle(PinStyle style) => polygonCopy.pinStyle = style;
+    void updateCopyStatus(String status) => polygonCopy.status = status;
     void updateCopyColor(Color color) => polygonCopy.color = color;
     void updateCopyProducts(List<String> products) =>
         polygonCopy.products = products;
@@ -46,6 +49,8 @@ class PolygonModal {
     void updateCopyFarmOwner(String owner) => polygonCopy.owner = owner;
     void updateCopyBarangay(String barangay) =>
         polygonCopy.parentBarangay = barangay;
+
+    void updateCopyLake(String lake) => polygonCopy.lake = lake;
 
     if (isLargeScreen) {
       await _showLargeScreenModal(
@@ -55,11 +60,13 @@ class PolygonModal {
         products: products,
         onUpdateCenter: updateCopyCenter,
         onUpdatePinStyle: updateCopyPinStyle,
+        onUpdateStatus: updateCopyStatus,
         onUpdateColor: updateCopyColor,
         onUpdateProducts: updateCopyProducts,
         onUpdateFarmName: updateCopyFarmName,
         onUpdateFarmOwner: updateCopyFarmOwner,
         onUpdateBarangay: updateCopyBarangay,
+        onUpdateLake: updateCopyLake,
         onSave: () {
           polygon.updateFrom(polygonCopy);
           onSave();
@@ -77,11 +84,13 @@ class PolygonModal {
         products: products,
         onUpdateCenter: updateCopyCenter,
         onUpdatePinStyle: updateCopyPinStyle,
+        onUpdateStatus: updateCopyStatus,
         onUpdateColor: updateCopyColor,
         onUpdateProducts: updateCopyProducts,
         onUpdateFarmName: updateCopyFarmName,
         onUpdateFarmOwner: updateCopyFarmOwner,
         onUpdateBarangay: updateCopyBarangay,
+        onUpdateLake: updateCopyLake,
         onSave: () {
           polygon.updateFrom(polygonCopy);
           onSave();
@@ -99,11 +108,13 @@ class PolygonModal {
     required PolygonData polygon,
     required Function(LatLng) onUpdateCenter,
     required Function(PinStyle) onUpdatePinStyle,
+    required Function(String) onUpdateStatus,
     required Function(Color) onUpdateColor,
     required Function(List<String>) onUpdateProducts,
     required Function(String) onUpdateFarmName,
     required Function(String) onUpdateFarmOwner,
     required Function(String) onUpdateBarangay,
+    required Function(String) onUpdateLake,
     required Function(int) onDeletePolygon,
     required VoidCallback onSave,
     required String selectedYear,
@@ -147,11 +158,13 @@ class PolygonModal {
               farmers: farmers,
               onUpdateCenter: onUpdateCenter,
               onUpdatePinStyle: onUpdatePinStyle,
+              onUpdateStatus: onUpdateStatus,
               onUpdateColor: onUpdateColor,
               onUpdateProducts: onUpdateProducts,
               onUpdateFarmName: onUpdateFarmName,
               onUpdateFarmOwner: onUpdateFarmOwner,
               onUpdateBarangay: onUpdateBarangay,
+              onUpdateLake: onUpdateLake,
               selectedYear: selectedYear,
               theme: theme,
               onSave: () {},
@@ -208,11 +221,13 @@ class PolygonModal {
     required PolygonData polygon,
     required Function(LatLng) onUpdateCenter,
     required Function(PinStyle) onUpdatePinStyle,
+    required Function(String) onUpdateStatus,
     required Function(Color) onUpdateColor,
     required Function(List<String>) onUpdateProducts,
     required Function(String) onUpdateFarmName,
     required Function(String) onUpdateFarmOwner,
     required Function(String) onUpdateBarangay,
+    required Function(String) onUpdateLake,
     required VoidCallback onSave,
     required Function(int) onDeletePolygon,
     required String selectedYear,
@@ -243,11 +258,13 @@ class PolygonModal {
               farmers: farmers,
               onUpdateCenter: onUpdateCenter,
               onUpdatePinStyle: onUpdatePinStyle,
+              onUpdateStatus: onUpdateStatus,
               onUpdateColor: onUpdateColor,
               onUpdateProducts: onUpdateProducts,
               onUpdateFarmName: onUpdateFarmName,
               onUpdateFarmOwner: onUpdateFarmOwner,
               onUpdateBarangay: onUpdateBarangay,
+              onUpdateLake: onUpdateLake,
               selectedYear: selectedYear,
               theme: theme,
               isLargeScreen: true,

@@ -12,9 +12,8 @@ class StatsCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     // Format the createdAt date
-    final joinDate = user['createdAt'] != null 
-        ? _formatDate(user['createdAt'])
-        : 'N/A';
+    final joinDate =
+        user['createdAt'] != null ? _formatDate(user['createdAt']) : 'N/A';
 
     return Card(
       elevation: 2,
@@ -28,7 +27,7 @@ class StatsCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.insights_outlined ),
+                Icon(Icons.insights_outlined),
                 const SizedBox(width: 12),
                 Text(
                   'Activity Stats',
@@ -42,7 +41,7 @@ class StatsCard extends StatelessWidget {
             _StatItem(
               icon: Icons.assignment_outlined,
               label: 'Total Reports',
-              value: user['totalReports']?.toString() ?? '0',
+              value: user['totalReports']?.toString() ?? '31',
             ),
             const SizedBox(height: 12),
             _StatItem(
@@ -67,7 +66,7 @@ class StatsCard extends StatelessWidget {
       } else if (date is int) {
         // Handle timestamp (seconds or milliseconds)
         final dateTime = DateTime.fromMillisecondsSinceEpoch(
-          date > 10000000000 ? date : date * 1000);
+            date > 10000000000 ? date : date * 1000);
         return DateFormat('MMM d, y').format(dateTime);
       }
       return 'N/A';

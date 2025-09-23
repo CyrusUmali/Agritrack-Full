@@ -33,6 +33,20 @@ class MapLayersHelper {
     );
   }
 
+  static PolygonLayer createLakeLayer(List<PolygonData> lakes) {
+    return PolygonLayer(
+      polygons: lakes
+          .map((lake) => Polygon(
+                points: lake.vertices,
+                color: const Color.fromARGB(255, 255, 255, 0).withOpacity(0.1),
+                borderStrokeWidth: 1,
+                borderColor: const Color.fromARGB(255, 223, 212, 1),
+                isFilled: true,
+              ))
+          .toList(),
+    );
+  }
+
   static PolygonLayer createPolygonLayer(
       List<List<LatLng>> polygons, // List of polygon vertices
       List<LatLng> currentPolygon, // Current polygon being drawn
@@ -123,6 +137,61 @@ class MapLayersHelper {
                         fontSize: size * 0.2,
                         fontWeight: FontWeight.bold,
                       ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  /// Creates a layer with interactive circles for barangay centers that will
+  /// render even if the polygon itself is not shown
+  static MarkerLayer createLakeCenterFallbackLayer(
+    List<PolygonData> lakes,
+    Function(PolygonData) onTap, {
+    Color circleColor = Colors.blue,
+    Color iconColor = Colors.white,
+    double size = 36.0,
+    List<String>? filteredLakes,
+  }) {
+    return MarkerLayer(
+      markers: lakes.map((lake) {
+        final isFiltered =
+            filteredLakes != null && filteredLakes.contains(lake.name);
+        return Marker(
+          point: MapLayersHelper.calculateCenter(lake.vertices),
+          width: size,
+          height: size,
+          child: GestureDetector(
+            onTap: () => onTap(lake),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isFiltered ? Colors.green : circleColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white,
+                  width: 2.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.water_drop_outlined, // Water/lake icon
+                      color: isFiltered ? Colors.white : iconColor,
+                      size: size * 0.5,
                     ),
                   ],
                 ),
@@ -242,7 +311,7 @@ class MapLayersHelper {
     final exceedsLimit = polygon.area != null && polygon.area! > maxArea;
 
     if (exceedsLimit) {
-      print(maxAreaLimitsHectares);
+      // print(maxAreaLimitsHectares);
 
       // print('wqqew');
 

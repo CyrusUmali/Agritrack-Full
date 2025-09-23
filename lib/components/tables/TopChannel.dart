@@ -1,6 +1,7 @@
-// ignore_for_file: file_names
+// ignore_for_file: fileNames
 
 import 'package:flareline/pages/toast/toast_helper.dart';
+import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flareline_uikit/components/tables/table_widget.dart';
 import 'package:flareline_uikit/entity/table_data_entity.dart';
 import 'package:flutter/material.dart';
@@ -20,14 +21,38 @@ class TopChannelWidget extends TableWidget {
   BaseTableProvider viewModelBuilder(BuildContext context) {
     return TopChannelViewModel(context);
   }
+
+  @override
+  Widget buildBody(BuildContext context) {
+    final viewModel = viewModelBuilder(context) as TopChannelViewModel;
+
+    if (viewModel.hasError) {
+      return NetworkErrorWidget(
+        error: viewModel.errorMessage ?? 'Unknown error occurred',
+        onRetry: () => viewModel.retryLoading(context),
+      );
+    }
+
+    return Container(); // Replace with your custom widget or logic
+  }
 }
 
 class TopChannelViewModel extends BaseTableProvider {
   TopChannelViewModel(super.context);
 
+  String? _errorMessage;
+  bool _hasError = false;
+
+  String? get errorMessage => _errorMessage;
+  bool get hasError => _hasError;
+
   @override
   loadData(BuildContext context) async {
     try {
+      _hasError = false;
+      _errorMessage = null;
+      notifyListeners(); // Notify to clear error state
+
       final sectorService = RepositoryProvider.of<SectorService>(context);
       final apiData = await sectorService.fetchSectors();
 
@@ -66,38 +91,20 @@ class TopChannelViewModel extends BaseTableProvider {
       };
 
       tableDataEntity = TableDataEntity.fromJson(map);
+      notifyListeners();
     } catch (e) {
-      // Create error display table data
-      final errorMap = {
-        "headers": ["Error"],
-        "rows": [
-          [
-            {
-              "text": "Failed to load data",
-              "widget": Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        color: Colors.red, size: 48),
-                    const SizedBox(height: 16),
-                    Text('Failed to load Top Sectors: ${e.toString()}',
-                        style: const TextStyle(color: Colors.red),
-                        textAlign: TextAlign.center),
-                  ],
-                ),
-              )
-            }
-          ]
-        ],
-      };
+      _hasError = true;
+      _errorMessage = e.toString();
+      notifyListeners();
 
-      tableDataEntity = TableDataEntity.fromJson(errorMap);
-
-      // ToastHelper.showErrorToast(
-      //   'Failed to load Top Sectors',
-      //   context,
-      // );
+      ToastHelper.showErrorToast(
+        'Failed to load Top Sectors',
+        context,
+      );
     }
+  }
+
+  void retryLoading(BuildContext context) {
+    loadData(context);
   }
 }

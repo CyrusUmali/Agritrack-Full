@@ -15,14 +15,18 @@ class MapContent extends StatelessWidget {
   final String selectedMap;
   final double zoomLevel;
   final BarangayManager barangayManager;
+  final LakeManager lakeManager;
   final PolygonManager polygonManager;
   final ValueNotifier<LatLng?> previewPointNotifier;
   final Function setState;
   final List<String>? barangayFilter;
+  final List<String> lakeFilter;
   final Map<String, bool> farmTypeFilters;
   final List<String> productFilters;
   final AnimatedMapController animatedMapController;
   final Function(List<String>)? onBarangayFilterChanged;
+  final Function(List<String>)? onLakeFilterChanged;
+  final bool showExceedingAreaOnly;
 
   const MapContent({
     Key? key,
@@ -31,13 +35,17 @@ class MapContent extends StatelessWidget {
     required this.zoomLevel,
     required this.polygonManager,
     required this.barangayManager,
+    required this.lakeManager,
     required this.previewPointNotifier,
     required this.setState,
     this.barangayFilter,
+    required this.lakeFilter,
     required this.farmTypeFilters,
     required this.productFilters,
     required this.animatedMapController,
     this.onBarangayFilterChanged,
+    this.onLakeFilterChanged,
+    required this.showExceedingAreaOnly,
   }) : super(key: key);
 
   @override
@@ -49,8 +57,15 @@ class MapContent extends StatelessWidget {
         valueListenable: polygonManager.editorUpdateNotifier,
         builder: (context, updateCount, child) {
           // Use the filtered polygons from the manager
-          final filteredPolygons =
-              polygonManager.getFilteredPolygons(farmTypeFilters);
+          // final filteredPolygons =
+          //     polygonManager.getFilteredPolygons(farmTypeFilters);
+
+          // To this:
+          final filteredPolygons = polygonManager.getFilteredPolygons(
+            farmTypeFilters,
+            showExceedingAreaOnly: showExceedingAreaOnly,
+          );
+
           final filteredPinStyles =
               filteredPolygons.map((p) => p.pinStyle).toList();
           final filteredColors = filteredPolygons.map((p) => p.color).toList();
@@ -62,6 +77,14 @@ class MapContent extends StatelessWidget {
                       polygonManager.selectedBarangays.contains(barangay.name))
                   .toList()
               : barangayManager.barangays;
+
+          // Get filtered lakes based on filter
+          final filteredLakes = polygonManager.selectedLakes.isNotEmpty
+              ? lakeManager.lakes
+                  .where((lake) =>
+                      polygonManager.selectedLakes.contains(lake.name))
+                  .toList()
+              : lakeManager.lakes;
 
           final userProvider =
               Provider.of<UserProvider>(context, listen: false);
@@ -75,6 +98,47 @@ class MapContent extends StatelessWidget {
               TileLayer(
                 tileProvider: CancellableNetworkTileProvider(),
                 urlTemplate: MapLayersHelper.availableLayers[selectedMap]!,
+              ),
+
+              // Lake polygons layer (only shown when explicitly filtered)
+              if (polygonManager.selectedLakes.isNotEmpty)
+                MapLayersHelper.createLakeLayer(lakeManager.lakes
+                    .where((lake) =>
+                        polygonManager.selectedLakes.contains(lake.name))
+                    .toList()),
+
+              // Lake center markers layer
+              MapLayersHelper.createLakeCenterFallbackLayer(
+                lakeManager.lakes,
+                (lake) {
+                  // Zoom to the lake
+                  animatedMapController.animatedFitCamera(
+                    cameraFit: CameraFit.coordinates(
+                      coordinates: lake.vertices,
+                      padding: const EdgeInsets.all(30),
+                    ),
+                    curve: Curves.easeInOut,
+                  );
+
+                  // Show lake info card
+                  polygonManager.showLakenInfo(
+                      context, lake, polygonManager.polygons);
+
+                  // Apply filter for this lake
+                  if (onLakeFilterChanged != null) {
+                    setState(() {
+                      if (polygonManager.selectedLakes.contains(lake.name)) {
+                        onLakeFilterChanged!([]);
+                      } else {
+                        onLakeFilterChanged!([lake.name]);
+                      }
+                    });
+                  }
+                },
+                circleColor: const Color.fromARGB(255, 59, 107, 145),
+                iconColor: Colors.white,
+                size: 30.0,
+                filteredLakes: polygonManager.selectedLakes,
               ),
 
               // Polyline layer

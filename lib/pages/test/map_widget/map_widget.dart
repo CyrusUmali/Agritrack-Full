@@ -47,11 +47,17 @@ class _MapWidgetState extends State<MapWidget>
   bool _isLoading = true;
   String? _loadingError;
 
+  bool _showExceedingAreaOnly = false;
+  bool get hasExceedingAreaFilter => _showExceedingAreaOnly;
+
   bool get isMobile => MediaQuery.of(context).size.width < 600;
 
   late final AnimatedMapController _animatedMapController;
   late PolygonManager polygonManager;
   late BarangayManager barangayManager;
+
+  late LakeManager lakeManager;
+
   final ValueNotifier<LatLng?> previewPointNotifier = ValueNotifier(null);
   late final RenderBox _renderBox;
   LatLng? _lastPoint;
@@ -65,7 +71,7 @@ class _MapWidgetState extends State<MapWidget>
       _renderBox = context.findRenderObject() as RenderBox;
     });
     FarmInfoCard.loadBarangays();
-    barangayManager = BarangayManager();
+
     _animatedMapController = AnimatedMapController(vsync: this);
     polygonManager = PolygonManager(
         context: context,
@@ -78,6 +84,9 @@ class _MapWidgetState extends State<MapWidget>
 
     barangayManager = BarangayManager();
     barangayManager.loadBarangays(barangays);
+
+    lakeManager = LakeManager();
+    lakeManager.loadLakes(lakes);
   }
 
   Future<void> _loadFarmsFromApi() async {
@@ -247,15 +256,25 @@ class _MapWidgetState extends State<MapWidget>
               zoomLevel: zoomLevel,
               polygonManager: polygonManager,
               barangayManager: barangayManager,
+              lakeManager: lakeManager,
               previewPointNotifier: previewPointNotifier,
               setState: setState,
+              lakeFilter: polygonManager.selectedLakes,
               barangayFilter: polygonManager.selectedBarangays,
               farmTypeFilters: BarangayFilterPanel.filterOptions,
               productFilters: polygonManager.selectedProducts, // Add this line
               animatedMapController: _animatedMapController,
+              showExceedingAreaOnly: _showExceedingAreaOnly,
               onBarangayFilterChanged: (newFilters) {
                 setState(() {
                   polygonManager.selectedBarangays = newFilters;
+                  hideFarmListPanel();
+                });
+              },
+
+              onLakeFilterChanged: (newFilters) {
+                setState(() {
+                  polygonManager.selectedLakes = newFilters;
                   hideFarmListPanel();
                 });
               },
@@ -272,8 +291,10 @@ class _MapWidgetState extends State<MapWidget>
             child: FarmListPanel(
               polygonManager: polygonManager,
               barangayManager: barangayManager,
+              lakeManager: lakeManager,
               selectedBarangays: polygonManager.selectedBarangays,
               selectedProducts: polygonManager.selectedProducts,
+              showExceedingAreaOnly: _showExceedingAreaOnly,
               onBarangayFilterChanged: (newFilters) {
                 polygonManager.updateFilters(barangays: newFilters);
                 setState(() {});
@@ -299,7 +320,7 @@ class _MapWidgetState extends State<MapWidget>
             child: _buildLegendPanel(),
           ),
 
-        // Panel and Legend Toggle Buttons in Column
+// Panel and Legend Toggle Buttons in Column
         Positioned(
           top: 10,
           left: _showFarmListPanel ? 270 : 10,
@@ -329,7 +350,7 @@ class _MapWidgetState extends State<MapWidget>
                   borderRadius: BorderRadius.circular(8.0),
                 ),
               ),
-              SizedBox(height: 10), // Add some spacing between buttons
+              SizedBox(height: 10),
               // Legend Toggle Button
               _buildStyledIconButton(
                 icon: _showLegendPanel
@@ -347,9 +368,36 @@ class _MapWidgetState extends State<MapWidget>
                   borderRadius: BorderRadius.circular(8.0),
                 ),
               ),
+              SizedBox(height: 10),
+              // NEW: Exceeding Area Filter Button
+              _buildStyledIconButton(
+                icon: _showExceedingAreaOnly
+                    ? Icons.warning
+                    : Icons.warning_outlined,
+                onPressed: () {
+                  setState(() {
+                    _showExceedingAreaOnly = !_showExceedingAreaOnly;
+                    // Clear selection when toggling filter
+                    polygonManager.selectedPolygonIndex = -1;
+                    polygonManager.selectedPolygon = null;
+                    polygonManager.selectedPolygonNotifier.value = null;
+                    polygonManager.removeInfoCardOverlay();
+                    hideFarmListPanel();
+                  });
+                },
+                backgroundColor:
+                    _showExceedingAreaOnly ? null : Colors.red.withOpacity(0.9),
+                iconColor: _showExceedingAreaOnly ? Colors.red : null,
+                iconSize: 15,
+                buttonSize: isMobile ? 40.0 : 30,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
             ],
           ),
         ),
+
         // Map Controls
         Positioned(
           top: 10,
@@ -426,8 +474,10 @@ class _MapWidgetState extends State<MapWidget>
             ),
           ),
 
-        if (polygonManager.selectedBarangays.isNotEmpty &&
+        if (polygonManager.selectedLakes.isNotEmpty && !_showFarmListPanel ||
+            polygonManager.selectedBarangays.isNotEmpty &&
                 !_showFarmListPanel ||
+            polygonManager.selectedProducts.isNotEmpty && !_showFarmListPanel ||
             BarangayFilterPanel.filterOptions.values
                     .any((isChecked) => !isChecked) &&
                 !_showFarmListPanel)
@@ -491,7 +541,9 @@ class _MapWidgetState extends State<MapWidget>
           const SizedBox(height: 8),
           _buildBarangayLegendItem(),
           const SizedBox(height: 8),
-          _buildWarningItem()
+          _buildWarningItem(),
+          const SizedBox(height: 8),
+          _buildLakeLegendItem(),
         ],
       ),
     );
@@ -524,6 +576,46 @@ class _MapWidgetState extends State<MapWidget>
           Expanded(
             child: Text(
               _formatPinStyleName(pinStyle),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLakeLegendItem() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 59, 107, 145),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.water_drop_outlined,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Lake',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,

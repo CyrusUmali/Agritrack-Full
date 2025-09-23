@@ -12,8 +12,10 @@ class EditControls {
     required PolygonData polygon,
     required PinStyle selectedPinStyle,
     required Color selectedColor,
+    required String selectedStatus, // Changed to String
     required Function(Color) onColorChanged,
     required Function(PinStyle) onPinStyleChanged,
+    required Function(String) onStatusChanged, // Changed to String
     required Function() onDelete,
     required ThemeData theme,
   }) {
@@ -23,12 +25,6 @@ class EditControls {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final _isFarmer = userProvider.isFarmer;
     final _farmerId = userProvider.farmer?.id?.toString();
-
-    // print(_isFarmer);
-    // print(_farmerId);
-    // print(polygon.farmerId);
-
-    // print(polygon.pinStyle);
 
     return Card(
       elevation: 2,
@@ -72,10 +68,33 @@ class EditControls {
             ),
             const SizedBox(height: 16),
 
-            Divider(color: colorScheme.outlineVariant, height: 1),
+            // Add Farm Status section
+            Row(
+              children: [
+                Icon(Icons.flag,
+                    size: 20,
+                    color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                const SizedBox(width: 8),
+                Text(
+                  'Farm Status',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildFarmStatusDropdown(
+              context: context,
+              selectedStatus: selectedStatus,
+              onStatusChanged: onStatusChanged,
+              theme: theme,
+            ),
             const SizedBox(height: 16),
 
-            // _buildDeleteButton(context, onDelete, theme),
+            Divider(color: colorScheme.outlineVariant, height: 1),
+            const SizedBox(height: 16),
 
             if (_isFarmer == false || polygon.farmerId?.toString() == _farmerId)
               _buildDeleteButton(context, onDelete, theme),
@@ -123,7 +142,7 @@ class EditControls {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
-                children: [ 
+                children: [
                   Container(
                     width: 12,
                     height: 12,
@@ -135,6 +154,65 @@ class EditControls {
                   ),
                   Text(
                     _formatPinStyleName(style.toString()),
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // Add Farm Status dropdown
+  static Widget _buildFarmStatusDropdown({
+    required BuildContext context,
+    required String selectedStatus,
+    required Function(String) onStatusChanged,
+    required ThemeData theme,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant,
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: DropdownButton<String>(
+        value: selectedStatus,
+        onChanged: (newStatus) {
+          if (newStatus != null) {
+            onStatusChanged(newStatus);
+          }
+        },
+        style: theme.textTheme.bodyMedium,
+        dropdownColor: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(12),
+        elevation: 4,
+        underline: const SizedBox(),
+        isExpanded: true,
+        icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.onSurface),
+        items: ['Active', 'Inactive'].map((status) {
+          return DropdownMenuItem<String>(
+            value: status,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      color: _getColorForFarmStatus(status),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Text(
+                    status,
                     style: theme.textTheme.bodyMedium,
                   ),
                 ],
@@ -170,6 +248,18 @@ class EditControls {
       case PinStyle.Fishery:
         return Colors.blue;
       case PinStyle.Organic:
+        return Colors.grey;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  // Add color mapping for farm status
+  static Color _getColorForFarmStatus(String status) {
+    switch (status) {
+      case 'Active':
+        return Colors.green;
+      case 'Inactive':
         return Colors.grey;
       default:
         return Colors.blue;
