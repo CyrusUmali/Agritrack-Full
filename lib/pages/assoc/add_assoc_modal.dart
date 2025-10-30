@@ -175,7 +175,6 @@ class _AddAssociationModalContentState
                 horizontal: 10.0,
               ),
             ),
-            maxLines: 5,
           ),
         ],
       ),

@@ -1,6 +1,8 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
+import 'package:provider/provider.dart';
+import 'package:flareline/providers/user_provider.dart';
 
 import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flareline/core/models/product_model.dart';
@@ -40,6 +42,7 @@ class PolygonManager with RouteAware {
   List<PolygonHistoryEntry> redoHistory = [];
 
   final VoidCallback? onFiltersChanged;
+  final bool isFarmer;
 
   bool _isModalShowing = false;
   PolygonData? _lastShownPolygon;
@@ -60,6 +63,7 @@ class PolygonManager with RouteAware {
     required this.context,
     this.onPolygonSelected,
     this.onFiltersChanged,
+    required this.isFarmer,
     required this.farmService,
     required this.products, // Add this
     required this.farmers, // Add this
@@ -73,12 +77,16 @@ class PolygonManager with RouteAware {
     return polygon.area! > maxAreaHectares;
   }
 
-  /// Updated getFilteredPolygons method to include exceeding area filter
+// In PolygonManager class
   List<PolygonData> getFilteredPolygons(
     Map<String, bool> farmTypeFilters, {
     bool showExceedingAreaOnly = false,
+    List<PolygonData>? basePolygons, // Optional base list to filter from
   }) {
-    return polygons.where((polygon) {
+    // Use provided base polygons or default to all polygons
+    final baseList = basePolygons ?? polygons;
+
+    return baseList.where((polygon) {
       // Check barangay filter
       final barangayMatch = selectedBarangays.isEmpty ||
           selectedBarangays.contains(polygon.parentBarangay);
@@ -150,33 +158,79 @@ class PolygonManager with RouteAware {
         BarangayFilterPanel.filterOptions.values.any((isChecked) => !isChecked);
   }
 
+// Add this method to PolygonManager class to get user-filtered base polygons
+  List<PolygonData> _getUserFilteredPolygons(BuildContext context) {
+    // This should match the filtering logic in MapContent
+    return polygons.where((polygon) {
+      // Apply user-based filters
+      if (isFarmer &&
+          BarangayFilterPanel.userFilterOptions['showOwnedOnly'] == true) {
+        // Get farmer ID from context
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final farmerId = userProvider.farmer?.id?.toString();
+
+        // Show only farms owned by current farmer
+        if (polygon.farmerId?.toString() != farmerId) {
+          return false;
+        }
+      } else if (!isFarmer &&
+          BarangayFilterPanel.userFilterOptions['showActiveOnly'] == true) {
+        // Show only active farms for non-farmers
+        if (polygon.status?.toLowerCase() != 'active' &&
+            polygon.status != null) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+  }
+
+// Updated getCurrentFilteredIndex method - BuildContext is now optional
   int getCurrentFilteredIndex(
     Map<String, bool> farmTypeFilters, {
+    BuildContext? context,
     bool showExceedingAreaOnly = false,
   }) {
     if (selectedPolygon == null) return -1;
 
+    // Get user-filtered base polygons if context is provided
+    List<PolygonData>? userFilteredPolygons;
+    if (context != null) {
+      userFilteredPolygons = _getUserFilteredPolygons(context);
+    }
+
+    // Then apply other filters
     final filteredPolygons = getFilteredPolygons(
       farmTypeFilters,
       showExceedingAreaOnly: showExceedingAreaOnly,
+      basePolygons:
+          userFilteredPolygons, // Pass user-filtered base (or null for all)
     );
+
     return filteredPolygons.indexWhere((p) => p == selectedPolygon);
   }
 
-// Update navigation methods to accept the exceeding area filter parameter
+// Updated navigateToPreviousPolygon method
   void navigateToPreviousPolygon(
     Map<String, bool> farmTypeFilters,
     BuildContext context, {
     bool showExceedingAreaOnly = false,
   }) {
+    // Get user-filtered base polygons first
+    final userFilteredPolygons = _getUserFilteredPolygons(context);
+
+    // Then apply other filters
     final filteredPolygons = getFilteredPolygons(
       farmTypeFilters,
       showExceedingAreaOnly: showExceedingAreaOnly,
+      basePolygons: userFilteredPolygons, // Pass user-filtered base
     );
+
     if (filteredPolygons.isEmpty) return;
 
     final currentIndex = getCurrentFilteredIndex(
       farmTypeFilters,
+      context: context, // Pass as named parameter
       showExceedingAreaOnly: showExceedingAreaOnly,
     );
     if (currentIndex <= 0) return;
@@ -190,19 +244,27 @@ class PolygonManager with RouteAware {
     }
   }
 
+// Updated navigateToNextPolygon method
   void navigateToNextPolygon(
     Map<String, bool> farmTypeFilters,
     BuildContext context, {
     bool showExceedingAreaOnly = false,
   }) {
+    // Get user-filtered base polygons first
+    final userFilteredPolygons = _getUserFilteredPolygons(context);
+
+    // Then apply other filters
     final filteredPolygons = getFilteredPolygons(
       farmTypeFilters,
       showExceedingAreaOnly: showExceedingAreaOnly,
+      basePolygons: userFilteredPolygons, // Pass user-filtered base
     );
+
     if (filteredPolygons.isEmpty) return;
 
     final currentIndex = getCurrentFilteredIndex(
       farmTypeFilters,
+      context: context, // Pass as named parameter
       showExceedingAreaOnly: showExceedingAreaOnly,
     );
     if (currentIndex >= filteredPolygons.length - 1 || currentIndex == -1)
@@ -217,6 +279,7 @@ class PolygonManager with RouteAware {
     }
   }
 
+// Updated _showInfoCard method
   void _showInfoCard(
     BuildContext context,
     PolygonData polygon, {
@@ -225,24 +288,19 @@ class PolygonManager with RouteAware {
     // Ensure any existing overlay is removed first
     removeInfoCardOverlay();
 
-    // debugPrint('[InfoCard] Attempting to show info card for: ${polygon.name}');
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!context.mounted) {
-        // debugPrint('[InfoCard] Context not mounted');
         return;
       }
 
       try {
         final overlayState = Overlay.of(context, rootOverlay: true);
         if (overlayState == null) {
-          // debugPrint('[InfoCard] No root overlay available');
           return;
         }
 
         final renderBox = context.findRenderObject() as RenderBox?;
         if (renderBox == null || !renderBox.hasSize) {
-          // debugPrint('[InfoCard] No valid render box found');
           return;
         }
 
@@ -251,18 +309,23 @@ class PolygonManager with RouteAware {
 
         final farmTypeFilters =
             Map<String, bool>.from(BarangayFilterPanel.filterOptions);
+
+        // Get user-filtered base polygons first
+        final userFilteredPolygons = _getUserFilteredPolygons(context);
+
+        // Then apply other filters
         final filteredPolygons = getFilteredPolygons(
           farmTypeFilters,
           showExceedingAreaOnly: showExceedingAreaOnly,
+          basePolygons: userFilteredPolygons, // Pass user-filtered base
         );
+
         final currentIndex = getCurrentFilteredIndex(
           farmTypeFilters,
+          context: context, // Pass context for user filtering
           showExceedingAreaOnly: showExceedingAreaOnly,
         );
         final showNavigation = filteredPolygons.length > 1;
-
-        // debugPrint(
-        //     '[InfoCard] Creating overlay - Navigation: $showNavigation, Index: $currentIndex/${filteredPolygons.length}');
 
         _infoCardOverlay = OverlayEntry(
           builder: (overlayContext) => Positioned(
@@ -279,12 +342,19 @@ class PolygonManager with RouteAware {
                     showPolygonModal(context, polygon);
                   }
                 },
+                onClose: () {
+                  selectedPolygonIndex = null;
+                  selectedPolygon = null;
+                  selectedPolygonNotifier.value = null;
+
+                  // NEW: Close button callback
+                  removeInfoCardOverlay();
+                },
                 showNavigation: showNavigation,
                 currentIndex: currentIndex >= 0 ? currentIndex : 0,
                 totalCount: filteredPolygons.length,
                 onPrevious: showNavigation && currentIndex > 0
                     ? () {
-                        // debugPrint('[InfoCard] Previous button tapped');
                         navigateToPreviousPolygon(
                           farmTypeFilters,
                           context,
@@ -295,7 +365,6 @@ class PolygonManager with RouteAware {
                 onNext:
                     showNavigation && currentIndex < filteredPolygons.length - 1
                         ? () {
-                            // debugPrint('[InfoCard] Next button tapped');
                             navigateToNextPolygon(
                               farmTypeFilters,
                               context,
@@ -309,7 +378,6 @@ class PolygonManager with RouteAware {
         );
 
         overlayState.insert(_infoCardOverlay!);
-        // debugPrint('[InfoCard] Overlay inserted successfully');
       } catch (e) {
         debugPrint('[InfoCard] Error showing info card: $e');
         _showInfoCardFallback(context, polygon,
@@ -318,7 +386,7 @@ class PolygonManager with RouteAware {
     });
   }
 
-// Update fallback method
+// Updated _showInfoCardFallback method
   void _showInfoCardFallback(
     BuildContext context,
     PolygonData polygon, {
@@ -330,12 +398,20 @@ class PolygonManager with RouteAware {
       if (overlay != null) {
         final farmTypeFilters =
             Map<String, bool>.from(BarangayFilterPanel.filterOptions);
+
+        // Get user-filtered base polygons first
+        final userFilteredPolygons = _getUserFilteredPolygons(context);
+
+        // Then apply other filters
         final filteredPolygons = getFilteredPolygons(
           farmTypeFilters,
           showExceedingAreaOnly: showExceedingAreaOnly,
+          basePolygons: userFilteredPolygons, // Pass user-filtered base
         );
+
         final currentIndex = getCurrentFilteredIndex(
           farmTypeFilters,
+          context: context, // Pass context for user filtering
           showExceedingAreaOnly: showExceedingAreaOnly,
         );
         final showNavigation = filteredPolygons.length > 1;
@@ -357,6 +433,13 @@ class PolygonManager with RouteAware {
                     if (context.mounted) {
                       showPolygonModal(context, polygon);
                     }
+                  },
+                  onClose: () {
+                    // NEW: Close button callback
+                    removeInfoCardOverlay();
+                    selectedPolygonIndex = null;
+                    selectedPolygon = null;
+                    selectedPolygonNotifier.value = null;
                   },
                   showNavigation: showNavigation,
                   currentIndex: currentIndex,
@@ -550,15 +633,46 @@ class PolygonManager with RouteAware {
     _updateCounter++;
   }
 
-  void handleSelectionTap(LatLng tapPoint, BuildContext context) {
-    // print(polygons);
+// Add this helper method to check if a polygon is currently visible
+  bool isPolygonVisible(
+    PolygonData polygon,
+    BuildContext context, {
+    bool showExceedingAreaOnly = false,
+  }) {
+    // Get user-filtered base polygons
+    final userFilteredPolygons = _getUserFilteredPolygons(context);
+
+    // Check if polygon passes user filters
+    if (!userFilteredPolygons.contains(polygon)) {
+      return false;
+    }
+
+    // Get farm type filters
+    final farmTypeFilters =
+        Map<String, bool>.from(BarangayFilterPanel.filterOptions);
+
+    // Get all filtered polygons
+    final filteredPolygons = getFilteredPolygons(
+      farmTypeFilters,
+      showExceedingAreaOnly: showExceedingAreaOnly,
+      basePolygons: userFilteredPolygons,
+    );
+
+    // Check if polygon is in the filtered list
+    return filteredPolygons.contains(polygon);
+  }
+
+// Updated handleSelectionTap method - replace your existing one with this
+  void handleSelectionTap(
+    LatLng tapPoint,
+    BuildContext context, {
+    bool showExceedingAreaOnly = false,
+  }) {
     if (polyEditor != null) {
       isDrawing = false;
-
       isEditing = false;
       currentPolygon.clear();
       undoLastPoint();
-
       selectedPolygonIndex = null;
     }
 
@@ -588,11 +702,24 @@ class PolygonManager with RouteAware {
           turf.Polygon(coordinates: [polygonCoordinates]));
 
       if (isInside) {
+        final polygon = polygons[i];
+
+        // Check if this polygon is currently visible based on filters
+        if (!isPolygonVisible(polygon, context,
+            showExceedingAreaOnly: showExceedingAreaOnly)) {
+          // Polygon is filtered out, don't show info card or select it
+          // debugPrint(
+          //     '[Selection] Polygon ${polygon.name} is filtered out, ignoring tap');
+          removeInfoCardOverlay();
+          continue; // Continue checking other polygons (in case of overlapping)
+        }
+
+        // Polygon is visible, select it and show info card
         // Pass the context to selectPolygon
         selectPolygon(i, context: context);
 
-        print('iere');
-        print(i);
+        // print('here');
+        // print(i);
 
         // Reinitialize the PolyEditor with the new polygon's vertices
         initializePolyEditor(selectedPolygon!);
@@ -604,10 +731,7 @@ class PolygonManager with RouteAware {
 
     if (selectedPolygon == null) {
       // Clear the PolyEditor when no polygon is selected
-      // toggleEditing();
       polyEditor = null;
-      // currentPolygon.clear();
-      // undoLastPoint();
     }
   }
 
@@ -787,6 +911,7 @@ class PolygonManager with RouteAware {
     removeInfoCardOverlay();
   }
 
+// Updated showBarangayInfo method
   void showBarangayInfo(BuildContext context, PolygonData barangay,
       List<PolygonData> allPolygons) {
     removeInfoCardOverlay();
@@ -821,6 +946,10 @@ class PolygonManager with RouteAware {
                           .where((p) => p.parentBarangay == barangay.name)
                           .toList());
                 }
+              },
+              onClose: () {
+                // NEW: Close button callback
+                removeInfoCardOverlay();
               },
             ),
           ),
@@ -876,6 +1005,10 @@ class PolygonManager with RouteAware {
                   _showLakeDetailsModal(context, lake,
                       allPolygons.where((p) => p.lake == lake.name).toList());
                 }
+              },
+              onClose: () {
+                // NEW: Close button callback
+                removeInfoCardOverlay();
               },
             ),
           ),
@@ -1065,6 +1198,7 @@ class PolygonManager with RouteAware {
         vertices: List.from(currentPolygon),
         name: 'New Farm ${polygons.length + 1}',
         color: Colors.blue, // will be updated below
+        status: isFarmer ? 'Inactive' : 'Active', // default status
       );
 
       // Calculate area first

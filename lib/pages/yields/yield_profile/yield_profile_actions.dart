@@ -14,6 +14,7 @@ class YieldProfileActions extends StatefulWidget {
   final bool isDeleting;
   final bool isAccepting;
   final bool isRejecting;
+  final String? yieldStatus; // Add this new parameter
 
   const YieldProfileActions({
     super.key,
@@ -26,6 +27,7 @@ class YieldProfileActions extends StatefulWidget {
     this.isDeleting = false,
     this.isAccepting = false,
     this.isRejecting = false,
+    this.yieldStatus, // Add this
   });
 
   @override
@@ -64,9 +66,23 @@ class _YieldProfileActionsState extends State<YieldProfileActions> {
     print('YieldProfileActions didUpdateWidget - rebuild triggered');
   }
 
+  // Helper methods to determine which buttons to show
+  bool get _shouldShowAcceptButton {
+    return widget.yieldStatus !=
+        'Accepted'; // Show Accept if status is NOT Accepted
+  }
+
+  bool get _shouldShowRejectButton {
+    return widget.yieldStatus !=
+        'Rejected'; // Show Reject if status is NOT Rejected
+  }
+
   @override
   Widget build(BuildContext context) {
     print('YieldProfileActions build method called');
+    print('Yield status: ${widget.yieldStatus}');
+    print('Show Accept: $_shouldShowAcceptButton');
+    print('Show Reject: $_shouldShowRejectButton');
 
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
@@ -74,6 +90,10 @@ class _YieldProfileActionsState extends State<YieldProfileActions> {
         print('Consumer rebuild - isFarmer: $isFarmer');
 
         final buttonWidth = widget.isMobile ? double.infinity : 180.0;
+
+        // Check if we should show any Accept/Reject buttons
+        final shouldShowAcceptRejectSection =
+            !isFarmer && (_shouldShowAcceptButton || _shouldShowRejectButton);
 
         return Center(
           child: ConstrainedBox(
@@ -122,47 +142,17 @@ class _YieldProfileActionsState extends State<YieldProfileActions> {
                   ],
                 ),
 
-                if (!isFarmer) ...[
+                // Show Accept/Reject section if:
+                // 1. User is not a farmer
+                // 2. AND at least one of the buttons should be shown
+                if (shouldShowAcceptRejectSection) ...[
                   SizedBox(height: widget.isMobile ? 16 : 24),
                   widget.isMobile
                       ? Column(
                           children: [
-                            SizedBox(
-                              width: buttonWidth,
-                              child: ButtonWidget(
-                                btnText: "Reject",
-                                textColor: FlarelineColors.background,
-                                onTap: () {
-                                  print('Reject button pressed');
-                                  widget.onReject();
-                                },
-                                type: ButtonType.danger.type,
-                                isLoading: widget.isRejecting,
-                                height: 48,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: buttonWidth,
-                              child: ButtonWidget(
-                                btnText: "Accept",
-                                textColor: FlarelineColors.background,
-                                onTap: () {
-                                  print('Accept button pressed');
-                                  widget.onAccept();
-                                },
-                                type: ButtonType.success.type,
-                                isLoading: widget.isAccepting,
-                                height: 48,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Row(
-                          children: [
-                            const Spacer(),
-                            Expanded(
-                              child: SizedBox(
+                            // Show Reject button if status is NOT Rejected
+                            if (_shouldShowRejectButton) ...[
+                              SizedBox(
                                 width: buttonWidth,
                                 child: ButtonWidget(
                                   btnText: "Reject",
@@ -176,10 +166,11 @@ class _YieldProfileActionsState extends State<YieldProfileActions> {
                                   height: 48,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: SizedBox(
+                              const SizedBox(height: 12),
+                            ],
+                            // Show Accept button if status is NOT Accepted
+                            if (_shouldShowAcceptButton)
+                              SizedBox(
                                 width: buttonWidth,
                                 child: ButtonWidget(
                                   btnText: "Accept",
@@ -193,7 +184,50 @@ class _YieldProfileActionsState extends State<YieldProfileActions> {
                                   height: 48,
                                 ),
                               ),
-                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            const Spacer(),
+                            // Show Reject button if status is NOT Rejected
+                            if (_shouldShowRejectButton)
+                              Expanded(
+                                child: SizedBox(
+                                  width: buttonWidth,
+                                  child: ButtonWidget(
+                                    btnText: "Reject",
+                                    textColor: FlarelineColors.background,
+                                    onTap: () {
+                                      print('Reject button pressed');
+                                      widget.onReject();
+                                    },
+                                    type: ButtonType.danger.type,
+                                    isLoading: widget.isRejecting,
+                                    height: 48,
+                                  ),
+                                ),
+                              ),
+                            if (_shouldShowRejectButton &&
+                                _shouldShowAcceptButton)
+                              const SizedBox(width: 20),
+                            // Show Accept button if status is NOT Accepted
+                            if (_shouldShowAcceptButton)
+                              Expanded(
+                                child: SizedBox(
+                                  width: buttonWidth,
+                                  child: ButtonWidget(
+                                    btnText: "Accept",
+                                    textColor: FlarelineColors.background,
+                                    onTap: () {
+                                      print('Accept button pressed');
+                                      widget.onAccept();
+                                    },
+                                    type: ButtonType.success.type,
+                                    isLoading: widget.isAccepting,
+                                    height: 48,
+                                  ),
+                                ),
+                              ),
                             const Spacer(),
                           ],
                         ),

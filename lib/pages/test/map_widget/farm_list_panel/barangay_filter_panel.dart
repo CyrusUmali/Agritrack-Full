@@ -3,7 +3,9 @@
 import 'dart:convert';
 import 'package:flareline/services/lanugage_extension.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class BarangayFilterPanel extends StatefulWidget {
   final BarangayManager barangayManager;
@@ -11,7 +13,8 @@ class BarangayFilterPanel extends StatefulWidget {
   final List<String> selectedBarangays;
   final List<String> selectedProducts;
   final VoidCallback onClose;
-  final Function(List<String>, List<String>, Map<String, bool>)
+  final Function(
+          List<String>, List<String>, Map<String, bool>, Map<String, bool>)
       onFiltersChanged;
 
   static Map<String, bool> filterOptions = {
@@ -21,6 +24,12 @@ class BarangayFilterPanel extends StatefulWidget {
     'Organic': true,
     'Livestock': true,
     'HVC': true,
+  };
+
+  // User-based filter options
+  static Map<String, bool> userFilterOptions = {
+    'showOwnedOnly': true, // For farmers: show only owned farms
+    'showActiveOnly': true, // For non-farmers: show only active farms
   };
 
   const BarangayFilterPanel({
@@ -41,6 +50,7 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
   late List<String> _tempSelectedBarangays;
   late List<String> _tempSelectedProducts;
   late Map<String, bool> _tempFilterOptions;
+  late Map<String, bool> _tempUserFilterOptions;
   String searchQuery = '';
   bool showProductFilter = false; // Toggle between barangay and product filters
 
@@ -50,6 +60,7 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
     _tempSelectedBarangays = List.from(widget.selectedBarangays);
     _tempSelectedProducts = List.from(widget.selectedProducts);
     _tempFilterOptions = Map.from(BarangayFilterPanel.filterOptions);
+    _tempUserFilterOptions = Map.from(BarangayFilterPanel.userFilterOptions);
     _logBarangays();
   }
 
@@ -107,15 +118,144 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
         .toList();
   }
 
+  Widget _buildUserFilterToggle(ThemeData theme, bool isFarmer) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: theme.colorScheme.surface.withOpacity(0.05),
+        border: Border.all(
+          color: theme.dividerColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Text(
+              //   isFarmer ? 'Show Farms' : 'Farm Status',
+              //   style: theme.textTheme.bodyMedium?.copyWith(
+              //     fontWeight: FontWeight.w600,
+              //   ),
+              // ),
+              // SizedBox(height: 2),
+              Text(
+                isFarmer
+                    ? (_tempUserFilterOptions['showOwnedOnly'] == true
+                        ? 'Only my farms'
+                        : 'All farms')
+                    : (_tempUserFilterOptions['showActiveOnly'] == true
+                        ? 'Active farms only'
+                        : 'All farms'),
+                // style: theme.textTheme.bodySmall?.copyWith(
+                //   color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                // ),
+
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: theme.colorScheme.surface.withOpacity(0.1),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Text(
+                //   isFarmer
+                //       ? (_tempUserFilterOptions['showOwnedOnly'] == true
+                //           ? 'Owned'
+                //           : 'All')
+                //       : (_tempUserFilterOptions['showActiveOnly'] == true
+                //           ? 'Active'
+                //           : 'All'),
+                //   // style: theme.textTheme.bodySmall?.copyWith(
+                //   //   // fontSize: 10,
+                //   //   fontWeight: FontWeight.w600,
+                //   // ),
+
+                //   style: theme.textTheme.bodyMedium?.copyWith(
+                //     fontWeight: FontWeight.w600,
+                //     fontSize: 10,
+                //   ),
+                // ),
+                SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (isFarmer) {
+                        _tempUserFilterOptions['showOwnedOnly'] =
+                            !(_tempUserFilterOptions['showOwnedOnly'] ?? true);
+                      } else {
+                        _tempUserFilterOptions['showActiveOnly'] =
+                            !(_tempUserFilterOptions['showActiveOnly'] ?? true);
+                      }
+                    });
+                  },
+                  child: Container(
+                    width: 50, // Increased from 30
+                    height: 24, // Increased from 16
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(
+                          12), // Increased to match new height
+                      color: (isFarmer
+                              ? (_tempUserFilterOptions['showOwnedOnly'] ??
+                                  true)
+                              : (_tempUserFilterOptions['showActiveOnly'] ??
+                                  true))
+                          ? theme.colorScheme.primary
+                          : Colors.grey.shade300,
+                    ),
+                    child: AnimatedAlign(
+                      alignment: (isFarmer
+                              ? (_tempUserFilterOptions['showOwnedOnly'] ??
+                                  true)
+                              : (_tempUserFilterOptions['showActiveOnly'] ??
+                                  true))
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      duration: Duration(milliseconds: 200),
+                      child: Container(
+                        width: 20, // Increased from 12
+                        height: 20, // Increased from 12
+                        margin: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
+
     final sortedBarangays = List.from(widget.barangayManager.barangays)
       ..sort((a, b) => a.name.compareTo(b.name));
     final filteredProducts = _getFilteredProducts();
 
     return Container(
-      width: 250,
+      width: 280,
       decoration: BoxDecoration(
         color: theme.cardTheme.color ?? Colors.white,
         border: Border(
@@ -166,7 +306,6 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
                                   'Farm Type Filters',
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    // color: Theme.of(context).cardTheme.color,
                                   ),
                                 ),
                                 Divider(color: Colors.white.withOpacity(0.5)),
@@ -174,10 +313,8 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
                                   return CheckboxListTile(
                                     title: Text(
                                       entry.key,
-                                      style:
-                                          theme.textTheme.bodyMedium?.copyWith(
-                                              // color: Colors.white,
-                                              ),
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(),
                                     ),
                                     value: entry.value,
                                     onChanged: (bool? value) {
@@ -186,7 +323,6 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
                                             value ?? false;
                                       });
                                     },
-                                    // activeColor: Colors.white,
                                     checkColor: Colors.white,
                                     contentPadding: EdgeInsets.zero,
                                     dense: true,
@@ -269,7 +405,13 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
             ),
           ),
 
+          SizedBox(height: 12),
+
+          // User-based filter - NEW PLACEMENT
+          _buildUserFilterToggle(theme, isFarmer),
+
           SizedBox(height: 16),
+
           Text(
             showProductFilter ? 'Products' : 'Barangays',
             style: theme.textTheme.bodyLarge?.copyWith(
@@ -314,9 +456,7 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
               children: showProductFilter
                   ? filteredProducts.map((product) {
                       return CheckboxListTile(
-                        title: Text(
-                            _getProductDisplayName(
-                                product), // Show only display name
+                        title: Text(_getProductDisplayName(product),
                             style: theme.textTheme.bodyMedium),
                         value: _tempSelectedProducts.contains(product),
                         onChanged: (bool? value) {
@@ -369,7 +509,8 @@ class _BarangayFilterPanelState extends State<BarangayFilterPanel> {
               widget.onFiltersChanged(
                   List.from(_tempSelectedBarangays),
                   List.from(_tempSelectedProducts),
-                  Map.from(_tempFilterOptions));
+                  Map.from(_tempFilterOptions),
+                  Map.from(_tempUserFilterOptions));
               widget.onClose();
             },
             child: Text(context.translate('Apply Filters')),

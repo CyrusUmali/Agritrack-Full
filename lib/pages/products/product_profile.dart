@@ -6,6 +6,8 @@ import 'package:flareline/pages/yields/yield_bloc/yield_bloc.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
 import 'package:flareline/repositories/yield_repository.dart';
 import 'package:flareline/repositories/farm_repository.dart';
+import 'package:flareline/services/lanugage_extension.dart';
+import 'package:flareline_uikit/components/breaktab.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flareline_uikit/service/year_picker_provider.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +26,13 @@ class ProductProfile extends LayoutWidget {
   @override
   String breakTabTitle(BuildContext context) {
     return 'Product Profile';
+  }
+
+  @override
+  List<BreadcrumbItem> breakTabBreadcrumbs(BuildContext context) {
+    return [ 
+      BreadcrumbItem('Products', '/products'),
+    ];
   }
 
   @override
@@ -90,7 +99,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
     super.initState();
     _currentProduct = widget.product;
 
-    print(widget.product.name);
+    // print(widget.product.name);
     transformedYieldData['name'] = _currentProduct.name;
   }
 
@@ -155,7 +164,7 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colors.surfaceVariant.withOpacity(0.5),
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(4),
@@ -282,6 +291,8 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                   if (state is FarmsLoading) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is FarmsLoaded) {
+                    // print('_farms');
+                    // print(_farms[0]);
                     return FarmsTable(farms: _farms);
                   } else if (state is FarmsError) {
                     return Center(
@@ -294,11 +305,10 @@ class _ProductProfileContentState extends State<_ProductProfileContent> {
                 // && !widget.isMobile
 
                 ) ...[
-              // Map view - only show on desktop
               Consumer<YearPickerProvider>(
                 builder: (context, yearProvider, child) {
                   return SizedBox(
-                    height: 800,
+                    height: widget.isMobile ? 1000 : 800,
                     child: CommonCard(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints.expand(),

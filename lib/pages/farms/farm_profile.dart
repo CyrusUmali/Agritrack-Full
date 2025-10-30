@@ -2,6 +2,7 @@ import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/core/models/farms_model.dart';
 import 'package:flareline/pages/farms/farm_widgets/recent_records.dart';
 import 'package:flareline/providers/user_provider.dart';
+import 'package:flareline_uikit/components/breaktab.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
@@ -25,6 +26,14 @@ class FarmProfile extends LayoutWidget {
   @override
   String breakTabTitle(BuildContext context) {
     return context.translate('Farm Profile');
+  }
+
+  @override
+  List<BreadcrumbItem> breakTabBreadcrumbs(BuildContext context) {
+    return [
+      BreadcrumbItem(context.translate('Dashboard'), '/'),
+      BreadcrumbItem(context.translate('Farms'), '/farms'),
+    ];
   }
 
   @override

@@ -6,12 +6,14 @@ class BarangayInfoCard extends StatelessWidget {
   final PolygonData barangay;
   final List<PolygonData> farmsInBarangay;
   final VoidCallback onTap;
+  final VoidCallback? onClose; // NEW: Add onClose callback
 
   const BarangayInfoCard({
     Key? key,
     required this.barangay,
     required this.farmsInBarangay,
     required this.onTap,
+    this.onClose, // NEW: Add to constructor
   }) : super(key: key);
 
   @override
@@ -22,12 +24,7 @@ class BarangayInfoCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.all(8),
       elevation: 2,
-
-      // shape: RoundedRectangleBorder(
-      //   borderRadius: BorderRadius.circular(12),
-      // ),
       child: InkWell(
-        // borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Container(
           width: 300,
@@ -64,11 +61,26 @@ class BarangayInfoCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Icon(
-                    Icons.chevron_right,
-                    size: 20,
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
+                  // Close button instead of chevron
+                  if (onClose != null)
+                    InkWell(
+                      onTap: onClose,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(
+                          Icons.close,
+                          size: 20,
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    )
+                  else
+                    Icon(
+                      Icons.chevron_right,
+                      size: 20,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
                 ],
               ),
 
@@ -107,10 +119,7 @@ class BarangayInfoCard extends StatelessWidget {
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-          // color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
-          // borderRadius: BorderRadius.circular(8),
-          ),
+      decoration: BoxDecoration(),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

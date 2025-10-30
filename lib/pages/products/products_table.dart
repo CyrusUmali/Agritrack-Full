@@ -51,7 +51,8 @@ class ProductsTable extends StatelessWidget {
         }
       },
       child: SizedBox(
-        height: 600,
+        // height: 600,
+        height: MediaQuery.of(context).size.height * 0.80,
         child: Column(
           children: [
             const ProductFilterWidget(),

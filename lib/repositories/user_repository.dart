@@ -14,7 +14,8 @@ class UserRepository extends BaseRepository {
     try {
       checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/auth/users/$userId')
+      final response = await apiService
+          .get('/auth/users/$userId')
           .timeout(const Duration(seconds: 30));
 
       return _validateAndParseUserResponse(response);
@@ -48,12 +49,13 @@ class UserRepository extends BaseRepository {
       handleError(e, operation: 'update user'); // Use inherited method
     }
   }
- 
+
   Future<List<UserModel>> fetchUsers() async {
     try {
       checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/auth/users')
+      final response = await apiService
+          .get('/auth/users')
           .timeout(const Duration(seconds: 30));
 
       return _validateAndParseUsersResponse(response);
@@ -103,10 +105,12 @@ class UserRepository extends BaseRepository {
         'farmerId': user.farmerId
       };
 
-      final response = await apiService.post(
-        '/auth/users',
-        data: requestData,
-      ).timeout(const Duration(seconds: 30));
+      final response = await apiService
+          .post(
+            '/auth/users',
+            data: requestData,
+          )
+          .timeout(const Duration(seconds: 30));
 
       return _validateAndParseUserResponse(response, method: 'add');
     } catch (e) {
@@ -118,14 +122,19 @@ class UserRepository extends BaseRepository {
     try {
       checkAuthentication(); // Use inherited method
 
-      await apiService.delete('/auth/users/$userId')
+      await apiService
+          .delete('/auth/users/$userId')
           .timeout(const Duration(seconds: 30));
     } catch (e) {
       handleError(e, operation: 'delete user'); // Use inherited method
     }
   }
 
-  Future<void> changePassword(String currentPassword, String newPassword) async {
+  Future<void> changePassword(
+      String currentPassword, String newPassword) async {
+    print('change passwrod');
+
+    print('currentPassword');
     try {
       // Note: This method uses Firebase Auth directly, so we need to handle it specially
       final user = FirebaseAuth.instance.currentUser;
@@ -148,11 +157,12 @@ class UserRepository extends BaseRepository {
   }
 
   // Helper method for response validation (PRESERVED - no changes)
-  UserModel _validateAndParseUserResponse(Response response, {String method = 'get'}) {
+  UserModel _validateAndParseUserResponse(Response response,
+      {String method = 'get'}) {
     if (response.data == null) {
       throw Exception('Server returned empty response');
     }
-    
+
     if (response.data['user'] == null) {
       throw Exception('Invalid user data format received from server');
     }
@@ -165,7 +175,7 @@ class UserRepository extends BaseRepository {
     if (response.data == null) {
       throw Exception('Server returned empty response');
     }
-    
+
     if (response.data['users'] == null) {
       throw Exception('Invalid users data format received from server');
     }

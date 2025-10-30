@@ -1,3 +1,4 @@
+import 'package:flareline/pages/recommendation/ai_models_info_widget.dart';
 import 'package:flareline/pages/recommendation/chatbot/chatbot_page.dart';
 import 'package:flareline/pages/recommendation/recommendation_page.dart';
 import 'package:flareline/pages/recommendation/requirement_page.dart';
@@ -101,53 +102,53 @@ class SuitabilityContentState extends State<SuitabilityContent> {
     }
   }
 
-  void _showNavigationMenu() async {
-    final RenderBox? renderBox =
-        _navigationMenuKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
+  // void _showNavigationMenu() async {
+  //   final RenderBox? renderBox =
+  //       _navigationMenuKey.currentContext?.findRenderObject() as RenderBox?;
+  //   if (renderBox == null) return;
 
-    final Offset buttonPosition = renderBox.localToGlobal(Offset.zero);
-    final Size buttonSize = renderBox.size;
+  //   final Offset buttonPosition = renderBox.localToGlobal(Offset.zero);
+  //   final Size buttonSize = renderBox.size;
 
-    final result = await showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        buttonPosition.dx,
-        buttonPosition.dy + buttonSize.height,
-        buttonPosition.dx + 200,
-        buttonPosition.dy + buttonSize.height + 100,
-      ),
-      color: Theme.of(context).cardTheme.color,
-      items: [
-        const PopupMenuItem(
-          value: 'back',
-          child: ListTile(
-            title: Text('Chatbot'),
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'recommendation',
-          child: ListTile(
-            title: Text('Crop Recommendation'),
-          ),
-        ),
-      ],
-    );
+  //   final result = await showMenu(
+  //     context: context,
+  //     position: RelativeRect.fromLTRB(
+  //       buttonPosition.dx,
+  //       buttonPosition.dy + buttonSize.height,
+  //       buttonPosition.dx + 200,
+  //       buttonPosition.dy + buttonSize.height + 100,
+  //     ),
+  //     color: Theme.of(context).cardTheme.color,
+  //     items: [
+  //       const PopupMenuItem(
+  //         value: 'back',
+  //         child: ListTile(
+  //           title: Text('Chatbot'),
+  //         ),
+  //       ),
+  //       const PopupMenuItem(
+  //         value: 'recommendation',
+  //         child: ListTile(
+  //           title: Text('Crop Recommendation'),
+  //         ),
+  //       ),
+  //     ],
+  //   );
 
-    if (result == 'back') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const ChatbotPage(),
-        ),
-      );
-    } else if (result == 'recommendation') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const RecommendationPage()),
-      );
-    }
-  }
+  //   if (result == 'back') {
+  //     Navigator.push(
+  //       context,
+  //       MaterialPageRoute(
+  //         builder: (context) => const ChatbotPage(),
+  //       ),
+  //     );
+  //   } else if (result == 'recommendation') {
+  //     Navigator.push(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => const RecommendationPage()),
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +163,7 @@ class SuitabilityContentState extends State<SuitabilityContent> {
 
         return Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 16 : 24,
+            horizontal: isMobile ? 0 : 24,
             vertical: isMobile ? 8 : 24,
           ),
           child: Center(
@@ -509,6 +510,10 @@ class SuitabilityContentState extends State<SuitabilityContent> {
   }
 
   Widget _buildResponsiveHeader(bool isMobile, bool isTablet) {
+    void _showAiModelsInfo() {
+      AiModelsInfoWidget.show(context: context);
+    }
+
     if (!isMobile && !isTablet) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -538,38 +543,80 @@ class SuitabilityContentState extends State<SuitabilityContent> {
                       color: Colors.grey,
                     ),
                   ),
-                  onPressed: _showNavigationMenu,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const RecommendationPage()),
+                    );
+                  },
                   splashRadius: 16,
                   padding: EdgeInsets.zero,
                 ),
               ),
             ],
           ),
-          Tooltip(
-            message: 'More information',
-            child: InkWell(
-              onTap: _navigateToRequirements,
-              borderRadius: BorderRadius.circular(50),
-              hoverColor: Colors.grey.withOpacity(0.1),
-              child: Container(
-                width: 50,
-                height: 50,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.grey[500]!,
-                    width: 2,
+
+          // Right side buttons
+          Row(
+            children: [
+              // AI Models Info Button (Question Mark)
+              Tooltip(
+                message: context.translate('Learn about AI Models'),
+                child: InkWell(
+                  onTap: _showAiModelsInfo,
+                  borderRadius: BorderRadius.circular(50),
+                  hoverColor: Colors.grey.withOpacity(0.1),
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.grey[500]!,
+                        width: 2,
+                      ),
+                      color: Colors.white,
+                    ),
+                    child: Icon(
+                      Icons.help_outline,
+                      size: 24,
+                      color: Colors.grey[700],
+                    ),
                   ),
-                  color: Colors.white,
-                ),
-                child: Icon(
-                  Icons.menu_book_outlined,
-                  size: 30,
-                  color: Colors.grey[700],
                 ),
               ),
-            ),
+              const SizedBox(width: 12),
+
+              // Requirements Button
+              Tooltip(
+                message: context.translate('View Requirements'),
+                child: InkWell(
+                  onTap: _navigateToRequirements,
+                  borderRadius: BorderRadius.circular(50),
+                  hoverColor: Colors.grey.withOpacity(0.1),
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.grey[500]!,
+                        width: 2,
+                      ),
+                      color: Colors.white,
+                    ),
+                    child: Icon(
+                      Icons.menu_book_outlined,
+                      size: 24,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       );
@@ -609,36 +656,74 @@ class SuitabilityContentState extends State<SuitabilityContent> {
                         color: Colors.grey,
                       ),
                     ),
-                    onPressed: _showNavigationMenu,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const RecommendationPage()),
+                      );
+                    },
                     splashRadius: 16,
                     padding: EdgeInsets.zero,
                   ),
                 ),
-                Tooltip(
-                  message: 'More information',
-                  child: InkWell(
-                    onTap: _navigateToRequirements,
-                    borderRadius: BorderRadius.circular(50),
-                    hoverColor: Colors.grey.withOpacity(0.1),
-                    child: Container(
-                      width: 25,
-                      height: 25,
-                      padding: const EdgeInsets.all(0),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.grey[500]!,
-                          width: 1,
+                Row(
+                  children: [
+                    // AI Models Info Button (Question Mark)
+                    Tooltip(
+                      message: context.translate('Learn about AI Models'),
+                      child: InkWell(
+                        onTap: _showAiModelsInfo,
+                        borderRadius: BorderRadius.circular(50),
+                        child: Container(
+                          width: 25,
+                          height: 25,
+                          padding: const EdgeInsets.all(0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.grey[500]!,
+                              width: 1,
+                            ),
+                            color: Colors.white,
+                          ),
+                          child: Icon(
+                            Icons.help_outline,
+                            size: 15,
+                            color: Colors.grey[700],
+                          ),
                         ),
-                        color: Colors.white,
-                      ),
-                      child: Icon(
-                        Icons.menu_book_outlined,
-                        size: 15,
-                        color: Colors.grey[700],
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+
+                    // Requirements Button
+                    Tooltip(
+                      message: context.translate('View Requirements'),
+                      child: InkWell(
+                        onTap: _navigateToRequirements,
+                        borderRadius: BorderRadius.circular(50),
+                        child: Container(
+                          width: 25,
+                          height: 25,
+                          padding: const EdgeInsets.all(0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.grey[500]!,
+                              width: 1,
+                            ),
+                            color: Colors.white,
+                          ),
+                          child: Icon(
+                            Icons.menu_book_outlined,
+                            size: 15,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

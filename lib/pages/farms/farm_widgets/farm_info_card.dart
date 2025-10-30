@@ -9,13 +9,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 class FarmInfoCard extends StatefulWidget {
-  final Map<String, dynamic> farm; 
+  final Map<String, dynamic> farm;
   final Function(Map<String, dynamic>) onSave;
 
   const FarmInfoCard({
     super.key,
     required this.farm,
-    required this.onSave, 
+    required this.onSave,
   });
 
   @override
@@ -72,10 +72,10 @@ class _FarmInfoCardState extends State<FarmInfoCard> {
   }
 
   void _saveChanges() {
-final selectedFarmer = _farmers.firstWhere(
-    (farmer) => farmer['name'] == _editedFarm['farmOwner'],
-    orElse: () => {'id': '', 'name': ''},
-  );
+    final selectedFarmer = _farmers.firstWhere(
+      (farmer) => farmer['name'] == _editedFarm['farmOwner'],
+      orElse: () => {'id': '', 'name': ''},
+    );
 
     int getSectorId(String? sector) {
       if (sector == null) return 0;
@@ -97,19 +97,19 @@ final selectedFarmer = _farmers.firstWhere(
       }
     }
 
-   // Add debug logging
-  print('Before getSectorId - sector: ${_editedFarm['sector']}');
-  final sectorId = getSectorId(_editedFarm['sector']?.toString());
-  print('After getSectorId - sectorId: $sectorId');
+    // Add debug logging
+    print('Before getSectorId - sector: ${_editedFarm['sector']}');
+    final sectorId = getSectorId(_editedFarm['sector']?.toString());
+    print('After getSectorId - sectorId: $sectorId');
 
-  final saveData = {
-    'farmName': _editedFarm['farmName'] ?? '',
-    'farmerId': selectedFarmer['id'] ?? '',
-    'sectorId': sectorId,
-    'products': _editedFarm['products'] ?? [],
-    'barangayName': _editedFarm['barangay'] ?? '',
-    'status': _editedFarm['status'] ?? 'Active',
-  };
+    final saveData = {
+      'farmName': _editedFarm['farmName'] ?? '',
+      'farmerId': selectedFarmer['id'] ?? '',
+      'sectorId': sectorId,
+      'products': _editedFarm['products'] ?? [],
+      'barangayName': _editedFarm['barangay'] ?? '',
+      'status': _editedFarm['status'] ?? 'Active',
+    };
 
     print('Saved farm data: $saveData');
     widget.onSave(saveData);
@@ -129,11 +129,11 @@ final selectedFarmer = _farmers.firstWhere(
     return product.toString();
   }
 
+  bool get isMobile {
+    final mediaQuery = MediaQuery.of(context);
+    return mediaQuery.size.width < 600; // Common breakpoint for mobile
+  }
 
-bool get isMobile {
-  final mediaQuery = MediaQuery.of(context);
-  return mediaQuery.size.width < 600; // Common breakpoint for mobile
-}
   Widget _buildStatusField() {
     const statusOptions = ['Active', 'Inactive'];
     final userProvider = context.read<UserProvider>();
@@ -271,7 +271,7 @@ bool get isMobile {
       return buildComboBox(
           context: context,
           hint: 'Select Barangay',
-          options: barangayNames, 
+          options: barangayNames,
           selectedValue: _editedFarm['barangay'] ?? '',
           onSelected: (value) => _handleFieldChange('barangay', value),
           width: isMobile ? double.infinity : 180,
@@ -286,30 +286,29 @@ bool get isMobile {
     }
   }
 
-
-Widget _buildFarmNameField() {
-  if (_isEditing) {
-    return SizedBox(
-      width: double.infinity, 
-      child: OutBorderTextFormField(
-        initialValue: _editedFarm['farmName'] ?? '',
-        hintText: 'Enter farm name',
-        height: 38,
-        textStyle: Theme.of(context).textTheme.bodyMedium,
-        onFieldSubmitted: (value) => _handleFieldChange('farmName', value),
-        onChanged: (value) => _handleFieldChange('farmName', value), // Add this line
-      ),
-    );
-  } else {
-    return Text(
-      _editedFarm['farmName'] ?? '',
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontSize: isMobile ? 12 : null,
-          ),
-    );
+  Widget _buildFarmNameField() {
+    if (_isEditing) {
+      return SizedBox(
+        width: double.infinity,
+        child: OutBorderTextFormField(
+          initialValue: _editedFarm['farmName'] ?? '',
+          hintText: 'Enter farm name',
+          height: 38,
+          textStyle: Theme.of(context).textTheme.bodyMedium,
+          onFieldSubmitted: (value) => _handleFieldChange('farmName', value),
+          onChanged: (value) =>
+              _handleFieldChange('farmName', value), // Add this line
+        ),
+      );
+    } else {
+      return Text(
+        _editedFarm['farmName'] ?? '',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontSize: isMobile ? 12 : null,
+            ),
+      );
+    }
   }
-}
-
 
   // Helper method to build card-style fields for mobile
   Widget _buildMobileFieldCard({
@@ -406,286 +405,237 @@ Widget _buildFarmNameField() {
     );
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
 
-@override
-Widget build(BuildContext context) {
-
- final bool isMobile = MediaQuery.of(context).size.width < 600;
-
-  return BlocListener<FarmerBloc, FarmerState>(
-    listener: (context, state) {
-      if (state is FarmersLoaded) {
-        setState(() {
-          _farmers = state.farmers
-              .map((farmer) => {
-                    'id': farmer.id,
-                    'name': farmer.name,
-                  })
-              .toList();
-        });
-      }
-    },
-    child: Stack(
-      children: [
-        Card(
-          child: Padding(
-            padding: EdgeInsets.all(isMobile ? 12 : 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header section with farm name and avatar
-                isMobile
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                   Row(
-  crossAxisAlignment: CrossAxisAlignment.center, // Changed from start to center
-  children: [
-    CircleAvatar(
-      radius: 32,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? GlobalColors.darkerCardColor
-          : GlobalColors.surfaceColor,
-      child: Icon(
-        Icons.agriculture,
-        size: 32,
-        color: Theme.of(context).colorScheme.onPrimaryContainer,
-      ),
-    ),
-    const SizedBox(width: 12),
-    Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center, // Added this line
+    return BlocListener<FarmerBloc, FarmerState>(
+      listener: (context, state) {
+        if (state is FarmersLoaded) {
+          setState(() {
+            _farmers = state.farmers
+                .map((farmer) => {
+                      'id': farmer.id,
+                      'name': farmer.name,
+                    })
+                .toList();
+          });
+        }
+      },
+      child: Stack(
         children: [
-          Text(
-            'Farm Details',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ), 
-        ],
-      ),
-    ),
-  ],
-),
-                          const SizedBox(height: 16),
-                          
-                          // Mobile: Use card-style fields for all form elements
-                          if (_isEditing) ...[
-                            _buildMobileFieldCard(
-                              icon: Icons.agriculture,
-                              label: 'Farm Name',
-                              content: _buildFarmNameField(),
-                            ),
-                            _buildMobileFieldCard(
-                              icon: Icons.person,
-                              label: 'Farm Owner',
-                              content: _buildOwnerField(),
-                            ),
-                            _buildMobileFieldCard(
-                              icon: Icons.info,
-                              label: 'Status',
-                              content: _buildStatusField(),
-                            ),
-                          ] else ...[
-                            // Read-only mode - show farm name prominently
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).brightness == Brightness.dark
-                                    ? GlobalColors.darkerCardColor
-                                    : GlobalColors.surfaceColor,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child:
-                               Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Farm Name',
-                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _editedFarm['farmName'] ?? '',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      )
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                     
-                        children: [
-                         
-                         
-
-                      
-   if (!_isEditing) ...[ 
-
-
-   
-                          CircleAvatar(
-                            radius: 48,
-                            backgroundColor: Theme.of(context).brightness ==
-                                    Brightness.dark
-                                ? GlobalColors.darkerCardColor
-                                : GlobalColors.surfaceColor,
-                            child: Icon(
-                              Icons.agriculture,
-                              size: 40,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer,
-                            ),
-                          ),
-                    
-    
-   ]
-,
-
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Always show farm name in read-only style when not editing
-                                if (!_isEditing) ...[
-                                  TextFormField(
-                                    initialValue: _editedFarm['farmName'] ?? '',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall
-                                        ?.copyWith(),
-                                    decoration: const InputDecoration(
-                                      border: InputBorder.none,
-                                      isDense: true,
-                                      contentPadding: EdgeInsets.zero,
-                                    ),
-                                    readOnly: true,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  _buildOwnerField(),
-                                  const SizedBox(height: 4),
-                                  _buildStatusField(),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                // const Divider(height: 32),
-
-                // Info sections - different layout for mobile vs desktop
-                isMobile
-                    ? Column(
-                        children: [
-                          // Mobile: Use card-style fields for all form elements
-                          if (!_isEditing) ...[
-                            // Only show these in read-only mode if they weren't shown above
-                            _buildMobileFieldCard(
-                              icon: Icons.person,
-                              label: 'Farm Owner',
-                              content: _buildOwnerField(),
-                            ),
-                            _buildMobileFieldCard(
-                              icon: Icons.info,
-                              label: 'Status',
-                              content: _buildStatusField(),
-                            ),
-                          ],
-                          
-                          _buildMobileFieldCard(
-                            icon: Icons.business,
-                            label: 'Primary Sector',
-                            content: _buildSectorField(),
-                          ),
-                          _buildMobileFieldCard(
-                            icon: Icons.location_on,
-                            label: 'Location',
-                            content: _buildLocationField(),
-                          ),
-                          if (_editedFarm['farmSize'] != null)
-                            _buildMobileFieldCard(
-                              icon: Icons.agriculture,
-                              label: 'Farm Size',
-                              content: Text(
-                                '${_editedFarm['farmSize']} hectares',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                        ],
-                      )
-                    : Container(
-                        width: double.infinity,
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 10,
-                          runSpacing: 10,
+          Card(
+            child: Padding(
+              padding: EdgeInsets.all(isMobile ? 12 : 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header section with farm name and avatar
+                  isMobile
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // When editing, show all fields including farm name, owner, and status in the wrap
-                            if (_isEditing) ...[
-                              // Farm Name
-                              _buildDesktopEditCard(
-                                icon: Icons.agriculture,
-                                label: 'Farm Name',
-                                content: SizedBox(
-                                  width: 200,
-                                  child: OutBorderTextFormField(
-                                    initialValue: _editedFarm['farmName'] ?? '',
-                                    hintText: 'Enter farm name',
-                                    height: 38,
-                               
-              onChanged: (value) => _handleFieldChange('farmName', value), // Add this line
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment
+                                  .center, // Changed from start to center
+                              children: [
+                                CircleAvatar(
+                                  radius: 32,
+                                  backgroundColor:
+                                      Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? GlobalColors.darkerCardColor
+                                          : GlobalColors.surfaceColor,
+                                  child: Icon(
+                                    Icons.agriculture,
+                                    size: 32,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
                                   ),
                                 ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment
+                                        .center, // Added this line
+                                    children: [
+                                      Text(
+                                        'Farm Details',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Mobile: Use card-style fields for all form elements
+                            if (_isEditing) ...[
+                              _buildMobileFieldCard(
+                                icon: Icons.agriculture,
+                                label: 'Farm Name',
+                                content: _buildFarmNameField(),
                               ),
-                              
-                              // Farm Owner
-                              _buildDesktopEditCard(
+                              _buildMobileFieldCard(
                                 icon: Icons.person,
                                 label: 'Farm Owner',
                                 content: _buildOwnerField(),
                               ),
-                              
-                              // Status
-                              _buildDesktopEditCard(
+                              _buildMobileFieldCard(
+                                icon: Icons.info,
+                                label: 'Status',
+                                content: _buildStatusField(),
+                              ),
+                            ] else ...[
+                              // Read-only mode - show farm name prominently
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? GlobalColors.darkerCardColor
+                                      : GlobalColors.surfaceColor,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Farm Name',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _editedFarm['farmName'] ?? '',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        )
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (!_isEditing) ...[
+                              CircleAvatar(
+                                radius: 48,
+                                backgroundColor: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? GlobalColors.darkerCardColor
+                                    : GlobalColors.surfaceColor,
+                                child: Icon(
+                                  Icons.agriculture,
+                                  size: 40,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Always show farm name in read-only style when not editing
+                                  if (!_isEditing) ...[
+                                    TextFormField(
+                                      initialValue:
+                                          _editedFarm['farmName'] ?? '',
+                                      // style: Theme.of(context)
+                                      //     .textTheme
+                                      //     .headlineSmall
+                                      //     ?.copyWith(),
+
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+
+                                      // style: Theme.of(context)
+                                      //     .textTheme
+                                      //     .bodyMedium
+                                      //     ?.copyWith(
+                                      //       color: Colors.grey[600],
+                                      //     ),
+
+                                      decoration: const InputDecoration(
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.zero,
+                                      ),
+                                      readOnly: true,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    _buildOwnerField(),
+                                    const SizedBox(height: 4),
+                                    _buildStatusField(),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                  // const Divider(height: 32),
+
+                  // Info sections - different layout for mobile vs desktop
+                  isMobile
+                      ? Column(
+                          children: [
+                            // Mobile: Use card-style fields for all form elements
+                            if (!_isEditing) ...[
+                              // Only show these in read-only mode if they weren't shown above
+                              _buildMobileFieldCard(
+                                icon: Icons.person,
+                                label: 'Farm Owner',
+                                content: _buildOwnerField(),
+                              ),
+                              _buildMobileFieldCard(
                                 icon: Icons.info,
                                 label: 'Status',
                                 content: _buildStatusField(),
                               ),
                             ],
-                            
-                            // Primary Sector
-                            _buildDesktopEditCard(
+
+                            _buildMobileFieldCard(
                               icon: Icons.business,
                               label: 'Primary Sector',
                               content: _buildSectorField(),
                             ),
-
-                            // Location
-                            _buildDesktopEditCard(
+                            _buildMobileFieldCard(
                               icon: Icons.location_on,
                               label: 'Location',
                               content: _buildLocationField(),
                             ),
-
-                            // Farm Size
                             if (_editedFarm['farmSize'] != null)
-                              _buildDesktopEditCard(
+                              _buildMobileFieldCard(
                                 icon: Icons.agriculture,
                                 label: 'Farm Size',
                                 content: Text(
@@ -694,122 +644,192 @@ Widget build(BuildContext context) {
                                 ),
                               ),
                           ],
-                        ),
-                      ),
-
-                const SizedBox(height: 16),
-
-                // Products section (unchanged)
-                Container(
-                  padding: EdgeInsets.all(isMobile ? 8 : 12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? GlobalColors.darkerCardColor
-                        : GlobalColors.surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.inventory,
-                            size: isMobile ? 16 : 20,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Products',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: isMobile ? 14 : null,
-                                ),
-                          ),
-                          const Spacer(),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (_editedFarm['products'].isEmpty)
-                        Text(
-                          'No products added yet',
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                            fontSize: isMobile ? 12 : null,
-                          ),
                         )
-                      else
-                        ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: isMobile ? 100 : 120,
-                          ),
-                          child: SingleChildScrollView(
-                            child: Wrap(
-                              spacing: isMobile ? 4 : 8,
-                              runSpacing: isMobile ? 4 : 8,
-                              children: List.generate(
-                                _editedFarm['products'].length,
-                                (index) => Chip(
-                                  backgroundColor:
-                                      Theme.of(context).cardTheme.color,
-                                  label: Text(
-                                    _getProductDisplayName(
-                                        _editedFarm['products'][index]),
-                                    style: TextStyle(
-                                      fontSize: isMobile ? 11 : null,
+                      : Container(
+                          width: double.infinity,
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              // When editing, show all fields including farm name, owner, and status in the wrap
+                              if (_isEditing) ...[
+                                // Farm Name
+                                _buildDesktopEditCard(
+                                  icon: Icons.agriculture,
+                                  label: 'Farm Name',
+                                  content: SizedBox(
+                                    width: 200,
+                                    child: OutBorderTextFormField(
+                                      initialValue:
+                                          _editedFarm['farmName'] ?? '',
+                                      hintText: 'Enter farm name',
+                                      height: 38,
+
+                                      onChanged: (value) => _handleFieldChange(
+                                          'farmName', value), // Add this line
                                     ),
                                   ),
-                                  deleteIcon: Icon(
-                                    Icons.close,
-                                    size: isMobile ? 14 : 16,
+                                ),
+
+                                // Farm Owner
+                                _buildDesktopEditCard(
+                                  icon: Icons.person,
+                                  label: 'Farm Owner',
+                                  content: _buildOwnerField(),
+                                ),
+
+                                // Status
+                                _buildDesktopEditCard(
+                                  icon: Icons.info,
+                                  label: 'Status',
+                                  content: _buildStatusField(),
+                                ),
+                              ],
+
+                              // Primary Sector
+                              _buildDesktopEditCard(
+                                icon: Icons.business,
+                                label: 'Primary Sector',
+                                content: _buildSectorField(),
+                              ),
+
+                              // Location
+                              _buildDesktopEditCard(
+                                icon: Icons.location_on,
+                                label: 'Location',
+                                content: _buildLocationField(),
+                              ),
+
+                              // Farm Size
+                              if (_editedFarm['farmSize'] != null)
+                                _buildDesktopEditCard(
+                                  icon: Icons.agriculture,
+                                  label: 'Farm Size',
+                                  content: Text(
+                                    '${_editedFarm['farmSize']} hectares',
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
                                   ),
-                                  materialTapTargetSize: isMobile
-                                      ? MaterialTapTargetSize.shrinkWrap
-                                      : MaterialTapTargetSize.padded,
-                                  visualDensity: isMobile
-                                      ? VisualDensity.compact
-                                      : VisualDensity.standard,
+                                ),
+                            ],
+                          ),
+                        ),
+
+                  const SizedBox(height: 16),
+
+                  // Products section (unchanged)
+                  Container(
+                    padding: EdgeInsets.all(isMobile ? 8 : 12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? GlobalColors.darkerCardColor
+                          : GlobalColors.surfaceColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.inventory,
+                              size: isMobile ? 16 : 20,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Products',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: isMobile ? 14 : null,
+                                  ),
+                            ),
+                            const Spacer(),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        if (_editedFarm['products'].isEmpty)
+                          Text(
+                            'No products added yet',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              fontSize: isMobile ? 12 : null,
+                            ),
+                          )
+                        else
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: isMobile ? 100 : 120,
+                            ),
+                            child: SingleChildScrollView(
+                              child: Wrap(
+                                spacing: isMobile ? 4 : 8,
+                                runSpacing: isMobile ? 4 : 8,
+                                children: List.generate(
+                                  _editedFarm['products'].length,
+                                  (index) => Chip(
+                                    backgroundColor:
+                                        Theme.of(context).cardTheme.color,
+                                    label: Text(
+                                      _getProductDisplayName(
+                                          _editedFarm['products'][index]),
+                                      style: TextStyle(
+                                        fontSize: isMobile ? 11 : null,
+                                      ),
+                                    ),
+                                    deleteIcon: Icon(
+                                      Icons.close,
+                                      size: isMobile ? 14 : 16,
+                                    ),
+                                    materialTapTargetSize: isMobile
+                                        ? MaterialTapTargetSize.shrinkWrap
+                                        : MaterialTapTargetSize.padded,
+                                    visualDensity: isMobile
+                                        ? VisualDensity.compact
+                                        : VisualDensity.standard,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                )
-              ],
+                      ],
+                    ),
+                  )
+                ],
+              ),
             ),
           ),
-        ),
-        Positioned(
-          top: 8,
-          right: 8,
-          child: FloatingActionButton.small(
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? GlobalColors.darkerCardColor
-                : GlobalColors.surfaceColor,
-            onPressed: _toggleEditing,
-            child: Icon(
-              _isEditing
-                  ? (_hasChanges ? Icons.save : Icons.close)
-                  : Icons.edit,
-              size: isMobile ? 18 : 24,
+          Positioned(
+            top: 8,
+            right: 8,
+            child: FloatingActionButton.small(
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? GlobalColors.darkerCardColor
+                  : GlobalColors.surfaceColor,
+              onPressed: _toggleEditing,
+              child: Icon(
+                _isEditing
+                    ? (_hasChanges ? Icons.save : Icons.close)
+                    : Icons.edit,
+                size: isMobile ? 18 : 24,
+              ),
+              tooltip: _isEditing
+                  ? (_hasChanges ? 'Save Changes' : 'Cancel Editing')
+                  : 'Edit Farm',
             ),
-            tooltip: _isEditing
-                ? (_hasChanges ? 'Save Changes' : 'Cancel Editing')
-                : 'Edit Farm',
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 }

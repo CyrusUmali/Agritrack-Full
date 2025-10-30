@@ -28,12 +28,26 @@ class _MapChartWidgetState extends State<MapChartWidget> {
   @override
   void initState() {
     super.initState();
-    print('selectedProduct: ${widget.selectedProduct}');
     _isMounted = true;
-    _loadData();
+
+    // Only load data if not already available
+    final productState = context.read<ProductBloc>().state;
+    final yieldState = context.read<YieldBloc>().state;
+
+    final needsProductLoad = productState is! ProductsLoaded;
+    final needsYieldLoad = yieldState is! YieldsLoaded;
+
+    if (needsProductLoad || needsYieldLoad) {
+      // print(
+      //     '📦 Loading data (Products: $needsProductLoad, Yields: $needsYieldLoad)');
+      _loadData();
+    } else {
+      // print('✅ Data already loaded, skipping load');
+    }
   }
 
-  void _loadData() {
+  void _loadData({bool forceRefresh = false}) {
+    // print('🔄 Loading data (force: $forceRefresh)');
     // Load both yields and products when initializing
     context.read<YieldBloc>().add(LoadYields());
     context.read<ProductBloc>().add(LoadProducts());
@@ -54,32 +68,31 @@ class _MapChartWidgetState extends State<MapChartWidget> {
         BlocListener<ProductBloc, ProductState>(
           listener: (context, state) {
             if (state is ProductsError) {
-              // ScaffoldMessenger.of(context).showSnackBar(
-              //   SnackBar(content: Text(state.message)),
-              // );
+              // Handle error if needed
             }
           },
         ),
         BlocListener<YieldBloc, YieldState>(
           listener: (context, state) {
             if (state is YieldsError) {
-              // ScaffoldMessenger.of(context).showSnackBar(
-              //   SnackBar(content: Text(state.message)),
-              // );
+              // Handle error if needed
             }
           },
         ),
       ],
       child: BlocBuilder<ProductBloc, ProductState>(
         builder: (productContext, productState) {
+          // print('🔍 ProductBloc State: ${productState.runtimeType}');
+
           // Handle product loading states first
           if (productState is ProductsLoading) {
+            // print('⏳ Products loading...');
             return MapChartUIComponents.buildLoadingState();
           } else if (productState is ProductsError) {
             return MapChartUIComponents.buildErrorState(
               context,
               productState.message,
-              _loadData,
+              () => _loadData(forceRefresh: true),
             );
           }
 
@@ -89,18 +102,22 @@ class _MapChartWidgetState extends State<MapChartWidget> {
             products = [widget.selectedProduct!];
           } else if (productState is ProductsLoaded) {
             products = productState.products.map((p) => p.name).toList();
+            // print('✅ Products loaded: ${products.length}');
           }
 
           return BlocBuilder<YieldBloc, YieldState>(
             builder: (yieldContext, yieldState) {
+              // print('🔍 YieldBloc State: ${yieldState.runtimeType}');
+
               // Handle yield loading states
               if (yieldState is YieldsLoading) {
+                // print('⏳ Yields loading...');
                 return MapChartUIComponents.buildLoadingState();
               } else if (yieldState is YieldsError) {
                 return MapChartUIComponents.buildErrorState(
                   context,
                   yieldState.message,
-                  _loadData,
+                  () => _loadData(forceRefresh: true),
                 );
               }
 
@@ -108,8 +125,10 @@ class _MapChartWidgetState extends State<MapChartWidget> {
               List<Yield> yields = [];
               if (yieldState is YieldsLoaded) {
                 yields = yieldState.yields;
+                // print('✅ Yields loaded: ${yields.length}');
               }
 
+              // print('🎯 Building map layout');
               // Only build the map when we have both products and yields data
               return _buildMapsLayout(context, products, yields);
             },
@@ -118,8 +137,6 @@ class _MapChartWidgetState extends State<MapChartWidget> {
       ),
     );
   }
-
-// In map_chart_widget.dart - Updated _buildMapsLayout method
 
   Widget _buildMapsLayout(
       BuildContext context, List<String> products, List<Yield> yields) {
@@ -144,7 +161,7 @@ class _MapChartWidgetState extends State<MapChartWidget> {
                   Icons.refresh,
                   color: theme.iconTheme.color,
                 ),
-                onPressed: _loadData,
+                onPressed: () => _loadData(forceRefresh: true),
                 tooltip: 'Reload Data',
               ),
             ],
@@ -157,83 +174,185 @@ class _MapChartWidgetState extends State<MapChartWidget> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
-                child: ChangeNotifierProvider(
-                  create: (context) => BarangayDataProvider(
-                    initialProducts: products,
-                    yields: yields,
-                    selectedYear: widget.selectedYear,
-                    // Pass the selected product to auto-select it
-                    initialSelectedProduct: widget.selectedProduct,
-                  ),
-                  key: ValueKey(
-                      '${widget.selectedYear}_${widget.selectedProduct}'),
-                  builder: (ctx, child) {
-                    final provider = ctx.watch<BarangayDataProvider>();
-
-                    if (provider.isLoading) {
-                      return Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.primary,
-                          ),
-                        ),
-                      );
-                    }
-
-                    final MapZoomPanBehavior zoomPanBehavior =
-                        MapZoomPanBehavior(
-                      enableDoubleTapZooming: true,
-                      enableMouseWheelZooming: true,
-                      enablePinching: true,
-                      zoomLevel: 1,
-                      minZoomLevel: 1,
-                      maxZoomLevel: 15,
-                      enablePanning: true,
-                    );
-
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        if (constraints.maxWidth < 800) {
-                          return Column(
-                            children: [
-                              MapChartUIComponents.buildProductSelector(
-                                  provider, context),
-                              const SizedBox(height: 16),
-                              Expanded(
-                                flex: 3,
-                                child: MapChartUIComponents.buildMap(
-                                    provider, zoomPanBehavior, context),
-                              ),
-                            ],
-                          );
-                        }
-                        return Column(
-                          children: [
-                            MapChartUIComponents.buildProductSelector(
-                                provider, context),
-                            const SizedBox(height: 16),
-                            Expanded(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: MapChartUIComponents.buildMap(
-                                        provider, zoomPanBehavior, context),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  MapChartUIComponents.buildBarangayList(
-                                      provider, context),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
+                child: _buildMapContent(context, products, yields, theme),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapContent(BuildContext context, List<String> products,
+      List<Yield> yields, ThemeData theme) {
+    // Check if there's no yield data
+    if (yields.isEmpty) {
+      return _buildNoDataIndicator(theme);
+    }
+
+    // Filter yields for the selected year (extracted from harvestDate)
+    final selectedYear = widget.selectedYear;
+    final filteredYields = yields
+        .where((yield) => yield.harvestDate.year == selectedYear)
+        .toList();
+
+    if (filteredYields.isEmpty) {
+      return _buildNoDataIndicator(theme, forYear: selectedYear);
+    }
+
+    // If we have a selected product, check if there's data for that specific product
+    if (widget.selectedProduct != null) {
+      final productYields = filteredYields
+          .where((yield) =>
+              yield.productName?.toLowerCase() ==
+              widget.selectedProduct!.toLowerCase())
+          .toList();
+
+      if (productYields.isEmpty) {
+        return _buildNoDataIndicator(theme,
+            forYear: selectedYear, forProduct: widget.selectedProduct);
+      }
+    }
+
+    return ChangeNotifierProvider(
+      create: (context) {
+        // print('🏗️ Creating BarangayDataProvider');
+        return BarangayDataProvider(
+          initialProducts: products,
+          yields: yields,
+          selectedYear: widget.selectedYear,
+          initialSelectedProduct: widget.selectedProduct,
+        );
+      },
+      builder: (ctx, child) {
+        final provider = ctx.watch<BarangayDataProvider>();
+
+        // print(
+        //     '🗺️ Provider state - isLoading: ${provider.isLoading}, data: ${provider.data.length}');
+
+        if (provider.isLoading) {
+          // print('⏳ Provider still loading...');
+          return Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                theme.colorScheme.primary,
+              ),
+            ),
+          );
+        }
+
+        // print('✅ Showing map content');
+
+        final MapZoomPanBehavior zoomPanBehavior = MapZoomPanBehavior(
+          enableDoubleTapZooming: true,
+          enableMouseWheelZooming: false,
+          enablePinching: true,
+          zoomLevel: 1,
+          minZoomLevel: 1,
+          maxZoomLevel: 15,
+          enablePanning: true,
+        );
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            // Only show product selector if no product is pre-selected
+            final bool showProductSelector = widget.selectedProduct == null;
+
+            if (constraints.maxWidth < 800) {
+              return Column(
+                children: [
+                  if (showProductSelector) ...[
+                    MapChartUIComponents.buildProductSelector(
+                        provider, context),
+                    const SizedBox(height: 16),
+                  ],
+                  Expanded(
+                    flex: 3,
+                    child: MapChartUIComponents.buildMap(
+                        provider, zoomPanBehavior, context),
+                  ),
+                ],
+              );
+            }
+            return Column(
+              children: [
+                if (showProductSelector) ...[
+                  MapChartUIComponents.buildProductSelector(provider, context),
+                  const SizedBox(height: 16),
+                ],
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: MapChartUIComponents.buildMap(
+                            provider, zoomPanBehavior, context),
+                      ),
+                      const SizedBox(width: 16),
+                      MapChartUIComponents.buildBarangayList(provider, context),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildNoDataIndicator(ThemeData theme,
+      {int? forYear, String? forProduct}) {
+    String message = 'No yield data available';
+    String subtitle =
+        'There is currently no yield information to display on the map.';
+
+    if (forYear != null && forProduct != null) {
+      message = 'No data for $forProduct in $forYear';
+      subtitle =
+          'There is no yield data available for $forProduct in the year $forYear.';
+    } else if (forYear != null) {
+      message = 'No data for $forYear';
+      subtitle = 'There is no yield data available for the year $forYear.';
+    } else if (forProduct != null) {
+      message = 'No data for $forProduct';
+      subtitle = 'There is no yield data available for $forProduct.';
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.map_outlined,
+            size: 80,
+            color: theme.colorScheme.onSurface.withOpacity(0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: () => _loadData(forceRefresh: true),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Reload Data'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
         ],

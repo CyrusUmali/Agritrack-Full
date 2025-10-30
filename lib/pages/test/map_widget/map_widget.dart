@@ -5,11 +5,13 @@ import 'package:flareline/pages/test/map_widget/farm_list_panel/barangay_filter_
 import 'package:flareline/pages/test/map_widget/farm_service.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/farm_info_card.dart';
 import 'package:flareline/pages/toast/toast_helper.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flareline/pages/test/map_widget/pin_style.dart';
+import 'package:flareline/pages/test/map_widget/legend_panel.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:provider/provider.dart';
 
 import 'farm_list_panel/farm_list.dart';
 import 'stored_polygons.dart';
@@ -17,6 +19,7 @@ import 'map_controls.dart';
 import 'map_layers.dart';
 import 'polygon_manager.dart';
 import 'map_content.dart';
+import 'legend_panel.dart'; // NEW IMPORT
 
 class MapWidget extends StatefulWidget {
   const MapWidget({
@@ -42,6 +45,7 @@ class _MapWidgetState extends State<MapWidget>
   String selectedMap = "Google Satellite (No Labels)";
   bool _showFarmListPanel = false;
   bool _showLegendPanel = false;
+  bool _showAreaMarkers = true; // NEW: Toggle for barangay and lake icons
   double zoomLevel = 15.0;
   LatLng? previewPoint;
   bool _isLoading = true;
@@ -72,15 +76,21 @@ class _MapWidgetState extends State<MapWidget>
     });
     FarmInfoCard.loadBarangays();
 
+    // Get user provider
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
+
     _animatedMapController = AnimatedMapController(vsync: this);
     polygonManager = PolygonManager(
-        context: context,
-        mapController: _animatedMapController,
-        onPolygonSelected: hideFarmListPanel,
-        products: widget.products,
-        farmers: widget.farmers,
-        farmService: widget.farmService,
-        onFiltersChanged: () => setState(() {}));
+      context: context,
+      mapController: _animatedMapController,
+      onPolygonSelected: hideFarmListPanel,
+      products: widget.products,
+      farmers: widget.farmers,
+      farmService: widget.farmService,
+      onFiltersChanged: () => setState(() {}),
+      isFarmer: isFarmer,
+    );
 
     barangayManager = BarangayManager();
     barangayManager.loadBarangays(barangays);
@@ -90,7 +100,7 @@ class _MapWidgetState extends State<MapWidget>
   }
 
   Future<void> _loadFarmsFromApi() async {
-    if (!mounted) return; // Add this check
+    if (!mounted) return;
 
     setState(() {
       _isLoading = true;
@@ -100,13 +110,13 @@ class _MapWidgetState extends State<MapWidget>
     try {
       final farmsData = await widget.farmService.fetchFarms();
 
-      if (!mounted) return; // Check again after async operation
+      if (!mounted) return;
 
       final polygonsToLoad =
           farmsData.map((map) => PolygonData.fromMap(map)).toList();
       polygonManager.loadPolygons(polygonsToLoad);
     } catch (e) {
-      if (!mounted) return; // Check before error handling
+      if (!mounted) return;
 
       setState(() {
         _loadingError = e.toString();
@@ -119,7 +129,6 @@ class _MapWidgetState extends State<MapWidget>
       }
     } finally {
       if (mounted) {
-        // Check before final state update
         setState(() {
           _isLoading = false;
         });
@@ -140,7 +149,6 @@ class _MapWidgetState extends State<MapWidget>
     final route = ModalRoute.of(context);
     if (route == null) return;
 
-    // Find any RouteObserver that can observe ModalRoute
     final navigator = Navigator.of(context);
     if (navigator is NavigatorState) {
       for (final observer in navigator.widget.observers) {
@@ -154,7 +162,6 @@ class _MapWidgetState extends State<MapWidget>
 
   @override
   void dispose() {
-    // Unsubscribe from route changes
     widget.routeObserver.unsubscribe(this);
     polygonManager.dispose();
     _animatedMapController.dispose();
@@ -162,7 +169,6 @@ class _MapWidgetState extends State<MapWidget>
     super.dispose();
   }
 
-  // Handle route changes
   @override
   void didPush() {
     polygonManager.removeInfoCardOverlay();
@@ -185,6 +191,26 @@ class _MapWidgetState extends State<MapWidget>
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final _isFarmer = userProvider.isFarmer;
+    final _farmerId = userProvider.farmer?.id?.toString();
+
+    // Method to check if current user can edit a specific polygon
+    bool _canUserEditPolygon(PolygonData? polygon) {
+      // If user is not a farmer, they can edit any polygon (admin/staff access)
+      if (!_isFarmer) {
+        return true;
+      }
+
+      // If user is a farmer, they can only edit their own farms
+      if (polygon?.farmerId != null && _farmerId != null) {
+        return polygon!.farmerId.toString() == _farmerId;
+      }
+
+      // Default to false if we can't determine ownership
+      return false;
+    }
+
     if (_isLoading) {
       return SizedBox(
         width: MediaQuery.of(context).size.width,
@@ -262,16 +288,16 @@ class _MapWidgetState extends State<MapWidget>
               lakeFilter: polygonManager.selectedLakes,
               barangayFilter: polygonManager.selectedBarangays,
               farmTypeFilters: BarangayFilterPanel.filterOptions,
-              productFilters: polygonManager.selectedProducts, // Add this line
+              productFilters: polygonManager.selectedProducts,
               animatedMapController: _animatedMapController,
               showExceedingAreaOnly: _showExceedingAreaOnly,
+              showAreaMarkers: _showAreaMarkers, // NEW: Pass the toggle state
               onBarangayFilterChanged: (newFilters) {
                 setState(() {
                   polygonManager.selectedBarangays = newFilters;
                   hideFarmListPanel();
                 });
               },
-
               onLakeFilterChanged: (newFilters) {
                 setState(() {
                   polygonManager.selectedLakes = newFilters;
@@ -312,29 +338,30 @@ class _MapWidgetState extends State<MapWidget>
             ),
           ),
 
-        // Legend Panel
+        // Legend Panel - UPDATED TO USE SEPARATE COMPONENT
         if (_showLegendPanel)
           Positioned(
             left: _showFarmListPanel ? 320 : 60,
             top: 20,
-            child: _buildLegendPanel(),
+            child: LegendPanel(), // SIMPLIFIED
           ),
 
-// Panel and Legend Toggle Buttons in Column
+        // Panel and Legend Toggle Buttons in Column
         Positioned(
           top: 10,
-          left: _showFarmListPanel ? 270 : 10,
+          left: _showFarmListPanel ? 290 : 10,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Panel Toggle Button
-              _buildStyledIconButton(
+              buildStyledIconButton(
                 icon: _showFarmListPanel
                     ? Icons.arrow_left_rounded
                     : Icons.arrow_right_rounded,
                 onPressed: () {
                   setState(() {
                     _showFarmListPanel = !_showFarmListPanel;
+                    _showLegendPanel = isMobile ? false : _showLegendPanel;
                     if (_showFarmListPanel) {
                       polygonManager.selectedPolygonIndex = -1;
                       polygonManager.selectedPolygon = null;
@@ -352,13 +379,14 @@ class _MapWidgetState extends State<MapWidget>
               ),
               SizedBox(height: 10),
               // Legend Toggle Button
-              _buildStyledIconButton(
+              buildStyledIconButton(
                 icon: _showLegendPanel
                     ? Icons.legend_toggle
                     : Icons.legend_toggle_outlined,
                 onPressed: () {
                   setState(() {
                     _showLegendPanel = !_showLegendPanel;
+                    _showFarmListPanel = isMobile ? false : _showFarmListPanel;
                   });
                 },
                 backgroundColor: Colors.white,
@@ -369,15 +397,33 @@ class _MapWidgetState extends State<MapWidget>
                 ),
               ),
               SizedBox(height: 10),
-              // NEW: Exceeding Area Filter Button
-              _buildStyledIconButton(
+              // Area Markers Toggle Button (Barangay & Lake Icons) - NEW
+              buildStyledIconButton(
+                icon: _showAreaMarkers ? Icons.location_on : Icons.location_off,
+                onPressed: () {
+                  setState(() {
+                    _showAreaMarkers = !_showAreaMarkers;
+                  });
+                },
+                backgroundColor: _showAreaMarkers
+                    ? Colors.green.withOpacity(0.9)
+                    : Colors.grey.withOpacity(0.9),
+                iconColor: _showAreaMarkers ? Colors.green : null,
+                iconSize: 15,
+                buttonSize: isMobile ? 40.0 : 30,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              SizedBox(height: 10),
+              // Exceeding Area Filter Button
+              buildStyledIconButton(
                 icon: _showExceedingAreaOnly
-                    ? Icons.warning
-                    : Icons.warning_outlined,
+                    ? Icons.square_foot
+                    : Icons.square_foot_outlined,
                 onPressed: () {
                   setState(() {
                     _showExceedingAreaOnly = !_showExceedingAreaOnly;
-                    // Clear selection when toggling filter
                     polygonManager.selectedPolygonIndex = -1;
                     polygonManager.selectedPolygon = null;
                     polygonManager.selectedPolygonNotifier.value = null;
@@ -426,6 +472,16 @@ class _MapWidgetState extends State<MapWidget>
               });
             },
             onToggleEditing: () {
+              // Check if user can edit the selected polygon
+              if (polygonManager.selectedPolygon != null &&
+                  !_canUserEditPolygon(polygonManager.selectedPolygon)) {
+                ToastHelper.showErrorToast(
+                  'You can only edit farms that you own.',
+                  context,
+                );
+                return;
+              }
+
               setState(() {
                 polygonManager.toggleEditing();
                 if (!polygonManager.isEditing) {
@@ -451,7 +507,8 @@ class _MapWidgetState extends State<MapWidget>
         ),
 
         if (polygonManager.selectedPolygonIndex != null &&
-            polygonManager.isEditing)
+            polygonManager.isEditing &&
+            _canUserEditPolygon(polygonManager.selectedPolygon))
           Positioned(
             bottom: 20,
             right: 10,
@@ -505,209 +562,7 @@ class _MapWidgetState extends State<MapWidget>
     );
   }
 
-  Widget _buildLegendPanel() {
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color ?? Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(0.1),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-        ],
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Legend',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).textTheme.titleMedium?.color,
-                ),
-          ),
-          const SizedBox(height: 16),
-          ...PinStyle.values.map((style) => _buildLegendItem(style)),
-          const SizedBox(height: 8),
-          _buildBarangayLegendItem(),
-          const SizedBox(height: 8),
-          _buildWarningItem(),
-          const SizedBox(height: 8),
-          _buildLakeLegendItem(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLegendItem(PinStyle pinStyle) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: getPinColor(pinStyle),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: getPinColor(pinStyle).withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Center(
-              child: getPinIcon(pinStyle),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _formatPinStyleName(pinStyle),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLakeLegendItem() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 59, 107, 145),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.water_drop_outlined,
-              color: Colors.white,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Lake',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBarangayLegendItem() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 74, 72, 72),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.account_balance,
-              color: Colors.white,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Barangay',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWarningItem() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 255, 17, 0),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color.fromARGB(255, 255, 17, 0).withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.warning_rounded,
-              color: Colors.white,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Warning',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStyledIconButton({
+  Widget buildStyledIconButton({
     required IconData icon,
     required VoidCallback onPressed,
     Color? backgroundColor,
@@ -764,18 +619,5 @@ class _MapWidgetState extends State<MapWidget>
         ),
       ),
     );
-  }
-
-// Helper method to format pin style names
-  String _formatPinStyleName(PinStyle pinStyle) {
-    String name = pinStyle.toString().split('.').last;
-
-    // Handle special cases for better readability
-    switch (name.toLowerCase()) {
-      case 'hvc':
-        return 'High Value Crops';
-      default:
-        return name;
-    }
   }
 }

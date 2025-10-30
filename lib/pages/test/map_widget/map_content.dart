@@ -1,3 +1,4 @@
+import 'package:flareline/pages/test/map_widget/farm_list_panel/barangay_filter_panel.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -27,6 +28,8 @@ class MapContent extends StatelessWidget {
   final Function(List<String>)? onBarangayFilterChanged;
   final Function(List<String>)? onLakeFilterChanged;
   final bool showExceedingAreaOnly;
+  final bool
+      showAreaMarkers; // NEW: Parameter to control area markers visibility
 
   const MapContent({
     Key? key,
@@ -46,6 +49,7 @@ class MapContent extends StatelessWidget {
     this.onBarangayFilterChanged,
     this.onLakeFilterChanged,
     required this.showExceedingAreaOnly,
+    required this.showAreaMarkers, // NEW: Add to constructor
   }) : super(key: key);
 
   @override
@@ -53,17 +57,42 @@ class MapContent extends StatelessWidget {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.92,
       width: MediaQuery.of(context).size.width,
-      child: ValueListenableBuilder<int>(
+      child: ValueListenableBuilder<int>( 
         valueListenable: polygonManager.editorUpdateNotifier,
         builder: (context, updateCount, child) {
-          // Use the filtered polygons from the manager
-          // final filteredPolygons =
-          //     polygonManager.getFilteredPolygons(farmTypeFilters);
+          final userProvider =
+              Provider.of<UserProvider>(context, listen: false);
+          final isFarmer = userProvider.isFarmer;
+          final farmerId = userProvider.farmer?.id?.toString();
 
-          // To this:
+          // Apply user-based filters to create base polygon list
+          List<PolygonData> userFilteredPolygons =
+              polygonManager.polygons.where((polygon) {
+            // Apply user-based filters
+            if (isFarmer &&
+                BarangayFilterPanel.userFilterOptions['showOwnedOnly'] ==
+                    true) {
+              // Show only farms owned by current farmer
+              if (polygon.farmerId?.toString() != farmerId) {
+                return false;
+              }
+            } else if (!isFarmer &&
+                BarangayFilterPanel.userFilterOptions['showActiveOnly'] ==
+                    true) {
+              // Show only active farms for non-farmers
+              if (polygon.status?.toLowerCase() != 'active' &&
+                  polygon.status != null) {
+                return false;
+              }
+            }
+            return true;
+          }).toList();
+
+          // Then apply other filters (farm type, exceeding area, etc.)
           final filteredPolygons = polygonManager.getFilteredPolygons(
             farmTypeFilters,
             showExceedingAreaOnly: showExceedingAreaOnly,
+            basePolygons: userFilteredPolygons, // Pass the user-filtered list
           );
 
           final filteredPinStyles =
@@ -86,8 +115,6 @@ class MapContent extends StatelessWidget {
                   .toList()
               : lakeManager.lakes;
 
-          final userProvider =
-              Provider.of<UserProvider>(context, listen: false);
           final _isFarmer = userProvider.isFarmer;
 
           return FlutterMap(
@@ -107,39 +134,40 @@ class MapContent extends StatelessWidget {
                         polygonManager.selectedLakes.contains(lake.name))
                     .toList()),
 
-              // Lake center markers layer
-              MapLayersHelper.createLakeCenterFallbackLayer(
-                lakeManager.lakes,
-                (lake) {
-                  // Zoom to the lake
-                  animatedMapController.animatedFitCamera(
-                    cameraFit: CameraFit.coordinates(
-                      coordinates: lake.vertices,
-                      padding: const EdgeInsets.all(30),
-                    ),
-                    curve: Curves.easeInOut,
-                  );
+              // Lake center markers layer - CONDITIONAL BASED ON showAreaMarkers
+              if (showAreaMarkers) // NEW: Conditionally show lake markers
+                MapLayersHelper.createLakeCenterFallbackLayer(
+                  lakeManager.lakes,
+                  (lake) {
+                    // Zoom to the lake
+                    animatedMapController.animatedFitCamera(
+                      cameraFit: CameraFit.coordinates(
+                        coordinates: lake.vertices,
+                        padding: const EdgeInsets.all(30),
+                      ),
+                      curve: Curves.easeInOut,
+                    );
 
-                  // Show lake info card
-                  polygonManager.showLakenInfo(
-                      context, lake, polygonManager.polygons);
+                    // Show lake info card
+                    polygonManager.showLakenInfo(
+                        context, lake, polygonManager.polygons);
 
-                  // Apply filter for this lake
-                  if (onLakeFilterChanged != null) {
-                    setState(() {
-                      if (polygonManager.selectedLakes.contains(lake.name)) {
-                        onLakeFilterChanged!([]);
-                      } else {
-                        onLakeFilterChanged!([lake.name]);
-                      }
-                    });
-                  }
-                },
-                circleColor: const Color.fromARGB(255, 59, 107, 145),
-                iconColor: Colors.white,
-                size: 30.0,
-                filteredLakes: polygonManager.selectedLakes,
-              ),
+                    // Apply filter for this lake
+                    if (onLakeFilterChanged != null) {
+                      setState(() {
+                        if (polygonManager.selectedLakes.contains(lake.name)) {
+                          onLakeFilterChanged!([]);
+                        } else {
+                          onLakeFilterChanged!([lake.name]);
+                        }
+                      });
+                    }
+                  },
+                  circleColor: const Color.fromARGB(255, 59, 107, 145),
+                  iconColor: Colors.white,
+                  size: 30.0,
+                  filteredLakes: polygonManager.selectedLakes,
+                ),
 
               // Polyline layer
               ValueListenableBuilder<LatLng?>(
@@ -163,39 +191,41 @@ class MapContent extends StatelessWidget {
                         .contains(barangay.name))
                     .toList()),
 
-              MapLayersHelper.createBarangayCenterFallbackLayer(
-                barangayManager.barangays,
-                (barangay) {
-                  // Zoom to the barangay
-                  animatedMapController.animatedFitCamera(
-                    cameraFit: CameraFit.coordinates(
-                      coordinates: barangay.vertices,
-                      padding: const EdgeInsets.all(30),
-                    ),
-                    curve: Curves.easeInOut,
-                  );
+              // Barangay center markers layer - CONDITIONAL BASED ON showAreaMarkers
+              if (showAreaMarkers) // NEW: Conditionally show barangay markers
+                MapLayersHelper.createBarangayCenterFallbackLayer(
+                  barangayManager.barangays,
+                  (barangay) {
+                    // Zoom to the barangay
+                    animatedMapController.animatedFitCamera(
+                      cameraFit: CameraFit.coordinates(
+                        coordinates: barangay.vertices,
+                        padding: const EdgeInsets.all(30),
+                      ),
+                      curve: Curves.easeInOut,
+                    );
 
-                  // Show barangay info card
-                  polygonManager.showBarangayInfo(
-                      context, barangay, polygonManager.polygons);
+                    // Show barangay info card
+                    polygonManager.showBarangayInfo(
+                        context, barangay, polygonManager.polygons);
 
-                  // Apply filter for this barangay
-                  if (onBarangayFilterChanged != null) {
-                    setState(() {
-                      if (polygonManager.selectedBarangays
-                          .contains(barangay.name)) {
-                        onBarangayFilterChanged!([]);
-                      } else {
-                        onBarangayFilterChanged!([barangay.name]);
-                      }
-                    });
-                  }
-                },
-                circleColor: const Color.fromARGB(255, 74, 72, 72),
-                iconColor: Colors.white,
-                size: 30.0,
-                filteredBarangays: polygonManager.selectedBarangays,
-              ),
+                    // Apply filter for this barangay
+                    if (onBarangayFilterChanged != null) {
+                      setState(() {
+                        if (polygonManager.selectedBarangays
+                            .contains(barangay.name)) {
+                          onBarangayFilterChanged!([]);
+                        } else {
+                          onBarangayFilterChanged!([barangay.name]);
+                        }
+                      });
+                    }
+                  },
+                  circleColor: const Color.fromARGB(255, 74, 72, 72),
+                  iconColor: Colors.white,
+                  size: 30.0,
+                  filteredBarangays: polygonManager.selectedBarangays,
+                ),
 
               // Polygon layer
               MapLayersHelper.createPolygonLayer(

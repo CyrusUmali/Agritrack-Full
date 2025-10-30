@@ -1,3 +1,4 @@
+import 'package:flareline/pages/sectors/sector_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/auth/sign_up/sign_up_provider.dart';
@@ -8,32 +9,27 @@ import 'package:flareline_uikit/core/mvvm/base_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flareline_uikit/components/buttons/button_widget.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
-import 'package:flareline_uikit/components/forms/outborder_text_form_field.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 
 class SignUpWidget extends BaseWidget<SignUpProvider> {
- 
-
- 
- 
   @override
   Widget bodyWidget(
       BuildContext context, SignUpProvider viewModel, Widget? child) {
-    debugPrint('[SIGNUP] Widget - bodyWidget rebuild. isPendingVerification: ${viewModel.isPendingVerification}');
-    
+    // debugPrint('[SIGNUP] Widget - bodyWidget rebuild. isPendingVerification: ${viewModel.isPendingVerification}');
+
     if (viewModel.isPendingVerification) {
       return _buildVerificationPendingScreen(context, viewModel);
     }
 
     return Builder(
       builder: (context) {
-        debugPrint('[SIGNUP] Main scaffold builder rebuild');
+        // debugPrint('[SIGNUP] Main scaffold builder rebuild');
         return Scaffold(
           resizeToAvoidBottomInset: true,
           body: LayoutBuilder(
             builder: (context, constraints) {
               final isMobile = constraints.maxWidth < 600;
-              debugPrint('[SIGNUP] LayoutBuilder rebuild. isMobile: $isMobile');
+              // debugPrint('[SIGNUP] LayoutBuilder rebuild. isMobile: $isMobile');
 
               return Stack(
                 children: [
@@ -54,14 +50,13 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
                       color: Colors.white,
                     ),
                   ],
-
                   Center(
                     child: SingleChildScrollView(
                       key: ValueKey('signup_scroll_${viewModel.currentStep}'),
                       physics: ClampingScrollPhysics(),
                       child: Builder(
                         builder: (context) {
-                          debugPrint('[SIGNUP] Content container builder rebuild');
+                          // debugPrint('[SIGNUP] Content container builder rebuild');
                           return Container(
                             constraints: BoxConstraints(
                               maxWidth: isMobile ? double.infinity : 800.0,
@@ -69,7 +64,8 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
                             ),
                             padding: isMobile
                                 ? EdgeInsets.zero
-                                : EdgeInsets.symmetric(horizontal: 0, vertical: 50),
+                                : EdgeInsets.symmetric(
+                                    horizontal: 0, vertical: 50),
                             child: Center(
                               child: CommonCard(
                                 padding: EdgeInsets.symmetric(
@@ -79,7 +75,7 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
                                 borderRadius: isMobile ? 0 : 12.0,
                                 child: Builder(
                                   builder: (context) {
-                                    debugPrint('[SIGNUP] Card content builder rebuild');
+                                    // debugPrint('[SIGNUP] Card content builder rebuild');
                                     return Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -88,14 +84,16 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
                                           child: TextButton(
                                             onPressed: () {
                                               Navigator.of(context)
-                                                  .pushReplacementNamed('/signIn');
+                                                  .pushReplacementNamed(
+                                                      '/signIn');
                                             },
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Icon(
                                                   Icons.arrow_back,
-                                                  color: Theme.of(context).primaryColor,
+                                                  color: Theme.of(context)
+                                                      .primaryColor,
                                                   size: 14.0,
                                                 ),
                                                 SizedBox(width: 4),
@@ -103,7 +101,8 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
                                                   'Login',
                                                   style: TextStyle(
                                                     fontSize: 14.0,
-                                                    color: Theme.of(context).primaryColor,
+                                                    color: Theme.of(context)
+                                                        .primaryColor,
                                                   ),
                                                 ),
                                               ],
@@ -113,7 +112,8 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
                                         const SizedBox(height: 16),
                                         SizedBox(
                                           width: 100,
-                                          child: Image.asset('assets/DA_image.jpg'),
+                                          child: Image.asset(
+                                              'assets/DA_image.jpg'),
                                         ),
                                         const SizedBox(height: 30),
                                         Text(
@@ -147,11 +147,10 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
                       ),
                     ),
                   ),
-
                   if (viewModel.isLoading)
                     Builder(
                       builder: (context) {
-                        debugPrint('[SIGNUP] Loading overlay builder rebuild');
+                        // debugPrint('[SIGNUP] Loading overlay builder rebuild');
                         return Container(
                           color: Colors.black.withOpacity(0.3),
                           child: Center(
@@ -173,7 +172,7 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
   }
 
   Widget _buildStepper(SignUpProvider viewModel, bool isMobile) {
-    debugPrint('[SIGNUP] Stepper rebuild - currentStep: ${viewModel.currentStep}, isMobile: $isMobile');
+    // debugPrint('[SIGNUP] Stepper rebuild - currentStep: ${viewModel.currentStep}, isMobile: $isMobile');
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20.0),
       child: Container(
@@ -223,7 +222,7 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
   }
 
   StepState _getStepState(SignUpProvider viewModel, int stepIndex) {
-    debugPrint('[SIGNUP] Step state check - step: $stepIndex, currentStep: ${viewModel.currentStep}');
+    // debugPrint('[SIGNUP] Step state check - step: $stepIndex, currentStep: ${viewModel.currentStep}');
     if (viewModel.currentStep > stepIndex) {
       return StepState.complete;
     } else if (viewModel.currentStep == stepIndex) {
@@ -235,7 +234,7 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
 
   Widget _buildVerificationPendingScreen(
       BuildContext context, SignUpProvider viewModel) {
-    debugPrint('[SIGNUP] Verification screen rebuild');
+    // debugPrint('[SIGNUP] Verification screen rebuild');
     return Scaffold(
       body: Stack(
         children: [
@@ -255,7 +254,7 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
               child: ResponsiveBuilder(
                 builder: (context, sizingInfo) {
                   final isMobile = sizingInfo.isMobile;
-                  debugPrint('[SIGNUP] Verification screen ResponsiveBuilder rebuild - isMobile: $isMobile');
+                  // debugPrint('[SIGNUP] Verification screen ResponsiveBuilder rebuild - isMobile: $isMobile');
                   final maxWidth = isMobile ? double.infinity : 500.0;
 
                   return Container(
@@ -376,9 +375,22 @@ class SignUpWidget extends BaseWidget<SignUpProvider> {
     );
   }
 
+  // @override
+  // SignUpProvider viewModelBuilder(BuildContext context) {
+  //   // debugPrint('[SIGNUP] Creating new viewModel instance');
+  //   return SignUpProvider(context);
+  // }
+
   @override
   SignUpProvider viewModelBuilder(BuildContext context) {
-    debugPrint('[SIGNUP] Creating new viewModel instance');
-    return SignUpProvider(context);
+    final viewModel = SignUpProvider(context);
+
+    // Load associations immediately after creating the provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final sectorService = RepositoryProvider.of<SectorService>(context);
+      viewModel.loadAssociations(sectorService);
+    });
+
+    return viewModel;
   }
 }

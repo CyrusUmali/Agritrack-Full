@@ -60,6 +60,27 @@ class LanguageSelectionCard extends StatelessWidget {
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).cardTheme.surfaceTintColor ??
+                        Colors.grey, // Use surfaceTintColor
+                    width: 1.0,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).cardTheme.surfaceTintColor ??
+                        Colors.grey, // Use surfaceTintColor
+                    width: 1.0,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).cardTheme.surfaceTintColor ??
+                        Colors.blue, // Use surfaceTintColor
+                    width: 2.0,
+                  ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,

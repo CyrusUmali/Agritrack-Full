@@ -3,6 +3,7 @@ import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
 
 class SectorBarChart extends StatefulWidget {
@@ -64,6 +65,12 @@ class _SectorBarChartState extends State<SectorBarChart> {
     }
   }
 
+  Future<void> _retryFetchData() async {
+    setState(() {
+      // Trigger rebuild which will call the FutureBuilder again
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final scrollBreakpoint = 600.0;
@@ -80,7 +87,20 @@ class _SectorBarChartState extends State<SectorBarChart> {
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return CommonCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: NetworkErrorWidget(
+                error: snapshot.error.toString(),
+                onRetry: _retryFetchData,
+                errorColor: Colors.red,
+                iconSize: 40,
+                fontSize: 14,
+                retryButtonText: 'Try Again',
+                padding: const EdgeInsets.all(20),
+              ),
+            ),
+          );
         }
 
         final sectors = snapshot.data ?? [];
@@ -173,14 +193,14 @@ class _SectorBarChartState extends State<SectorBarChart> {
   Widget _buildChart(List<Map<String, dynamic>> sectors) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-final chartData = sectors
-    .map((sector) => _ChartData(
-          sector['name'] ?? 'Unknown',
-          (sector['stats']?['totalAreaHarvested'] ?? 0).toDouble(),
-          ((sector['stats']?['totalYieldVolume'] ?? 0) / 1000).toDouble(), // kg → MT
-        ))
-    .toList();
-
+    final chartData = sectors
+        .map((sector) => _ChartData(
+              sector['name'] ?? 'Unknown',
+              (sector['stats']?['totalAreaHarvested'] ?? 0).toDouble(),
+              ((sector['stats']?['totalYieldVolume'] ?? 0) / 1000)
+                  .toDouble(), // kg → MT
+            ))
+        .toList();
 
     return SfCartesianChart(
       plotAreaBorderWidth: 0,

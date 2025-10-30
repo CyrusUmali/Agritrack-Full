@@ -6,6 +6,7 @@ import 'package:flareline/services/lanugage_extension.dart';
 class InfoCard extends StatelessWidget {
   final PolygonData polygon;
   final VoidCallback onTap;
+  final VoidCallback? onClose; // NEW: Add onClose callback
   final VoidCallback? onPrevious;
   final VoidCallback? onNext;
   final bool showNavigation;
@@ -16,6 +17,7 @@ class InfoCard extends StatelessWidget {
     Key? key,
     required this.polygon,
     required this.onTap,
+    this.onClose, // NEW: Add to constructor
     this.onPrevious,
     this.onNext,
     this.showNavigation = false,
@@ -73,11 +75,26 @@ class InfoCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 20,
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
+                    // Close button instead of chevron
+                    if (onClose != null)
+                      InkWell(
+                        onTap: onClose,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: Icon(
+                            Icons.close,
+                            size: 20,
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      )
+                    else
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
                   ],
                 ),
 
@@ -206,11 +223,26 @@ class InfoCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 20,
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
+                      // Close button instead of chevron
+                      if (onClose != null)
+                        InkWell(
+                          onTap: onClose,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Icon(
+                              Icons.close,
+                              size: 20,
+                              color: colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        )
+                      else
+                        Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
                     ],
                   ),
 

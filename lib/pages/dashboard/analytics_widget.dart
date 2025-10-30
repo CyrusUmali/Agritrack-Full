@@ -4,6 +4,7 @@ import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/dashboard/map_widget.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
+import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
@@ -62,36 +63,33 @@ class AnalyticsWidget extends StatelessWidget {
           if (data['data'] != null && data['data']['products'] != null) {
             final products =
                 List<Map<String, dynamic>>.from(data['data']['products']);
-            
+
             // Handle empty products list
             if (products.isEmpty) {
               return _buildEmptyDataLayout(
-                context, 
-                'No product data available for $selectedYear',
-                'Try selecting a different year or check back later.',
-                Icons.inventory_2_outlined,
-                () => _buildFarmerProductDistribution(context, farmerId)
-              );
+                  context,
+                  'No product data available for $selectedYear',
+                  'Try selecting a different year or check back later.',
+                  Icons.inventory_2_outlined,
+                  () => _buildFarmerProductDistribution(context, farmerId));
             }
-            
+
             return _buildProductDistributionChart(products);
           } else {
             return _buildEmptyDataLayout(
-              context,
-              'No product data available',
-              'No products found for the selected year.',
-              Icons.inventory_2_outlined,
-              () => _buildFarmerProductDistribution(context, farmerId)
-            );
+                context,
+                'No product data available',
+                'No products found for the selected year.',
+                Icons.inventory_2_outlined,
+                () => _buildFarmerProductDistribution(context, farmerId));
           }
         } else {
           return _buildEmptyDataLayout(
-            context,
-            'No data available',
-            'Unable to load product information.',
-            Icons.data_usage_outlined,
-            () => _buildFarmerProductDistribution(context, farmerId)
-          );
+              context,
+              'No data available',
+              'Unable to load product information.',
+              Icons.data_usage_outlined,
+              () => _buildFarmerProductDistribution(context, farmerId));
         }
       },
     );
@@ -99,59 +97,36 @@ class AnalyticsWidget extends StatelessWidget {
 
   Widget _buildErrorLayout(
       BuildContext context, String error, VoidCallback onRetry) {
-    // Determine the error message based on the error type
-    String errorMessage;
-    if (error.contains('timeout') || error.contains('network')) {
-      errorMessage = 'Connection failed. Please check your internet.';
-    } else if (error.contains('server')) {
-      errorMessage = 'Server error. Please try again later.';
-    } else {
-      errorMessage = 'Something went wrong: $error';
-    }
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, color: Colors.red, size: 48),
-          const SizedBox(height: 16),
-          Text(errorMessage,
-              style: TextStyle(color: Colors.red), textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          IconButton(
-            icon: Icon(Icons.refresh),
-            color: Colors.grey,
-            iconSize: 36,
-            onPressed: onRetry,
-            tooltip: 'Retry',
-          ),
-        ],
+    // Wrap the NetworkErrorWidget in a CommonCard
+    return CommonCard(
+      child: NetworkErrorWidget(
+        error: error,
+        onRetry: onRetry,
+        errorIcon: Icons.error_outline,
+        errorColor: Colors.red,
+        iconSize: 48,
+        fontSize: 16,
+        retryButtonText: 'Retry',
+        padding: const EdgeInsets.all(32.0),
       ),
     );
   }
 
   // New method to handle empty data states
-  Widget _buildEmptyDataLayout(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    VoidCallback onRetry
-  ) {
+  Widget _buildEmptyDataLayout(BuildContext context, String title,
+      String subtitle, IconData icon, VoidCallback onRetry) {
     return ScreenTypeLayout.builder(
-      desktop: (context) => _buildEmptyStateWeb(context, title, subtitle, icon, onRetry),
-      mobile: (context) => _buildEmptyStateMobile(context, title, subtitle, icon, onRetry),
-      tablet: (context) => _buildEmptyStateMobile(context, title, subtitle, icon, onRetry),
+      desktop: (context) =>
+          _buildEmptyStateWeb(context, title, subtitle, icon, onRetry),
+      mobile: (context) =>
+          _buildEmptyStateMobile(context, title, subtitle, icon, onRetry),
+      tablet: (context) =>
+          _buildEmptyStateMobile(context, title, subtitle, icon, onRetry),
     );
   }
 
-  Widget _buildEmptyStateWeb(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    VoidCallback onRetry
-  ) {
+  Widget _buildEmptyStateWeb(BuildContext context, String title,
+      String subtitle, IconData icon, VoidCallback onRetry) {
     return SizedBox(
       height: 280,
       child: Row(
@@ -181,13 +156,8 @@ class AnalyticsWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyStateMobile(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    VoidCallback onRetry
-  ) {
+  Widget _buildEmptyStateMobile(BuildContext context, String title,
+      String subtitle, IconData icon, VoidCallback onRetry) {
     return Column(
       children: [
         SizedBox(
@@ -215,11 +185,7 @@ class AnalyticsWidget extends StatelessWidget {
   }
 
   Widget _buildEmptyStateContent(
-    String title,
-    String subtitle,
-    IconData icon,
-    VoidCallback onRetry
-  ) {
+      String title, String subtitle, IconData icon, VoidCallback onRetry) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -256,7 +222,8 @@ class AnalyticsWidget extends StatelessWidget {
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Refresh'),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],
@@ -274,22 +241,22 @@ class AnalyticsWidget extends StatelessWidget {
     }).toList();
 
     // Additional check to ensure chart data is valid
-    final validChartData = chartData.where((item) => 
-      item['x'] != null && 
-      item['x'].toString().isNotEmpty && 
-      item['y'] != null && 
-      item['y'] is num && 
-      item['y'] > 0
-    ).toList();
+    final validChartData = chartData
+        .where((item) =>
+            item['x'] != null &&
+            item['x'].toString().isNotEmpty &&
+            item['y'] != null &&
+            item['y'] is num &&
+            item['y'] > 0)
+        .toList();
 
     if (validChartData.isEmpty) {
       return _buildEmptyDataLayout(
-        null as BuildContext, // This will be handled by the caller
-        'No valid product data',
-        'All products have zero or invalid values.',
-        Icons.inventory_2_outlined,
-        () {}
-      );
+          null as BuildContext, // This will be handled by the caller
+          'No valid product data',
+          'All products have zero or invalid values.',
+          Icons.inventory_2_outlined,
+          () {});
     }
 
     return ScreenTypeLayout.builder(
@@ -456,12 +423,12 @@ class AnalyticsWidget extends StatelessWidget {
     // Handle empty sector data
     if (sectorData.isEmpty) {
       return _buildEmptyDataLayout(
-        null as BuildContext, // Context will be provided by the builder
-        'No farmer data available',
-        'No farmers are currently registered in the system.',
-        Icons.people_outline,
-        () {} // Empty callback, will be handled by parent
-      );
+          null as BuildContext, // Context will be provided by the builder
+          'No farmer data available',
+          'No farmers are currently registered in the system.',
+          Icons.people_outline,
+          () {} // Empty callback, will be handled by parent
+          );
     }
 
     return ScreenTypeLayout.builder(
@@ -473,6 +440,10 @@ class AnalyticsWidget extends StatelessWidget {
 
   Widget _analyticsWeb(
       BuildContext context, List<Map<String, dynamic>> sectorData) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final userRole = userProvider.user?.role;
+    final bool isFarmer = userRole == 'farmer';
+
     return SizedBox(
       height: 280,
       child: Row(
@@ -482,7 +453,9 @@ class AnalyticsWidget extends StatelessWidget {
             child: CommonCard(
               child: sectorData.isNotEmpty
                   ? CircularhartWidget(
-                      title: 'Product Distribution ',
+                      title: isFarmer
+                          ? 'Product Distribution (%)'
+                          : 'Farmer Distribution by Sector (%)',
                       palette: const [
                         GlobalColors.warn,
                         GlobalColors.secondary,
@@ -495,10 +468,11 @@ class AnalyticsWidget extends StatelessWidget {
                     )
                   : _buildEmptyStateContent(
                       'No data to display',
-                      'Chart data is not available.',
+                      isFarmer
+                          ? 'No product data available.'
+                          : 'Chart data is not available.',
                       Icons.pie_chart_outline,
-                      () {}
-                    ),
+                      () {}),
             ),
           ),
           const SizedBox(width: 16),
@@ -522,6 +496,10 @@ class AnalyticsWidget extends StatelessWidget {
 
   Widget _analyticsMobile(
       BuildContext context, List<Map<String, dynamic>> sectorData) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final userRole = userProvider.user?.role;
+    final bool isFarmer = userRole == 'farmer';
+
     return Column(
       children: [
         SizedBox(
@@ -529,7 +507,9 @@ class AnalyticsWidget extends StatelessWidget {
           child: CommonCard(
             child: sectorData.isNotEmpty
                 ? CircularhartWidget(
-                    title: 'Farmer Distribution by Sector (%)',
+                    title: isFarmer
+                        ? 'Product Distribution (%)'
+                        : 'Farmer Distribution by Sector (%)',
                     palette: const [
                       GlobalColors.warn,
                       GlobalColors.secondary,
@@ -541,11 +521,12 @@ class AnalyticsWidget extends StatelessWidget {
                     chartData: sectorData,
                   )
                 : _buildEmptyStateContent(
-                    'No farmer data',
-                    'No farmers are registered yet.',
+                    'No data available',
+                    isFarmer
+                        ? 'No product data to display.'
+                        : 'No farmers are registered yet.',
                     Icons.people_outline,
-                    () {}
-                  ),
+                    () {}),
           ),
         ),
         const SizedBox(height: 16),

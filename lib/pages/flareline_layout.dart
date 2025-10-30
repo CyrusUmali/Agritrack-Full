@@ -80,6 +80,10 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
     return '';
   }
 
+  List<BreadcrumbItem>? breakTabBreadcrumbs(BuildContext context) {
+    return null; // Default: use standard breadcrumb
+  }
+
   Widget? breakTabWidget(BuildContext context) {
     return null;
   }
@@ -98,8 +102,7 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
     final farmer = userProvider.farmer;
 
     return Scaffold(
-        resizeToAvoidBottomInset: false,
-
+      resizeToAvoidBottomInset: false,
       backgroundColor: backgroundColor(context),
       appBar: AppBar(toolbarHeight: 0),
       body: ResponsiveBuilder(
@@ -149,6 +152,7 @@ abstract class FlarelineLayoutWidget extends StatelessWidget {
             child: breakTabWidget(context) ??
                 BreakTab(
                   breakTabTitle(context),
+                  breadcrumbs: breakTabBreadcrumbs(context),
                   rightWidget: breakTabRightWidget(context),
                 ),
           ),

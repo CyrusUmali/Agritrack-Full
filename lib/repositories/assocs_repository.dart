@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flareline/core/models/assocs_model.dart';
-import 'package:flareline/services/api_service.dart';
 import 'package:flareline/repositories/base_repository.dart'; // Import the base repository
 
 class AssociationRepository extends BaseRepository {
@@ -8,18 +7,21 @@ class AssociationRepository extends BaseRepository {
 
   Future<Association> getAssociationById(int associationId) async {
     try {
-      checkAuthentication(); // Use inherited method
+      // checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/assocs/associations/$associationId');
+      final response =
+          await apiService.get('/assocs/associations/$associationId');
       return _validateAndParseAssociationResponse(response);
     } catch (e) {
-      handleError(e, operation: 'load association'); // Use inherited method
+      handleError(e,
+          operation: 'load associations',
+          skipAuthCheck: true); // Skip auth check
     }
   }
 
   Future<Association> updateAssociation(Association association) async {
     try {
-      checkAuthentication(); // Use inherited method
+      // checkAuthentication(); // Use inherited method
       _validateAssociationRequiredFields(association);
 
       final response = await apiService.put(
@@ -35,7 +37,7 @@ class AssociationRepository extends BaseRepository {
 
   Future<List<Association>> fetchAssociations(int? year) async {
     try {
-      checkAuthentication(); // Use inherited method
+      // print('here1');
 
       // Build query parameters
       final Map<String, dynamic> queryParams = {};
@@ -49,14 +51,18 @@ class AssociationRepository extends BaseRepository {
       );
 
       return _validateAndParseAssociationsResponse(response);
+    } on DioException catch (e) {
+      // Handle DioException specifically without auth check
+      handleError(e, operation: 'load associations', skipAuthCheck: true);
     } catch (e) {
-      handleError(e, operation: 'load associations'); // Use inherited method
+      // For non-DioException errors, also skip auth check
+      handleError(e, operation: 'load associations', skipAuthCheck: true);
     }
   }
 
   Future<void> deleteAssociation(int associationId) async {
     try {
-      checkAuthentication(); // Use inherited method
+      // checkAuthentication(); // Use inherited method
       await apiService.delete('/assocs/associations/$associationId');
     } catch (e) {
       handleError(e, operation: 'delete association'); // Use inherited method
@@ -68,11 +74,11 @@ class AssociationRepository extends BaseRepository {
     required String description,
   }) async {
     try {
-      checkAuthentication(); // Use inherited method
+      // checkAuthentication(); // Use inherited method
       _validateCreateAssociationFields(name, description);
 
       final response = await apiService.post(
-        '/assocs/sassociations',
+        '/assocs/associations',
         data: _buildCreateAssociationData(name, description),
       );
 
@@ -108,7 +114,8 @@ class AssociationRepository extends BaseRepository {
   }
 
   // Helper method to build association data for create
-  Map<String, dynamic> _buildCreateAssociationData(String name, String description) {
+  Map<String, dynamic> _buildCreateAssociationData(
+      String name, String description) {
     return {
       'name': name,
       'description': description,
@@ -122,7 +129,7 @@ class AssociationRepository extends BaseRepository {
     if (response.data == null) {
       throw Exception('Server returned empty response');
     }
-    
+
     if (response.data['association'] == null) {
       throw Exception('Invalid association data format received from server');
     }
@@ -135,7 +142,7 @@ class AssociationRepository extends BaseRepository {
     if (response.data == null) {
       throw Exception('Server returned empty response');
     }
-    
+
     if (response.data['associations'] == null) {
       throw Exception('Invalid associations data format received from server');
     }

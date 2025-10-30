@@ -17,7 +17,8 @@ class ProductHeaderUI {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
+            // color: colorScheme.primaryContainer,
+            color: colorScheme.primaryContainer.withOpacity(0.3),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
@@ -103,7 +104,8 @@ class ProductHeaderUI {
                     nameController,
                     descriptionController,
                     selectedSector,
-                    getSectorIcon),
+                    getSectorIcon,
+                    context),
               ),
             ],
           );
@@ -121,7 +123,8 @@ class ProductHeaderUI {
                   nameController,
                   descriptionController,
                   selectedSector,
-                  getSectorIcon),
+                  getSectorIcon,
+                  context),
             ],
           );
         }
@@ -244,7 +247,8 @@ class ProductHeaderUI {
       TextEditingController nameController,
       TextEditingController descriptionController,
       String selectedSector,
-      Function(String) getSectorIcon) {
+      Function(String) getSectorIcon,
+      BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -261,7 +265,7 @@ class ProductHeaderUI {
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: !isEditing
-              ? _buildDisplayDescription(theme, colorScheme, item)
+              ? _buildDisplayDescription(theme, colorScheme, item, context)
               : _buildEditDescription(
                   theme, colorScheme, descriptionController),
         ),
@@ -368,13 +372,14 @@ class ProductHeaderUI {
     );
   }
 
-  static Widget _buildDisplayDescription(
-      ThemeData theme, ColorScheme colorScheme, Product item) {
+  static Widget _buildDisplayDescription(ThemeData theme,
+      ColorScheme colorScheme, Product item, BuildContext context) {
     return Container(
       key: const ValueKey('display_description'),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        // color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: colorScheme.outline.withOpacity(0.2),
@@ -478,7 +483,6 @@ class ProductHeaderUI {
     );
   }
 
-  // Fixed buildEditControls method with balanced layout
   static Widget buildEditControls(
       ColorScheme colorScheme,
       ThemeData theme,
@@ -487,12 +491,15 @@ class ProductHeaderUI {
       bool isLoading,
       Function toggleEditing,
       Function submitChanges,
-      Function(String) getSectorIcon) {
+      Function(String) getSectorIcon,
+      BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        // color: colorScheme.surfaceVariant.withOpacity(0.3),
+
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isEditing

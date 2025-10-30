@@ -123,11 +123,6 @@ class _SectorLineChartState extends State<SectorLineChart> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Loading agricultural data...',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
             ],
           ),
         ),

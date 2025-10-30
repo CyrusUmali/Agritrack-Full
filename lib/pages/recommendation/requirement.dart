@@ -11,8 +11,6 @@ class CropRequirementsWidget extends StatefulWidget {
 }
 
 class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
-  // final String baseUrl = 'http://localhost:8000';
-  // final String baseUrl = 'https://aicrop.onrender.com/';
   Map<String, dynamic>? cropRequirements;
   Map<String, dynamic>? filteredCropRequirements;
   bool isLoading = false;
@@ -65,13 +63,6 @@ class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
     });
 
     try {
-      // Build the URI with query parameters for GET request
-      // final uri = Uri.parse('$baseUrl/api/v1/crop-requirements').replace(
-      //   queryParameters: {
-      //     'model': selectedModel == 'All Models' ? '' : selectedModel,
-      //   },
-      // );
-
       final uri = Uri.parse(ApiConstants.cropRequirements).replace(
         queryParameters: {
           'model': selectedModel == 'All Models' ? '' : selectedModel,
@@ -85,12 +76,16 @@ class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
+        print(data); // Debug print
         if (data['status'] == 'success') {
+          print('success');
           setState(() {
             cropRequirements = data['data'];
             filteredCropRequirements = data['data'];
           });
         } else {
+          print('fail');
           throw Exception(data['message'] ?? 'Unknown error occurred');
         }
       } else {
@@ -114,38 +109,6 @@ class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Model selection and refresh controls
-          // Row(
-          //   children: [
-          //     const Text('Select Model: ',
-          //         style: TextStyle(fontWeight: FontWeight.bold)),
-          //     DropdownButton<String>(
-          //       value: selectedModel,
-          //       items: availableModels.map((String model) {
-          //         return DropdownMenuItem<String>(
-          //           value: model,
-          //           child: Text(model),
-          //         );
-          //       }).toList(),
-          //       onChanged: (String? newValue) {
-          //         if (newValue != null) {
-          //           setState(() {
-          //             selectedModel = newValue;
-          //           });
-          //           _fetchCropRequirements();
-          //         }
-          //       },
-          //     ),
-          //     const SizedBox(width: 16),
-          //     ElevatedButton(
-          //       onPressed: _fetchCropRequirements,
-          //       child: const Text('Refresh Data'),
-          //     ),
-          //   ],
-          // ),
-          // const SizedBox(height: 16),
-
-          // Search bar
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
@@ -171,10 +134,8 @@ class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
           else if (filteredCropRequirements!.isEmpty)
             const Text('No crops match your search')
           else
-            // Wrap the Expanded with a SizedBox with a fixed height
             SizedBox(
-              height:
-                  MediaQuery.of(context).size.height * 0.7, // Adjust as needed
+              height: MediaQuery.of(context).size.height * 0.7,
               child: _buildRequirementsList(),
             ),
         ],
@@ -190,6 +151,7 @@ class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
         final cropData = filteredCropRequirements![cropName];
         final requirements = cropData['requirements'];
         final imageUrl = cropData['image_url'];
+        final prediction = cropData['prediction'];
 
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
@@ -198,7 +160,7 @@ class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Crop header with image
+                // Crop header with image and prediction
                 Row(
                   children: [
                     if (imageUrl != null)
@@ -217,12 +179,26 @@ class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
                         ),
                       ),
                     Expanded(
-                      child: Text(
-                        cropName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            cropName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Prediction Score: $prediction',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -261,17 +237,13 @@ class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
                         ),
                       ],
                     ),
-                    // Table rows
-                    _buildRequirementRow('Nitrogen (N)', requirements['N']),
-                    _buildRequirementRow('Phosphorous (P)', requirements['P']),
-                    _buildRequirementRow('Potassium (K)', requirements['K']),
-                    _buildRequirementRow(
-                        'Temperature (°C)', requirements['temperature']),
-                    _buildRequirementRow(
-                        'Humidity (%)', requirements['humidity']),
-                    _buildRequirementRow('pH Level', requirements['ph']),
-                    _buildRequirementRow(
-                        'Rainfall (mm)', requirements['rainfall']),
+                    // Table rows with new parameter names
+                    _buildRequirementRow('Soil pH', requirements['soil_ph']),
+                    _buildRequirementRow('Fertility EC (μS/cm)', requirements['fertility_ec']),
+                    _buildRequirementRow('Humidity (%)', requirements['humidity']),
+                    _buildRequirementRow('Sunlight (lux)', requirements['sunlight']),
+                    _buildRequirementRow('Soil Temperature (°C)', requirements['soil_temp']),
+                    _buildRequirementRow('Soil Moisture (%)', requirements['soil_moisture']),
                   ],
                 ),
               ],
@@ -291,17 +263,25 @@ class _CropRequirementsWidgetState extends State<CropRequirementsWidget> {
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(values['min'].toString()),
+          child: Text(_formatValue(values['min'])),
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(values['max'].toString()),
+          child: Text(_formatValue(values['max'])),
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(values['mean'].toString()),
+          child: Text(_formatValue(values['mean'])),
         ),
       ],
     );
+  }
+
+  String _formatValue(dynamic value) {
+    if (value == null) return 'N/A';
+    if (value is double) {
+      return value.toStringAsFixed(2);
+    }
+    return value.toString();
   }
 }

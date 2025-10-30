@@ -57,7 +57,7 @@ Color getPinColor(PinStyle pinStyle) {
     case PinStyle.HVC:
       return Colors.purple;
     case PinStyle.Livestock:
-      return Colors.brown;
+      return Colors.deepOrange;
     case PinStyle.Fishery:
       return Colors.blue;
     case PinStyle.Organic:
@@ -80,7 +80,7 @@ Color getPolygonColor(PinStyle pinStyle, {bool isWarning = false}) {
     case PinStyle.HVC:
       return Colors.purple.withOpacity(0.5);
     case PinStyle.Livestock:
-      return Colors.brown.withOpacity(0.5);
+      return Colors.deepOrange.withOpacity(0.5);
     case PinStyle.Fishery:
       return Colors.blue.withOpacity(0.5);
     case PinStyle.Organic:

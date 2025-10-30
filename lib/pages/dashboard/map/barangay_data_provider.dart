@@ -9,6 +9,7 @@ class BarangayDataProvider extends ChangeNotifier {
   String _selectedProduct = '';
   List<String> _availableProducts = [];
   List<Yield> _yields = [];
+  List<Yield> get yields => _yields;
   bool _disposed = false;
 
   List<BarangayModel> get data => _data;
@@ -50,7 +51,42 @@ class BarangayDataProvider extends ChangeNotifier {
     //   );
     // }
 
-    init();
+    // Start initialization and mark as loading until complete
+    _isLoading = true;
+    init().then((_) {
+      // This ensures loading state is properly updated
+      if (!_disposed) {
+        notifyListeners();
+      }
+    });
+  }
+
+// Add to BarangayDataProvider class
+  List<BarangayModel> get filteredBarangays {
+    if (_selectedProduct.isEmpty) {
+      return _data;
+    }
+
+    return _data.where((barangay) {
+      final yield = barangay.yieldData[_selectedProduct] ?? 0;
+      return yield > 0;
+    }).toList();
+  }
+
+  List<BarangayModel> get sortedBarangays {
+    final barangays = filteredBarangays;
+
+    if (_selectedProduct.isEmpty) {
+      return barangays;
+    }
+
+    barangays.sort((a, b) {
+      final yieldA = a.yieldData[_selectedProduct] ?? 0;
+      final yieldB = b.yieldData[_selectedProduct] ?? 0;
+      return yieldB.compareTo(yieldA);
+    });
+
+    return barangays;
   }
 
   // Add a method to filter yields by year
@@ -81,32 +117,64 @@ class BarangayDataProvider extends ChangeNotifier {
   @override
   void notifyListeners() {
     if (!_disposed) {
+      print(
+          '🔔 notifyListeners called - isLoading: $_isLoading, data length: ${_data.length}');
       super.notifyListeners();
     }
   }
 
+  void printBarangayColors() {
+    // print('\n=== BARANGAY COLORS ASSIGNED (NON-ZERO YIELDS ONLY) ===');
+    // print('Selected Product: $_selectedProduct');
+    // print('Selected Year: $_selectedYear');
+    // print('Available Products: $_availableProducts');
+    // print('----------------------------------------');
+
+    int nonZeroCount = 0;
+
+    for (var barangay in _data) {
+      final yield = _selectedProduct.isEmpty
+          ? 0
+          : barangay.yieldData[_selectedProduct] ?? 0;
+
+      // Skip barangays with zero yield
+      if (yield == 0) {
+        continue;
+      }
+
+      final color = barangay.color;
+
+      print('${barangay.name}:');
+      print('  - Color: ${color.toString()}');
+      print('  - HEX: #${color.value.toRadixString(16).padLeft(8, '0')}');
+      print('  - Yield: $yield');
+      print('  - Area: ${barangay.area} hectares');
+      print('  - Top Products: ${barangay.topProducts}');
+      print('  - Yield Data: ${barangay.yieldData}');
+      print('');
+
+      nonZeroCount++;
+    }
+
+    print('Total barangays with non-zero yield: $nonZeroCount');
+    print('Total barangays processed: ${_data.length}');
+    print('================================\n');
+  }
+
+// Also update the init method to ensure colors are set properly:
   Future<void> init() async {
+    _isLoading = true;
+    notifyListeners();
+
     try {
       // Filter yields by selected year before processing
       final filteredYields = _filterYieldsByYear(_yields, _selectedYear);
-
-      // Print raw yield data before processing
-      // print('Raw yield data before processing:');
-      for (var yields in filteredYields) {
-        // print(
-        //   'Barangay: ${yields.barangay}, Farm ID: ${yields.farmId}, '
-        //   'Product: ${yields.productName}, Volume: ${yields.volume}, '
-        //   'Hectare: ${yields.hectare} , Date: ${yields.harvestDate}    ',
-        // );
-      }
 
       final barangayNames =
           await GeoJsonParser.getBarangayNamesFromAsset('assets/barangay.json');
       barangayNames.sort();
 
-      // If no products were passed in constructor, use fallback
       if (_availableProducts.isEmpty) {
-        // _availableProducts = ['Rice'];
         print('No products provided, using fallback');
       }
 
@@ -118,8 +186,8 @@ class BarangayDataProvider extends ChangeNotifier {
         final barangay = _yield.barangay ?? 'Unknown';
         final farmId = _yield.farmId ?? 0;
         final productName = _yield.productName ?? 'Unknown';
-        final volume = _yield.volume ?? 0;
-        final hectare = _yield.hectare ?? 0;
+        final volume = _yield.volume ?? 0.0;
+        final hectare = _yield.hectare ?? 0.0;
 
         // Track unique farms and their areas
         if (!farmAreas.containsKey(barangay)) {
@@ -137,19 +205,6 @@ class BarangayDataProvider extends ChangeNotifier {
           ifAbsent: () => volume,
         );
       }
-
-      // Print processed yield data
-      // print('\nProcessed yield data by barangay:');
-      barangayYields.forEach((barangay, products) {
-        // print('Barangay: $barangay');
-        products.forEach((product, volume) {
-          // print('  Product: $product, Total Volume: $volume');
-        });
-        final totalArea =
-            farmAreas[barangay]?.values.fold(0.0, (sum, area) => sum + area) ??
-                0.0;
-        // print('  Total Area: $totalArea hectares');
-      });
 
       // Create barangay models with real data
       _data = barangayNames.map((barangay) {
@@ -177,21 +232,37 @@ class BarangayDataProvider extends ChangeNotifier {
               barangayNames.indexOf(barangay), barangayNames.length),
         );
       }).toList();
+
+      print('📊 Created ${_data.length} barangay models');
     } catch (e) {
       _data = [];
       debugPrint('Error loading barangay data: $e');
     } finally {
       _isLoading = false;
-      // Update colors based on initially selected product if any
+
+      // IMPORTANT: Update colors AFTER data is loaded and BEFORE notifying
       if (_selectedProduct.isNotEmpty) {
+        print('Updating colors for initial product: $_selectedProduct');
         updateColorsBasedOnYield();
+      } else {
+        // Still need to notify even if no product selected
+        notifyListeners();
       }
-      notifyListeners();
+
+      // Only print in debug mode
+      // if (kDebugMode) {
+      //   printBarangayColors();
+      // }
     }
   }
 
   void updateColorsBasedOnYield() {
+    print('\n🎨 === UPDATE COLORS DEBUG ===');
+    print('Selected Product: "$_selectedProduct"');
+    print('Data length: ${_data.length}');
+
     if (_selectedProduct.isEmpty) {
+      print('No product selected - using default colors');
       // Reset to default colors if no product selected
       for (var i = 0; i < _data.length; i++) {
         _data[i].color = getColorForIndex(i, _data.length);
@@ -199,37 +270,77 @@ class BarangayDataProvider extends ChangeNotifier {
     } else {
       // Get all yield values for the selected product
       final yields = _data
-          .map((barangay) => barangay.yieldData[_selectedProduct] ?? 0)
+          .map((barangay) => barangay.yieldData[_selectedProduct] ?? 0.0)
           .toList();
 
-      if (yields.isEmpty) return;
+      print('Total yields collected: ${yields.length}');
 
-      final maxYield = yields.reduce((a, b) => a > b ? a : b);
-      final minYield = yields.reduce((a, b) => a < b ? a : b);
-      final range = maxYield - minYield;
-
-      if (range == 0) return; // All values are the same
-
-      // Print yield data for the selected product
-      // print('\nYield data for selected product ($_selectedProduct):');
-      for (var barangay in _data) {
-        final yield = barangay.yieldData[_selectedProduct] ?? 0;
-        // print('${barangay.name}: $yield');
+      if (yields.isEmpty) {
+        print('⚠️ No yields found - this should not happen');
+        return;
       }
-      // print('Min yield: $minYield, Max yield: $maxYield');
 
-      // Update colors based on yield
-      for (var barangay in _data) {
-        final yield = barangay.yieldData[_selectedProduct] ?? 0;
-        final normalized = (yield - minYield) / range;
+      // Separate zero and non-zero yields
+      final nonZeroYields = yields.where((y) => y > 0).toList();
 
-        // Create a heatmap color (red = high, green = low)
-        barangay.color = Color.lerp(
-          Colors.green,
-          Colors.red,
-          normalized,
-        )!
-            .withOpacity(0.7);
+      print('Non-zero yields: ${nonZeroYields.length}');
+      print('Zero yields: ${yields.length - nonZeroYields.length}');
+
+      if (nonZeroYields.isEmpty) {
+        print('All yields are zero - setting all to gray');
+        // All values are zero - use gray for all
+        for (var barangay in _data) {
+          barangay.color = Colors.grey.withOpacity(0.7);
+        }
+      } else {
+        // We have both zero and non-zero values
+        final maxYield = nonZeroYields.reduce((a, b) => a > b ? a : b);
+        final minYield = nonZeroYields.reduce((a, b) => a < b ? a : b);
+        final range = maxYield - minYield;
+
+        print('Max yield: $maxYield');
+        print('Min yield: $minYield');
+        print('Range: $range');
+
+        // Update colors based on yield
+        for (var barangay in _data) {
+          final yieldValue = barangay.yieldData[_selectedProduct] ?? 0.0;
+
+          if (yieldValue == 0) {
+            // Zero values get gray
+            barangay.color = Colors.grey.withOpacity(0.7);
+            print('${barangay.name}: ZERO yield → gray');
+          } else {
+            // Calculate normalized value only for non-zero yields
+            double normalized;
+
+            if (range == 0) {
+              // All non-zero values are the same
+              normalized = 0.5;
+              print('${barangay.name}: Range is 0, using normalized = 0.5');
+            } else {
+              normalized = (yieldValue - minYield) / range;
+            }
+
+            // Ensure normalized is between 0 and 1
+            normalized = normalized.clamp(0.0, 1.0);
+
+            // Create a heatmap color (red = high, orange = low)
+            final color = Color.lerp(
+              const Color.fromARGB(255, 245, 192, 112), // Low - orange
+              Colors.red, // High - red
+              normalized,
+            )!
+                .withOpacity(0.7);
+
+            barangay.color = color;
+
+            print(
+                '${barangay.name}: yield=$yieldValue, normalized=$normalized, color=${color.toString()}');
+          }
+        }
+
+        print('=== COLOR UPDATE COMPLETE ===\n');
       }
     }
 

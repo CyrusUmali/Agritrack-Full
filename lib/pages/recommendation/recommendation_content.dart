@@ -1,10 +1,8 @@
-import 'package:flareline/pages/recommendation/chatbot/chatbot_content.dart';
+import 'package:flareline/pages/recommendation/ai_models_info_widget.dart';
 import 'package:flareline/pages/recommendation/chatbot/chatbot_page.dart';
-import 'package:flareline/pages/recommendation/requirement.dart';
 import 'package:flareline/pages/recommendation/requirement_page.dart';
 import 'package:flareline/pages/recommendation/suitability/suitability_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flareline_uikit/components/card/common_card.dart';
 import 'recommendation_inputs.dart';
 import 'recommendation_results.dart';
 import 'recommendation_model.dart';
@@ -27,7 +25,7 @@ class RecommendationContentState extends State<RecommendationContent> {
 
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 24,
+        horizontal: isMobile ? 0 : 24,
         vertical: isMobile ? 8 : 24,
       ),
       child: Center(
@@ -79,56 +77,60 @@ class RecommendationContentState extends State<RecommendationContent> {
       );
     }
 
-    void _showNavigationMenu() async {
-      final RenderBox? renderBox =
-          _navigationMenuKey.currentContext?.findRenderObject() as RenderBox?;
-      if (renderBox == null) return;
-
-      final Offset buttonPosition = renderBox.localToGlobal(Offset.zero);
-      final Size buttonSize = renderBox.size;
-
-      final result = await showMenu(
-        context: context,
-        position: RelativeRect.fromLTRB(
-          buttonPosition.dx,
-          buttonPosition.dy + buttonSize.height,
-          buttonPosition.dx + 200,
-          buttonPosition.dy + buttonSize.height + 100,
-        ),
-        color: Theme.of(context).cardTheme.color,
-        items: [
-          const PopupMenuItem(
-            value: 'back',
-            child: ListTile(
-              title: Text('Chatbot'),
-            ),
-          ),
-          PopupMenuItem(
-            value: 'suitability',
-            child: ListTile(
-              title: Text(context.translate('Crop Suitability')),
-            ),
-          ),
-        ],
-      );
-
-      if (result == 'back') {
-        // Navigator.pop(context);
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                const ChatbotPage(), // Change to your desired page
-          ),
-        );
-      } else if (result == 'suitability') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const SuitabilityPage()),
-        );
-      }
+    void _showAiModelsInfo() {
+      AiModelsInfoWidget.show(context: context);
     }
+
+    // void _showNavigationMenu() async {
+    //   final RenderBox? renderBox =
+    //       _navigationMenuKey.currentContext?.findRenderObject() as RenderBox?;
+    //   if (renderBox == null) return;
+
+    //   final Offset buttonPosition = renderBox.localToGlobal(Offset.zero);
+    //   final Size buttonSize = renderBox.size;
+
+    //   final result = await showMenu(
+    //     context: context,
+    //     position: RelativeRect.fromLTRB(
+    //       buttonPosition.dx,
+    //       buttonPosition.dy + buttonSize.height,
+    //       buttonPosition.dx + 200,
+    //       buttonPosition.dy + buttonSize.height + 100,
+    //     ),
+    //     color: Theme.of(context).cardTheme.color,
+    //     items: [
+    //       const PopupMenuItem(
+    //         value: 'back',
+    //         child: ListTile(
+    //           title: Text('Chatbot'),
+    //         ),
+    //       ),
+    //       PopupMenuItem(
+    //         value: 'suitability',
+    //         child: ListTile(
+    //           title: Text(context.translate('Crop Suitability')),
+    //         ),
+    //       ),
+    //     ],
+    //   );
+
+    //   if (result == 'back') {
+    //     // Navigator.pop(context);
+
+    //     Navigator.push(
+    //       context,
+    //       MaterialPageRoute(
+    //         builder: (context) =>
+    //             const ChatbotPage(), // Change to your desired page
+    //       ),
+    //     );
+    //   } else if (result == 'suitability') {
+    //     Navigator.push(
+    //       context,
+    //       MaterialPageRoute(builder: (context) => const SuitabilityPage()),
+    //     );
+    //   }
+    // }
 
     // For desktop view (when neither mobile nor tablet)
     if (!isMobile && !isTablet) {
@@ -159,12 +161,18 @@ class RecommendationContentState extends State<RecommendationContent> {
                       ..scale(-1.0, 1.0), // Flip horizontally (mirror effect)
                     child: const Icon(
                       Icons.keyboard_return,
-                      size: 16,
+                      size: 22,
                       color: Colors.grey,
                     ),
                   ),
                   onPressed: () {
-                    _showNavigationMenu();
+                    // _showNavigationMenu();
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SuitabilityPage()),
+                    );
                   },
                   splashRadius: 16, // Smaller splash effect
                   padding: EdgeInsets.zero, // Remove extra padding
@@ -173,42 +181,72 @@ class RecommendationContentState extends State<RecommendationContent> {
             ],
           ),
 
-          // Tooltip with InkWell for better hover effects
-          Tooltip(
-            message: context.translate('View Requirements'),
-            child: InkWell(
-              onTap: _navigateToRequirements,
-              borderRadius: BorderRadius.circular(50),
-              hoverColor: Colors.grey.withOpacity(0.1), // Gray hover effect
-              child: Container(
-                width: 50,
-                height: 50,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.grey[500]!, // Medium gray border
-                    width: 2,
+          Row(
+            children: [
+              // AI Models Info Button (Question Mark)
+              Tooltip(
+                message: context.translate('Learn about AI Models'),
+                child: InkWell(
+                  onTap: _showAiModelsInfo,
+                  borderRadius: BorderRadius.circular(50),
+                  hoverColor: Colors.grey.withOpacity(0.1),
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.grey[500]!,
+                        width: 2,
+                      ),
+                      color: Colors.white,
+                    ),
+                    child: Icon(
+                      Icons.lightbulb_outline,
+                      size: 24,
+                      color: Colors.grey[700],
+                    ),
                   ),
-                  color: Colors.white,
-                ),
-                child: Icon(
-                  Icons.menu_book_outlined,
-                  size: 30,
-                  color: Colors.grey[700], // Dark gray icon
                 ),
               ),
-            ),
+              const SizedBox(width: 12),
+
+              // Requirements Button
+              Tooltip(
+                message: context.translate('View Requirements'),
+                child: InkWell(
+                  onTap: _navigateToRequirements,
+                  borderRadius: BorderRadius.circular(50),
+                  hoverColor: Colors.grey.withOpacity(0.1),
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.grey[500]!,
+                        width: 2,
+                      ),
+                      color: Colors.white,
+                    ),
+                    child: Icon(
+                      Icons.menu_book_outlined,
+                      size: 24,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       );
     }
 
-    // For mobile/tablet view (column layout)
     return Column(
       children: [
-        // Title Text
-
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -232,8 +270,7 @@ class RecommendationContentState extends State<RecommendationContent> {
                     key: _navigationMenuKey,
                     icon: Transform(
                       alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..scale(-1.0, 1.0), // Flip horizontally (mirror effect)
+                      transform: Matrix4.identity()..scale(-1.0, 1.0),
                       child: const Icon(
                         Icons.keyboard_return,
                         size: 20,
@@ -241,45 +278,76 @@ class RecommendationContentState extends State<RecommendationContent> {
                       ),
                     ),
                     onPressed: () {
-                      _showNavigationMenu();
-
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //       builder: (context) => const SuitabilityPage()),
-                      // );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SuitabilityPage()),
+                      );
                     },
-                    splashRadius: 16, // Smaller splash effect
-                    padding: EdgeInsets.zero, // Remove extra padding
+                    splashRadius: 16,
+                    padding: EdgeInsets.zero,
                   ),
                 ),
 
-                // Tooltip Circular Button
-                Tooltip(
-                  message: context.translate('View Requirements'),
-                  child: InkWell(
-                    onTap: _navigateToRequirements,
-                    borderRadius: BorderRadius.circular(50),
-                    hoverColor: Colors.grey.withOpacity(0.1),
-                    child: Container(
-                      width: 25,
-                      height: 25,
-                      padding: const EdgeInsets.all(0),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.grey[500]!,
-                          width: 1,
+                // Right side buttons for mobile
+                Row(
+                  children: [
+                    // AI Models Info Button (Question Mark)
+                    Tooltip(
+                      message: context.translate('Learn about AI Models'),
+                      child: InkWell(
+                        onTap: _showAiModelsInfo,
+                        borderRadius: BorderRadius.circular(50),
+                        child: Container(
+                          width: 25,
+                          height: 25,
+                          padding: const EdgeInsets.all(0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.grey[500]!,
+                              width: 1,
+                            ),
+                            color: Colors.white,
+                          ),
+                          child: Icon(
+                            Icons.lightbulb_outline,
+                            size: 15,
+                            color: Colors.grey[700],
+                          ),
                         ),
-                        color: Colors.white,
-                      ),
-                      child: Icon(
-                        Icons.menu_book_outlined,
-                        size: 15,
-                        color: Colors.grey[700],
                       ),
                     ),
-                  ),
+
+                    const SizedBox(width: 8),
+
+                    // Requirements Button
+                    Tooltip(
+                      message: context.translate('View Requirements'),
+                      child: InkWell(
+                        onTap: _navigateToRequirements,
+                        borderRadius: BorderRadius.circular(50),
+                        child: Container(
+                          width: 25,
+                          height: 25,
+                          padding: const EdgeInsets.all(0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.grey[500]!,
+                              width: 1,
+                            ),
+                            color: Colors.white,
+                          ),
+                          child: Icon(
+                            Icons.menu_book_outlined,
+                            size: 15,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

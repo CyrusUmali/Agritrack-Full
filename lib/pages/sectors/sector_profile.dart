@@ -1,8 +1,8 @@
-import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/services/lanugage_extension.dart';
+import 'package:flareline_uikit/components/breaktab.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
 import 'package:flareline/pages/test/map_widget/map_panel/polygon_modal_components/lake_yield_data_table.dart';
-import 'package:flareline_uikit/components/card/common_card.dart';
-import 'package:flareline_uikit/components/charts/circular_chart.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
 import 'package:flareline/pages/sectors/sector_profile/sector_header.dart';
@@ -19,6 +19,14 @@ class SectorProfile extends LayoutWidget {
   @override
   String breakTabTitle(BuildContext context) {
     return 'Sector Profile';
+  }
+
+  @override
+  List<BreadcrumbItem> breakTabBreadcrumbs(BuildContext context) {
+    return [
+      BreadcrumbItem(context.translate('Dashboard'), '/'),
+      BreadcrumbItem(context.translate('Sectors'), '/sectors'),
+    ];
   }
 
   @override

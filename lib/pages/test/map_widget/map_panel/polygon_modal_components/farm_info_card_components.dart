@@ -58,10 +58,26 @@ class FarmInfoCardComponents {
     required List<Farmer> ownerOptions,
     required Function(String) onOwnerChanged,
     required ThemeData theme,
+    required bool isLoading,
   }) {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
     final isFarmer = context.read<UserProvider>().isFarmer;
+
+    // Extract display name from the currentOwner value
+    String getDisplayName(String ownerValue) {
+      if (ownerValue.isEmpty) return 'Select Owner';
+
+      // If the format is "ID: name", extract just the name part
+      final parts = ownerValue.split(': ');
+      if (parts.length > 1) {
+        return parts
+            .sublist(1)
+            .join(': '); // Handle cases where name might contain ":"
+      }
+
+      return ownerValue; // Fallback to original if not in expected format
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -78,8 +94,8 @@ class FarmInfoCardComponents {
                 Text('Farm Owner', style: _buildLabelStyle(theme)),
                 const SizedBox(height: 2),
                 InkWell(
-                  onTap: isFarmer
-                      ? null // Disable tap if user is farmer
+                  onTap: isLoading || isFarmer
+                      ? null
                       : () {
                           FarmInfoCardDialogs.showFarmOwnerSelectionDialog(
                             context: context,
@@ -87,20 +103,45 @@ class FarmInfoCardComponents {
                             ownerOptions: ownerOptions,
                             onOwnerChanged: onOwnerChanged,
                             theme: theme,
+                            isLoading: isLoading,
                           );
                         },
                   child: Row(
                     children: [
-                      Text(
-                        currentOwner,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface,
+                      if (isLoading) ...[
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onSurface,
+                            ),
+                          ),
                         ),
-                      ),
-                      if (!isFarmer) ...[
-                        const SizedBox(width: 4),
-                        Icon(Icons.arrow_drop_down,
-                            size: 20, color: colorScheme.onSurface),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Loading...',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ] else ...[
+                        Expanded(
+                          child: Text(
+                            getDisplayName(currentOwner),
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: currentOwner.isEmpty
+                                  ? colorScheme.onSurface.withOpacity(0.6)
+                                  : colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        if (!isFarmer && !isLoading) ...[
+                          const SizedBox(width: 4),
+                          Icon(Icons.arrow_drop_down,
+                              size: 20, color: colorScheme.onSurface),
+                        ],
                       ],
                     ],
                   ),

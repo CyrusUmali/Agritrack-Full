@@ -40,6 +40,8 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
   @override
   void initState() {
     super.initState();
+    print('qwewe');
+    print(widget.farmer);
     _effectiveFormKey = widget.formKey ?? GlobalKey<FormState>();
 
     // Format options with "id: name"
@@ -49,11 +51,10 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
     // Set initial display value (name only if available)
     if (widget.farmer['association'] != null) {
       _initialAssocValue = widget.farmer['association'];
-      _selectedAssocValue =
-          '${widget.farmer['associationId']}: ${widget.farmer['association']}';
+      _selectedAssocValue = '${widget.farmer['association']}';
     } else {
-      _initialAssocValue = '---';
-      _selectedAssocValue = '---';
+      _initialAssocValue = '';
+      _selectedAssocValue = '';
     }
   }
 
@@ -70,7 +71,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
 
   String getValue(String key) {
     final value = widget.farmer[key]?.toString();
-    return (value == null || value.isEmpty) ? '---' : value;
+    return (value == null || value.isEmpty) ? '' : value;
   }
 
   Widget _buildComboBoxField({
@@ -130,7 +131,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
           onTap: () async {
             final DateTime? picked = await showDatePicker(
               context: context,
-              initialDate: value != '---' && value.isNotEmpty
+              initialDate: value != '' && value.isNotEmpty
                   ? DateTime.tryParse(value) ?? DateTime.now()
                   : DateTime.now(),
               firstDate: DateTime(1900),
@@ -153,10 +154,10 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
               children: [
                 Expanded(
                   child: Text(
-                    value == '---' || value.isEmpty ? 'Select Date' : value,
+                    value == '' || value.isEmpty ? 'Select Date' : value,
                     style: TextStyle(
                       fontSize: 10,
-                      color: value == '---' || value.isEmpty
+                      color: value == '' || value.isEmpty
                           ? Colors.grey[600]
                           : Colors.black87,
                     ),
@@ -464,7 +465,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                     ? _buildComboBoxField(
                         label: 'Association',
                         comboBoxHeight: 38,
-                        value: _selectedAssocValue ?? '---',
+                        value: _selectedAssocValue ?? '',
                         options: _assocOptions,
                         onChanged: (value) {
                           setState(() {
@@ -473,7 +474,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                           // Pass the entire formatted string to the parent
                           widget.onFieldChanged(MapEntry('association', value));
                           // Also update associationId if needed
-                          if (value != '---') {
+                          if (value != '') {
                             final id = value.split(':').first.trim();
                             widget
                                 .onFieldChanged(MapEntry('associationId', id));
@@ -482,7 +483,7 @@ class _PersonalInfoCardState extends State<PersonalInfoCard> {
                       )
                     : DetailField(
                         label: 'Association',
-                        value: _initialAssocValue ?? '---',
+                        value: _initialAssocValue ?? '',
                       ),
               ),
               const SizedBox(width: 12),

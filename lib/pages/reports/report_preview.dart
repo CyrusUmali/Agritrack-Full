@@ -88,7 +88,7 @@ class _ReportPreviewState extends State<ReportPreview> {
   }
 }
 
-class ReportDataTable extends StatefulWidget { 
+class ReportDataTable extends StatefulWidget {
   final List<Map<String, dynamic>> reportData;
   final List<String> selectedColumns;
   final Function(List<int>) onDeleteSelected;
@@ -153,7 +153,8 @@ class _ReportDataTableState extends State<ReportDataTable> {
             child: SizedBox(
               width: constraints.maxWidth > 1200 ? 1200 : constraints.maxWidth,
               child: _ReportTableWidget(
-                key: ValueKey('${widget.selectedColumns.join(',')}-$_sortColumn-$_sortAscending'),
+                key: ValueKey(
+                    '${widget.selectedColumns.join(',')}-$_sortColumn-$_sortAscending'),
                 reportData: _sortedData,
                 selectedColumns: widget.selectedColumns,
                 sortColumn: _sortColumn,
@@ -172,9 +173,10 @@ class _ReportDataTableState extends State<ReportDataTable> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: 800,
+        width: 1200,
         child: _ReportTableWidget(
-          key: ValueKey('${widget.selectedColumns.join(',')}-$_sortColumn-$_sortAscending'),
+          key: ValueKey(
+              '${widget.selectedColumns.join(',')}-$_sortColumn-$_sortAscending'),
           reportData: _sortedData,
           selectedColumns: widget.selectedColumns,
           sortColumn: _sortColumn,
@@ -332,7 +334,7 @@ class ReportTableViewModel extends BaseTableProvider {
   @override
   Future loadData(BuildContext context) async {
     final headers = [...selectedColumns];
-    
+
     List<List<TableDataRowsTableDataRows>> rows = [];
 
     for (var i = 0; i < reportData.length; i++) {

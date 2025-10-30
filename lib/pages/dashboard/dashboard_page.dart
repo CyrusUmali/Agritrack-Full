@@ -107,7 +107,7 @@ class Dashboard extends LayoutWidget {
         Consumer<YearPickerProvider>(
           builder: (context, yearProvider, child) {
             return SizedBox(
-              height: 700,
+              height: 1000,
               child: CommonCard(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints.expand(),

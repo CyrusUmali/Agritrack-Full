@@ -7,7 +7,6 @@ import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:flareline/services/lanugage_extension.dart';
 import 'package:provider/provider.dart';
 import 'date_range_picker.dart';
@@ -371,16 +370,18 @@ class _FiltersSection extends StatelessWidget {
       width: isDesktop ? 130 : double.infinity,
     );
 
-    Widget assocFilter = BlocBuilder<AssocsBloc, AssocsState>(
-      builder: (context, state) {
-        return buildComboBox(
-          context: context,
-          hint: 'Association',
-          options: FilterOptions.getAssocs(context),
-          selectedValue: selectedAssoc,
-          onSelected: onAssocChanged,
-          width: isDesktop ? 130 : double.infinity,
-        );
+    Widget assocFilter = _RetryComboboxBuilder<AssocsBloc, AssocsState>(
+      blocBuilder: (context) => BlocProvider.of<AssocsBloc>(context),
+      buildWidget: (context) => buildComboBox(
+        context: context,
+        hint: 'Association',
+        options: FilterOptions.getAssocs(context),
+        selectedValue: selectedAssoc,
+        onSelected: onAssocChanged,
+        width: isDesktop ? 130 : double.infinity,
+      ),
+      onRetry: (context) {
+        context.read<AssocsBloc>().add(LoadAssocs());
       },
     );
 
@@ -402,42 +403,48 @@ class _FiltersSection extends StatelessWidget {
       width: isDesktop ? 130 : double.infinity,
     );
 
-    Widget farmerFilter = BlocBuilder<FarmerBloc, FarmerState>(
-      builder: (context, state) {
-        return buildComboBox(
-          context: context,
-          hint: 'Farmer',
-          options: FilterOptions.getFarmers(context),
-          selectedValue: selectedFarmer,
-          onSelected: onFarmerChanged,
-          width: isDesktop ? 130 : double.infinity,
-        );
+    Widget farmerFilter = _RetryComboboxBuilder<FarmerBloc, FarmerState>(
+      blocBuilder: (context) => BlocProvider.of<FarmerBloc>(context),
+      buildWidget: (context) => buildComboBox(
+        context: context,
+        hint: 'Farmer',
+        options: FilterOptions.getFarmers(context),
+        selectedValue: selectedFarmer,
+        onSelected: onFarmerChanged,
+        width: isDesktop ? 130 : double.infinity,
+      ),
+      onRetry: (context) {
+        context.read<FarmerBloc>().add(LoadFarmers());
       },
     );
 
-    Widget productFilter = BlocBuilder<ProductBloc, ProductState>(
-      builder: (context, state) {
-        return buildComboBox(
-          context: context,
-          hint: 'Product',
-          options: FilterOptions.getProducts(context),
-          selectedValue: selectedProduct,
-          onSelected: onProductChanged,
-          width: isDesktop ? 130 : double.infinity,
-        );
+    Widget productFilter = _RetryComboboxBuilder<ProductBloc, ProductState>(
+      blocBuilder: (context) => BlocProvider.of<ProductBloc>(context),
+      buildWidget: (context) => buildComboBox(
+        context: context,
+        hint: 'Product',
+        options: FilterOptions.getProducts(context),
+        selectedValue: selectedProduct,
+        onSelected: onProductChanged,
+        width: isDesktop ? 130 : double.infinity,
+      ),
+      onRetry: (context) {
+        context.read<ProductBloc>().add(LoadProducts());
       },
     );
 
-    Widget farmFilter = BlocBuilder<FarmBloc, FarmState>(
-      builder: (context, state) {
-        return buildComboBox(
-          context: context,
-          hint: 'Farm',
-          options: FilterOptions.getFarms(context, _farmerId),
-          selectedValue: selectedFarm,
-          onSelected: onFarmChanged,
-          width: isDesktop ? 130 : double.infinity,
-        );
+    Widget farmFilter = _RetryComboboxBuilder<FarmBloc, FarmState>(
+      blocBuilder: (context) => BlocProvider.of<FarmBloc>(context),
+      buildWidget: (context) => buildComboBox(
+        context: context,
+        hint: 'Farm',
+        options: FilterOptions.getFarms(context, _farmerId),
+        selectedValue: selectedFarm,
+        onSelected: onFarmChanged,
+        width: isDesktop ? 130 : double.infinity,
+      ),
+      onRetry: (context) {
+        context.read<FarmBloc>().add(LoadFarms());
       },
     );
 
@@ -483,5 +490,128 @@ class _FiltersSection extends StatelessWidget {
       default:
         return [];
     }
+  }
+}
+
+// Generic retry widget for comboboxes that can fail to load data
+class _RetryComboboxBuilder<B extends BlocBase<S>, S> extends StatelessWidget {
+  final B Function(BuildContext) blocBuilder;
+  final Widget Function(BuildContext) buildWidget;
+  final void Function(BuildContext) onRetry;
+
+  const _RetryComboboxBuilder({
+    required this.blocBuilder,
+    required this.buildWidget,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<B, S>(
+      builder: (context, state) {
+        // Check if state indicates an error
+        final hasError = _checkForErrorState(state);
+
+        if (hasError) {
+          return _buildErrorRetryWidget(context, _getErrorMessage(state));
+        }
+
+        return buildWidget(context);
+      },
+    );
+  }
+
+  bool _checkForErrorState(S state) {
+    // Check for specific error states based on the state type
+    if (state is FarmersError) {
+      return true;
+    }
+    // Add similar checks for other bloc states when you define their error states
+    if (state is AssocsState && state is AssocsError) {
+      return true;
+    }
+    if (state is ProductState && state is ProductsError) {
+      return true;
+    }
+    if (state is FarmState && state is FarmsError) {
+      return true;
+    }
+    return false;
+  }
+
+  String _getErrorMessage(S state) {
+    if (state is FarmersError) {
+      return state.message;
+    }
+    // Add similar getters for other error states
+    if (state is AssocsState && state is AssocsError) {
+      return state.message;
+    }
+    if (state is ProductState && state is ProductsError) {
+      return state.message;
+    }
+    if (state is FarmState && state is FarmsError) {
+      return state.message;
+    }
+    return 'Failed to load data';
+  }
+
+  Widget _buildErrorRetryWidget(BuildContext context, String errorMessage) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final isDesktop = constraints.maxWidth > 1000;
+
+      return Container(
+        width: isDesktop ? 130 : double.infinity,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.red.shade300),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: Colors.red,
+              size: 20,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Failed to load',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            // const SizedBox(height: 4),
+            // Text(
+            //   errorMessage,
+            //   style: TextStyle(
+            //     color: Colors.red.shade700,
+            //     fontSize: 10,
+            //   ),
+            //   textAlign: TextAlign.center,
+            //   maxLines: 2,
+            //   overflow: TextOverflow.ellipsis,
+            // ),
+            const SizedBox(height: 2),
+            ElevatedButton(
+              onPressed: () => onRetry(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+              ),
+              child: Text(
+                'Retry',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }

@@ -293,7 +293,8 @@ class _ProductHeaderState extends State<ProductHeader>
                       _isLoading,
                       _toggleEditing,
                       _submitChanges,
-                      _getSectorIcon, // Add getSectorIcon parameter
+                      _getSectorIcon,
+                      context, // Add getSectorIcon parameter
                     ),
                 ],
               ),

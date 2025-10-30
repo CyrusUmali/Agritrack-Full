@@ -1,4 +1,4 @@
- import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:flareline/core/models/farms_model.dart';
 import 'package:flareline/services/api_service.dart';
 import 'package:flareline/repositories/base_repository.dart'; // Import the base repository
@@ -26,16 +26,21 @@ class FarmRepository extends BaseRepository {
     try {
       checkAuthentication(); // Use inherited method
 
-      final response = await apiService.get('/farms/farms/by-product/$productId');
+      final response =
+          await apiService.get('/farms/farms/by-product/$productId');
+
+      print('this one ');
 
       if (response.data == null || response.data['farms'] == null) {
         throw Exception('Invalid farm data format');
       }
 
       final farmsData = response.data['farms'] as List;
-      return farmsData.map((json) => Farm.fromJson(json)).toList();
+      print(farmsData[0]);
+      return farmsData.map((json) => Farm.fromJson2(json)).toList();
     } catch (e) {
-      handleError(e, operation: 'load farms by product'); // Use inherited method
+      handleError(e,
+          operation: 'load farms by product'); // Use inherited method
     }
   }
 
@@ -78,7 +83,8 @@ class FarmRepository extends BaseRepository {
         queryParams['farmerId'] = farmerId.toString();
       }
 
-      final response = await apiService.get('/farms/farms', queryParameters: queryParams);
+      final response =
+          await apiService.get('/farms/farms', queryParameters: queryParams);
 
       if (response.data == null || response.data['farms'] == null) {
         throw Exception('Invalid farms data format');

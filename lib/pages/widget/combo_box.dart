@@ -39,6 +39,12 @@ Widget buildComboBox({
                 return TextField(
                   controller: textEditingController,
                   focusNode: focusNode,
+                  readOnly:
+                      true, // Make field read-only to show dropdown on tap
+                  onTap: () {
+                    // Show options when field is tapped
+                    focusNode.requestFocus();
+                  },
                   decoration: InputDecoration(
                     hintText: hint,
                     border: InputBorder.none,
@@ -68,6 +74,9 @@ Widget buildComboBox({
                           textEditingController.clear();
                           onSelected('');
                           focusNode.unfocus();
+                        } else {
+                          // Show dropdown options when arrow is clicked
+                          focusNode.requestFocus();
                         }
                       },
                       padding: EdgeInsets.zero,

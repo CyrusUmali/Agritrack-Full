@@ -5,6 +5,8 @@ import 'package:flareline/pages/assoc/assoc_profile/assoc_overview.dart';
 import 'package:flareline/pages/assoc/assoc_profile/assoc_yield_data.dart';
 import 'package:flareline/pages/assoc/assoc_profile/sector_header.dart';
 import 'package:flareline/pages/sectors/sector_service.dart';
+import 'package:flareline/services/lanugage_extension.dart';
+import 'package:flareline_uikit/components/breaktab.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/pages/layout.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,6 +20,13 @@ class AssocProfile extends LayoutWidget {
   @override
   String breakTabTitle(BuildContext context) {
     return 'Association Profile';
+  }
+
+  @override
+  List<BreadcrumbItem> breakTabBreadcrumbs(BuildContext context) {
+    return [
+      BreadcrumbItem(context.translate('Associations'), '/assocs'),
+    ];
   }
 
   @override

@@ -2,11 +2,13 @@ import 'dart:convert';
 
 import 'package:flareline/core/models/farmer_model.dart';
 import 'package:flareline/core/models/product_model.dart';
+import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline/services/lanugage_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
 import 'package:flareline/services/lanugage_extension.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'farm_info_card_components.dart';
 
 class FarmInfoCard {
@@ -92,13 +94,39 @@ class FarmInfoCard {
               onNameChanged: onFarmNameChanged,
               theme: theme,
             ),
-            FarmInfoCardComponents.buildEditableFarmOwnerRow(
-              context: context,
-              currentOwner: farmOwner,
-              ownerOptions: farmers,
-              onOwnerChanged: onFarmOwnerChanged,
-              theme: theme,
+
+            // FarmInfoCardComponents.buildEditableFarmOwnerRow(
+            //   context: context,
+            //   currentOwner: farmOwner,
+            //   ownerOptions: farmers,
+            //   onOwnerChanged: onFarmOwnerChanged,
+            //   theme: theme,
+            //     isLoading: isLoadingFarmers, // Pass loading state
+            // ),
+
+            BlocBuilder<FarmerBloc, FarmerState>(
+              builder: (context, farmerState) {
+                bool isLoadingFarmers = farmerState is FarmersLoading;
+                List<Farmer> farmers = [];
+
+                if (farmerState is FarmersLoaded) {
+                  farmers = farmerState.farmers;
+                } else if (farmerState is FarmersError) {
+                  // Handle error state - maybe show retry button
+                  farmers = []; // or keep previous farmers if available
+                }
+
+                return FarmInfoCardComponents.buildEditableFarmOwnerRow(
+                  context: context,
+                  currentOwner: farmOwner,
+                  ownerOptions: farmers,
+                  onOwnerChanged: onFarmOwnerChanged,
+                  theme: theme,
+                  isLoading: isLoadingFarmers, // Pass loading state
+                );
+              },
             ),
+
             FarmInfoCardComponents.buildEditableBarangayRow(
               context: context,
               currentBarangay: barangay,

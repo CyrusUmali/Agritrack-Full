@@ -115,6 +115,20 @@ class _ContributorItem extends StatelessWidget {
     ];
     final badgeColor = badgeColors[index % badgeColors.length];
 
+    // Safe parsing of farmerId
+    final farmerId = contributor['farmerId']?.toString();
+    final int? parsedFarmerID =
+        farmerId != null ? int.tryParse(farmerId) : null;
+
+    // print('contributor');
+    // print(contributor);
+
+    // print('farmerId');
+    // print(farmerId);
+
+    // print('parsedFarmerID');
+    // print(parsedFarmerID);
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -129,7 +143,10 @@ class _ContributorItem extends StatelessWidget {
                   backgroundColor: badgeColor.withOpacity(0.2),
                   radius: 22,
                   child: Text(
-                    contributor['farmerName'].substring(0, 1).toUpperCase(),
+                    contributor['farmerName']
+                        .toString()
+                        .substring(0, 1)
+                        .toUpperCase(),
                     style: TextStyle(
                       color: badgeColor,
                       fontWeight: FontWeight.bold,
@@ -153,30 +170,39 @@ class _ContributorItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(contributor['farmerName']),
+                Text(contributor['farmerName'].toString()),
                 const SizedBox(height: 4),
-                // Text(
-                //   '${contributor['totalValue'].toStringAsFixed(2)} ',
-                //   style: const TextStyle(
-                //     fontSize: 12,
-                //     color: Colors.grey,
-                //   ),
-                // ),
+                Text(
+                  '${contributor['yieldCount']} entries ',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
               ],
             ),
           ),
           InkWell(
             onTap: () {
-              print('qwe');
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FarmersProfile(
-                    // farmerID: contributor['farmerID']
-                    farmerID: int.parse(contributor['farmerID'].toString()),
+              // Only navigate if we have a valid farmerId
+              if (parsedFarmerID != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FarmersProfile(
+                      farmerID: parsedFarmerID,
+                    ),
                   ),
-                ),
-              );
+                );
+              } else {
+                // Optional: Show a snackbar or log message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Invalid farmer ID'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
             },
             child: Container(
               height: 30,

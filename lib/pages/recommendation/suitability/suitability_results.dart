@@ -575,7 +575,7 @@ class SuitabilityResults extends StatelessWidget {
     required String status,
     required bool isSmallScreen,
   }) {
-    final statusInfo = _getStatusInfo(status);
+    final statusInfo = _getStatusInfo(status, Theme.of(context).brightness);
     final progressValue = _calculateProgressValue(current, min, max);
     final progressColor = _getProgressBarColor(current, min, max);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -584,14 +584,10 @@ class SuitabilityResults extends StatelessWidget {
       margin: EdgeInsets.only(bottom: isSmallScreen ? 12 : 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
-            // ? statusInfo.darkBackgroundColor
-            // : statusInfo.backgroundColor,
-            ? statusInfo.backgroundColor
-            : statusInfo.backgroundColor,
+        color: statusInfo.backgroundColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? statusInfo.backgroundColor : statusInfo.borderColor,
+          color: statusInfo.borderColor,
         ),
       ),
       child: Column(
@@ -602,8 +598,7 @@ class SuitabilityResults extends StatelessWidget {
             children: [
               Icon(
                 _getParameterIcon(parameter),
-                // color: isDark ? statusInfo.darkColor : statusInfo.color,
-                color: isDark ? statusInfo.color : statusInfo.color,
+                color: statusInfo.color,
                 size: 18,
               ),
               const SizedBox(width: 8),
@@ -620,16 +615,13 @@ class SuitabilityResults extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: (isDark ? statusInfo.color : statusInfo.color)
-                      .withOpacity(0.1),
+                  color: statusInfo.color.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   status.toUpperCase(),
                   style: TextStyle(
-                    // color: isDark ? statusInfo.darkColor : statusInfo.color,
-
-                    color: isDark ? statusInfo.color : statusInfo.color,
+                    color: statusInfo.color,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -655,7 +647,7 @@ class SuitabilityResults extends StatelessWidget {
                 style: TextStyle(
                   fontSize: isSmallScreen ? 15 : 16,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? statusInfo.color : statusInfo.color,
+                  color: statusInfo.color,
                 ),
               ),
               Text(
@@ -893,46 +885,51 @@ class SuitabilityResults extends StatelessWidget {
     return [suggestions.toString()];
   }
 
-  // Build suggestions content
-  Widget _buildSuggestionsContent(
-      List<String> suggestions, BuildContext context, bool isSmallScreen) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  
+  
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: suggestions.asMap().entries.map((entry) {
-        final index = entry.key;
-        final section = entry.value;
+Widget _buildSuggestionsContent(
+    List<String> suggestions, BuildContext context, bool isSmallScreen) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
 
-        return Container(
-          margin:
-              EdgeInsets.only(bottom: index < suggestions.length - 1 ? 12 : 0),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.grey[800] : Colors.white,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isDark ? Colors.grey[600]! : Colors.grey[200]!,
-            ),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: suggestions.asMap().entries.map((entry) {
+      final index = entry.key;
+      final section = entry.value;
+
+      // Remove asterisks from the suggestion text
+      final cleanedSection = section.replaceAll('*', '');
+
+      return Container(
+        margin:
+            EdgeInsets.only(bottom: index < suggestions.length - 1 ? 12 : 0),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.white,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isDark ? Colors.grey[600]! : Colors.grey[200]!,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Content
-              Text(
-                section,
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 14 : 15,
-                  color: isDark ? Colors.grey[300] : Colors.grey[700],
-                  height: 1.4,
-                ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Content with cleaned text (no asterisks)
+            Text(
+              cleanedSection,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 14 : 15,
+                color: isDark ? Colors.grey[300] : Colors.grey[700],
+                height: 1.4,
               ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
+            ),
+          ],
+        ),
+      );
+    }).toList(),
+  );
+}
 
   // Build the "Get Suggestions" button
   Widget _buildGetSuggestionsButton(BuildContext context, bool isSmallScreen) {
@@ -988,25 +985,27 @@ class SuitabilityResults extends StatelessWidget {
 
   // Helper methods and utilities
   ({Color color, Color backgroundColor, Color borderColor}) _getStatusInfo(
-      String status) {
+      String status, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    
     switch (status) {
       case 'low':
         return (
-          color: Colors.orange[600]!,
-          backgroundColor: Colors.orange[50]!,
-          borderColor: Colors.orange[200]!,
+          color: isDark ? Colors.orange[400]! : Colors.orange[600]!,
+          backgroundColor: isDark ? Colors.orange[900]!.withOpacity(0.2) : Colors.orange[50]!,
+          borderColor: isDark ? Colors.orange[800]! : Colors.orange[200]!,
         );
       case 'high':
         return (
-          color: Colors.red[600]!,
-          backgroundColor: Colors.red[50]!,
-          borderColor: Colors.red[200]!,
+          color: isDark ? Colors.red[400]! : Colors.red[600]!,
+          backgroundColor: isDark ? Colors.red[900]!.withOpacity(0.2) : Colors.red[50]!,
+          borderColor: isDark ? Colors.red[800]! : Colors.red[200]!,
         );
-      default:
+      default: // 'optimal'
         return (
-          color: Colors.green[600]!,
-          backgroundColor: Colors.green[50]!,
-          borderColor: Colors.green[200]!,
+          color: isDark ? Colors.green[400]! : Colors.green[600]!,
+          backgroundColor: isDark ? Colors.green[900]!.withOpacity(0.2) : Colors.green[50]!,
+          borderColor: isDark ? Colors.green[800]! : Colors.green[200]!,
         );
     }
   }

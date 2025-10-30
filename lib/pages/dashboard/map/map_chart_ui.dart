@@ -1,7 +1,11 @@
 import 'package:flareline/core/theme/global_colors.dart';
+import 'package:flareline/pages/dashboard/map/barangay_model.dart';
+import 'package:flareline/pages/widget/network_error.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_maps/maps.dart';
 import 'barangay_data_provider.dart';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class MapChartUIComponents {
   static Widget buildLoadingState() {
@@ -16,20 +20,14 @@ class MapChartUIComponents {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 48),
-          const SizedBox(height: 16),
-          const Text('Error', style: TextStyle(color: Colors.red)),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: onRetry,
-            child: const Text('Retry'),
-          ),
+          NetworkErrorWidget(
+            error: 'Error',
+            onRetry: onRetry, // Fixed: removed unnecessary closure
+          )
         ],
       ),
     );
   }
-
-// In map_chart_ui.dart - Updated buildProductSelector method
 
   static Widget buildProductSelector(
       BarangayDataProvider provider, BuildContext context) {
@@ -54,13 +52,11 @@ class MapChartUIComponents {
           const SizedBox(width: 8),
           Expanded(
             child: Autocomplete<String>(
-              // Set the initial value based on the selected product
               initialValue: provider.selectedProduct.isNotEmpty
                   ? TextEditingValue(text: provider.selectedProduct)
                   : null,
               fieldViewBuilder: (context, textEditingController, focusNode,
                   onFieldSubmitted) {
-                // Set the controller's text if there's a selected product
                 if (provider.selectedProduct.isNotEmpty &&
                     textEditingController.text != provider.selectedProduct) {
                   textEditingController.text = provider.selectedProduct;
@@ -230,45 +226,56 @@ class MapChartUIComponents {
                       provider.data[index].color,
                 ),
                 showDataLabels: true,
-
-                // SOLUTION 1: Enhanced tooltip settings for mobile
                 shapeTooltipBuilder: (BuildContext context, int index) {
                   final barangay = provider.data[index];
-                  final colorLightness = barangay.color.computeLuminance();
-                  final textColor =
-                      colorLightness > 0.5 ? Colors.black : Colors.white;
+                  final theme = Theme.of(context);
+                  final bool isMobile = MediaQuery.of(context).size.width < 600;
 
                   double? yieldPercentage;
+                  double? yieldValue;
                   if (provider.selectedProduct.isNotEmpty) {
                     final yields = provider.data
                         .map((b) => b.yieldData[provider.selectedProduct] ?? 0)
                         .toList();
                     final maxYield = yields.reduce((a, b) => a > b ? a : b);
+                    yieldValue =
+                        barangay.yieldData[provider.selectedProduct] ?? 0;
                     yieldPercentage =
-                        (barangay.yieldData[provider.selectedProduct] ?? 0) /
-                            maxYield *
-                            100;
+                        maxYield > 0 ? (yieldValue / maxYield * 100) : 0;
                   }
 
+                  final totalYield = barangay.yieldData.values
+                      .fold(0.0, (sum, value) => sum + value);
+
+                  final totalFarms = provider.yields
+                      .where((y) => y.barangay == barangay.name)
+                      .map((y) => y.farmId)
+                      .toSet()
+                      .length;
+
+                  final sortedProducts = barangay.yieldData.entries.toList()
+                    ..sort((a, b) => b.value.compareTo(a.value));
+
                   return Container(
-                    width: 220,
-                    padding: const EdgeInsets.all(12),
+                    width: isMobile ? 280 : 500, // Much wider on desktop
+                    constraints: BoxConstraints(
+                      maxHeight:
+                          isMobile ? 450 : 400, // Slightly shorter on desktop
+                    ),
                     decoration: BoxDecoration(
                       color:
-                          barangay.color.withOpacity(0.95), // Increased opacity
-                      borderRadius: BorderRadius.circular(8),
+                          Theme.of(context).cardTheme.color?.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color:
-                            Colors.white.withOpacity(0.8), // Increased opacity
-                        width: 2, // Increased width
+                        color: Colors.black.withOpacity(0.8),
+                        width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              Colors.black.withOpacity(0.3), // Stronger shadow
-                          blurRadius: 12, // Increased blur
-                          spreadRadius: 2, // Added spread
-                          offset: const Offset(0, 4), // Increased offset
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 16,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
@@ -276,95 +283,74 @@ class MapChartUIComponents {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Icon(Icons.location_on, size: 16, color: textColor),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                barangay.name,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: textColor,
+                        // Header with barangay name
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(isMobile ? 12 : 16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(10),
+                              topRight: Radius.circular(10),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.location_on,
+                                  size: isMobile ? 18 : 20,
+                                  color: Colors.white),
+                              SizedBox(width: isMobile ? 6 : 8),
+                              Expanded(
+                                child: Text(
+                                  barangay.name,
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 16 : 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        if (provider.selectedProduct.isNotEmpty) ...[
-                          buildTooltipRow(
-                            icon: Icons.agriculture,
-                            label: '${provider.selectedProduct} Yield',
-                            value:
-                                '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(1) ?? 'N/A'} kg',
-                            textColor: textColor,
+                            ],
                           ),
-                          if (yieldPercentage != null)
-                            buildTooltipRow(
-                              icon: Icons.trending_up,
-                              label: 'Yield Percentage',
-                              value: '${yieldPercentage.toStringAsFixed(1)}%',
-                              textColor: textColor,
-                            ),
-                          const SizedBox(height: 4),
-                        ],
-                        buildTooltipRow(
-                          icon: Icons.landscape,
-                          label: 'Area',
-                          value: '${barangay.area.toStringAsFixed(2)} km²',
-                          textColor: textColor,
                         ),
-                        buildTooltipRow(
-                          icon: Icons.people,
-                          label: 'Farmers',
-                          value: barangay.farmer?.toStringAsFixed(0) ?? 'N/A',
-                          textColor: textColor,
+
+                        // Content
+                        Padding(
+                          padding: EdgeInsets.all(isMobile ? 12 : 16),
+                          child: isMobile
+                              ? _buildMobileLayout(
+                                  barangay,
+                                  provider,
+                                  theme,
+                                  yieldValue,
+                                  yieldPercentage,
+                                  totalYield,
+                                  totalFarms,
+                                  sortedProducts)
+                              : _buildDesktopLayout(
+                                  barangay,
+                                  provider,
+                                  theme,
+                                  yieldValue,
+                                  yieldPercentage,
+                                  totalYield,
+                                  totalFarms,
+                                  sortedProducts),
                         ),
-                        if (barangay.topProducts.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'Top Products:',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: textColor,
-                            ),
-                          ),
-                          ...barangay.topProducts
-                              .map((product) => Padding(
-                                    padding: const EdgeInsets.only(
-                                        left: 8.0, top: 4),
-                                    child: Text(
-                                      '• $product',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: textColor.withOpacity(0.9),
-                                      ),
-                                    ),
-                                  ))
-                              .take(3),
-                        ],
                       ],
                     ),
                   );
                 },
-
-                // SOLUTION 2: Enhanced tooltip settings for mobile compatibility
-                tooltipSettings: MapTooltipSettings(
-                  hideDelay: 2000, // Increased delay to 2 seconds
-                  color: Colors.transparent, // Let custom tooltip handle color
+                tooltipSettings: const MapTooltipSettings(
+                  hideDelay: 10,
+                  color: Colors.transparent,
+                  strokeColor: Colors.transparent,
+                  strokeWidth: 0,
                 ),
-
-                // SOLUTION 3: Add onSelectionChanged callback for mobile tap handling
                 onSelectionChanged: (int index) {
                   // This will trigger on mobile tap
-                  // You can add haptic feedback here
-                  // HapticFeedback.lightImpact();
                 },
-
                 strokeColor: Colors.white,
                 strokeWidth: 0.8,
                 dataLabelSettings: MapDataLabelSettings(
@@ -375,8 +361,6 @@ class MapChartUIComponents {
                     fontSize: 10,
                   ),
                 ),
-
-                // SOLUTION 4: Enable selection to make shapes tappable on mobile
                 selectionSettings: const MapSelectionSettings(
                   strokeColor: Colors.blue,
                   strokeWidth: 3,
@@ -384,210 +368,599 @@ class MapChartUIComponents {
               ),
             ],
           ),
-
-          // Zoom Controls
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Column(
-              children: [
-                // Zoom In Button
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color?.withOpacity(0.95),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(8),
-                      topRight: Radius.circular(8),
-                    ),
-                    border: Border.all(
-                      color: theme.dividerColor,
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.shadowColor.withOpacity(0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        // Zoom in
-                        final currentZoom = zoomPanBehavior.zoomLevel;
-                        final newZoom = (currentZoom + 1).clamp(
-                          zoomPanBehavior.minZoomLevel,
-                          zoomPanBehavior.maxZoomLevel,
-                        );
-                        zoomPanBehavior.zoomLevel = newZoom;
-                      },
+          if (!kIsWeb)
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Column(
+                children: [
+                  // Zoom In Button
+                  Container(
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).cardTheme.color?.withOpacity(0.95),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(8),
                         topRight: Radius.circular(8),
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        child: Icon(
-                          Icons.add,
-                          size: 20,
-                          color: theme.colorScheme.onSurface,
+                      border: Border.all(
+                        color: theme.dividerColor,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.shadowColor.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          final currentZoom = zoomPanBehavior.zoomLevel;
+                          final newZoom = (currentZoom + 1).clamp(
+                            zoomPanBehavior.minZoomLevel,
+                            zoomPanBehavior.maxZoomLevel,
+                          );
+                          zoomPanBehavior.zoomLevel = newZoom;
+                        },
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          child: Icon(
+                            Icons.add,
+                            size: 20,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
 
-                // Divider line
-                Container(
-                  height: 1,
-                  width: 44,
-                  color: theme.dividerColor,
-                ),
-
-                // Zoom Out Button
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color?.withOpacity(0.95),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(8),
-                      bottomRight: Radius.circular(8),
-                    ),
-                    border: Border.all(
-                      color: theme.dividerColor,
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.shadowColor.withOpacity(0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                  // Divider line
+                  Container(
+                    height: 1,
+                    width: 44,
+                    color: theme.dividerColor,
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        // Zoom out
-                        final currentZoom = zoomPanBehavior.zoomLevel;
-                        final newZoom = (currentZoom - 1).clamp(
-                          zoomPanBehavior.minZoomLevel,
-                          zoomPanBehavior.maxZoomLevel,
-                        );
-                        zoomPanBehavior.zoomLevel = newZoom;
-                      },
+
+                  // Zoom Out Button
+                  Container(
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).cardTheme.color?.withOpacity(0.95),
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(8),
                         bottomRight: Radius.circular(8),
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        child: Icon(
-                          Icons.remove,
-                          size: 20,
-                          color: theme.colorScheme.onSurface,
+                      border: Border.all(
+                        color: theme.dividerColor,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.shadowColor.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          final currentZoom = zoomPanBehavior.zoomLevel;
+                          final newZoom = (currentZoom - 1).clamp(
+                            zoomPanBehavior.minZoomLevel,
+                            zoomPanBehavior.maxZoomLevel,
+                          );
+                          zoomPanBehavior.zoomLevel = newZoom;
+                        },
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(8),
+                          bottomRight: Radius.circular(8),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          child: Icon(
+                            Icons.remove,
+                            size: 20,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-
           if (provider.selectedProduct.isNotEmpty)
             Positioned(
               bottom: 16,
               left: 16,
-              child: buildLegend(provider, context),
+              child: _LegendWidget(provider: provider), // Use stateful widget
             ),
         ],
       ),
     );
   }
 
-  static Widget buildLegend(
-      BarangayDataProvider provider, BuildContext context) {
-    final theme = Theme.of(context);
-    final yields = provider.data
-        .map((b) => b.yieldData[provider.selectedProduct] ?? 0)
-        .toList();
-    final maxYield =
-        yields.isNotEmpty ? yields.reduce((a, b) => a > b ? a : b) : 1;
-    final minYield =
-        yields.isNotEmpty ? yields.reduce((a, b) => a < b ? a : b) : 0;
+// Mobile layout (single column)
+  static Widget _buildMobileLayout(
+      BarangayModel barangay,
+      BarangayDataProvider provider,
+      ThemeData theme,
+      double? yieldValue,
+      double? yieldPercentage,
+      double totalYield,
+      int totalFarms,
+      List<MapEntry<String, double>> sortedProducts) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (provider.selectedProduct.isNotEmpty) ...[
+          _buildSelectedProductSection(
+              barangay, provider, theme, yieldValue, yieldPercentage, true),
+          const SizedBox(height: 12),
+        ],
 
+        // General Information - Single column for mobile
+        _buildInfoRow(
+          icon: Icons.landscape,
+          label: 'Total Area',
+          value: '${barangay.area.toStringAsFixed(2)} hectares',
+          theme: theme,
+          isMobile: true,
+        ),
+        const SizedBox(height: 8),
+        _buildInfoRow(
+          icon: Icons.home_work,
+          label: 'Total Farms',
+          value: '$totalFarms',
+          theme: theme,
+          isMobile: true,
+        ),
+        const SizedBox(height: 8),
+        _buildInfoRow(
+          icon: Icons.people,
+          label: 'Farmers',
+          value: barangay.farmer?.toStringAsFixed(0) ?? 'N/A',
+          theme: theme,
+          isMobile: true,
+        ),
+        const SizedBox(height: 8),
+        _buildInfoRow(
+          icon: Icons.inventory,
+          label: 'Total Yield',
+          value: '${totalYield.toStringAsFixed(2)} kg',
+          theme: theme,
+          isMobile: true,
+        ),
+        const SizedBox(height: 8),
+        _buildInfoRow(
+          icon: Icons.category,
+          label: 'Products',
+          value: '${barangay.yieldData.length} types',
+          theme: theme,
+          isMobile: true,
+        ),
+
+        // Top Products Section
+        if (sortedProducts.isNotEmpty && totalYield > 0) ...[
+          const SizedBox(height: 16),
+          _buildTopProductsSection(sortedProducts, totalYield, theme, true),
+        ],
+      ],
+    );
+  }
+
+// Desktop layout (multi-column)
+  static Widget _buildDesktopLayout(
+      BarangayModel barangay,
+      BarangayDataProvider provider,
+      ThemeData theme,
+      double? yieldValue,
+      double? yieldPercentage,
+      double totalYield,
+      int totalFarms,
+      List<MapEntry<String, double>> sortedProducts) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (provider.selectedProduct.isNotEmpty) ...[
+          _buildSelectedProductSection(
+              barangay, provider, theme, yieldValue, yieldPercentage, false),
+          const SizedBox(height: 16),
+        ],
+
+        // Two-column layout for general information
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left Column - Basic Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInfoRow(
+                    icon: Icons.landscape,
+                    label: 'Total Area',
+                    value: '${barangay.area.toStringAsFixed(2)} hectares',
+                    theme: theme,
+                    isMobile: false,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildInfoRow(
+                    icon: Icons.home_work,
+                    label: 'Total Farms',
+                    value: '$totalFarms',
+                    theme: theme,
+                    isMobile: false,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildInfoRow(
+                    icon: Icons.people,
+                    label: 'Farmers',
+                    value: barangay.farmer?.toStringAsFixed(0) ?? 'N/A',
+                    theme: theme,
+                    isMobile: false,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 20),
+
+            // Right Column - Yield Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInfoRow(
+                    icon: Icons.inventory,
+                    label: 'Total Yield',
+                    value: '${totalYield.toStringAsFixed(2)} kg',
+                    theme: theme,
+                    isMobile: false,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildInfoRow(
+                    icon: Icons.category,
+                    label: 'Products',
+                    value: '${barangay.yieldData.length} types',
+                    theme: theme,
+                    isMobile: false,
+                  ),
+                  if (barangay.yieldData.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _buildInfoRow(
+                      icon: Icons.analytics,
+                      label: 'Avg Yield/Product',
+                      value:
+                          '${(totalYield / barangay.yieldData.length).toStringAsFixed(1)} kg',
+                      theme: theme,
+                      isMobile: false,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        // Top Products Section - Full width below
+        if (sortedProducts.isNotEmpty && totalYield > 0) ...[
+          const SizedBox(height: 16),
+          _buildTopProductsSection(sortedProducts, totalYield, theme, false),
+        ],
+      ],
+    );
+  }
+
+// Selected Product Section
+  static Widget _buildSelectedProductSection(
+      BarangayModel barangay,
+      BarangayDataProvider provider,
+      ThemeData theme,
+      double? yieldValue,
+      double? yieldPercentage,
+      bool isMobile) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      padding: EdgeInsets.all(isMobile ? 10 : 12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(0.95),
+        color: theme.colorScheme.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: theme.dividerColor,
+          color: theme.colorScheme.primary.withOpacity(0.3),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.shadowColor.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${provider.selectedProduct} Yield (kg)',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
           Row(
             children: [
-              buildLegendItem(
-                Colors.red[700]!,
-                'High (${maxYield.toStringAsFixed(1)})',
-                context,
+              Icon(
+                Icons.agriculture,
+                size: isMobile ? 14 : 16,
+                color: theme.colorScheme.primary,
               ),
-              const SizedBox(width: 8),
-              buildLegendItem(
-                Colors.orange[400]!,
-                'Medium (${(maxYield * 0.66).toStringAsFixed(1)})',
-                context,
-              ),
-              const SizedBox(width: 8),
-              buildLegendItem(
-                Colors.green[400]!,
-                'Low (${minYield.toStringAsFixed(1)})',
-                context,
+              SizedBox(width: isMobile ? 4 : 6),
+              Expanded(
+                child: Text(
+                  provider.selectedProduct,
+                  style: TextStyle(
+                    fontSize: isMobile ? 13 : 14,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
+          ),
+          SizedBox(height: isMobile ? 6 : 8),
+
+          // Two-column layout for yield data on desktop
+          if (!isMobile)
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Yield:',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: theme.colorScheme.onSurface.withOpacity(0.8),
+                        ),
+                      ),
+                      Text(
+                        '${yieldValue?.toStringAsFixed(2) ?? 'N/A'} kg',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (yieldPercentage != null)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Percentage:',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.colorScheme.onSurface.withOpacity(0.8),
+                          ),
+                        ),
+                        Text(
+                          '${yieldPercentage.toStringAsFixed(1)}%',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Yield:',
+                      style: TextStyle(
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      '${yieldValue?.toStringAsFixed(2) ?? 'N/A'} kg',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                if (yieldPercentage != null) ...[
+                  SizedBox(height: 3),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Percentage:',
+                        style: TextStyle(
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        '${yieldPercentage.toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+// Top Products Section
+  static Widget _buildTopProductsSection(
+      List<MapEntry<String, double>> sortedProducts,
+      double totalYield,
+      ThemeData theme,
+      bool isMobile) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(isMobile ? 10 : 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.grey[300]!,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.stars,
+                size: isMobile ? 14 : 16,
+                color: Colors.amber[700],
+              ),
+              SizedBox(width: isMobile ? 4 : 6),
+              Text(
+                'Top Products by Yield',
+                style: TextStyle(
+                  fontSize: isMobile ? 12 : 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: isMobile ? 6 : 8),
+
+          // Two-column layout for top products on desktop
+          if (!isMobile && sortedProducts.length > 5)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    children: sortedProducts
+                        .take(5)
+                        .map((entry) =>
+                            _buildProductRow(entry, totalYield, theme, false))
+                        .toList(),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    children: sortedProducts
+                        .skip(5)
+                        .take(5)
+                        .map((entry) =>
+                            _buildProductRow(entry, totalYield, theme, false))
+                        .toList(),
+                  ),
+                ),
+              ],
+            )
+          else
+            Column(
+              children: sortedProducts
+                  .take(isMobile ? 3 : 10) // Show more on desktop
+                  .map((entry) =>
+                      _buildProductRow(entry, totalYield, theme, isMobile))
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+// Product row helper
+  static Widget _buildProductRow(MapEntry<String, double> entry,
+      double totalYield, ThemeData theme, bool isMobile) {
+    final percentage = totalYield > 0 ? (entry.value / totalYield * 100) : 0.0;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Container(
+            width: isMobile ? 4 : 6,
+            height: isMobile ? 4 : 6,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(width: isMobile ? 6 : 8),
+          Expanded(
+            child: Text(
+              entry.key,
+              style: TextStyle(
+                fontSize: isMobile ? 11 : 12,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          SizedBox(width: isMobile ? 6 : 8),
+          Text(
+            '${entry.value.toStringAsFixed(1)} kg',
+            style: TextStyle(
+              fontSize: isMobile ? 10 : 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(width: isMobile ? 2 : 4),
+          Text(
+            '(${percentage.toStringAsFixed(1)}%)',
+            style: TextStyle(
+              fontSize: isMobile ? 9 : 10,
+            ),
           ),
         ],
       ),
     );
   }
 
-  static Widget buildLegendItem(
-      Color color, String text, BuildContext context) {
-    final theme = Theme.of(context);
-
+// Updated helper method to accept isMobile parameter
+  static Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required ThemeData theme,
+    bool isMobile = false,
+  }) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 16,
-          height: 16,
-          color: color,
+        Icon(
+          icon,
+          size: isMobile ? 14 : 16,
+          color: theme.colorScheme.primary.withOpacity(0.8),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: isMobile ? 6 : 8),
+        Expanded(
+          child: Text(
+            '$label:',
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 13,
+            ),
+          ),
+        ),
         Text(
-          text,
-          style: theme.textTheme.bodySmall,
+          value,
+          style: TextStyle(
+            fontSize: isMobile ? 12 : 13,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -596,17 +969,18 @@ class MapChartUIComponents {
   static Widget buildBarangayList(
       BarangayDataProvider provider, BuildContext context) {
     final theme = Theme.of(context);
-
-    // Create a dedicated ScrollController for this widget
     final ScrollController scrollController = ScrollController();
+
+    // Use the provider's filtered and sorted list
+    final filteredBarangays = provider.sortedBarangays;
 
     return Container(
       width: 200,
-      height: 400, // Add explicit height constraint
+      height: 400,
       constraints: const BoxConstraints(
         maxWidth: 250,
-        maxHeight: 600, // Add max height constraint
-        minHeight: 200, // Add min height constraint
+        maxHeight: 600,
+        minHeight: 200,
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
@@ -628,11 +1002,16 @@ class MapChartUIComponents {
         children: [
           Padding(
             padding: const EdgeInsets.all(12.0),
-            child: Text(
-              'Barangay List',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Barangay List',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
           Divider(
@@ -654,49 +1033,87 @@ class MapChartUIComponents {
               child: Scrollbar(
                 controller: scrollController,
                 thumbVisibility: true,
-                child: ListView.builder(
-                  controller: scrollController,
-                  padding: EdgeInsets.zero,
-                  itemCount: provider.data.length,
-                  itemBuilder: (context, index) {
-                    final barangay = provider.data[index];
-                    return ListTile(
-                      dense: true,
-                      minLeadingWidth: 24,
-                      leading: Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: barangay.color,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: theme.dividerColor,
-                            width: 1,
+                child: filteredBarangays.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            provider.selectedProduct.isNotEmpty
+                                ? 'No yield data for ${provider.selectedProduct}'
+                                : 'No barangay data available',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
-                      ),
-                      title: Text(
-                        barangay.name,
-                        style: theme.textTheme.bodyMedium,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: provider.selectedProduct.isNotEmpty
-                          ? Text(
-                              '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(2) ?? 'N/A'} kg',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.7),
+                      )
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: EdgeInsets.zero,
+                        itemCount: filteredBarangays.length,
+                        itemBuilder: (context, index) {
+                          final barangay = filteredBarangays[index];
+                          final yieldValue = provider.selectedProduct.isNotEmpty
+                              ? barangay.yieldData[provider.selectedProduct] ??
+                                  0
+                              : null;
+
+                          return ListTile(
+                            dense: true,
+                            minLeadingWidth: 24,
+                            leading: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: barangay.color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: theme.dividerColor,
+                                  width: 1,
+                                ),
                               ),
-                            )
-                          : null,
-                      onTap: () {
-                        // SOLUTION 6: Show bottom sheet with barangay details on mobile
-                        _showBarangayDetailsBottomSheet(
-                            context, barangay, provider);
-                      },
-                    );
-                  },
-                ),
+                            ),
+                            title: Text(
+                              barangay.name,
+                              style: theme.textTheme.bodyMedium,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: provider.selectedProduct.isNotEmpty &&
+                                    yieldValue != null
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${yieldValue.toStringAsFixed(2)} kg',
+                                        style:
+                                            theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.onSurface
+                                              .withOpacity(0.7),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      if (barangay.area > 0)
+                                        Text(
+                                          '${(yieldValue / barangay.area).toStringAsFixed(2)} kg/ha',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: theme.colorScheme.onSurface
+                                                .withOpacity(0.6),
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                    ],
+                                  )
+                                : null,
+                            onTap: () {
+                              // You can add tap functionality here if needed
+                            },
+                          );
+                        },
+                      ),
               ),
             ),
           ),
@@ -704,147 +1121,119 @@ class MapChartUIComponents {
       ),
     );
   }
+}
 
-  // SOLUTION 7: Alternative mobile-friendly detail view
-  static void _showBarangayDetailsBottomSheet(
-      BuildContext context, dynamic barangay, BarangayDataProvider provider) {
+// Separate stateful widget for the legend to maintain state
+class _LegendWidget extends StatefulWidget {
+  final BarangayDataProvider provider;
+
+  const _LegendWidget({required this.provider});
+
+  @override
+  State<_LegendWidget> createState() => _LegendWidgetState();
+}
+
+class _LegendWidgetState extends State<_LegendWidget> {
+  bool _isVisible = true;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final yields = widget.provider.data
+        .map((b) => b.yieldData[widget.provider.selectedProduct] ?? 0)
+        .toList();
+    final maxYield =
+        yields.isNotEmpty ? yields.reduce((a, b) => a > b ? a : b) : 1;
+    final minYield =
+        yields.isNotEmpty ? yields.reduce((a, b) => a < b ? a : b) : 0;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.dividerColor,
+          width: 1,
         ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: theme.dividerColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-
-            // Barangay name
-            Row(
-              children: [
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: barangay.color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: theme.dividerColor,
-                      width: 1,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    barangay.name,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Details
-            if (provider.selectedProduct.isNotEmpty) ...[
-              _buildDetailRow(
-                context,
-                Icons.agriculture,
-                '${provider.selectedProduct} Yield',
-                '${barangay.yieldData[provider.selectedProduct]?.toStringAsFixed(1) ?? 'N/A'} kg',
-              ),
-              const SizedBox(height: 12),
-            ],
-
-            _buildDetailRow(
-              context,
-              Icons.landscape,
-              'Area',
-              '${barangay.area.toStringAsFixed(2)} km²',
-            ),
-            const SizedBox(height: 12),
-
-            _buildDetailRow(
-              context,
-              Icons.people,
-              'Farmers',
-              barangay.farmer?.toStringAsFixed(0) ?? 'N/A',
-            ),
-
-            if (barangay.topProducts.isNotEmpty) ...[
-              const SizedBox(height: 20),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
               Text(
-                'Top Products:',
-                style: theme.textTheme.titleMedium?.copyWith(
+                '${widget.provider.selectedProduct} Yield (kg)',
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
-              ...barangay.topProducts.take(5).map<Widget>(
-                    (product) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.circle, size: 6),
-                          const SizedBox(width: 8),
-                          Text(product, style: theme.textTheme.bodyMedium),
-                        ],
-                      ),
-                    ),
-                  ),
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _isVisible = !_isVisible;
+                  });
+                },
+                child: Icon(
+                  _isVisible ? Icons.visibility_off : Icons.visibility,
+                  size: 18,
+                  color: theme.iconTheme.color,
+                ),
+              ),
             ],
-
-            const SizedBox(height: 20),
+          ),
+          if (_isVisible) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildLegendItem(
+                  Colors.red[700]!,
+                  'High (${maxYield.toStringAsFixed(1)})',
+                  context,
+                ),
+                const SizedBox(width: 8),
+                _buildLegendItem(
+                  const Color.fromARGB(255, 255, 98, 0),
+                  'Medium (${(maxYield * 0.66).toStringAsFixed(1)})',
+                  context,
+                ),
+                const SizedBox(width: 8),
+                _buildLegendItem(
+                  const Color.fromARGB(255, 245, 192, 112),
+                  'Low (${minYield.toStringAsFixed(1)})',
+                  context,
+                ),
+              ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 
-  static Widget _buildDetailRow(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String value,
-  ) {
+  Widget _buildLegendItem(Color color, String text, BuildContext context) {
     final theme = Theme.of(context);
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 20, color: theme.colorScheme.primary),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            '$label:',
-            style: theme.textTheme.bodyMedium,
-          ),
+        Container(
+          width: 16,
+          height: 16,
+          color: color,
         ),
+        const SizedBox(width: 4),
         Text(
-          value,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          text,
+          style: theme.textTheme.bodySmall,
         ),
       ],
     );

@@ -1,5 +1,5 @@
 // ignore_for_file: must_be_immutable, avoid_print, use_super_parameters, non_constant_identifier_names
- 
+
 import 'package:flareline/core/theme/global_colors.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farms/farm_bloc/farm_bloc.dart';
@@ -12,7 +12,7 @@ import 'package:flareline/pages/yields/yield_profile.dart';
 import 'package:flareline/providers/user_provider.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; 
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
@@ -67,15 +67,7 @@ class _YieldsWidgetState extends State<YieldsWidget> {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is YieldsError) {
-
- 
-
-             ToastHelper.showErrorToast(
-       state.message,
-        context, maxLines: 3
-      );
-
-      
+          ToastHelper.showErrorToast(state.message, context, maxLines: 3);
         }
       },
       child: _channels(),
@@ -95,7 +87,8 @@ class _YieldsWidgetState extends State<YieldsWidget> {
     final farmerId = userProvider.farmer?.id?.toString();
 
     return SizedBox(
-      height: 550,
+      // height: 550,
+      height: MediaQuery.of(context).size.height * 0.7,
       child: Column(
         children: [
           _buildSearchBarDesktop(),
@@ -280,7 +273,7 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                       'Livestock',
                       'Fishery',
                       'Corn',
-                      'High Value Crop'
+                      'HVC'
                     ],
                     selectedValue: selectedSector,
                     onSelected: (value) {
@@ -461,7 +454,6 @@ class _YieldsWidgetState extends State<YieldsWidget> {
                                   String notes,
                                   List<String> images,
                                 ) {
-
                                   print('areaHa');
                                   print(areaHa);
                                   context.read<YieldBloc>().add(
@@ -508,14 +500,7 @@ class _YieldsWidgetState extends State<YieldsWidget> {
         BlocListener<ProductBloc, ProductState>(
           listener: (context, state) {
             if (state is ProductsError) {
-               
-
-ToastHelper.showErrorToast(
-       state.message,
-        context, maxLines: 3
-      );
-
-
+              ToastHelper.showErrorToast(state.message, context, maxLines: 3);
             }
           },
         ),
@@ -553,7 +538,7 @@ ToastHelper.showErrorToast(
                     'Livestock',
                     'Fishery',
                     'Corn',
-                    'High Value Crop'
+                    'HVC'
                   ],
                   selectedValue: selectedSector,
                   onSelected: (value) {
@@ -735,12 +720,9 @@ ToastHelper.showErrorToast(
                                 DateTime date,
                                 String notes,
                                 List<String> images,
-                              ) 
-                              {
-
-
-                                  print('areaHa');
-                                  print(areaHa);
+                              ) {
+                                print('areaHa');
+                                print(areaHa);
 
                                 context.read<YieldBloc>().add(
                                       AddYield(
@@ -984,11 +966,11 @@ class YieldsViewModel extends BaseTableProvider {
     if (volume == null) return 'N/A';
 
     switch (sectorId) {
-      case 1: 
-      case 2: 
-      case 3: 
-      case 5: 
-      case 6: 
+      case 1:
+      case 2:
+      case 3:
+      case 5:
+      case 6:
         return '${volume.toStringAsFixed(volume % 1 == 0 ? 0 : 1)} kg';
       case 4:
         return '${volume.toInt()} heads';
@@ -1022,11 +1004,10 @@ class YieldsViewModel extends BaseTableProvider {
 
     final headers = [
       "Record Id",
-       "Product",
+      "Product",
       if (!isFarmer) "Farmer Name",
       "Sector",
       if (!isFarmer) "Barangay",
-     
       "Area",
       "Reported Yield",
       "Date Reported",
@@ -1046,8 +1027,7 @@ class YieldsViewModel extends BaseTableProvider {
         ..id = yieldRecord.id.toString();
       row.add(recordIdCell);
 
-
-        // Product name with image
+      // Product name with image
       var productCell = TableDataRowsTableDataRows()
         ..text = yieldRecord.productName
         ..imageUrl = yieldRecord.productImage
@@ -1063,7 +1043,6 @@ class YieldsViewModel extends BaseTableProvider {
           ..columnName = 'Farmer Name'
           ..id = yieldRecord.id.toString();
         row.add(farmerNameCell);
-        
       }
 
       var sectorCell = TableDataRowsTableDataRows()
@@ -1089,10 +1068,6 @@ class YieldsViewModel extends BaseTableProvider {
       //   ..columnName = 'Product'
       //   ..id = yieldRecord.id.toString();
       // row.add(productCell);
-
-
- 
-
 
       var areaCell = TableDataRowsTableDataRows()
         ..text = '${yieldRecord.areaHarvested} ha'
@@ -1140,15 +1115,10 @@ class YieldsViewModel extends BaseTableProvider {
   }
 }
 
-
-
-
-
-
 class MobileYieldListWidget extends StatefulWidget {
   final YieldsLoaded state;
   final int itemsPerPage;
-  
+
   const MobileYieldListWidget({
     required this.state,
     this.itemsPerPage = 10, // Default items per page
@@ -1161,12 +1131,14 @@ class MobileYieldListWidget extends StatefulWidget {
 
 class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
   int currentPage = 0;
-  
-  int get totalPages => (widget.state.yields.length / widget.itemsPerPage).ceil();
-  
+
+  int get totalPages =>
+      (widget.state.yields.length / widget.itemsPerPage).ceil();
+
   List<dynamic> get currentPageData {
     final startIndex = currentPage * widget.itemsPerPage;
-    final endIndex = (startIndex + widget.itemsPerPage).clamp(0, widget.state.yields.length);
+    final endIndex =
+        (startIndex + widget.itemsPerPage).clamp(0, widget.state.yields.length);
     return widget.state.yields.sublist(startIndex, endIndex);
   }
 
@@ -1221,19 +1193,21 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: _getSectorColor(yield.sectorId),
-                    child: yield.productImage != null 
-                      ? ClipOval(
-                          child: Image.network(
-                            yield.productImage!,
-                            fit: BoxFit.cover,
-                            width: 40,
-                            height: 40,
-                          ),
-                        )
-                      : Icon(sectorIcon, color: Colors.white),
+                    child: yield.productImage != null
+                        ? ClipOval(
+                            child: Image.network(
+                              yield.productImage!,
+                              fit: BoxFit.cover,
+                              width: 40,
+                              height: 40,
+                            ),
+                          )
+                        : Icon(sectorIcon, color: Colors.white),
                   ),
                   title: Text(
-                    isFarmer ? yield.productName ?? 'N/A' : '${yield.farmerName}  • ${yield.productName}',
+                    isFarmer
+                        ? yield.productName ?? 'N/A'
+                        : '${yield.farmerName}  • ${yield.productName}',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1261,7 +1235,8 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
                         onPressed: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => YieldProfile(yieldData: yield),
+                            builder: (context) =>
+                                YieldProfile(yieldData: yield),
                           ),
                         ),
                       ),
@@ -1277,7 +1252,7 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
               },
             ),
           ),
-          
+
           // Pagination controls
           if (totalPages > 1)
             Container(
@@ -1298,10 +1273,11 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
                     onPressed: currentPage > 0 ? _previousPage : null,
                     icon: Icon(
                       Icons.chevron_left,
-                      color: currentPage > 0 ? GlobalColors.primary : Colors.grey,
+                      color:
+                          currentPage > 0 ? GlobalColors.primary : Colors.grey,
                     ),
                   ),
-                  
+
                   // Page indicators
                   Expanded(
                     child: Row(
@@ -1316,24 +1292,26 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
                               pageIndex = index;
                             } else {
                               // Smart pagination: show current page in center
-                              int start = (currentPage - 2).clamp(0, totalPages - 5);
+                              int start =
+                                  (currentPage - 2).clamp(0, totalPages - 5);
                               pageIndex = start + index;
                             }
-                            
+
                             return GestureDetector(
                               onTap: () => _goToPage(pageIndex),
                               child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 4),
                                 width: 32,
                                 height: 32,
                                 decoration: BoxDecoration(
-                                  color: currentPage == pageIndex 
-                                    ? GlobalColors.primary 
-                                    : Colors.transparent,
+                                  color: currentPage == pageIndex
+                                      ? GlobalColors.primary
+                                      : Colors.transparent,
                                   border: Border.all(
-                                    color: currentPage == pageIndex 
-                                      ? GlobalColors.primary 
-                                      : Colors.grey.shade400,
+                                    color: currentPage == pageIndex
+                                        ? GlobalColors.primary
+                                        : Colors.grey.shade400,
                                   ),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -1341,13 +1319,13 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
                                   child: Text(
                                     '${pageIndex + 1}',
                                     style: TextStyle(
-                                      color: currentPage == pageIndex 
-                                        ? Colors.white 
-                                        : null, 
+                                      color: currentPage == pageIndex
+                                          ? Colors.white
+                                          : null,
                                       fontSize: 12,
-                                      fontWeight: currentPage == pageIndex 
-                                        ? FontWeight.w600 
-                                        : FontWeight.normal,
+                                      fontWeight: currentPage == pageIndex
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
                                     ),
                                   ),
                                 ),
@@ -1355,7 +1333,7 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
                             );
                           },
                         ),
-                        
+
                         // Show ellipsis if there are more pages
                         if (totalPages > 5)
                           Padding(
@@ -1368,19 +1346,21 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
                       ],
                     ),
                   ),
-                  
+
                   // Next button
                   IconButton(
                     onPressed: currentPage < totalPages - 1 ? _nextPage : null,
                     icon: Icon(
                       Icons.chevron_right,
-                      color: currentPage < totalPages - 1 ? GlobalColors.primary : Colors.grey,
+                      color: currentPage < totalPages - 1
+                          ? GlobalColors.primary
+                          : Colors.grey,
                     ),
                   ),
                 ],
               ),
             ),
-          
+
           // Page info
           if (totalPages > 1)
             Padding(
@@ -1400,10 +1380,14 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
 
   IconData _getSectorIcon(int? sectorId) {
     switch (sectorId) {
-      case 1: return Icons.grass; // Crops
-      case 2: return Icons.agriculture; // Livestock
-      case 3: return Icons.water_drop; // Fisheries
-      default: return Icons.category;
+      case 1:
+        return Icons.grass; // Crops
+      case 2:
+        return Icons.agriculture; // Livestock
+      case 3:
+        return Icons.water_drop; // Fisheries
+      default:
+        return Icons.category;
     }
   }
 
@@ -1411,11 +1395,11 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
     if (volume == null) return 'N/A';
 
     switch (sectorId) {
-      case 1: 
-      case 2: 
-      case 3: 
-      case 5: 
-      case 6: 
+      case 1:
+      case 2:
+      case 3:
+      case 5:
+      case 6:
         return '${volume.toStringAsFixed(volume % 1 == 0 ? 0 : 1)} kg';
       case 4:
         return '${volume.toInt()} heads';
@@ -1427,7 +1411,8 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
   String _formatDate(dynamic dateInput) {
     if (dateInput == null) return 'N/A';
     try {
-      DateTime dateTime = dateInput is String ? DateTime.parse(dateInput) : dateInput;
+      DateTime dateTime =
+          dateInput is String ? DateTime.parse(dateInput) : dateInput;
       return DateFormat('MMM d').format(dateTime);
     } catch (e) {
       return 'N/A';
@@ -1436,19 +1421,27 @@ class _MobileYieldListWidgetState extends State<MobileYieldListWidget> {
 
   Color _getSectorColor(int? sectorId) {
     switch (sectorId) {
-      case 1: return Colors.green;
-      case 2: return Colors.orange;
-      case 3: return GlobalColors.primary;
-      default: return Colors.grey;
+      case 1:
+        return Colors.green;
+      case 2:
+        return Colors.orange;
+      case 3:
+        return GlobalColors.primary;
+      default:
+        return Colors.grey;
     }
   }
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'Accepted': return Colors.green;
-      case 'Pending': return Colors.orange;
-      case 'Rejected': return Colors.red;
-      default: return Colors.grey;
+      case 'Accepted':
+        return Colors.green;
+      case 'Pending':
+        return Colors.orange;
+      case 'Rejected':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 }

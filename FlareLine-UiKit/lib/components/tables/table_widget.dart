@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
+import 'package:syncfusion_flutter_core/theme.dart';
 
 enum CellDataType {
   TEXT('text'),
@@ -257,12 +258,26 @@ abstract class TableWidget<S extends BaseTableProvider> extends BaseWidget<S> {
         )),
         if (showPaging && rows.isNotEmpty)
           SizedBox(
-              height: 60,
+            height: 60,
+            child: SfDataPagerTheme(
+              data: SfDataPagerThemeData(
+                // selectedItemColor:
+                //     Colors.blue, // Background color of active page
+                selectedItemTextStyle: TextStyle(
+                  color: Colors.black, // Text color of active page number
+                  // fontWeight: FontWeight.bold,
+                ),
+                // itemTextStyle: TextStyle(
+                //   color: Colors.black, // Text color of inactive page numbers
+                // ),
+              ),
               child: SfDataPager(
                 delegate: dataGridSource,
                 pageCount: pageCount.toDouble(),
                 direction: Axis.horizontal,
-              ))
+              ),
+            ),
+          )
       ],
     );
   }

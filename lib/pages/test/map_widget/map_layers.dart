@@ -346,7 +346,7 @@ class MapLayersHelper {
                   ],
                 ),
                 child: const Icon(
-                  Icons.warning_rounded,
+                  Icons.square_foot,
                   color: Colors.white,
                   size: 12,
                 ),

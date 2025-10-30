@@ -5,7 +5,7 @@ import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_ti
 
 class MapMiniView extends StatefulWidget {
   final bool isMobile;
-  final VoidCallback? onTap; // Optional callback for more flexibility
+  final VoidCallback? onTap;
 
   const MapMiniView({super.key, this.isMobile = false, this.onTap});
 
@@ -45,37 +45,37 @@ class _MapMiniViewState extends State<MapMiniView> {
                 onTapCancel: () => setState(() => _isTapped = false),
                 onTap: widget.onTap ??
                     () {
-                      Navigator.pushNamed(context, '/newPage');
+                      Navigator.pushNamed(context, '/map');
                     },
                 child: Card(
                   elevation: (_isHovered || _isTapped) ? 4 : 1,
                   clipBehavior: Clip.antiAlias,
                   child: Stack(
                     children: [
-                      FlutterMap(
-                        options: MapOptions(
-                          center: const LatLng(14.077557, 121.328938),
-                          zoom: 13,
-                          minZoom: 13,
-                          maxBounds: LatLngBounds(
-                            const LatLng(13.927557, 121.178938),
-                            const LatLng(14.227557, 121.478938),
+                      // Use AbsorbPointer to prevent FlutterMap from intercepting gestures
+                      AbsorbPointer(
+                        child: FlutterMap(
+                          options: MapOptions(
+                            center: const LatLng(14.077557, 121.328938),
+                            zoom: 13,
+                            minZoom: 13,
+                            maxBounds: LatLngBounds(
+                              const LatLng(13.927557, 121.178938),
+                              const LatLng(14.227557, 121.478938),
+                            ),
+                            // Disable interactive flags
+                            interactiveFlags: InteractiveFlag.none,
                           ),
+                          children: [
+                            TileLayer(
+                              urlTemplate:
+                                  "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+                              subdomains: const ['a', 'b', 'c'],
+                              tileProvider: CancellableNetworkTileProvider(),
+                              userAgentPackageName: 'com.example.app',
+                            ),
+                          ],
                         ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-                            subdomains: const [
-                              'a',
-                              'b',
-                              'c'
-                            ], // Added subdomains for better tile loading
-                            tileProvider:
-                                CancellableNetworkTileProvider(), // Using cancellable provider
-                            userAgentPackageName: 'com.example.app',
-                          ),
-                        ],
                       ),
                       if (_isHovered || _isTapped)
                         AnimatedOpacity(

@@ -1,7 +1,9 @@
 import 'package:flareline/pages/test/map_widget/farm_list_panel/barangay_filter_panel.dart';
 import 'package:flareline/pages/test/map_widget/pin_style.dart';
 import 'package:flareline/pages/test/map_widget/polygon_manager.dart';
+import 'package:flareline/providers/user_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class FarmListPanel extends StatefulWidget {
   final PolygonManager polygonManager;
@@ -47,6 +49,7 @@ class _FarmListPanelState extends State<FarmListPanel>
   List<String>? _lastSelectedProducts;
   String? _lastSearchQuery;
   Map<String, bool>? _lastFilterOptions;
+  Map<String, bool>? _lastUserFilterOptions;
   List<PolygonData>? _lastPolygons;
 
   @override
@@ -65,6 +68,7 @@ class _FarmListPanelState extends State<FarmListPanel>
         _lastSelectedProducts == widget.selectedProducts &&
         _lastSearchQuery == searchQuery &&
         _lastFilterOptions == BarangayFilterPanel.filterOptions &&
+        _lastUserFilterOptions == BarangayFilterPanel.userFilterOptions &&
         _lastPolygons == widget.polygonManager.polygons) {
       return _cachedFilteredPolygons!;
     }
@@ -73,9 +77,31 @@ class _FarmListPanelState extends State<FarmListPanel>
     _lastSelectedProducts = widget.selectedProducts;
     _lastSearchQuery = searchQuery;
     _lastFilterOptions = Map.from(BarangayFilterPanel.filterOptions);
+    _lastUserFilterOptions = Map.from(BarangayFilterPanel.userFilterOptions);
     _lastPolygons = widget.polygonManager.polygons;
 
     List<PolygonData> result = widget.polygonManager.polygons;
+
+    // Get user context
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
+    final farmerId = userProvider.farmer?.id?.toString();
+
+    // Apply user-based filters first
+    if (isFarmer &&
+        BarangayFilterPanel.userFilterOptions['showOwnedOnly'] == true) {
+      // Show only farms owned by current farmer
+      result = result.where((polygon) {
+        return polygon.farmerId?.toString() == farmerId;
+      }).toList();
+    } else if (!isFarmer &&
+        BarangayFilterPanel.userFilterOptions['showActiveOnly'] == true) {
+      // Show only active farms for non-farmers
+      result = result.where((polygon) {
+        return polygon.status?.toLowerCase() == 'active' ||
+            polygon.status == null;
+      }).toList();
+    }
 
     // Apply search filter
     if (searchQuery.isNotEmpty) {
@@ -118,7 +144,7 @@ class _FarmListPanelState extends State<FarmListPanel>
     return result;
   }
 
-  // Option 1: Simple Colored Shape
+  // Updated: Polygon Preview with Pin Icon
   Widget _buildPolygonPreview(PolygonData polygon) {
     final exceedsLimit = widget.polygonManager.polygonExceedsAreaLimit(polygon);
     final color = getPinColor(polygon.pinStyle);
@@ -137,6 +163,9 @@ class _FarmListPanelState extends State<FarmListPanel>
             ),
             borderRadius: BorderRadius.circular(6),
           ),
+          child: Center(
+            child: getPinIcon(polygon.pinStyle),
+          ),
         ),
         if (exceedsLimit)
           Positioned(
@@ -151,7 +180,7 @@ class _FarmListPanelState extends State<FarmListPanel>
                 border: Border.all(color: Colors.white, width: 1.5),
               ),
               child: Icon(
-                Icons.warning,
+                Icons.square_foot,
                 color: Colors.white,
                 size: 8,
               ),
@@ -172,11 +201,12 @@ class _FarmListPanelState extends State<FarmListPanel>
         polygonManager: widget.polygonManager,
         selectedBarangays: widget.selectedBarangays,
         selectedProducts: widget.selectedProducts,
-        onFiltersChanged: (barangays, products, farmFilters) {
+        onFiltersChanged: (barangays, products, farmFilters, userFilters) {
           setState(() {
             widget.onBarangayFilterChanged(barangays);
             widget.onProductFilterChanged(products);
             BarangayFilterPanel.filterOptions = farmFilters;
+            BarangayFilterPanel.userFilterOptions = userFilters;
           });
           widget.onFiltersChanged();
         },
@@ -220,7 +250,8 @@ class _FarmListPanelState extends State<FarmListPanel>
                     color: (widget.selectedBarangays.isNotEmpty ||
                             widget.selectedProducts.isNotEmpty ||
                             BarangayFilterPanel.filterOptions.values
-                                .any((value) => !value))
+                                .any((value) => !value) ||
+                            _hasActiveUserFilters())
                         ? theme.colorScheme.primary
                         : theme.disabledColor),
                 onPressed: () {
@@ -339,31 +370,31 @@ class _FarmListPanelState extends State<FarmListPanel>
                                 ),
                               if (polygon.products != null &&
                                   polygon.products!.isNotEmpty)
-                                // Text(
-                                //   'Products: ${polygon.products!.join(', ')}',
-                                //   style: TextStyle(
-                                //     fontSize: 11,
-                                //     color: Colors.grey.shade600,
-                                //   ),
-                                //   maxLines: 1,
-                                //   overflow: TextOverflow.ellipsis,
-                                // ),
-                                if (exceedsLimit)
-                                  Row(
-                                    children: [
-                                      Icon(Icons.warning,
-                                          size: 12, color: Colors.red),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Area exceeds limit',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                Text(
+                                  'Products: ${polygon.products!.join(', ')}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade600,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              if (exceedsLimit)
+                                Row(
+                                  children: [
+                                    Icon(Icons.square_foot,
+                                        size: 12, color: Colors.red),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Area exceeds limit',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                           contentPadding:
@@ -394,5 +425,17 @@ class _FarmListPanelState extends State<FarmListPanel>
         ],
       ),
     );
+  }
+
+  // Helper method to check if user-based filters are active
+  bool _hasActiveUserFilters() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isFarmer = userProvider.isFarmer;
+
+    if (isFarmer) {
+      return BarangayFilterPanel.userFilterOptions['showOwnedOnly'] == true;
+    } else {
+      return BarangayFilterPanel.userFilterOptions['showActiveOnly'] == true;
+    }
   }
 }

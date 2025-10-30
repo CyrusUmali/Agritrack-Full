@@ -17,6 +17,7 @@ class RoleGuard {
       '/yields',
       '/map',
       '/farms',
+      '/chatbot',
       '/sectors',
     ],
     'officer': [
@@ -32,6 +33,7 @@ class RoleGuard {
       '/yields',
       '/map',
       '/farms',
+        '/chatbot',
       '/sectors',
     ],
     'farmer': [
@@ -44,6 +46,7 @@ class RoleGuard {
       '/recommendation',
       '/yields',
       '/map',
+        '/chatbot',
       '/farms',
     ],
   };

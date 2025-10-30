@@ -24,22 +24,22 @@ class FilterOptions {
 
   static List<String> getAssocs(BuildContext context) {
     final assocsState = context.read<AssocsBloc>().state;
-    debugPrint('Current AssocsBloc state: ${assocsState.runtimeType}');
+    // debugPrint('Current AssocsBloc state: ${assocsState.runtimeType}');
 
     // Handle different states
     if (assocsState is AssocsInitial) {
-      debugPrint('Showing initial state');
+      // debugPrint('Showing initial state');
       return ['Loading...'];
     }
 
     if (assocsState is AssocsLoading) {
-      debugPrint('Showing loading state');
+      // debugPrint('Showing loading state');
       return ['Loading...'];
     }
 
     if (assocsState is AssocsLoaded) {
-      debugPrint(
-          'Associations loaded, count: ${assocsState.associations.length}');
+      // debugPrint(
+      //     'Associations loaded, count: ${assocsState.associations.length}');
       return assocsState.associations
           .map((assoc) => '${assoc.id}: ${assoc.name}')
           .toList();
@@ -48,16 +48,16 @@ class FilterOptions {
     if (assocsState is AssocLoaded) {
       // Note: This is the single-association state
       final assoc = assocsState.association;
-      debugPrint('Single association loaded - ID: ${assoc.id}');
+      // debugPrint('Single association loaded - ID: ${assoc.id}');
       return ['${assoc.id}: ${assoc.name}'];
     }
 
     if (assocsState is AssocsError) {
-      debugPrint('Error: ${assocsState.message}');
+      // debugPrint('Error: ${assocsState.message}');
       return ['Error: ${assocsState.message}'];
     }
 
-    debugPrint('Unknown state: ${assocsState.runtimeType}');
+    // debugPrint('Unknown state: ${assocsState.runtimeType}');
     return ['No data available'];
   }
 
@@ -73,7 +73,7 @@ class FilterOptions {
   static Map<String, String> getFilteredReportTypes(bool isFarmer) {
     if (isFarmer) {
       return {
-        'farmer': 'Farmer Record',  
+        'farmer': 'Farmer Record',
       };
     } else {
       return reportTypes; // Show all reports for admin/non-farmers

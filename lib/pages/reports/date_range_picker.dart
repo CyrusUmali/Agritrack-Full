@@ -1,3 +1,4 @@
+import 'package:flareline_uikit/core/theme/flareline_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -84,7 +85,6 @@ class DateRangePickerWidget extends StatelessWidget {
     );
   }
 
-  // ... rest of the code remains the same
   Future<void> _showDatePicker(BuildContext context) async {
     final now = DateTime.now();
     final currentYear = now.year;
@@ -110,6 +110,7 @@ class DateRangePickerWidget extends StatelessWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return Dialog(
+            backgroundColor: Theme.of(context).cardTheme.color,
             insetPadding: const EdgeInsets.all(20),
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -225,7 +226,7 @@ class DateRangePickerWidget extends StatelessWidget {
                         const SizedBox(width: 8),
                         FilledButton(
                           style: FilledButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
+                            backgroundColor: FlarelineColors.primary,
                           ),
                           onPressed: () {
                             final startDate = DateTime(
@@ -298,6 +299,7 @@ class DateRangePickerWidget extends StatelessWidget {
                     child: Text(year.toString()),
                   );
                 }).toList(),
+                dropdownColor: Theme.of(context).cardTheme.color,
                 onChanged: (year) {
                   if (year != null) onYearChanged(year);
                 },
@@ -322,6 +324,7 @@ class DateRangePickerWidget extends StatelessWidget {
                 onChanged: (month) {
                   if (month != null) onMonthChanged(month);
                 },
+                dropdownColor: Theme.of(context).cardTheme.color,
                 decoration: InputDecoration(
                   labelText: 'Month',
                   border: OutlineInputBorder(

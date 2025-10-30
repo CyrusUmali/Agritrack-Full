@@ -17,12 +17,7 @@
         "menuName": "Farms",
         "path": "/farms"
       },
-
-      {
-        "icon": "assets/sidebar/assocs.svg",
-        "menuName": "Assocs",
-        "path": "/assocs"
-      },
+ 
       
       
      
@@ -42,6 +37,20 @@
         "menuName": "Recommendation",
         "path": "/recommendation"
       },
+
+
+
+
+
+      {
+       
+          "icon": "assets/sidebar/chatbot.svg",
+            "menuName": "Chatbot",
+             "path": "/chatbot"
+         
+      },
+
+
       {
         "icon": "assets/sidebar/reports.svg",
         "menuName": "Reports",

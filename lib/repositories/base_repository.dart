@@ -11,32 +11,39 @@ abstract class BaseRepository {
 
   BaseRepository({required this.apiService});
 
-  Never handleError(dynamic error, {String operation = 'operation'}) {
+  Never handleError(dynamic error,
+      {String operation = 'operation', bool skipAuthCheck = false}) {
     if (error is DioException) {
-      _handleDioError(error, operation: operation);
+      _handleDioError(error,
+          operation: operation, skipAuthCheck: skipAuthCheck);
     } else if (error is FirebaseAuthException) {
       _handleFirebaseAuthError(error, operation: operation);
     } else if (error is TimeoutException) {
-      throw Exception('Request timed out. Please check your internet connection and try again.');
+      throw Exception(
+          'Request timed out. Please check your internet connection and try again.');
     } else if (error is SocketException) {
-      throw Exception('No internet connection. Please check your network settings.');
+      throw Exception(
+          'No internet connection. Please check your network settings.');
     } else {
       throw Exception('Failed to complete $operation: ${error.toString()}');
     }
   }
 
-  Never _handleDioError(DioException e, {required String operation}) {
+  Never _handleDioError(DioException e,
+      {required String operation, bool skipAuthCheck = false}) {
     // Network connectivity errors
     if (e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.sendTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
-      throw Exception('Network connection failed. Please check your internet connection and try again.');
+      throw Exception(
+          'Network connection failed. Please check your internet connection and try again.');
     }
-    
+
     // No internet connection
     if (e.type == DioExceptionType.unknown && e.error is SocketException) {
-      throw Exception('No internet connection. Please check your network settings.');
+      throw Exception(
+          'No internet connection. Please check your network settings.');
     }
 
     // HTTP status code based errors
@@ -46,9 +53,14 @@ abstract class BaseRepository {
 
     switch (statusCode) {
       case 400:
-        throw Exception(message ?? 'Invalid request data. Please check your input.');
+        throw Exception(
+            message ?? 'Invalid request data. Please check your input.');
       case 401:
-        throw Exception(message ?? 'Authentication failed. Please sign in again.');
+        if (!skipAuthCheck) {
+          checkAuthentication(); // Only check auth if not skipped
+        }
+        throw Exception(
+            message ?? 'Authentication failed. Please sign in again.');
       case 403:
         throw Exception('You do not have permission to perform this action.');
       case 404:
@@ -58,20 +70,26 @@ abstract class BaseRepository {
       case 500:
         throw Exception('Server error. Please try again later.');
       case 503:
-        throw Exception('Service temporarily unavailable. Please try again later.');
+        throw Exception(
+            'Service temporarily unavailable. Please try again later.');
       default:
         throw Exception('Network error during $operation: ${e.message}');
     }
   }
 
-  Never _handleFirebaseAuthError(FirebaseAuthException e, {required String operation}) {
+  Never _handleFirebaseAuthError(FirebaseAuthException e,
+      {required String operation}) {
     switch (e.code) {
       case 'wrong-password':
+        print('error code');
+        print(e.code);
         throw Exception('Current password is incorrect');
       case 'weak-password':
-        throw Exception('New password is too weak. Please choose a stronger password.');
+        throw Exception(
+            'New password is too weak. Please choose a stronger password.');
       case 'requires-recent-login':
-        throw Exception('This operation requires recent authentication. Please sign in again.');
+        throw Exception(
+            'This operation requires recent authentication. Please sign in again.');
       case 'user-not-found':
         throw Exception('User not found');
       case 'email-already-in-use':

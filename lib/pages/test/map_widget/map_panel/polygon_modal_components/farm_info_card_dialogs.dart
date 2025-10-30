@@ -66,27 +66,18 @@ class FarmInfoCardDialogs {
 
   static void showFarmOwnerSelectionDialog({
     required BuildContext context,
-    required String currentOwner, // Expects string in "id: name" format
+    required String currentOwner,
     required List<Farmer> ownerOptions,
-    required Function(String)
-        onOwnerChanged, // Returns string in "id: name" format
+    required Function(String) onOwnerChanged,
     required ThemeData theme,
+    bool isLoading = false, // Add loading parameter
   }) {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
     String searchQuery = '';
     String selectedOwner = currentOwner;
 
-    // Helper function to create the display string
     String _ownerDisplayString(Farmer farmer) => '${farmer.id}: ${farmer.name}';
-
-    // Find initial selected farmer
-    Farmer? _findSelectedFarmer() {
-      return ownerOptions.firstWhere(
-        (owner) => _ownerDisplayString(owner) == selectedOwner,
-        orElse: () => ownerOptions.first, // fallback to first if not found
-      );
-    }
 
     showDialog(
       context: context,
@@ -94,7 +85,6 @@ class FarmInfoCardDialogs {
         return StatefulBuilder(
           builder: (context, setState) {
             final isDesktop = MediaQuery.of(context).size.width > 600;
-            final currentFarmer = _findSelectedFarmer();
 
             return AlertDialog(
               title: Text('Select Farm Owner',
@@ -107,70 +97,106 @@ class FarmInfoCardDialogs {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search farm owners...',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    if (isLoading) ...[
+                      SizedBox(
+                        height: 200,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text('Loading farmers...'),
+                            ],
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
                       ),
-                      onChanged: (value) {
-                        setState(() {
-                          searchQuery = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: isDesktop ? 400 : 300,
-                      child: Material(
-                        borderRadius: BorderRadius.circular(8),
-                        color: colorScheme.surfaceVariant.withOpacity(0.3),
-                        child: ListView.builder(
-                          itemCount: ownerOptions
-                              .where((owner) => _ownerDisplayString(owner)
-                                  .toLowerCase()
-                                  .contains(searchQuery.toLowerCase()))
-                              .length,
-                          itemBuilder: (context, index) {
-                            final owner = ownerOptions
+                    ] else if (ownerOptions.isEmpty) ...[
+                      SizedBox(
+                        height: 200,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.people_outline,
+                                  size: 50, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text('No farmers available'),
+                              SizedBox(height: 8),
+                              Text(
+                                'Please check if farmers are loaded properly',
+                                style: TextStyle(color: Colors.grey),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search farm owners...',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            searchQuery = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: isDesktop ? 400 : 300,
+                        child: Material(
+                          borderRadius: BorderRadius.circular(8),
+                          color: colorScheme.surfaceVariant.withOpacity(0.3),
+                          child: ListView.builder(
+                            itemCount: ownerOptions
                                 .where((owner) => _ownerDisplayString(owner)
                                     .toLowerCase()
                                     .contains(searchQuery.toLowerCase()))
-                                .elementAt(index);
-                            final ownerString = _ownerDisplayString(owner);
+                                .length,
+                            itemBuilder: (context, index) {
+                              final owner = ownerOptions
+                                  .where((owner) => _ownerDisplayString(owner)
+                                      .toLowerCase()
+                                      .contains(searchQuery.toLowerCase()))
+                                  .elementAt(index);
+                              final ownerString = _ownerDisplayString(owner);
 
-                            return ListTile(
-                              title: Text(_getDisplayName(
-                                  ownerString)), // Show only display name
-                              leading: Radio<String>(
-                                value: ownerString,
-                                groupValue: selectedOwner,
-                                onChanged: (String? value) {
+                              return ListTile(
+                                title: Text(_getDisplayName(ownerString)),
+                                leading: Radio<String>(
+                                  value: ownerString,
+                                  groupValue: selectedOwner,
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      selectedOwner = value ?? selectedOwner;
+                                    });
+                                  },
+                                ),
+                                onTap: () {
                                   setState(() {
-                                    selectedOwner = value ?? selectedOwner;
+                                    selectedOwner = ownerString;
                                   });
                                 },
-                              ),
-                              onTap: () {
-                                setState(() {
-                                  selectedOwner = ownerString;
-                                });
-                              },
-                              tileColor: selectedOwner == ownerString
-                                  ? colorScheme.primary.withOpacity(0.1)
-                                  : null,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            );
-                          },
+                                tileColor: selectedOwner == ownerString
+                                    ? colorScheme.primary.withOpacity(0.1)
+                                    : null,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -179,21 +205,16 @@ class FarmInfoCardDialogs {
                   onPressed: () => Navigator.pop(context),
                   child: Text('Cancel'),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (selectedOwner != currentOwner) {
-                      onOwnerChanged(selectedOwner);
-                    }
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FlarelineColors
-                        .primary, // Change this to your desired background color
-                    foregroundColor:
-                        Colors.white, // This sets the text color to white
+                if (!isLoading && ownerOptions.isNotEmpty)
+                  ElevatedButton(
+                    onPressed: () {
+                      if (selectedOwner != currentOwner) {
+                        onOwnerChanged(selectedOwner);
+                      }
+                      Navigator.pop(context);
+                    },
+                    child: Text('Select'),
                   ),
-                  child: Text('Select'),
-                ),
               ],
             );
           },

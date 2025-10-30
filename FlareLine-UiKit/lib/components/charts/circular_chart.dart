@@ -71,7 +71,7 @@ class CircularhartWidget extends StatelessWidget {
       BuildContext context) {
     return [
       DoughnutSeries<dynamic, String>(
-          explode: false,
+          explode: true,
           dataSource: chartData,
           xValueMapper: (dynamic data, _) => data['x'],
           yValueMapper: (dynamic data, _) => data['y'],

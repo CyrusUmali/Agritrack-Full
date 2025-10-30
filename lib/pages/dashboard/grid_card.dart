@@ -10,10 +10,13 @@ import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:flareline/services/lanugage_extension.dart';
 
-class GridCard extends StatefulWidget {
-  final int selectedYear; // Add selectedYear as a required parameter
+import 'package:flareline/pages/widget/network_error.dart';
 
-  const GridCard({super.key, required this.selectedYear}); // Update constructor
+class GridCard extends StatefulWidget {
+  final int selectedYear;
+
+  const GridCard({super.key, required this.selectedYear});
+
   @override
   State<GridCard> createState() => _GridCardState();
 }
@@ -29,7 +32,7 @@ class _GridCardState extends State<GridCard> {
   void didUpdateWidget(covariant GridCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedYear != widget.selectedYear) {
-      _fetchShiValues(); // Refetch when year changes
+      _fetchShiValues();
     }
   }
 
@@ -43,8 +46,7 @@ class _GridCardState extends State<GridCard> {
   Future<void> _fetchUserRole() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     _isFarmer = userProvider.isFarmer;
-
-    _farmerId = userProvider.farmer?.id?.toString(); // Ensure string conversion
+    _farmerId = userProvider.farmer?.id?.toString();
 
     await _fetchShiValues();
   }
@@ -58,10 +60,9 @@ class _GridCardState extends State<GridCard> {
     });
 
     try {
-      // Pass farmerId only if the user is a farmer
       final shiValues = await sectorService.fetchShiValues(
         farmerId: _isFarmer ? _farmerId : null,
-        year: widget.selectedYear, // Pass the selectedYear here
+        year: widget.selectedYear,
       );
       setState(() {
         _shiValues = shiValues;
@@ -123,33 +124,17 @@ class _GridCardState extends State<GridCard> {
   }
 
   Widget _buildErrorLayout(BuildContext context, String error) {
-    // Determine the error message based on the error type
-    String errorMessage;
-    if (error.contains('timeout') || error.contains('network')) {
-      errorMessage = 'Connection failed. Please check your internet.';
-    } else if (error.contains('server')) {
-      errorMessage = 'Server error. Please try again later.';
-    } else {
-      errorMessage = 'Something went wrong: $error';
-    }
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, color: Colors.red, size: 48),
-          const SizedBox(height: 16),
-          Text(errorMessage,
-              style: TextStyle(color: Colors.red), textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          IconButton(
-            icon: Icon(Icons.refresh),
-            color: Colors.grey,
-            iconSize: 36,
-            onPressed: _fetchShiValues,
-            tooltip: 'Retry',
-          ),
-        ],
+    // Wrap the NetworkErrorWidget in a CommonCard
+    return CommonCard(
+      child: NetworkErrorWidget(
+        error: error,
+        onRetry: _fetchShiValues,
+        errorIcon: Icons.error_outline,
+        errorColor: Colors.red,
+        iconSize: 48,
+        fontSize: 16,
+        retryButtonText: 'Retry',
+        padding: const EdgeInsets.all(32.0),
       ),
     );
   }
@@ -163,7 +148,6 @@ class _GridCardState extends State<GridCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon placeholder (circular)
             ClipOval(
               child: Container(
                 width: 36,
@@ -172,14 +156,12 @@ class _GridCardState extends State<GridCard> {
               ),
             ),
             const SizedBox(height: 12),
-            // Title placeholder
             Container(
               height: screenType == DeviceScreenType.desktop ? 20 : 16,
               width: screenType == DeviceScreenType.desktop ? 120 : 80,
               color: Colors.grey.shade200,
             ),
             const SizedBox(height: 12),
-            // First row of data
             Row(
               children: [
                 Container(
@@ -197,7 +179,6 @@ class _GridCardState extends State<GridCard> {
               ],
             ),
             const SizedBox(height: 8),
-            // Second row of data (if present)
             Row(
               children: [
                 Container(
@@ -339,9 +320,7 @@ class _GridCardState extends State<GridCard> {
             _itemCardWidget(
               context,
               Icons.view_list_outlined,
-              context.translate(
-                'Annual Yield',
-              ),
+              context.translate('Annual Yield'),
               'Volume:',
               '',
               true,

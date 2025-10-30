@@ -21,12 +21,14 @@ class ToolBarWidget extends StatelessWidget {
   final bool? showMore;
   final bool? showChangeTheme;
   final Widget? userInfoWidget;
+  final bool? forceShowYearPicker;
 
   const ToolBarWidget({
     super.key,
     this.showMore,
     this.showChangeTheme,
     this.userInfoWidget,
+    this.forceShowYearPicker,
   });
 
   @override
@@ -38,6 +40,9 @@ class ToolBarWidget extends StatelessWidget {
     final sidebarProvider =
         Provider.of<SidebarProvider>(context, listen: false);
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    // Auto-detect if we should show year picker based on current route
+    final bool shouldShowYearPicker = _shouldShowYearPicker(context);
 
     return Container(
       color: Theme.of(context).appBarTheme.backgroundColor,
@@ -67,8 +72,12 @@ class ToolBarWidget extends StatelessWidget {
                       padding: const EdgeInsets.all(5),
                       margin: const EdgeInsets.only(right: 10),
                       decoration: BoxDecoration(
-                        border:
-                            Border.all(color: Colors.grey.shade200, width: 1),
+                        border: Border.all(
+                            // color: Colors.grey.shade200,
+                            color:
+                                Theme.of(context).cardTheme.surfaceTintColor ??
+                                    Colors.grey.shade200,
+                            width: 1),
                         color: Colors.transparent,
                       ),
                       child: Icon(
@@ -87,8 +96,11 @@ class ToolBarWidget extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
-                        border:
-                            Border.all(color: Colors.grey.shade200, width: 1),
+                        border: Border.all(
+                            color:
+                                Theme.of(context).cardTheme.surfaceTintColor ??
+                                    Colors.grey.shade200,
+                            width: 1),
                       ),
                       child: const Icon(Icons.more_vert),
                     ),
@@ -103,8 +115,12 @@ class ToolBarWidget extends StatelessWidget {
 
         const Spacer(),
 
-        // Year Picker with toggle-like styling
-        const YearPickerWidget(),
+        // Year Picker - conditionally show based on route or override
+        if (forceShowYearPicker ?? shouldShowYearPicker)
+          const YearPickerWidget(),
+
+        if (forceShowYearPicker ?? shouldShowYearPicker)
+          const SizedBox(width: 10),
 
         const SizedBox(width: 10),
 
@@ -153,6 +169,32 @@ class ToolBarWidget extends StatelessWidget {
     );
   }
 
+  bool _shouldShowYearPicker(BuildContext context) {
+    // Get current route
+
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+
+    // Only show year picker if we have a named route
+    if (currentRoute == null) {
+      return false; // Don't show for unnamed routes
+    }
+
+    // Define which routes should show the year picker
+    const routesWithYearPicker = {
+      '/',
+      '/users',
+      '/yields',
+      '/farms',
+      '/usersPage',
+      '/assocs',
+      '/farmers',
+      '/sectors',
+      // Add other routes that need year filtering
+    };
+
+    return routesWithYearPicker.contains(currentRoute);
+  }
+
   void _handleSettingsNavigation(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final user = userProvider.user;
@@ -172,9 +214,8 @@ class ToolBarWidget extends StatelessWidget {
 
   void _handleProfileNavigation(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final user = userProvider.user; 
+    final user = userProvider.user;
     final farmerId = userProvider.farmer?.id;
-     
 
     print('user:');
     print(user);
@@ -201,7 +242,7 @@ class ToolBarWidget extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => FarmersProfile(farmerID: farmerId),
-          ), 
+          ),
         );
       }
     } else if (role.contains('officer') || role.contains('admin')) {
@@ -236,7 +277,7 @@ class ToolBarWidget extends StatelessWidget {
   Future<void> onLogoutClick(BuildContext context) async {
     // Sign out from Firebase
     await FirebaseAuth.instance.signOut();
- 
+
     // Reset theme to light mode
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     themeProvider.themeMode = ThemeMode.light;
@@ -246,12 +287,9 @@ class ToolBarWidget extends StatelessWidget {
       '/signIn',
       (Route<dynamic> route) => false,
     );
- 
-    
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.clearUser();
 
-
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    await userProvider.clearUser();
   }
 }
 
@@ -318,7 +356,7 @@ class YearPickerWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Theme( 
+        return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
               onPrimary: Colors.white, // Text color on primary
@@ -334,8 +372,8 @@ class YearPickerWidget extends StatelessWidget {
               width: 300,
               height: 400,
               child: YearPicker(
-                firstDate: DateTime(currentYear - 20),
-                lastDate: DateTime(currentYear + 10),
+                firstDate: DateTime(currentYear - 10),
+                lastDate: DateTime(currentYear),
                 initialDate: DateTime(yearProvider.selectedYear),
                 selectedDate: DateTime(yearProvider.selectedYear),
                 onChanged: (DateTime dateTime) {

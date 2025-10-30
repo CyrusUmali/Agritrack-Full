@@ -38,6 +38,15 @@
         "menuName": "Rekomendasyon",
         "path": "/recommendation"
       },
+
+      {
+       
+        "icon": "assets/sidebar/chatbot.svg",
+        "menuName": "Chatbot",
+         "path": "/chatbot"
+     
+  },
+
       {
         "icon": "assets/sidebar/reports.svg",
         "menuName": "Mga Ulat",

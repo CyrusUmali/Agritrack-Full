@@ -80,7 +80,8 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
 
   Widget _channelsWeb(BuildContext context) {
     return SizedBox(
-      height:500,
+      // height: 500,
+      height: MediaQuery.of(context).size.height * 0.7, // 70% of screen height
       child: Column(
         children: [
           _buildSearchBarDesktop(),
@@ -128,7 +129,8 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
         _buildSearchBarMobile(),
         const SizedBox(height: 16),
         SizedBox(
-          height: 600,
+          height:
+              MediaQuery.of(context).size.height * 0.5, // 70% of screen height
           child: BlocBuilder<FarmerBloc, FarmerState>(
             builder: (context, state) {
               if (state is FarmersLoading) {
@@ -273,6 +275,7 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
                       name: '',
                       barangay: value == 'All' ? null : value,
                       sector: selectedSector,
+                      association: selectedAssociation,
                     ));
               },
               width: 150,
@@ -457,6 +460,7 @@ class _FarmersPerSectorWidgetState extends State<FarmersPerSectorWidget> {
                         ? null
                         : value, // This will trigger "All" in bloc
                     sector: selectedSector,
+                    association: selectedAssociation,
                   ));
             },
             width: 150,

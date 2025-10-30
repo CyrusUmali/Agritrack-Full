@@ -17,4 +17,10 @@ class ApiConstants {
 
   // Add to your ApiConstants class
   static const String cropRequirements = '$baseUrl/crop-requirements';
+
+  // genai.configure(api_key="AIzaSyCWiZmhjdh1GmYKnvJMLvgsY-bh20wYOZs")  
+        // model = genai.GenerativeModel('gemini-2.5-flash')
+
+
+
 }

@@ -118,8 +118,8 @@ class Farmer extends Equatable {
     return Farmer(
       id: (json['id'] as int?) ?? 0,
       name: (json['name'] as String?) ?? 'Unknown',
-      accountStatus: (json['accountStatus'] as String?) ?? 'Unregistered',
-      firstname: (json['firstname'] as String?) ?? '',
+    accountStatus: (json['accountStatus'] ?? json['user_status']) as String? ?? 'Unregistered',
+      firstname: (json['firstname'] as String?) ?? '',  
       birthday: json['birthday'] != null
           ? DateTime.tryParse(json['birthday'])
           : null, // Parse birthday if available
@@ -242,54 +242,7 @@ class Farmer extends Equatable {
     };
   }
 
-  // Sample data for development/demo purposes
-  static List<Farmer> get sampleFarmers {
-    return [
-      Farmer(
-        id: 1,
-        name: 'Juan Dela Cruz',
-        sector: 'Rice',
-        barangay: 'San Juan',
-        contact: '09123456789',
-        farmName: 'Golden Grains Rice Farm',
-        hectare: 5.2,
-        email: 'juan.delacruz@example.com',
-        phone: '09123456789',
-        address: '123 Farm Street, San Juan',
-        house_hold_head: "true",
-        civilStatus: 'Married',
-        spouseName: 'Maria Dela Cruz',
-        religion: 'Roman Catholic',
-        householdNum: 5,
-        maleMembersNum: 3,
-        femaleMembersNum: 2,
-        motherMaidenName: 'Santos',
-        personToNotify: 'Pedro Dela Cruz',
-        ptnContact: '09123456788',
-        ptnRelationship: 'Brother',
-      ),
-      Farmer(
-        id: 2,
-        name: 'Ricardo Mendoza',
-        sector: 'Rice',
-        barangay: 'San Isidro',
-        contact: '09234567891',
-        farmName: 'Mendoza Rice Fields',
-        hectare: 3.8,
-        email: 'ricardo.mendoza@example.com',
-        phone: '09234567891',
-        address: '456 Harvest Road, San Isidro',
-        house_hold_head: "true",
-        civilStatus: 'Single',
-        religion: 'Protestant',
-        householdNum: 4,
-        maleMembersNum: 2,
-        femaleMembersNum: 2,
-        motherMaidenName: 'Gonzales',
-      ),
-    ];
-  }
-
+ 
   @override
   List<Object?> get props => [
         id,

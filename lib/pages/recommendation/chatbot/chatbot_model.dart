@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:uuid/uuid.dart';
 import 'dart:async';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class ChatbotModel extends ChangeNotifier {
   final List<types.Message> _messages = [];
@@ -12,17 +13,56 @@ class ChatbotModel extends ChangeNotifier {
   final _bot = const types.User(id: 'bot', firstName: 'AgriBot');
   bool _isTyping = false;
   String _currentModel = 'Gemini';
-  bool _useStreaming = true; // Add streaming toggle
+  bool _useStreaming = true;
 
   // Streaming-related properties
   StreamSubscription? _streamSubscription;
   String _currentStreamingMessageId = '';
   String _currentStreamingText = '';
 
-  // API endpoints
+  // Store suggestions from the AI response
+  List<String> _latestSuggestions = [];
+
+  // API endpoints (for non-Gemini models)
   final uri = Uri.parse(ApiConstants.chatbot);
-  final streamUri = Uri.parse(
-      '${ApiConstants.baseUrl}/chat/stream'); // Update with your streaming endpoint
+  final streamUri = Uri.parse('${ApiConstants.baseUrl}/chat/stream');
+
+  // Gemini setup
+  late GenerativeModel _geminiModel;
+  late ChatSession _geminiChatSession;
+  String? _geminiApiKey;
+
+  static const String _systemPrompt =
+      '''You are AgriBot, an expert agricultural assistant specializing in:
+- Crop selection and planning
+- Soil health and testing
+- Pest and disease management
+- Water and irrigation systems
+- Fertilizers and nutrient management
+- Seasonal farming guides
+- Weather and climate adaptation
+- Harvesting and storage techniques
+- Organic and sustainable farming practices
+- Livestock management (cattle, poultry, goats, sheep, pigs)
+- Animal nutrition and feed management
+- Livestock health and disease control
+- Fishery and aquaculture systems
+- Fish farming techniques
+- Pond management and water quality
+- Fish health and disease management
+
+Provide practical, actionable advice tailored to the user's specific needs. Always ask clarifying questions about their region, soil type, current conditions, and livestock/fishery setup when relevant. Keep responses concise but informative.
+
+IMPORTANT: After your response, add 3-4 relevant follow-up questions that the user might want to ask. Format them at the end like this:
+
+[FOLLOW_UP_QUESTIONS]
+- Question 1?
+- Question 2?
+- Question 3?
+- Question 4?
+[/FOLLOW_UP_QUESTIONS]
+
+Make the questions practical, concise, and directly related to your response.''';
 
   static const List<String> availableModels = [
     'Gemini',
@@ -38,9 +78,24 @@ class ChatbotModel extends ChangeNotifier {
   String get currentModel => _currentModel;
   List<String> get models => availableModels;
   bool get useStreaming => _useStreaming;
+  List<String> get latestSuggestions => _latestSuggestions;
+
+  static const String _geminiApiKeyValue =
+      'AIzaSyCWiZmhjdh1GmYKnvJMLvgsY-bh20wYOZs';
 
   ChatbotModel() {
+    _geminiApiKey = _geminiApiKeyValue;
+    _initializeGemini(_geminiApiKeyValue);
     _addBotWelcomeMessage();
+  }
+
+  void _initializeGemini(String apiKey) {
+    _geminiModel = GenerativeModel(
+      model: 'gemini-2.5-flash',
+      apiKey: apiKey,
+      systemInstruction: Content.text(_systemPrompt),
+    );
+    _geminiChatSession = _geminiModel.startChat();
   }
 
   @override
@@ -62,6 +117,7 @@ class ChatbotModel extends ChangeNotifier {
       );
 
       _messages.insert(0, modelMessage);
+      _latestSuggestions = [];
       notifyListeners();
     }
   }
@@ -72,8 +128,13 @@ class ChatbotModel extends ChangeNotifier {
     _streamSubscription?.cancel();
     _currentStreamingMessageId = '';
     _currentStreamingText = '';
+    _latestSuggestions = [];
 
-    // Add welcome message back
+    // Reinitialize Gemini chat session if using Gemini
+    if (_currentModel == 'Gemini' && _geminiApiKey != null) {
+      _geminiChatSession = _geminiModel.startChat();
+    }
+
     _addBotWelcomeMessage();
   }
 
@@ -83,10 +144,16 @@ class ChatbotModel extends ChangeNotifier {
       createdAt: DateTime.now().millisecondsSinceEpoch,
       id: const Uuid().v4(),
       text:
-          "Hello! I'm AgriBot, your agriculture assistant. I'm currently using the $_currentModel model. How can I help you today?",
+          "Hello! I'm AgriBot, your agriculture assistant. How can I help you today?",
     );
 
     _messages.insert(0, welcomeMessage);
+    _latestSuggestions = [
+      'Tell me about soil health',
+      'What crops should I grow?',
+      'How do I control pests?',
+      'Best irrigation practices?'
+    ];
     notifyListeners();
   }
 
@@ -100,29 +167,77 @@ class ChatbotModel extends ChangeNotifier {
 
     _messages.insert(0, userMessage);
     _isTyping = true;
+    _latestSuggestions = []; // Clear suggestions while processing
     notifyListeners();
   }
 
-  // Main method - decides between streaming and regular response
+  // Extract suggestions from AI response
+  Map<String, dynamic> _extractSuggestionsFromResponse(String fullResponse) {
+    final startMarker = '[FOLLOW_UP_QUESTIONS]';
+    final endMarker = '[/FOLLOW_UP_QUESTIONS]';
+
+    if (fullResponse.contains(startMarker) &&
+        fullResponse.contains(endMarker)) {
+      final startIndex = fullResponse.indexOf(startMarker);
+      final endIndex = fullResponse.indexOf(endMarker);
+
+      // Extract the clean response without markers
+      final cleanResponse = fullResponse.substring(0, startIndex).trim();
+
+      // Extract suggestions section
+      final suggestionsSection = fullResponse
+          .substring(startIndex + startMarker.length, endIndex)
+          .trim();
+
+      // Parse suggestions (lines starting with - or numbers)
+      final suggestions = suggestionsSection
+          .split('\n')
+          .map((line) => line.trim())
+          .where((line) => line.isNotEmpty)
+          .map((line) {
+            // Remove leading dash, asterisk, or number
+            return line.replaceFirst(RegExp(r'^[-*•]\s*|^\d+\.\s*'), '').trim();
+          })
+          .where((line) => line.isNotEmpty && line.length > 5)
+          .take(4)
+          .toList();
+
+      return {
+        'response': cleanResponse,
+        'suggestions': suggestions,
+      };
+    }
+
+    // Fallback: no structured suggestions found
+    return {
+      'response': fullResponse,
+      'suggestions': _generateFallbackSuggestions(),
+    };
+  }
+
+  List<String> _generateFallbackSuggestions() {
+    return [
+      'Can you explain more?',
+      'What are the benefits?',
+      'Any alternatives?',
+      'How do I start?'
+    ];
+  }
+
   Future<void> getBotResponse(String userMessage,
       {bool useStreaming = true}) async {
-    if (useStreaming) {
+    if (_currentModel == 'Gemini' && _geminiApiKey != null) {
+      await _getBotResponseGemini(userMessage);
+    } else if (useStreaming) {
       await _getBotResponseStreaming(userMessage);
     } else {
       await _getBotResponseRegular(userMessage);
     }
   }
 
-  // Streaming response method
-  Future<void> _getBotResponseStreaming(String userMessage) async {
+  // Gemini direct API response
+  Future<void> _getBotResponseGemini(String userMessage) async {
     try {
-      // Cancel any existing stream
-      await _streamSubscription?.cancel();
-
-      // Prepare chat history
-      final chatHistory = _prepareChatHistory();
-
-      // Create initial empty bot message for streaming
       _currentStreamingMessageId = const Uuid().v4();
       _currentStreamingText = '';
 
@@ -136,7 +251,47 @@ class ChatbotModel extends ChangeNotifier {
       _messages.insert(0, initialMessage);
       notifyListeners();
 
-      // Create streaming request
+      final stream = _geminiChatSession.sendMessageStream(
+        Content.text(userMessage),
+      );
+
+      _streamSubscription = stream.listen(
+        (event) {
+          final chunk = event.text ?? '';
+          if (chunk.isNotEmpty) {
+            _currentStreamingText += chunk;
+            _updateStreamingMessage(_currentStreamingText);
+          }
+        },
+        onError: _handleStreamError,
+        onDone: () => _handleStreamDone(isGemini: true),
+      );
+    } catch (e) {
+      print('Error in Gemini response: $e');
+      _addErrorMessage('Failed to get response: $e');
+    }
+  }
+
+  // Streaming response method (for custom API)
+  Future<void> _getBotResponseStreaming(String userMessage) async {
+    try {
+      await _streamSubscription?.cancel();
+
+      final chatHistory = _prepareChatHistory();
+
+      _currentStreamingMessageId = const Uuid().v4();
+      _currentStreamingText = '';
+
+      final initialMessage = types.TextMessage(
+        author: _bot,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+        id: _currentStreamingMessageId,
+        text: '',
+      );
+
+      _messages.insert(0, initialMessage);
+      notifyListeners();
+
       final request = http.Request('POST', streamUri);
       request.headers.addAll({
         'Content-Type': 'application/json',
@@ -150,18 +305,16 @@ class ChatbotModel extends ChangeNotifier {
         'model': _currentModel,
       });
 
-      // Send request and get stream
       final streamedResponse = await request.send();
 
       if (streamedResponse.statusCode == 200) {
-        // Process the stream
         _streamSubscription = streamedResponse.stream
             .transform(utf8.decoder)
             .transform(const LineSplitter())
             .listen(
               _handleStreamData,
               onError: _handleStreamError,
-              onDone: _handleStreamDone,
+              onDone: () => _handleStreamDone(isGemini: false),
             );
       } else {
         throw Exception(
@@ -169,15 +322,13 @@ class ChatbotModel extends ChangeNotifier {
       }
     } catch (e) {
       print('Streaming error: $e');
-      // Fallback to regular response
       await _getBotResponseRegular(userMessage);
     }
   }
 
-  // Handle incoming stream data
   void _handleStreamData(String line) {
     if (line.startsWith('data: ')) {
-      final jsonStr = line.substring(6); // Remove 'data: ' prefix
+      final jsonStr = line.substring(6);
 
       if (jsonStr.trim().isEmpty) return;
 
@@ -185,7 +336,6 @@ class ChatbotModel extends ChangeNotifier {
         final data = jsonDecode(jsonStr);
         final chunk = data['chunk'] as String?;
         final isComplete = data['is_complete'] as bool? ?? false;
-        // final disclaimer = data['disclaimer'] as String?;
 
         if (chunk != null && chunk.isNotEmpty) {
           _currentStreamingText += chunk;
@@ -193,7 +343,7 @@ class ChatbotModel extends ChangeNotifier {
         }
 
         if (isComplete) {
-          // _finishStreaming(disclaimer);
+          _finishStreaming();
         }
       } catch (e) {
         print('Error parsing stream data: $e');
@@ -201,8 +351,36 @@ class ChatbotModel extends ChangeNotifier {
     }
   }
 
-  // Update the streaming message in real-time
   void _updateStreamingMessage(String text) {
+    final messageIndex = _messages.indexWhere(
+      (msg) => msg.id == _currentStreamingMessageId,
+    );
+
+    if (messageIndex != -1) {
+      // For display, show text without suggestion markers
+      String displayText = text;
+      if (text.contains('[FOLLOW_UP_QUESTIONS]')) {
+        displayText =
+            text.substring(0, text.indexOf('[FOLLOW_UP_QUESTIONS]')).trim();
+      }
+
+      final updatedMessage = types.TextMessage(
+        author: _bot,
+        createdAt: _messages[messageIndex].createdAt,
+        id: _currentStreamingMessageId,
+        text: displayText,
+      );
+
+      _messages[messageIndex] = updatedMessage;
+      notifyListeners();
+    }
+  }
+
+  void _finishStreaming() {
+    // Extract suggestions from the complete response
+    final extracted = _extractSuggestionsFromResponse(_currentStreamingText);
+
+    // Update the message with clean response
     final messageIndex = _messages.indexWhere(
       (msg) => msg.id == _currentStreamingMessageId,
     );
@@ -212,44 +390,35 @@ class ChatbotModel extends ChangeNotifier {
         author: _bot,
         createdAt: _messages[messageIndex].createdAt,
         id: _currentStreamingMessageId,
-        text: text,
+        text: extracted['response'] as String,
       );
 
       _messages[messageIndex] = updatedMessage;
-      notifyListeners();
     }
-  }
 
-  // Handle stream completion
-  void _finishStreaming(String? disclaimer) {
+    // Update suggestions
+    _latestSuggestions = extracted['suggestions'] as List<String>;
+
     _isTyping = false;
-
-    // if (disclaimer != null && disclaimer.isNotEmpty) {
-    //   _currentStreamingText += '\n\n$disclaimer';
-    //   _updateStreamingMessage(_currentStreamingText);
-    // }
-
     _currentStreamingMessageId = '';
     _currentStreamingText = '';
     notifyListeners();
   }
 
-  // Handle stream errors
   void _handleStreamError(error) {
     print('Stream error: $error');
     _isTyping = false;
+    _latestSuggestions = _generateFallbackSuggestions();
     _addErrorMessage('Failed to get streaming response. Please try again.');
     notifyListeners();
   }
 
-  // Handle stream completion
-  void _handleStreamDone() {
+  void _handleStreamDone({required bool isGemini}) {
     if (_isTyping) {
-      _finishStreaming(null);
+      _finishStreaming();
     }
   }
 
-  // Regular (non-streaming) response method
   Future<void> _getBotResponseRegular(String userMessage) async {
     try {
       final chatHistory = _prepareChatHistory();
@@ -270,21 +439,26 @@ class ChatbotModel extends ChangeNotifier {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final botResponse = data['response'] as String;
-        _addBotMessage(botResponse);
+
+        // Extract and set suggestions
+        final extracted = _extractSuggestionsFromResponse(botResponse);
+        _addBotMessage(extracted['response'] as String);
+        _latestSuggestions = extracted['suggestions'] as List<String>;
       } else {
         final localResponse = generateLocalResponse(userMessage);
         _addBotMessage(localResponse);
+        _latestSuggestions = _generateFallbackSuggestions();
       }
     } catch (e) {
       final localResponse = generateLocalResponse(userMessage);
       _addBotMessage(localResponse);
+      _latestSuggestions = _generateFallbackSuggestions();
     } finally {
       _isTyping = false;
       notifyListeners();
     }
   }
 
-  // Prepare chat history for API
   List<Map<String, dynamic>> _prepareChatHistory() {
     return _messages.reversed
         .where((message) => message is types.TextMessage)
@@ -295,7 +469,7 @@ class ChatbotModel extends ChangeNotifier {
             'content': textMessage.text,
           };
         })
-        .take(20) // Limit history to last 20 messages
+        .take(20)
         .toList();
   }
 
@@ -325,53 +499,10 @@ class ChatbotModel extends ChangeNotifier {
 
   void handleSendPressed(types.PartialText message) {
     addUserMessage(message.text);
-    getBotResponse(message.text,
-        useStreaming: _useStreaming); // Use current streaming setting
-  }
-
-  // Method to toggle between streaming and regular responses
-  void toggleStreamingMode(bool enableStreaming) {
-    _useStreaming = enableStreaming;
-    notifyListeners();
-
-    // Add notification message
-    final modeMessage = types.TextMessage(
-      author: _bot,
-      createdAt: DateTime.now().millisecondsSinceEpoch,
-      id: const Uuid().v4(),
-      text: enableStreaming
-          ? "Streaming mode enabled - responses will appear in real-time!"
-          : "Streaming mode disabled - responses will appear all at once.",
-    );
-
-    _messages.insert(0, modeMessage);
-    notifyListeners();
+    getBotResponse(message.text, useStreaming: _useStreaming);
   }
 
   String generateLocalResponse(String userMessage) {
-    final message = userMessage.toLowerCase();
-
-    if (message.contains('hello') || message.contains('hi')) {
-      return "Hello! What agricultural topic can I help with today? I'm currently using the $_currentModel model.";
-    } else if (message.contains('soil') || message.contains('ph')) {
-      return "[$_currentModel] Soil quality is crucial for crops. Most prefer pH 6.0-7.0. Test your soil regularly and consider:\n\n• Adding organic matter like compost\n• Adjusting pH with lime (for acidic soil) or sulfur (for alkaline soil)\n• Testing nutrient levels (N-P-K)\n• Checking soil drainage\n\nWhat specific soil concerns do you have?";
-    } else if (message.contains('crop') && message.contains('recommend')) {
-      return "[$_currentModel] For crop recommendations, I need to consider:\n\n• Your climate zone/region\n• Soil type and quality\n• Available water resources\n• Market demand\n• Your experience level\n\nCould you share your location and what you're hoping to grow? Also check our Recommendation tool for personalized suggestions!";
-    } else if (message.contains('pest') || message.contains('insect')) {
-      return "[$_currentModel] Organic pest control strategies:\n\n🐛 **Prevention:**\n• Crop rotation\n• Companion planting (marigolds, basil)\n• Healthy soil = stronger plants\n\n🌿 **Natural treatments:**\n• Neem oil for aphids, whiteflies\n• Diatomaceous earth for crawling insects\n• Beneficial insects (ladybugs, lacewings)\n• Soap spray for soft-bodied pests\n\nWhat specific pests are you dealing with?";
-    } else if (message.contains('fertilizer') ||
-        message.contains('nutrients')) {
-      return "[$_currentModel] Essential plant nutrients:\n\n**Primary (N-P-K):**\n• Nitrogen (N) - Leaf growth, green color\n• Phosphorus (P) - Root development, flowering\n• Potassium (K) - Disease resistance, fruit quality\n\n**Secondary:** Calcium, Magnesium, Sulfur\n**Micronutrients:** Iron, Zinc, Boron, etc.\n\n💡 **Tips:**\n• Always soil test first\n• Organic options: compost, manure, bone meal\n• Follow application rates carefully\n• Time applications with plant growth stages";
-    } else if (message.contains('water') || message.contains('irrigation')) {
-      return "[$_currentModel] Smart watering practices:\n\n💧 **Timing:**\n• Early morning (6-8 AM) is ideal\n• Avoid evening watering (disease risk)\n\n🎯 **Technique:**\n• Deep, infrequent watering\n• Water soil, not leaves\n• Mulch to retain moisture\n\n📊 **Systems:**\n• Drip irrigation (90% efficiency)\n• Soaker hoses for gardens\n• Smart controllers with weather sensors\n\n**Check soil moisture:** Stick finger 2 inches deep - if dry, time to water!";
-    } else if (message.contains('season') || message.contains('planting')) {
-      return "[$_currentModel] Planting timing guide:\n\n🌱 **Cool Season Crops** (Spring/Fall):\n• Lettuce, spinach, peas, carrots\n• Plant 2-4 weeks before last frost\n\n☀️ **Warm Season Crops** (Summer):\n• Tomatoes, peppers, cucumbers, corn\n• Plant after soil warms to 60°F+\n\n📅 **Key dates to know:**\n• Last spring frost\n• First fall frost\n• Soil temperature\n\nWhat's your growing zone? I can give more specific timing!";
-    } else if (message.contains('disease') || message.contains('fungus')) {
-      return "[$_currentModel] Plant disease management:\n\n🍄 **Fungal diseases** (most common):\n• Symptoms: Spots, wilting, moldy growth\n• Prevention: Good air circulation, avoid overhead watering\n• Treatment: Fungicides, remove affected parts\n\n🦠 **Bacterial diseases:**\n• Symptoms: Water-soaked spots, oozing\n• Prevention: Clean tools, avoid working wet plants\n• Treatment: Copper-based sprays, remove infected plants\n\n🔬 **Viral diseases:**\n• Symptoms: Mosaic patterns, stunted growth\n• Prevention: Control insect vectors\n• Treatment: Remove infected plants (no cure)\n\nDescribe the symptoms you're seeing for specific advice!";
-    } else if (message.contains('weather') || message.contains('climate')) {
-      return "[$_currentModel] Weather impacts on agriculture:\n\n🌡️ **Temperature effects:**\n• Frost damage to tender plants\n• Heat stress reduces yields\n• Growing degree days affect timing\n\n🌧️ **Precipitation:**\n• Too little = drought stress\n• Too much = root rot, fungal diseases\n• Timing matters for planting/harvesting\n\n💨 **Wind & storms:**\n• Physical damage to crops\n• Increased evaporation\n• Disease spread\n\n**Adaptation strategies:** Season extension, variety selection, protective structures. What weather challenges are you facing?";
-    } else {
-      return "[$_currentModel] I'm here to help with all aspects of agriculture! I can assist with:\n\n🌱 **Crop Selection & Planning**\n🌾 **Soil Health & Testing**\n🐛 **Pest & Disease Management**\n💧 **Irrigation & Water Management**\n🌿 **Fertilizers & Nutrition**\n📅 **Seasonal Planning**\n🌤️ **Weather & Climate Adaptation**\n\nWhat specific agricultural topic would you like to explore? Feel free to use the quick topic buttons above or ask me anything!";
-    }
+    return "I'm currently offline. Please check your connection and try again.";
   }
 }

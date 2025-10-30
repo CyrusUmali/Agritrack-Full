@@ -6,6 +6,7 @@ import 'package:flareline/pages/assoc/assoc_bloc/assocs_bloc.dart';
 import 'package:flareline/pages/farmers/farmer/farmer_bloc.dart';
 import 'package:flareline/pages/farmers/farmers_widget/personal_info_card.dart';
 import 'package:flareline/pages/test/map_widget/stored_polygons.dart';
+import 'package:flareline_uikit/components/breaktab.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flareline_uikit/components/card/common_card.dart';
@@ -26,6 +27,14 @@ class FarmersProfile extends LayoutWidget {
 
   @override
   String breakTabTitle(BuildContext context) => 'Farmer Profile';
+
+  @override
+  List<BreadcrumbItem> breakTabBreadcrumbs(BuildContext context) {
+    return [
+      BreadcrumbItem(context.translate('Dashboard'), '/'),
+      BreadcrumbItem(context.translate('Farmers'), '/farmers'),
+    ];
+  }
 
   Widget _buildContent(BuildContext context, bool isMobile) {
     return MultiBlocProvider(
@@ -190,6 +199,13 @@ abstract class _BaseFarmersProfileState<T extends StatefulWidget>
     });
   }
 
+  void cancelEditing() {
+    setState(() {
+      isEditing = false;
+      editedFarmer = Map.from(currentFarmer);
+    });
+  }
+
   void saveChanges() {
     if (_formKey.currentState?.validate() != true) {
       _showToast('Please fix all errors in the form', isError: true);
@@ -275,6 +291,7 @@ class _FarmersProfileViewState
                   isEditing: isEditing,
                   onEdit: toggleEdit,
                   onSave: saveChanges,
+                  onCancel: cancelEditing,
                   onImageUpload: uploadAndUpdateImage,
                 ),
                 const SizedBox(height: 24),
@@ -323,6 +340,7 @@ class _ProfileHeader extends StatelessWidget {
   final bool isEditing;
   final VoidCallback onEdit;
   final VoidCallback onSave;
+  final VoidCallback onCancel;
   final Function(XFile) onImageUpload;
 
   const _ProfileHeader({
@@ -331,6 +349,7 @@ class _ProfileHeader extends StatelessWidget {
     required this.isEditing,
     required this.onEdit,
     required this.onSave,
+    required this.onCancel,
     required this.onImageUpload,
   });
 
@@ -426,12 +445,29 @@ class _ProfileHeader extends StatelessWidget {
             child: Center(
               child: Text(
                 farmer['name'] ?? 'Unknown Farmer',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                // style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                //       color: Colors.white,
+                //     ),
+
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
               ),
             ),
           ),
+          // Cancel button on the left side
+          if (isEditing)
+            Positioned(
+                top: 16,
+                left: 16,
+                child: FilledButton.tonal(
+                  onPressed: onCancel,
+                  child: _buildButtonContent(
+                      Icons.cancel, context.translate('Cancel')),
+                )),
+
+          // Save/Edit button on the right side
           Positioned(
             top: 16,
             right: 16,

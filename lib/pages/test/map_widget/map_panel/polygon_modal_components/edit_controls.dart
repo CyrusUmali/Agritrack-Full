@@ -82,6 +82,12 @@ class EditControls {
                     color: colorScheme.onSurface,
                   ),
                 ),
+                if (_isFarmer == true) // Show lock icon for farmers
+                  const SizedBox(width: 4),
+                if (_isFarmer == true)
+                  Icon(Icons.lock_outline,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withOpacity(0.5)),
               ],
             ),
             const SizedBox(height: 16),
@@ -90,6 +96,7 @@ class EditControls {
               selectedStatus: selectedStatus,
               onStatusChanged: onStatusChanged,
               theme: theme,
+              isFarmer: _isFarmer, // Pass the farmer status
             ),
             const SizedBox(height: 16),
 
@@ -165,12 +172,12 @@ class EditControls {
     );
   }
 
-  // Add Farm Status dropdown
   static Widget _buildFarmStatusDropdown({
     required BuildContext context,
     required String selectedStatus,
     required Function(String) onStatusChanged,
     required ThemeData theme,
+    required bool isFarmer,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -179,22 +186,37 @@ class EditControls {
           color: theme.colorScheme.outlineVariant,
           width: 1,
         ),
+        color: isFarmer
+            ? theme.colorScheme.surfaceVariant
+                .withOpacity(0.5) // More subtle for disabled state
+            : theme.cardTheme.color, // Use card color instead of null
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButton<String>(
         value: selectedStatus,
-        onChanged: (newStatus) {
-          if (newStatus != null) {
-            onStatusChanged(newStatus);
-          }
-        },
-        style: theme.textTheme.bodyMedium,
+        onChanged: isFarmer
+            ? null
+            : (newStatus) {
+                if (newStatus != null) {
+                  onStatusChanged(newStatus);
+                }
+              },
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: isFarmer
+              ? theme.colorScheme.onSurface.withOpacity(0.5)
+              : theme.colorScheme.onSurface,
+        ),
         dropdownColor: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         elevation: 4,
         underline: const SizedBox(),
         isExpanded: true,
-        icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.onSurface),
+        icon: Icon(
+          Icons.arrow_drop_down,
+          color: isFarmer
+              ? theme.colorScheme.onSurface.withOpacity(0.5)
+              : theme.colorScheme.onSurface,
+        ),
         items: ['Active', 'Inactive'].map((status) {
           return DropdownMenuItem<String>(
             value: status,
@@ -213,8 +235,17 @@ class EditControls {
                   ),
                   Text(
                     status,
-                    style: theme.textTheme.bodyMedium,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isFarmer
+                          ? theme.colorScheme.onSurface.withOpacity(0.5)
+                          : theme.colorScheme.onSurface,
+                    ),
                   ),
+                  if (isFarmer) const SizedBox(width: 8),
+                  if (isFarmer)
+                    Icon(Icons.lock_outline,
+                        size: 14,
+                        color: theme.colorScheme.onSurface.withOpacity(0.5)),
                 ],
               ),
             ),

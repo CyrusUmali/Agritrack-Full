@@ -78,10 +78,18 @@ class MapControls extends StatelessWidget {
             final String? newValue = await showMenu<String>(
               context: context,
               position: RelativeRect.fromLTRB(100, 100, 50, 0),
+              color: cardColor,
               items: mapLayers.keys.map((String key) {
                 return PopupMenuItem<String>(
                   value: key,
-                  child: Text(key),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: cardColor, // Item background color
+                      // borderRadius: BorderRadius.circular(4),
+                    ),
+                    // padding: EdgeInsets.all(8),
+                    child: Text(key),
+                  ),
                 );
               }).toList(),
             );
@@ -116,73 +124,69 @@ class MapControls extends StatelessWidget {
     );
   }
 
-Widget _buildControlButton({
-  required String tooltip,
-  required IconData icon,
-  required VoidCallback onPressed,
-  Color? backgroundColor,
-  required int index,
-  Color? surfaceTintColor,
-  Color? shadowColor,
-}) {
-  return LayoutBuilder(
-    builder: (context, constraints) {
-      // Get screen size using MediaQuery
-      final screenSize = MediaQuery.of(context).size;
-      final screenWidth = screenSize.width;
-      
-      // Define sizes based on screen width breakpoints
-      double buttonSize;
-      
-      if (screenWidth < 600) {
-        // Small screens (phones)
-        buttonSize = 40.0;
-       
-      } else {
-        // Large screens (desktops, tablets in landscape)
-        buttonSize = 30.0;
-      }
-      
-   
-      
-      return Tooltip(
-        message: tooltip,
-        child: Container(
-          width: buttonSize,
-          height: buttonSize,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8.0),
-            boxShadow: [
-              BoxShadow(
-                color: shadowColor ?? Colors.transparent,
-                blurRadius: 13,
-                offset: const Offset(0, 8),
-                spreadRadius: -3,
-              ),
-            ],
-          ),
-          child: FloatingActionButton(
-            heroTag: 'map-control-$index',
-            mini: true,
-            onPressed: onPressed,
-            backgroundColor: backgroundColor,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              side: BorderSide(
-                width: 1,
-                color: surfaceTintColor ?? Colors.transparent,
-              ),
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Icon(
-              icon,
-              size: buttonSize * 0.5, // Icon size proportional to button
-            ),
-          ),
-        ),
-      );
-    },
-  );
-}
+  Widget _buildControlButton({
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onPressed,
+    Color? backgroundColor,
+    required int index,
+    Color? surfaceTintColor,
+    Color? shadowColor,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Get screen size using MediaQuery
+        final screenSize = MediaQuery.of(context).size;
+        final screenWidth = screenSize.width;
 
+        // Define sizes based on screen width breakpoints
+        double buttonSize;
+
+        if (screenWidth < 600) {
+          // Small screens (phones)
+          buttonSize = 40.0;
+        } else {
+          // Large screens (desktops, tablets in landscape)
+          buttonSize = 30.0;
+        }
+
+        return Tooltip(
+          message: tooltip,
+          child: Container(
+            width: buttonSize,
+            height: buttonSize,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.0),
+              boxShadow: [
+                BoxShadow(
+                  color: shadowColor ?? Colors.transparent,
+                  blurRadius: 13,
+                  offset: const Offset(0, 8),
+                  spreadRadius: -3,
+                ),
+              ],
+            ),
+            child: FloatingActionButton(
+              heroTag: 'map-control-$index',
+              mini: true,
+              onPressed: onPressed,
+              backgroundColor: backgroundColor,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                side: BorderSide(
+                  width: 1,
+                  color: Colors.transparent,
+                ),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Icon(
+                icon,
+                size: buttonSize * 0.5, // Icon size proportional to button
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

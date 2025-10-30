@@ -37,14 +37,10 @@ class _UsersState extends State<Users> {
   String selectedStatus = '';
   String _searchQuery = '';
 
-
-
-
-
-   @override
+  @override
   void initState() {
-    super.initState(); 
-    context.read<FarmerBloc>().add(LoadFarmers()); 
+    super.initState();
+    context.read<FarmerBloc>().add(LoadFarmers());
   }
 
   @override
@@ -62,10 +58,7 @@ class _UsersState extends State<Users> {
             autoCloseDuration: const Duration(seconds: 3),
           );
         } else if (state is UsersError) {
-    ToastHelper.showErrorToast(
-       state.message,
-        context, maxLines: 3
-      );
+          ToastHelper.showErrorToast(state.message, context, maxLines: 3);
         }
       },
       child: _channels(),
@@ -81,47 +74,55 @@ class _UsersState extends State<Users> {
   }
 
   Widget _channelsWeb(BuildContext context) {
-    return SizedBox(
-      height: 450,
-      child: Column(
-        children: [
-          _buildSearchBarDesktop(),
-          const SizedBox(height: 16),
-          Expanded(
-            child: BlocBuilder<UserBloc, UserState>(
-              builder: (context, state) {
-                if (state is UsersLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (state is UsersError) {
-                  return NetworkErrorWidget(
-                    error: state.message,
-                    onRetry: () {
-                      context.read<UserBloc>().add(LoadUsers());
-                    },
-                  );
-          } else if (state is UsersLoaded) {
-                  if (state.users.isEmpty) {
-                    return _buildNoResultsWidget();
-                  }
-                  return Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: DataTableWidget(
-                          key: ValueKey(
-                              'users_table_${state.users.length}_${context.read<UserBloc>().sortColumn}_${context.read<UserBloc>().sortAscending}'),
-                          users:
-                              state.users.map((user) => user.toJson()).toList(),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: 800,
+        // You can also set minHeight if needed
+        // minHeight: 200,
+      ),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.70,
+        child: Column(
+          children: [
+            _buildSearchBarDesktop(),
+            const SizedBox(height: 16),
+            Expanded(
+              child: BlocBuilder<UserBloc, UserState>(
+                builder: (context, state) {
+                  if (state is UsersLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is UsersError) {
+                    return NetworkErrorWidget(
+                      error: state.message,
+                      onRetry: () {
+                        context.read<UserBloc>().add(LoadUsers());
+                      },
+                    );
+                  } else if (state is UsersLoaded) {
+                    if (state.users.isEmpty) {
+                      return _buildNoResultsWidget();
+                    }
+                    return Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: DataTableWidget(
+                            key: ValueKey(
+                                'users_table_${state.users.length}_${context.read<UserBloc>().sortColumn}_${context.read<UserBloc>().sortAscending}'),
+                            users: state.users
+                                .map((user) => user.toJson())
+                                .toList(),
+                          ),
                         ),
-                      ),
-                    ],
-                  );
-                }
-                return _buildNoResultsWidget();
-              },
+                      ],
+                    );
+                  }
+                  return _buildNoResultsWidget();
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -138,7 +139,6 @@ class _UsersState extends State<Users> {
               if (state is UsersLoading) {
                 return const Center(child: CircularProgressIndicator());
               } else if (state is UsersError) {
-            
                 return NetworkErrorWidget(
                   error: state.message,
                   onRetry: () {
@@ -305,20 +305,16 @@ class _UsersState extends State<Users> {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
                 onPressed: () async {
+                  // Show loading indicator while ensuring data is fresh
+                  final Completer<void> completer = Completer();
 
+                  // Refresh the farmer list
+                  context.read<FarmerBloc>().add(LoadFarmers());
 
-  // Show loading indicator while ensuring data is fresh
-  final Completer<void> completer = Completer();
-  
-  // Refresh the farmer list
-  context.read<FarmerBloc>().add(LoadFarmers());
-  
-  // Wait for the load to complete if not already loaded
-  if (context.read<FarmerBloc>().state is! FarmersLoaded) {
-    await Future.delayed(const Duration(milliseconds: 100));
-  }
-
-
+                  // Wait for the load to complete if not already loaded
+                  if (context.read<FarmerBloc>().state is! FarmersLoaded) {
+                    await Future.delayed(const Duration(milliseconds: 100));
+                  }
 
                   AccountCreationMethodModal.show(
                     context: context,
@@ -516,21 +512,16 @@ class _UsersState extends State<Users> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
               onPressed: () async {
-            
-            
+                // Show loading indicator while ensuring data is fresh
+                final Completer<void> completer = Completer();
 
-  // Show loading indicator while ensuring data is fresh
-  final Completer<void> completer = Completer();
-  
-  // Refresh the farmer list
-  context.read<FarmerBloc>().add(LoadFarmers());
-  
-  // Wait for the load to complete if not already loaded
-  if (context.read<FarmerBloc>().state is! FarmersLoaded) {
-    await Future.delayed(const Duration(milliseconds: 100));
-  }
+                // Refresh the farmer list
+                context.read<FarmerBloc>().add(LoadFarmers());
 
-
+                // Wait for the load to complete if not already loaded
+                if (context.read<FarmerBloc>().state is! FarmersLoaded) {
+                  await Future.delayed(const Duration(milliseconds: 100));
+                }
 
                 AccountCreationMethodModal.show(
                   context: context,
@@ -595,8 +586,6 @@ class _UsersState extends State<Users> {
                                       return filteredFarmers;
                                     }()
                                   : <Farmer>[]));
-
-                                  
                     }
                   },
                   onLinkExistingFarmer: () {
@@ -615,9 +604,6 @@ class _UsersState extends State<Users> {
                     );
                   },
                 );
-           
-           
-           
               },
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -634,11 +620,6 @@ class _UsersState extends State<Users> {
     );
   }
 }
- 
-
- 
-
-
 
 class DataTableWidget extends TableWidget<UsersViewModel> {
   final List<Map<String, dynamic>> users;
@@ -728,8 +709,7 @@ class DataTableWidget extends TableWidget<UsersViewModel> {
                 Navigator.of(context).pop();
               },
               child: Center(
-                child: Text(
-                    'Are you sure you want to delete ${user['Username']}?'),
+                child: Text('Are you sure you want to delete this'),
               ),
               footer: Padding(
                 padding: const EdgeInsets.symmetric(

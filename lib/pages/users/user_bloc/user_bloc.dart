@@ -51,10 +51,27 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       emit(UserUpdated(updatedUser, passwordChanged: event.passwordChanged));
       emit(UserLoaded(updatedUser));
     } catch (e) {
-      
       // print('Error updating user: ${e.toString()}');
       emit(UsersError(e.toString()));
-    } 
+    }
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      emit(UsersLoading());
+
+      // Call the repository's changePassword method
+      await userRepository.changePassword(currentPassword, newPassword);
+
+      // Password changed successfully - no need to emit UserUpdated
+      // since we'll navigate to login immediately
+    } catch (e) {
+      emit(UsersError(e.toString()));
+      rethrow; // Re-throw to handle in the UI
+    }
   }
 
   Future<void> _onGetUserById(

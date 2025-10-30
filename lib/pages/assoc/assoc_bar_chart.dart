@@ -104,9 +104,11 @@ class _AssocBarChartState extends State<AssocsBarChart> {
 
   Widget _buildChart(List<Association> associations) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
-    // print(associations[0].totalMembers);
 
-    final chartData = associations
+    // Limit associations to maximum 7
+    final limitedAssociations = associations.take(7).toList();
+
+    final chartData = limitedAssociations
         .map((assoc) => _ChartData(
               assoc.name,
               (assoc.totalMembers != null)

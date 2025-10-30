@@ -224,6 +224,18 @@ class FarmerBloc extends Bloc<FarmerEvent, FarmerState> {
       return matchesSearch;
     }).toList();
 
+    // Log filter results
+    // print('Filter Results:');
+    // print('  Total farmers: ${_farmers.length}');
+    // print('  Filtered farmers: ${filteredFarmers.length}');
+    // print('  Active filters:');
+    // print('    - Sector: $_sectorFilter');
+    // print('    - Barangay: $_barangayFilter');
+    // print('    - Association: $_associationFilter');
+    // print('    - Search query: "$_searchQuery"');
+    // print('    - Sort column: $_sortColumn');
+    // print('    - Sort ascending: $_sortAscending');
+
     // Sorting logic
     if (_sortColumn != null) {
       filteredFarmers.sort((a, b) {
@@ -247,6 +259,9 @@ class FarmerBloc extends Bloc<FarmerEvent, FarmerState> {
         }
         return _sortAscending ? compareResult : -compareResult;
       });
+
+      // print(
+      //     '  Sorting applied: $_sortColumn (${_sortAscending ? 'ascending' : 'descending'})');
     }
 
     return filteredFarmers;

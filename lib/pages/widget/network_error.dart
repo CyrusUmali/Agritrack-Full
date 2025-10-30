@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class NetworkErrorWidget extends StatelessWidget {
   final String error;
-  final VoidCallback onRetry; 
+  final VoidCallback onRetry;
   final IconData? errorIcon;
   final Color? errorColor;
   final double? iconSize;
@@ -57,6 +57,7 @@ class NetworkErrorWidget extends StatelessWidget {
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
                 foregroundColor: Theme.of(context).primaryColor,
+                backgroundColor: Theme.of(context).cardTheme.color,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

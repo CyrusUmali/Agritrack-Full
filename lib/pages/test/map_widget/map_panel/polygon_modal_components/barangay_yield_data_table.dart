@@ -84,17 +84,30 @@ class _BarangayYieldDataTableState extends State<BarangayYieldDataTable> {
     });
   }
 
-  Future<void> _exportData() async {
-    await YieldExportUtils.exportYieldDataToExcel(
-      context: context,
-      yields: _yields,
-      polygonName: widget.barangay ?? 'Unknown',
-      selectedProduct: _selectedProduct,
-      isMonthlyView: _showMonthlyData,
-      selectedYear: selectedYear,
-      showLoadingDialog: _showLoadingDialog,
-      closeLoadingDialog: _closeLoadingDialog,
-    );
+  Future<void> _exportData({bool isPDF = false}) async {
+    if (isPDF) {
+      await YieldExportUtils.exportYieldDataToPDF(
+        context: context,
+        yields: _yields,
+        polygonName: widget.barangay ?? 'Unknown',
+        selectedProduct: _selectedProduct,
+        isMonthlyView: _showMonthlyData,
+        selectedYear: selectedYear,
+        showLoadingDialog: _showLoadingDialog,
+        closeLoadingDialog: _closeLoadingDialog,
+      );
+    } else {
+      await YieldExportUtils.exportYieldDataToExcel(
+        context: context,
+        yields: _yields,
+        polygonName: widget.barangay ?? 'Unknown',
+        selectedProduct: _selectedProduct,
+        isMonthlyView: _showMonthlyData,
+        selectedYear: selectedYear,
+        showLoadingDialog: _showLoadingDialog,
+        closeLoadingDialog: _closeLoadingDialog,
+      );
+    }
   }
 
   String _getInitialProduct() {
@@ -636,7 +649,7 @@ class _BarangayYieldDataTableState extends State<BarangayYieldDataTable> {
             color: theme.dividerColor,
           ),
           _buildPieToggleButton(
-            label: 'Records',
+            label: 'Productivity',
             icon: Icons.analytics,
             isSelected: !_showPieByVolume,
             onTap: () => setState(() => _showPieByVolume = false),
@@ -944,33 +957,48 @@ class _BarangayYieldDataTableState extends State<BarangayYieldDataTable> {
               ),
             ],
             const SizedBox(height: 20),
-            _buildExportButton(theme),
+            Row(
+              children: [
+                // Excel button (green)
+                Expanded(
+                  child: _buildExportButton(theme, isPDF: false),
+                ),
+                const SizedBox(width: 8),
+                // PDF button (red)
+                Expanded(
+                  child: _buildExportButton(theme, isPDF: true),
+                ),
+              ],
+            )
           ],
         ),
       ),
     );
   }
 
-  Widget _buildExportButton(ThemeData theme) {
+  Widget _buildExportButton(ThemeData theme, {bool isPDF = false}) {
+    final Color buttonColor = isPDF ? Colors.red : Colors.green;
+    final String buttonText = isPDF ? ' PDF' : 'Excel';
+    final IconData buttonIcon = isPDF ? Icons.picture_as_pdf : Icons.download;
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: _isExporting ? null : _exportData,
+        onPressed: _isExporting ? null : () => _exportData(isPDF: isPDF),
         icon: _isExporting
-            ? const SizedBox(
+            ? SizedBox(
                 width: 16,
                 height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
               )
-            : const Icon(
-                Icons.download,
-                size: 18,
-                color: GlobalColors.primary,
-              ),
-        label: Text(_isExporting ? 'Exporting...' : 'Export to Excel'),
+            : Icon(buttonIcon, size: 18, color: Colors.white),
+        label: Text(_isExporting ? 'Exporting...' : buttonText),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          backgroundColor: GlobalColors.primary,
+          backgroundColor: buttonColor,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

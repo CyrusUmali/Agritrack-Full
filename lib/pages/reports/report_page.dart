@@ -395,7 +395,7 @@ class _ReportContentState extends State<ReportContent> {
                         ),
                         Text(
                           'Generated on ${DateTime.now().toLocal().toString().split('.')[0]}',
-                          style: Theme.of(context).textTheme.bodySmall,
+                          // style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
@@ -417,7 +417,7 @@ class _ReportContentState extends State<ReportContent> {
                         children: [
                           Text(
                             'Search results: ${filteredReportData.length} of ${reportData.length}',
-                            style: Theme.of(context).textTheme.bodySmall,
+                            // style: Theme.of(context).textTheme.bodySmall,
                           ),
                           TextButton.icon(
                             icon: const Icon(Icons.clear, size: 16),
